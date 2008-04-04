@@ -6,7 +6,6 @@
 105_initscript_config_in_etc-default.patch
 106_papd_needs_atalk_and_fix_bashism.patch
 107_afpd-zeroconf.patch
-108_zeroconf.patch
 109_xfs_option.patch
 110_db.patch
 111_db_macro.patch

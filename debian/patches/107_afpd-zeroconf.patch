@@ -1,10 +1,28 @@
+? etc/afpd/afp_avahi.c
+? etc/afpd/afp_avahi.c.org
+? etc/afpd/afp_avahi.h
+? etc/afpd/afp_avahi.h.org
+? etc/afpd/afp_bonjour.c
+? etc/afpd/afp_bonjour.c.org
+? etc/afpd/afp_bonjour.h
+? etc/afpd/afp_bonjour.h.org
+? etc/afpd/afp_howl.c
+? etc/afpd/afp_howl.c.org
+? etc/afpd/afp_howl.h
+? etc/afpd/afp_howl.h.org
+? etc/afpd/afp_zeroconf.c
+? etc/afpd/afp_zeroconf.c.org
+? etc/afpd/afp_zeroconf.h
+? etc/afpd/afp_zeroconf.h.org
+? macros/zeroconf.m4
+? macros/zeroconf.m4.org
 Index: configure.in
 ===================================================================
 RCS file: /cvsroot/netatalk/netatalk/configure.in,v
 retrieving revision 1.203
 diff -u -r1.203 configure.in
 --- netatalk/configure.in	28 Apr 2005 20:49:17 -0000	1.203
-+++ netatalk/configure.in	22 Apr 2006 21:53:19 -0000
++++ netatalk/configure.in	5 May 2006 10:46:30 -0000
 @@ -399,6 +399,9 @@
  dnl Check for optional server location protocol support (used by MacOS X)
  NETATALK_SRVLOC
@@ -21,7 +39,7 @@ RCS file: /cvsroot/netatalk/netatalk/config/afpd.conf.tmpl,v
 retrieving revision 1.16
 diff -u -r1.16 afpd.conf.tmpl
 --- netatalk/config/afpd.conf.tmpl	28 Apr 2005 20:49:20 -0000	1.16
-+++ netatalk/config/afpd.conf.tmpl	22 Apr 2006 21:53:21 -0000
++++ netatalk/config/afpd.conf.tmpl	5 May 2006 10:46:31 -0000
 @@ -51,6 +51,8 @@
  #			  empty string.
  #     -noslp              Don't register this server with the Service
@@ -37,7 +55,7 @@ RCS file: /cvsroot/netatalk/netatalk/contrib/a2boot/Makefile.am,v
 retrieving revision 1.5
 diff -u -r1.5 Makefile.am
 --- netatalk/contrib/a2boot/Makefile.am	28 Apr 2005 20:49:21 -0000	1.5
-+++ netatalk/contrib/a2boot/Makefile.am	22 Apr 2006 21:53:21 -0000
++++ netatalk/contrib/a2boot/Makefile.am	5 May 2006 10:46:32 -0000
 @@ -10,7 +10,7 @@
  EXTRA_DIST = COPYRIGHT VERSION
  
@@ -47,13 +65,46 @@ diff -u -r1.5 Makefile.am
  	 -D_PATH_A_GS_BLOCKS=\"$(PKGCONFDIR)/a2boot/ProDOS16\ Boot\ Blocks\" \
  	 -D_PATH_A_2E_BLOCKS=\"$(PKGCONFDIR)/a2boot/Apple\ :2f:2fe\ Boot\ Blocks\" \
  	 -D_PATH_P16_IMAGE=\"$(PKGCONFDIR)/a2boot/ProDOS16\ Image\"
+Index: etc/afpd/Makefile.am
+===================================================================
+RCS file: /cvsroot/netatalk/netatalk/etc/afpd/Makefile.am,v
+retrieving revision 1.38
+diff -u -r1.38 Makefile.am
+--- netatalk/etc/afpd/Makefile.am	30 Apr 2005 21:33:41 -0000	1.38
++++ netatalk/etc/afpd/Makefile.am	5 May 2006 10:46:33 -0000
+@@ -8,19 +8,21 @@
+ 	 file.c enumerate.c desktop.c filedir.c fork.c appl.c gettok.c \
+ 	 mangle.c status.c afp_options.c afp_asp.c afp_dsi.c messages.c  \
+ 	 afp_config.c nfsquota.c quota.c uam.c afs.c uid.c afp_util.c \
+-         catsearch.c afprun.c
++         catsearch.c afprun.c \
++         afp_zeroconf.c afp_avahi.c afp_bonjour.c afp_howl.c
+ 
+ afpd_LDADD =  $(top_builddir)/libatalk/cnid/libcnid.la $(top_builddir)/libatalk/libatalk.la
+ afpd_LDFLAGS = -export-dynamic
+ 
+ noinst_HEADERS = auth.h afp_config.h desktop.h directory.h file.h \
+ 	 filedir.h fork.h globals.h icon.h mangle.h misc.h status.h switch.h \
+-	 uam_auth.h uid.h unix.h volume.h
++	 uam_auth.h uid.h unix.h volume.h \
++         afp_zeroconf.h afp_avahi.h afp_bonjour.h afp_howl.h
+ 
+-LIBS = @LIBS@ @QUOTA_LIBS@ @SLP_LIBS@ @WRAP_LIBS@ @LIBADD_DL@
++LIBS = @LIBS@ @QUOTA_LIBS@ @SLP_LIBS@ @ZEROCONF_LIBS@ @WRAP_LIBS@ @LIBADD_DL@
+ 
+ CFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/sys \
+-	 @CFLAGS@ @SLP_CFLAGS@ \
++	 @CFLAGS@ @SLP_CFLAGS@ @ZEROCONF_CFLAGS@ \
+ 	 -D_PATH_AFPDDEFVOL=\"$(pkgconfdir)/AppleVolumes.default\" \
+ 	 -D_PATH_AFPDSYSVOL=\"$(pkgconfdir)/AppleVolumes.system\" \
+ 	 -D_PATH_AFPDPWFILE=\"$(pkgconfdir)/afppasswd\" \
 Index: etc/afpd/afp_config.c
 ===================================================================
 RCS file: /cvsroot/netatalk/netatalk/etc/afpd/afp_config.c,v
 retrieving revision 1.23
 diff -u -r1.23 afp_config.c
 --- netatalk/etc/afpd/afp_config.c	28 Apr 2005 20:49:39 -0000	1.23
-+++ netatalk/etc/afpd/afp_config.c	22 Apr 2006 21:53:23 -0000
++++ netatalk/etc/afpd/afp_config.c	5 May 2006 10:46:35 -0000
 @@ -50,6 +50,9 @@
  #ifdef USE_SRVLOC
  #include <slp.h>
@@ -93,20 +144,18 @@ diff -u -r1.23 afp_config.c
  
  #ifndef NO_DDP
  static void asp_cleanup(const AFPConfig *config)
-@@ -357,6 +368,12 @@
+@@ -355,6 +366,10 @@
+     struct servent *afpovertcp;
+     int afp_port = 548;
      char *srvloc_hostname, *hostname;
- #endif /* USE_SRVLOC */
- 
-+#ifdef USE_ZEROCONF
++#elif defined (USE_ZEROCONF)
 +    struct servent *afpovertcp;
 +    int afp_port = 548;
 +    char *hostname = NULL;
-+#endif
-+
+ #endif /* USE_SRVLOC */
+ 
      if ((config = (AFPConfig *) calloc(1, sizeof(AFPConfig))) == NULL) {
-         LOG(log_error, logtype_afpd, "DSIConfigInit: malloc(config): %s", strerror(errno) );
-         return NULL;
-@@ -449,6 +466,36 @@
+@@ -449,6 +464,36 @@
      }
  #endif /* USE_SRVLOC */
  
@@ -143,7 +192,7 @@ diff -u -r1.23 afp_config.c
  
      config->fd = dsi->serversock;
      config->obj.handle = dsi;
-@@ -469,6 +516,9 @@
+@@ -469,6 +514,9 @@
  #ifdef USE_SRVLOC
      config->server_cleanup = dsi_cleanup;
  #endif 
@@ -159,7 +208,7 @@ RCS file: /cvsroot/netatalk/netatalk/etc/afpd/afp_options.c,v
 retrieving revision 1.35
 diff -u -r1.35 afp_options.c
 --- netatalk/etc/afpd/afp_options.c	28 Apr 2005 20:49:39 -0000	1.35
-+++ netatalk/etc/afpd/afp_options.c	22 Apr 2006 21:53:26 -0000
++++ netatalk/etc/afpd/afp_options.c	5 May 2006 10:46:39 -0000
 @@ -202,10 +202,15 @@
      /* parse toggles */
      if (strstr(buf, " -nodebug"))
@@ -195,7 +244,7 @@ RCS file: /cvsroot/netatalk/netatalk/etc/afpd/globals.h,v
 retrieving revision 1.21
 diff -u -r1.21 globals.h
 --- netatalk/etc/afpd/globals.h	28 Apr 2005 20:49:43 -0000	1.21
-+++ netatalk/etc/afpd/globals.h	22 Apr 2006 21:53:26 -0000
++++ netatalk/etc/afpd/globals.h	5 May 2006 10:46:39 -0000
 @@ -40,6 +40,7 @@
  #define OPTION_CUSTOMICON    (1 << 4)
  #define OPTION_NOSLP         (1 << 5)
@@ -210,7 +259,7 @@ RCS file: /cvsroot/netatalk/netatalk/include/atalk/dsi.h,v
 retrieving revision 1.6
 diff -u -r1.6 dsi.h
 --- netatalk/include/atalk/dsi.h	3 May 2005 14:55:12 -0000	1.6
-+++ netatalk/include/atalk/dsi.h	22 Apr 2006 21:53:27 -0000
++++ netatalk/include/atalk/dsi.h	5 May 2006 10:46:41 -0000
 @@ -86,6 +86,10 @@
    char srvloc_url[512];
  #endif 
@@ -228,7 +277,7 @@ RCS file: /cvsroot/netatalk/netatalk/macros/summary.m4,v
 retrieving revision 1.2
 diff -u -r1.2 summary.m4
 --- netatalk/macros/summary.m4	28 Apr 2005 20:50:05 -0000	1.2
-+++ netatalk/macros/summary.m4	22 Apr 2006 21:53:29 -0000
++++ netatalk/macros/summary.m4	5 May 2006 10:46:46 -0000
 @@ -44,6 +44,7 @@
  	AC_MSG_RESULT([    Options:])
  	AC_MSG_RESULT([         CUPS support:           $netatalk_cv_use_cups])
@@ -243,7 +292,7 @@ RCS file: /cvsroot/netatalk/netatalk/man/man5/afpd.conf.5.tmpl,v
 retrieving revision 1.4
 diff -u -r1.4 afpd.conf.5.tmpl
 --- netatalk/man/man5/afpd.conf.5.tmpl	28 Apr 2005 20:50:06 -0000	1.4
-+++ netatalk/man/man5/afpd.conf.5.tmpl	22 Apr 2006 21:53:31 -0000
++++ netatalk/man/man5/afpd.conf.5.tmpl	5 May 2006 10:46:48 -0000
 @@ -210,6 +210,9 @@
  Protocol (if SLP support was compiled in). This is useful if you are
  running multiple servers and want one to be hidden, perhaps because
@@ -255,8 +304,8 @@ diff -u -r1.4 afpd.conf.5.tmpl
  .TP 
  \-admingroup \fI[group]\fR
 --- netatalk/etc/afpd/afp_avahi.c.org	2006-04-21 10:29:22.000000000 +0200
-+++ netatalk/etc/afpd/afp_avahi.c	2006-04-21 12:15:50.000000000 +0200
-@@ -0,0 +1,448 @@
++++ netatalk/etc/afpd/afp_avahi.c	2006-04-22 08:34:34.000000000 +0200
+@@ -0,0 +1,500 @@
 +/* -*- Mode: C; tab-width: 2; indent-tabs-mode: t; c-basic-offset: 2 -*- */
 +/*
 + * Author:  Daniel S. Haischt <me@daniel.stefan.haischt.name>
@@ -474,6 +523,54 @@ diff -u -r1.4 afpd.conf.5.tmpl
 +  }
 +}
 +
++static void* thread(void *userdata) {
++#ifndef HAVE_AVAHI_THREADED_POLL
++  struct context *ctx = userdata;
++  sigset_t mask;
++  int r;
++
++  /* Make sure that signals are delivered to the main thread */
++  sigfillset(&mask);
++  pthread_sigmask(SIG_BLOCK, &mask, NULL);
++    
++  pthread_mutex_lock(&ctx->mutex);
++
++  /* Run the main loop */
++  LOG(log_info, logtype_afpd, "Starting avahi loop...");
++  r = avahi_simple_poll_loop(ctx->simple_poll);
++
++  /* Cleanup some stuff */
++  if (ctx->client)
++    avahi_client_free(ctx->client);
++  ctx->client = NULL;
++  ctx->group = NULL;
++    
++  pthread_mutex_unlock(&ctx->mutex);
++#endif    
++  return NULL;
++}
++
++static int poll_func(struct pollfd *ufds,
++                     unsigned int nfds,
++                     int timeout,
++                     void *userdata) {
++#ifndef HAVE_AVAHI_THREADED_POLL
++  pthread_mutex_t *mutex = userdata;
++  int r;
++
++  /* Before entering poll() we unlock the mutex, so that
++   * avahi_simple_poll_quit() can succeed from another thread. */
++    
++  pthread_mutex_unlock(mutex);
++  r = poll(ufds, nfds, timeout);
++  pthread_mutex_lock(mutex);
++
++  return r;
++#else
++  return 0;
++#endif
++}
++
 +/*
 + * Tries to setup the Zeroconf thread and any
 + * neccessary config setting.
@@ -496,6 +593,7 @@ diff -u -r1.4 afpd.conf.5.tmpl
 +  ctx->group = NULL;
 +#ifndef HAVE_AVAHI_THREADED_POLL
 +  ctx->simple_poll = NULL;
++  pthread_mutex_init(&ctx->mutex, NULL);
 +#else
 +  ctx->threaded_poll = NULL;
 +#endif
@@ -506,7 +604,6 @@ diff -u -r1.4 afpd.conf.5.tmpl
 +      "Setting port for Zeroconf service to: %i.\n",
 +      port);  
 +  ctx->port = port;
-+  pthread_mutex_init(&ctx->mutex, NULL);
 +
 +  /* Prepare service name */
 +  if (!name) {
@@ -527,17 +624,17 @@ diff -u -r1.4 afpd.conf.5.tmpl
 +/* first of all we need to initialize our threading env */
 +#ifdef HAVE_AVAHI_THREADED_POLL
 +  if (!(ctx->threaded_poll = avahi_threaded_poll_new())) {
-+     return;
++     goto fail;
 +  }
 +#else
-+  avahi_simple_poll_set_func(ctx->simple_poll, poll_func, &ctx->mutex);
-+
 +  if (!(ctx->simple_poll = avahi_simple_poll_new())) {
 +      LOG(log_error,
 +          logtype_afpd,
 +          "Failed to create event loop object.\n");
 +      goto fail;
 +  }
++
++  avahi_simple_poll_set_func(ctx->simple_poll, poll_func, &ctx->mutex);
 +#endif
 +
 +/* now we need to acquire a client */
@@ -624,9 +721,11 @@ diff -u -r1.4 afpd.conf.5.tmpl
 + * Currently unused.
 + */
 +void av_zeroconf_lock(void *u) {
++#ifdef HAVE_AVAHI_THREADED_POLL
 +  struct context *ctx = u;
 +
 +  avahi_threaded_poll_lock(ctx->threaded_poll);
++#endif
 +}
 +
 +/*
@@ -634,9 +733,11 @@ diff -u -r1.4 afpd.conf.5.tmpl
 + * Currently unused.
 + */
 +void av_zeroconf_unlock(void *u) {
++#ifdef HAVE_AVAHI_THREADED_POLL
 +  struct context *ctx = u;
 +
 +  avahi_threaded_poll_unlock(ctx->threaded_poll);
++#endif
 +}
 +
 +/*
@@ -706,8 +807,8 @@ diff -u -r1.4 afpd.conf.5.tmpl
 +
 +#endif /* USE_AVAHI */
 --- netatalk/etc/afpd/afp_avahi.h.org	2006-04-21 10:29:23.000000000 +0200
-+++ netatalk/etc/afpd/afp_avahi.h	2006-04-21 07:36:53.000000000 +0200
-@@ -0,0 +1,57 @@
++++ netatalk/etc/afpd/afp_avahi.h	2006-04-22 07:40:05.000000000 +0200
+@@ -0,0 +1,58 @@
 +/* -*- Mode: C; tab-width: 2; indent-tabs-mode: t; c-basic-offset: 2 -*- */
 +/*
 + * Author:  Daniel S. Haischt <me@daniel.stefan.haischt.name>
@@ -730,6 +831,7 @@ diff -u -r1.4 afpd.conf.5.tmpl
 +
 +#ifndef HAVE_AVAHI_THREADED_POLL
 +#include <avahi-common/simple-watch.h>
++#include <signal.h> /* SIG_BLOCK */
 +#else
 +#include <avahi-common/thread-watch.h>
 +#endif
@@ -1179,11 +1281,11 @@ diff -u -r1.4 afpd.conf.5.tmpl
 +#endif
 +}
 --- netatalk/macros/zeroconf.m4.org	2006-04-21 10:29:51.000000000 +0200
-+++ netatalk/macros/zeroconf.m4	2006-04-21 08:44:07.000000000 +0200
-@@ -0,0 +1,100 @@
++++ netatalk/macros/zeroconf.m4	2006-04-22 07:26:56.000000000 +0200
+@@ -0,0 +1,101 @@
 +dnl Check for optional Zeroconf support
 +
-+dnl $Id: afpd-zeroconf.diff,v 1.1 2006/04/23 00:46:29 willysilly Exp $
++dnl $Id: $
 +
 +AC_DEFUN([NETATALK_ZEROCONF], [
 +
@@ -1250,8 +1352,9 @@ diff -u -r1.4 afpd.conf.5.tmpl
 +    case "$ac_cv_lib_avahi_client_avahi_client_new" in
 +      yes)
 +      PKG_CHECK_MODULES(AVAHI, [ avahi-client >= 0.6 ])
-+      PKG_CHECK_MODULES(AVAHI_TPOLL, [ avahi-client >= 0.6 ],
-+        [AC_DEFINE(HAVE_AVAHI_THREADED_POLL, 1, [Uses Avahis threaded poll implementation])])
++      PKG_CHECK_MODULES(AVAHI_TPOLL, [ avahi-client >= 0.6.4 ],
++        [AC_DEFINE(HAVE_AVAHI_THREADED_POLL, 1, [Uses Avahis threaded poll implementation])],
++        [AC_MSG_WARN(This Avahi implementation is not supporting threaded poll objects. Maybe this is not what you want.)])
 +      ZEROCONF_LIBS="$AVAHI_LIBS"
 +      ZEROCONF_CFLAGS="$AVAHI_CFLAGS"
 +      AC_DEFINE(HAVE_AVAHI, 1, [Use Avahi/DNS-SD registration])
