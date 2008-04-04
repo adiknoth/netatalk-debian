@@ -1,0 +1,6 @@
+  * Make sure all of debian/copyright_hints is also in debian/copyright.
+
+When (if ever?) OpenSSL issues are resolved:
+  * Build-depend on libssl-dev.
+  * Unconditionally enable ssl-related stuff
+  * Close bug#190417 and Bug#191790

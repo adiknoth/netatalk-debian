@@ -1,0 +1,24 @@
+diff -ruN netatalk-2.0.3.orig/config/netatalk.conf netatalk-2.0.3/config/netatalk.conf
+--- netatalk-2.0.3.orig/config/netatalk.conf	2007-08-12 23:53:44.000000000 +0200
++++ netatalk-2.0.3/config/netatalk.conf	2007-08-12 23:56:14.000000000 +0200
+@@ -31,7 +31,7 @@
+ # Set which daemons to run (papd is dependent upon atalkd):
+ ATALKD_RUN=yes
+ PAPD_RUN=yes
+-CNID_METAD_RUN=yes
++CNID_METAD_RUN=no
+ AFPD_RUN=yes
+ TIMELORD_RUN=no
+ A2BOOT_RUN=no
+diff -ruN netatalk-2.0.3.orig/distrib/initscripts/rc.atalk.debian.tmpl netatalk-2.0.3/distrib/initscripts/rc.atalk.debian.tmpl
+--- netatalk-2.0.3.orig/distrib/initscripts/rc.atalk.debian.tmpl	2007-08-12 23:53:44.000000000 +0200
++++ netatalk-2.0.3/distrib/initscripts/rc.atalk.debian.tmpl	2007-08-12 23:54:33.000000000 +0200
+@@ -23,7 +23,7 @@
+ ATALK_ZONE=
+ ATALK_NAME=`/bin/hostname --short`
+ ATALK_BGROUND=no
+-CNID_METAD_RUN=yes
++CNID_METAD_RUN=no
+ ATALK_MAC_CHARSET='MAC_ROMAN'
+ ATALK_UNIX_CHARSET='LOCALE'
+ 

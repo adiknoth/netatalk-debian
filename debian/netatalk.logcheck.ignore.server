@@ -1,0 +1,28 @@
+afpd\[[0-9]+\]: ((dhx|cleartext|randnum/rand2num) )?login: [[:alnum:]]+$
+afpd\[[0-9]+\]: (afp_flushfork|afp_read|getforkparms): (ad_refresh|of_find): (No such file or directory|No such process|Permission denied)$
+afpd\[[0-9]+\]: dsi_stream_read\(0\): (No such file or directory|No such process|Permission denied)$
+afpd\[[0-9]+\]: (atp_rresp|afp_die: asp_shutdown): Connection timed out$
+afpd\[[0-9]+\]: (registering [[:alnum:]]+ \(uid [0-9]+\) on [\.0-9]+ as|removed) /[^[:space:]]+/net[\.0-9]+node[0-9]+$
+afpd\[[0-9]+\]: (server_child\[[0-9]+\] [0-9]+ )?(done|exited 1)$
+afpd\[[0-9]+\]: ASIP session:[0-9]+\([0-9]+\) from [\.:0-9]+\([0-9]+\)$
+afpd\[[0-9]+\]: CNID DB initialized using Sleepycat Software: Berkeley DB( [\.0-9]+: \([^\(]+\))?$
+afpd\[[0-9]+\]: Connection terminated$
+afpd\[[0-9]+\]: [\.[:alnum:]]+ read, [\.[:alnum:]]+ written$
+afpd\[[0-9]+\]: [_[:alnum:]]+(\(-?[0-9]+\))?: stat [^:]+: (No such file or directory|Permission denied)$
+afpd\[[0-9]+\]: afp_alarm: child timed out$
+atalkd\[[0-9]+\]: as_timer sendto: Network is unreachable $
+afpd\[[0-9]+\]: asp_alrm: [0-9]+ timed out$
+afpd\[[0-9]+\]: dsi_stream_(read\(-1\)|write): Connection reset by peer$
+afpd\[[0-9]+\]: dsi_stream_read\(0\): Success$
+afpd\[[0-9]+\]: error stat'ing /[^[:space:]]+/net[\.0-9]+node[0-9]+: No such file or directory$
+afpd\[[0-9]+\]: login [[:alnum:]]+ \(uid [0-9]+, gid [0-9]+\)( AFP2\.2)?$
+afpd\[[0-9]+\]: login noauth$
+afpd\[[0-9]+\]: logout [[:alnum:]]+$
+afpd\[[0-9]+\]: session from [\.:0-9]+ on [\.:0-9]+$
+afpd\[[0-9]+\]: uams_dhx_pam.c :PAM: PAM (Auth OK!|Success -- Success)$
+afpd\[[0-9]+\]: using codepage directory: /etc/netatalk/nls/maccode\.[\.a-z0-9-]+$
+atalkd\[[0-9]+\]: zip (ignoring gnireply|gnireply from [\.0-9]+ \([[:alnum:]]+ [[:alnum:]]+\))$
+atalkd\[[0-9]+\]: \[rtmp\.c:[0-9]+\]: I:ATalkDaemon: rtmp_replace [0-9]+-[0-9]+$
+atalkd\[[0-9]+\]: \[rtmp\.c:[0-9]+\]: I:ATalkDaemon: rtmp_free [0-9]+-[0-9]+$
+papd\[[0-9]+\]: child [0-9]+ done$
+papd\[[0-9]+\]: child [0-9]+ for "[^[:space:]]+" from [\.0-9]+$

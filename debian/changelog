@@ -1,0 +1,1215 @@
+netatalk (2.0.3-8) unstable; urgency=medium
+
+  * Add patch 001 to sync with upstream CVS as of today.
+  * Add rule to generate CVS snapshot patch.
+  * Reduce patch 110 and unfuzz other patches to adapt to CVS snapshot.
+  * Add patch 111 extending autotools macro resolving BerkeleyDB libs to
+    check newest versions first, and check versions 4.5 and 4.6 too.
+  * Explicitly disable SLP support and build-conflict against libavahi-
+    compat-libdnssd-dev to not clash with AVAHI-based Zeroconf support.
+    Closes: bug#459395, thanks to Gregory Oschwald.
+  * Add patch 112 to fix assertion in zeroconf patch. Closes:
+    bug#457246, thanks to Omar Siam.
+  * Set urgency=medium as lack of the above zeroconf fix silently broke
+    netatalk completely in some situations.
+  * Update cdbs tweaks:
+    + Support zip in upstream-tarball.mk
+    + Use ~ as repackaging delimiter in upstream-tarball.mk to make room
+      for point releases and cleaned up rerelease
+    + Rename top srcdir in repackaged tarball to $pkg-$ver.orig to
+      comply with Developers Reference 6.7.8.2.
+    + Support mangling upstream version string in upstream-tarball.mk
+    + Drop buildcore.mk override (set DEB_AUTO_UPDATE_DEBIAN_CONTROL
+      manually when needed instead)
+    (none of the above affect this package currently)
+    + Add (and use) new variables DEB_COPYRIGHT_CHECK_IGNORE and
+      DEB_COPYRIGHT_CHECK_IGNORE_REGEX to copyright-check.mk.
+  * Fix safety check in debian/rules for compiling official packages
+    with SSL support.
+  * Update section in README.Debian on recompiling with SSL support.
+
+ -- Jonas Smedegaard <dr@jones.dk>  Fri, 01 Feb 2008 02:44:53 +0100
+
+netatalk (2.0.3-7) unstable; urgency=low
+
+  * Friendly package maintainer takeover, with the consent of the
+    previous maintainer. Thanks a lot for your excellent work with both
+    packaging and upstream development, Sebastian Rittau!
+  * Enable BDB transaction protection. Closes: bug#435210, thanks to
+    Craig Ringer.
+  * Fix bogus trailing space in logcheck rule. Closes: bug#381839,
+    thanks to Bernhard Sadlowski.
+  * Fix building with DEB_BUILD_OPTIONS=ssl by moving ssl_build_depends
+    inclusion below other build-dependencies declared in debian/rules.
+  * Add Vcs-Svn and Vcs-Browser fields to debian/control.
+  * Move Homepage to own field (from pseudo-field in long description).
+  * Update CDBS tweaks:
+    + update-tarball needs cdbs 0.4.39 or newer (only relevant for
+      backports).
+    + Fix typo in update-tarball regarding gzip-recompressing tarballs.
+    + Use uppercase variables in copyright-check.
+  * Update build-dependency cosmetics in debian/rules, and semi-auto-
+    update debian/control:
+      DEB_BUILD_OPTIONS=cdbs-autoupdate fakeroot debian/rules pre-build
+  * Support Zeroconf (instead of SLP:
+    + Add patches 107 and 108 to support zeroconf, found at
+      http://aur.archlinux.org/packages/netatalk/netatalk/ .
+    + Enable zeroconf, and build-depend on recent version of libavahi-client-dev.
+    + Drop SLP support, and drop build-depending on libslp-dev and recommending
+      slpd.
+    + Unfuzz zeroconf patches.
+  * Generate autotools at build time (zeroconf patches change autobuilt files).
+    + Disable patches to autobuilt files.
+    + Adjust patch 210 to not indent comment hashes, thanks to automake 1.10.
+    + Duplicate macros directory as m4, and touch AUTHORS, ChangeLog and INSTALL
+      (as workaround for cdbs lacking support for passing options to autotools).
+    + Suppress copyright-checking autobuilt files.
+    + Build-depend on libltdl3-dev (seems to grow a dependency on that once the
+      source has been rebuilt once).
+  * Build-depend on libkrb5-dev (not heimdal-dev). Closes: bug#441520.
+  * Add patch 109 to support explicitly avoiding XFS quota support. Patch found at
+    http://aur.archlinux.org/packages/netatalk/netatalk/ . Use it - code is
+    broken currently (complains about redefining __swabXXX in xfs/swab.h).
+  * Only enable PGP UAM when SSL is enabled (didn't fail but was confusing).
+  * Update BerkeleyDB linkage:
+    + Add patch 110 to fix linking against newer versions of BerkeleyDB, found at
+      http://aur.archlinux.org/packages/netatalk/netatalk/ .
+    + Extend patch 110 to avoid deprecated DB_VERB_CHKPOINT.
+    + build-depend on libdb-dev (not libdb4.2-dev).
+
+ -- Jonas Smedegaard <dr@jones.dk>  Thu, 06 Dec 2007 01:42:44 +0100
+
+netatalk (2.0.3-6) unstable; urgency=low
+
+  * Update CDBS tweaks:
+    + Replace auto-update.mk with overloading buildcore.mk.
+    + Add debian/README.cdbs-tweaks and advertise it in debian/rules.
+    + Fix applying buildinfo only once.
+    + Fix race condition: check copyright strings in pre-build target
+      (not clean target).
+    + Add upstream-tarball.mk to implement get-orig-source target.
+  * Declare (and cleanup) build-dependencies in debian/rules.
+  * Semi-auto-update debian/control:
+      DEB_BUILD_OPTIONS=cdbs-autoupdate fakeroot debian/rules pre-build
+  * Add patch 212 to disable cnid_metad by default. This was the only
+    major change in -5 initscript and thus hopefully closes: bug#384276.
+
+ -- Jonas Smedegaard <dr@jones.dk>  Sun, 12 Aug 2007 22:59:12 +0200
+
+netatalk (2.0.3-5) unstable; urgency=low
+
+  * Change back to unversioned build-dependency on heimdal-dev again
+    (it was only a temporary need, and prevented backporting to sarge).
+  * Add patches to fix a few missed sed replacements:
+    + 101_fix_manpage_sed_replacements.patch
+    + 208_fix_manpage_sed_replacements_for_automade_file.patch
+  * Add patches to make upstream sysv init-file behave sanely:
+    + 102_rename_initscript.patch
+    + 103_initscript_background_off_by_default.patch
+    + 104_initscript_load_module_only_if_intended.patch
+    + 105_initscript_config_in_etc-default.patch
+    + 106_papd_needs_atalk_and_fix_bashism.patch
+    + 209_rename_initscript_for_automade_file.patch
+    + 210_avoid_update-rc-d.patch
+    + 211_avoid_update-rc-d_for_automade_file.patch
+  * Add debian/patches/README explaining the patch numbering scheme.
+  * Enable the use of upstream Debian-compliant init-file:
+    + SysV daemons honours locale defaults.
+    + SysV script handles new cnid daemon.
+  * Have debhelper reinstall init-file, adding maintainer script hooks.
+  * Rename NEWS.Debian to NEWS in source to get recognized by debhelper
+    (yes, seems odd, but that's how it works).
+  * Recommend procps, needed by macusers.
+  * Fix default UAM list (upstream assumes openssl is compiled in).
+  * Improve use of cdbs:
+    + Add local snippet copyright-check.mk: Scan source for (c) changes.
+    + Add local snippet auto-update.mk: auto-update build-dependencies.
+      (enabled only when environment includes DEB_BUILD_OPTIONS=update).
+    + Add local snippet buildinfo.mk: Include env info with binary pkgs
+    + (instead of invoking buildinfo directly within debian/rules).
+    + Switch to using patchsys-quilt (instead of simple-patchsys).
+  * Add comments documenting the various parts of debian/rules, and
+    avoid indentation, to not show them during build.
+  * Fix my entry as package uploader.
+  * Add netatalk_update.sh (found on upstream wiki) as example script.
+  * Support autobuilding of ssl-enabled packages when DEB_BUILD_OPTIONS
+    contains "ssl":
+    + Include ssl-related build-dependencies with cdbs auto-update (when
+      environment contains DEB_BUILD_OPTIONS=update,ssl or similar).
+    + Extend default UAM list handling to toggle SSL-enabled UAMs.
+    + Safety-check: Refuse to build if build-depending on "libssl" but
+      without "ssl" included in DEB_BUILD_OPTIONS (if auto-updated to
+      use ssl but later incosistently built without it enabled).
+  * Update note in README.Debian about unofficial ssl-enabled packages
+    to refer to new netatalk-only repository:
+    deb http://debian.jones.dk/ $DIST/netatalk main
+  * Bump up standards-version to 3.7.2 (no changes needed).
+  * Drop no longer relevant (pre-potato) dependencies:
+    - Depended on libpam-runtime (>= 0.76-14).
+    - Conflicted with libatalk1 and netatalk-dev.
+    - Replaced libatalk1.
+
+ -- Jonas Smedegaard <dr@jones.dk>  Sun, 13 Aug 2006 04:22:26 +0200
+
+netatalk (2.0.3-4) unstable; urgency=low
+
+  * Start cnid_metad when requested by user. (Patch stolen from Ubuntu.)
+    + debian/netatalk.init: Run cnid_metad.
+    + Closes: #308828 "cnid_metad doesn't run on startup"
+  * debian/control: Bump heimdal-dev dependency to >= 0.7.1-3 to prevent
+    build problems on mips/-el.
+
+ -- Sebastian Rittau <srittau@debian.org>  Sat, 14 Jan 2006 09:26:43 +0100
+
+netatalk (2.0.3-3) unstable; urgency=low
+
+  * debian/netatalk.dirs: Add var/spool/netatalk.
+    + Partly addresses bug #336495.
+  * debian/control: Build-depend on heimdal-dev >= 0.7.0.
+  * Fixed namespace conflict with bigloo by renaming afile and achfile.
+    + Closes: #132054 "Should not conflict with bigloo"
+    + Closes: #145482 "netatalk conflicts with bigloo"
+    + debian/patches/207_afile_namespace_conflict.diff: Rename afile to
+      apple_file and achfile to apple_chfile.
+    + debian/rules: Manually rename afile.1 to apple_file.1 and achfile.1 to
+      apple_chfile.1.
+    + debian/control: Removed conflict with bigloo.
+  * debian/patches/203_amd64_fixes.diff: Removed, obsolete.
+
+ -- Sebastian Rittau <srittau@debian.org>  Thu, 29 Dec 2005 19:45:54 +0100
+
+netatalk (2.0.3-2) unstable; urgency=low
+
+  * Fixed namespace conflict with yudit by renaming uniconv to
+    netatalk-uniconv. (Closes: #306385, #306279)
+    + debian/patches/204_uniconv_namespace_conflict.diff: Rename uniconv
+      to netatalk-uniconv. Adapt the man page accordingly.
+    + debian/rules: Manually rename uniconv.1 to netatalk-uniconv.1.
+    + debian/control: Removed conflict with yudit.
+
+ -- Sebastian Rittau <srittau@debian.org>  Wed, 13 Jul 2005 16:10:59 +0200
+
+netatalk (2.0.3-1) unstable; urgency=low
+
+  * New upstream version.
+
+ -- Sebastian Rittau <srittau@debian.org>  Sun, 26 Jun 2005 06:09:33 +0200
+
+netatalk (2.0.2-5) unstable; urgency=low
+
+  * Recompile against unstable libc6 and CUPS. (Closes: #312963)
+  * Policy version 3.6.2. (No changes required.)
+
+ -- Sebastian Rittau <srittau@debian.org>  Sun, 26 Jun 2005 05:53:52 +0200
+
+netatalk (2.0.2-4) unstable; urgency=low
+
+  * debian/README.Debian: Fixed typos, removed my homepage as alternate
+    download location for SSL enabled packages for now.
+  * Added conflict with yudit. Partly addresses bugs #306279 and #306385.
+
+ -- Sebastian Rittau <srittau@debian.org>  Tue,  7 Jun 2005 12:54:23 +0200
+
+netatalk (2.0.2-3) unstable; urgency=low
+
+  * Fixed build problem on amd64.
+    + debian/patches/203_amd64_fixes.diff: New patch (thanks, Andreas
+      Jochens).
+    + Closes: #300354 "FTBFS (amd64/gcc-4.0): static declaration of 'ucreator'
+      follows non-static declaration"
+
+ -- Sebastian Rittau <srittau@debian.org>  Sat, 19 Mar 2005 12:54:12 +0100
+
+netatalk (2.0.2-2) unstable; urgency=low
+
+  * debian/control: Added homepage URL to the long description.
+  * debian/control: Added missing build dependency on heimdal-dev.
+    + Closes: #300106 "FTBFS: missing build-depends?"
+
+ -- Sebastian Rittau <srittau@debian.org>  Thu, 17 Mar 2005 23:35:56 +0100
+
+netatalk (2.0.2-1) unstable; urgency=low
+
+  * New upstream version.
+    + debian/patches/100_psf_path.diff: Removed, integrated upstream.
+    + debian/patches/200_netatalk_conf_defaults.diff: Updated.
+    + debian/patches/202_psf_8_paths.diff: Updated.
+    + debian/patches/203_add_netatalk_printer_paths.diff: Removed.
+    + debian/patches/205_applevolumes_default_homedir.diff: Updated.
+    + debian/netatalk.examples: Removed.
+    + debian/netatalk.install: Removed obsolete stuff.
+    + Closes: #277176 "Please package version 2.0"
+  * Removed useless netatalk-dev package.
+    + debian/control: Removed the netatalk-dev package. Make netatalk conflict
+      with netatalk-dev.
+    + debian/rules: Don't call d-devlibdeps. Installation directory is now
+      debian/netatalk instead of debian/tmp. Remove unneeded files from the
+      installation directory.
+    + debian/netatalk.install: Removed.
+    + debian/netatalk-dev.docs: Removed.
+    + debian/netatalk-dev.install: Removed.
+  * debian/control: Fix recommends on db4.2-util.
+    + Closes: #288318 "Recommends non-existent package db4.2-utils"
+  * New features: CUPS support, PGP and Kerberos UAMs.
+    + debian/control: Added libcupsys2-dev and heimdal-dev to the build
+      dependencies.
+    + debian/rules: Added --enable-pgp-uam, --enablekrb4-uam and
+      --enable-krbV-uam configure flags.
+  * Documentation update:
+    + debian/netatalk.docs: Removed doc/CONFIGURE, added doc/README.ids.
+    + debian/netatalk-dev.docs: Added doc/README.logger.
+
+ -- Sebastian Rittau <srittau@debian.org>  Wed, 16 Mar 2005 00:52:28 +0100
+
+netatalk (1.6.4a-1) unstable; urgency=high
+
+  * New upstream release. Security fix: insecure tempfile handling
+    (CAN-2004-0974). Closes: bug#278396 (thanks to Joey Hess
+    <joeyh@debian.org>).
+  * Recommend db4.2-utils and add new patch 206 adapting hardcoded paths
+    in cnid_maint to Debian location of helper binaries. Closes:
+    Bug#239347 (thanks to Rory Campbell-Lange
+    <rory@campbell-lange.net>).
+  * Improve init script:
+    + Timelord requires Appletalk, so load only when ATALKD_ON=yes.
+    + Use && instead of test -a (it is apparently not POSIX compliant).
+  * Cleaned up debian/copyright:
+    + Mention "GNU systems" (instead of only GNU/Linux).
+    + Drop info contained in changelog.
+    + Refer only to upstream source. Closes: Bug#260703 (thanks to Adam
+      Glasgall <teferi@wmute.net>).
+    + Use simpler upstream source URL: http://netatalk.sourceforge.net/.
+  * Improve README.Debian section on SSL being disabled:
+    + Rephrase to describe only _current_ state (NEWS.Debian is the
+      place for _change_ of state).
+    + Rephrase to clarify the FSF and Debian as _interpreting_ the
+      conflict between licenses (could be seen as FSF and Debian being
+      the authors of OpenSSL license).
+    + Clarify the FSF abbreviation.
+    + Describe how to rebuild locally with SSL support.
+    + Add another possible source of SSL-enabled packages, and clarify
+      that both sources are only unofficial _suggestions_. Closes (also)
+      bug#260703 (thanks to Adam Glasgall <teferi@wmute.net>).
+  * Set urgency=high to get this bugfix release into sarge ASAP.
+
+ -- Jonas Smedegaard <dr@jones.dk>  Sun, 31 Oct 2004 20:50:17 +0100
+
+netatalk (1.6.4-2) unstable; urgency=low
+
+  * The following changes from Jonas (thanks!):
+    + Tighten netatalk-dev dependency on exact same version of netatalk.
+    + Bump up dependency on libpam-runtime to 0.76-14 (reflecting a recent
+      update to Debian-PAM-MiniPolicy).
+    + Drop patch no longer needed: 204_netatalk_pamd_enable_password.diff.
+    + Enable SRVLOC support, recommend slpd and build-depend on
+      libslp-dev.
+    + Use (and build-depend on) d-devlibdeps.
+    + Use (and build-depend on) dh-buildinfo.
+    + Move around logcheck files to be recognized by dh_installlogcheck,
+      and tighten build-dependencies of debhelper and cdbs.
+    + Remove cracklib-related (build-)dependencies (they are only used
+      when compiled with ssl support).
+    + Support enabling ssl-related options simply by setting
+      "DEB_BUILD_OPTIONS=ssl" at build time.
+      - Include cracklib-support to PAM config on ssl build.
+      - Only enable DHX plugin on ssl build.
+    + Add TODO with notes on things to (re)add when (if ever?) ssl support
+      is enabled again by default.
+  * Use Berkeley DB 4.2.
+    + debian/control: Changed build-dependencies accordingly.
+    + debian/NEWS.Debian: Updated.
+    + debian/README.Debian: Updated.
+
+ -- Sebastian Rittau <srittau@debian.org>  Mon, 19 Jan 2004 12:43:49 +0100
+
+netatalk (1.6.4-1) unstable; urgency=medium
+
+  * New upstream release.
+    + debian/patches/100_psf_path.diff: Updated.
+  * debian/control: Build-Depend on libdb4.1-dev. [Suggested by Jonas
+    Smedegaard]
+  * Describe problems with upgrading from older BDB using versions of
+    Netatalk to newer versions. [Problem tracked down by Jonas]
+    + debian/README.Debian: Added note about upgrading issues with libdb.
+    + debian/NEWS.Debian: Added another note and refer to README.Debian.
+
+ -- Sebastian Rittau <srittau@debian.org>  Sun,  7 Dec 2003 15:30:18 +0100
+
+netatalk (1.6.3-4) unstable; urgency=low
+
+  * debian/logcheck/ignore.d.server: Patch by David Sewell to suppress
+    rtmp_replace and rtmp_free to be displayed by logcheck.
+    + Closes: #193304 "Suggested addition to logcheck ignore file for netatalk"
+  * debian/control: Standards-Version 3.6.1 (no changes required)
+  * Use common PAM files:
+    + debian/control: Depend on libpam-runtime (>= 0.76-13.1).
+    + debian/netatalk.install: Don't install upstream's PAM file.
+    + debian/netatalk.pam: Custom PAM file.
+    + debian/rules: Install debian/netatalk.pam into debian/netatalk/etc/pam.d.
+
+ -- Sebastian Rittau <srittau@debian.org>  Sat, 23 Aug 2003 14:40:08 +0200
+
+netatalk (1.6.3-3) unstable; urgency=low
+
+  * Fix upload.
+  * debian/rules: Set variables after including makefile fragment.
+    (Closes: #198244)
+  * debian/rules: Put source package in section net.
+
+ -- Sebastian Rittau <srittau@debian.org>  Sun, 22 Jun 2003 23:22:22 +0200
+
+netatalk (1.6.3-2) unstable; urgency=low
+
+  * Not a Debian native package anymore. (Bug introduced into 1.6.3-1.)
+
+ -- Sebastian Rittau <srittau@debian.org>  Fri, 20 Jun 2003 13:39:21 +0200
+
+netatalk (1.6.3-1) unstable; urgency=low
+
+  * New upstream release.
+    + debian/patches/000_netatalk_conf_typo.diff: Removed.
+    + debian/patches/007_include_fixes.diff: Removed.
+  * Remove adv1tov2 since it's obsolete:
+    + debian/netatalk.install: Removed debian/tmp/usr/bin/adv1tov2.
+    + debian/netatalk.ignore: Added usr/bin/adv1tov2.
+  * New patch naming scheme:
+    + 0xx: Bug fixes the need to go upstream.
+    + 1xx: Feature addition/changes that should go upstream.
+    + 2xx: Debian-specific patches.
+  * debian/rules: Add --disable-logger to the configure options. Suggestion
+    by Thomas Kaiser.
+
+ -- Sebastian Rittau <srittau@debian.org>  Thu, 19 Jun 2003 20:33:32 +0200
+
+netatalk (1.6.2-3) unstable; urgency=low
+
+  * debian/rules: Correct path to NLS directory.
+  * debian/rules: Set DEB_UPDATE_RCD_PARAMS.
+  * debian/control: Build-Depend on cdbs >= 0.4.0.1 to ensure the availability
+    of DEB_UPDATE_RCD_PARAMS.
+  * debian/control: Suggest tetex-bin instead of tetex-base.
+  * debian/patches/008_psf_path.diff: Place psf etc. in libexecdir instead
+    of sbindir.
+  * debian/netatalk.install: Filters are now in debian/tmp/usr/lib/netatalk
+    instead of debian/tmp/usr/sbin.
+
+ -- Sebastian Rittau <srittau@debian.org>  Sun,  8 Jun 2003 16:46:42 +0200
+
+netatalk (1.6.2-2) unstable; urgency=low
+
+  * debian/netatalk.init: Don't redirect messages on force-reload.
+    + Closes: #151050 "bad messages for restart"
+  * debian/README.Debian: Document OpenSSL issues.
+  * debian/control: Conforms to Debian policy 3.5.10.
+  * debian/control: Build-Depend on libdb4.0-dev instead of libdb3-dev.
+  * debian/control: Package netatalk depends on libdb4.0-util. (Pointed out
+    by Nigel Pegram.)
+  * Use CDBS:
+    + debian/rules: Use cdbs.
+    + debian/control: Build-Depend on cdbs and debhelper >= 4.1.0.
+    + debian/patches/001_netatalk_conf_defaults.diff
+    + debian/patches/002_etc2ps_paths.diff
+    + debian/patches/003_psf_8_paths.diff
+    + debian/patches/004_add_netatalk_printer_paths.diff
+    + debian/patches/005_netatalk_pamd_enable_password.diff
+    + debian/patches/006_applevolumes_default_homedir.diff
+  * debian/patches/000_netatalk_conf_typo.diff: Fixed typo in comment.
+    + Closes: #151051 "typo"
+  * debian/patches/007_include_fixes.diff: Correct include paths.
+
+ -- Sebastian Rittau <srittau@debian.org>  Fri,  6 Jun 2003 18:43:54 +0200
+
+netatalk (1.6.2-1) unstable; urgency=low
+
+  * New upstream version.
+  * Put Debhelper compatibility level into debian/compat, use level 4.
+  * Added dependencies on ${shlibs:Depends} and ${misc:Depends}.
+  * Conforms to Debian policy 3.5.9.
+  * Put netatalk in main.
+  * Don't link against libssl for now. Also, don't install afppasswd and
+    manual page.
+
+ -- Sebastian Rittau <srittau@debian.org>  Sun,  4 May 2003 00:24:25 +0200
+
+netatalk (1.6.1-1) unstable; urgency=low
+
+  * New upstream version.
+  * Corrected the download location in debian/copyright.
+  * Removed links to undocumented(7).
+  * Put filters in /usr/sbin (as per the upstream package) instead of
+    /usr/lib/atalk. Should probably be changed upstream to be LIBEXECDIR
+    instead of SBINDIR.
+  * Removed some Debian patches, incorporated upstream.
+
+ -- Sebastian Rittau <srittau@debian.org>  Sun, 23 Feb 2003 03:59:19 +0100
+
+netatalk (1.6.0-5) unstable; urgency=low
+
+  * Fixes a build problem on HPPA. (Closes: #178693)
+
+ -- Sebastian Rittau <srittau@debian.org>  Tue, 28 Jan 2003 15:58:16 +0100
+
+netatalk (1.6.0-4) unstable; urgency=low
+
+  * Reupload to non-US.
+  * Added Jonas Smedegaard to the uploaders field.
+
+ -- Sebastian Rittau <srittau@debian.org>  Mon, 30 Dec 2002 10:49:02 +0100
+
+netatalk (1.6.0-3) unstable; urgency=low
+
+  * Enable long file name support.
+  * Patches by Jonas Smedegaard:
+    + Improved logcheck files
+    + Remove deprecated logcheck symlinks
+    + Macusers: strip GECOS field (committed upstream as well)
+    + Macusers: recognize unresolved IP numbers (ditto)
+    + Remove --list-missing option on dh_install for now
+
+ -- Sebastian Rittau <srittau@debian.org>  Sun,  8 Dec 2002 17:40:44 +0100
+
+netatalk (1.6.0-2) unstable; urgency=low
+
+  * Use dh_install instead of dh_movefiles. Bump build-dependency on debhelper
+    to >= 4.0.0.
+  * Distribute /usr/bin/cnid_maint in package netatalk.
+  * Distribute /usr/include/atalk/{boolean,logger}.h in package
+    netatalk-dev.
+
+ -- Sebastian Rittau <srittau@debian.org>  Sun,  1 Dec 2002 02:04:07 +0100
+
+netatalk (1.6.0-1) unstable; urgency=low
+
+  * New upstream version.
+  * Removed --with-did=cnid configure option, since it's now default.
+  * pap.8 no longer exists.
+  * CHANGES document no longer exists.
+  * Complies with policy version 3.5.8.
+  * Changed dependency on timeout to a suggests, since the printing
+    script ensures the existance of timeout before using it.
+  * Recommend rc instead of just suggesting it, since it's needed by
+    acleandir.rc.
+  * Fixed the init.d script to allow host names with spaces. (Pointed out
+    and solution provided by Thomas Kaiser.)
+  * Fixed download location in copyright file.
+
+ -- Sebastian Rittau <srittau@debian.org>  Sun,  1 Dec 2002 01:25:52 +0100
+
+netatalk (1.5.5-1) unstable; urgency=low
+
+  * New upstream version.
+  * Compile with debug symbols by default, support for noopt in
+    DEB_BUILD_OPTIONS.
+  * Complies with policy version 3.5.7.
+  * Add a note to README.Debian about problems with MacOS X and DDP and
+    how to resolve them. Thanks to Nigel Pegram for pointing this out.
+  * Removed espy's e-mail address, since I doubt that e-mail will still
+    reach him. Instead, added his IRC nick to his name.
+
+ -- Sebastian Rittau <srittau@debian.org>  Tue, 24 Sep 2002 23:54:51 +0200
+
+netatalk (1.5.4.1-2) unstable; urgency=medium
+
+  * Use CNID as DID scheme. This may prevent data loss.
+
+ -- Sebastian Rittau <srittau@debian.org>  Fri, 16 Aug 2002 11:15:36 +0200
+
+netatalk (1.5.4.1-1) unstable; urgency=low
+
+  * New upstream version.
+
+ -- Sebastian Rittau <srittau@debian.org>  Tue, 30 Jul 2002 23:08:26 +0200
+
+netatalk (1.5.3.1-1) unstable; urgency=low
+
+  * New upstream version.
+  * Put afpd NLS file into /usr/share/nls/netatalk. (Rationale: They are
+    generated binary files and not really meant for changing anyways - a
+    mapping is a mapping is a mapping.)
+  * debian/netatalk.docs: removed file BUGS.
+
+ -- Sebastian Rittau <srittau@debian.org>  Tue,  9 Apr 2002 00:08:12 +0200
+
+netatalk (1.5.2-1) unstable; urgency=low
+
+  * New upstream version.
+  * Install acleandir.rc and link to undocumented(7).
+  * Suggest rc (for acleandir.rc).
+  * Added package specific paragraphs to Netatalk's package descriptions.
+    (Closes: #135523)
+  * Added --with-nlsdir (and --with-pkgconfdir) configure option.
+  * Added /usr/bin/afppasswd and correspoding man page. (Closes: #137963)
+
+ -- Sebastian Rittau <srittau@debian.org>  Tue, 12 Mar 2002 09:34:21 +0100
+
+netatalk (1.5.1.1-4) unstable; urgency=low
+
+  * Use uams_dhx.so and uams_randnom.so. This will enable SSL support by
+    default.
+  * Fixed wrong line breaks in AppleVolumes.system. Pointed out by Jonas.
+
+ -- Sebastian Rittau <srittau@debian.org>  Sat,  9 Feb 2002 15:47:21 +0100
+
+netatalk (1.5.1.1-3) unstable; urgency=low
+
+  * Offically re-enabled OpenSSL support. Rationale: In the OpenSSL FAQ[1]
+    it says:
+
+      2. Can I use OpenSSL with GPL software?
+
+      On many systems including the major Linux and BSD distributions, yes (the
+      GPL does not place restrictions on using libraries that are part of the
+      normal operating system distribution).
+
+    Also, Debian does not infringe on the copyright of the Netatalk team,
+    since we (the Netatalk team) clearly intend Netatalk to be linked
+    against OpenSSL. (OpenSSL support is on by default.)
+
+    OpenSSL support was on by accident since a few version back anyways.
+    Now removed the part about enabling OpenSSL support from README.Debian
+    and added appropriate build dependencies.
+
+    [1] http://www.openssl.org/support/faq.html
+
+ -- Sebastian Rittau <srittau@debian.org>  Tue,  5 Feb 2002 01:04:02 +0100
+
+netatalk (1.5.1.1-2) unstable; urgency=low
+
+  * Added conflict with bigloo for now. This partly addresses bug
+    #132041. (Both, netatalk and bigloo contain a binary with the name
+    afile.) We need to fix this properly by ending the ugly name space
+    pollution of afile.
+
+ -- Sebastian Rittau <srittau@debian.org>  Sun,  3 Feb 2002 13:35:20 +0100
+
+netatalk (1.5.1.1-1) unstable; urgency=low
+
+  * New upstream version.
+  * Added -q flag to grep call in init file to suppress spurious output.
+    (Suggestion by Aubin Paul.)
+  * The init script is now able to start AppleTalk daemons in the background.
+    (See /etc/default/netatalk.) This was a much-requested feature and we
+    can also remove the patches to netatalk.conf and its man page. And -
+    most importantly - it fixes a four-figure and a "wontfix" wishlist bug!
+    (Closes: #7683, #95942)
+
+ -- Sebastian Rittau <srittau@debian.org>  Wed, 23 Jan 2002 01:08:39 +0100
+
+netatalk (1.5.0-1) unstable; urgency=low
+
+  * New upstream version "New Year's Eve Release". Final 1.5.0 version.
+  * Removed the PowerPC segfault patch as it was included upstream.
+  * Distribute new file NEWS.
+
+ -- Sebastian Rittau <srittau@debian.org>  Sun, 30 Dec 2001 03:00:25 +0100
+
+netatalk (1.5rc2-1) unstable; urgency=medium
+
+  * New upstream version.
+  * Patches from Jonas:
+    + 004_logcheck_zip_gnireply_anything
+      Logcheck fix.
+    + 005_visible_home_dir_in_config_(again!_and_with_comments_this_time...)
+      Make home directory visible again. This issue is still not resolved
+      upstream. I will bring it up on the netatalk-devel mailing list and
+      hope that Jonas' patch can go upstream.
+    + 014_--sysconfdir_is_included_with_--enable-fhs
+      Remove --sysconfdir from ./configure flags.
+  * Fix segfault at startup on PowerPC. Thanks to David D. Kilzer for the
+    analysis and fix. (Closes: #123951)
+
+ -- Sebastian Rittau <srittau@debian.org>  Sat, 29 Dec 2001 03:48:41 +0100
+
+netatalk (1.5rc1-1) unstable; urgency=medium
+
+  * New upstream version. Some Debian patches were integrated upstream.
+  * Correct included docs, since all platform specific docs were merged.
+  * Upstream does now have manpages for apple_cp(1), apple_mv(1), and
+    apple_rm(1), written by Lance Levsen <l.levsen@printwest.com>.
+    Removed the links to undocumented(7).
+  * Don't supply --with-did=last anymore, since this is now the default.
+  * Removed code to work around an upstream packaging problem. This is fixed
+    with the new release.
+
+ -- Sebastian Rittau <srittau@debian.org>  Sat, 15 Dec 2001 14:23:56 +0100
+
+netatalk (1.5pre8-6) unstable; urgency=low
+
+  * More patches by Jonas Smedegaard <dr@jones.dk>
+    + 001_make_sure_replaced_files_are_executable
+    + 002_randnum.so_is_only_for_encryption-enabled_builds
+      Removed uams_randnum.so from config files.
+    + 003_bring_init_and_conf_in_sync_and_support_zone
+      Set AFPD_MAX_CLIENTS to 50 in netatalk.init, too.
+      New variable: ATALK_ZONE for configuration.
+    + 012_logcheck_corrections
+  * Also "fixed" uams_dhx_pam.so. (Closes: #120360)
+  * Removed the USE_SSL variable from debian/rules. Instead, document the
+    use of --with-ssl-dir in README.Debian.
+
+ -- Sebastian Rittau <srittau@debian.org>  Sun,  2 Dec 2001 06:50:21 +0100
+
+netatalk (1.5pre8-5) unstable; urgency=low
+
+  * Appletalk -> AppleTalk in package short descriptions. Thanks to Matt
+    Zimmerman and his spell checking effort for pointing this out.
+  * Really install README.Debian this time.
+  * Removed afppasswd and afppasswd(1) from Debian distribution, since
+    they are of no use when SSL support is not compiled in.
+
+ -- Sebastian Rittau <srittau@debian.org>  Sun, 18 Nov 2001 15:13:53 +0100
+
+netatalk (1.5pre8-4) unstable; urgency=low
+
+  * Fixed uams_pam.so. (Closes: #118889)
+  * Explain why we don't link against OpenSSL in README.Debian.
+  * Modified debian/rules so that setting a variable called USE_SSL to
+    "yes" enables SSL support. This should ease the local compilation of
+    SSL-enabled netatalk packages.
+
+ -- Sebastian Rittau <srittau@debian.org>  Sat, 10 Nov 2001 19:05:12 +0100
+
+netatalk (1.5pre8-3) unstable; urgency=low
+
+  * Corrected upstream version number (pre8 instead of pre7). This corrects
+    afpd -v and similar commands.
+  * Raised default number of allowed afpd clients. Suggestion by Jonas
+    Smedegaard.
+  * Small logcheck fix by Jonas.
+  * Removed ATALK_BACKGROUND description from netatalk.conf(5).
+  * Removed obsolete --with-config-dir configure option.
+
+ -- Sebastian Rittau <srittau@debian.org>  Sat, 27 Oct 2001 15:36:30 +0200
+
+netatalk (1.5pre8-2) unstable; urgency=low
+
+  * Work around the fact that upstream includes sym-links to mkinstalldirs and
+    missing instead of verbatim copies. We do that by including our own copies
+    in debian and copy them before running the build. (Closes: #114915)
+
+ -- Sebastian Rittau <srittau@debian.org>  Wed, 10 Oct 2001 14:03:34 +0200
+
+netatalk (1.5pre8-1) unstable; urgency=low
+
+  * New upstream version, containing most Debian patches.
+  * Added a patch to configure.in that fixes PAM detection and compilation.
+
+ -- Sebastian Rittau <srittau@debian.org>  Sun,  7 Oct 2001 12:46:15 +0200
+
+netatalk (1.5pre7-5) unstable; urgency=low
+
+  * More patches by Jonas Smedegaard <dr@jones.dk>:
+    + 001_logcheck_fix_typo_and_optimize...
+      Logcheck fixes and improvements. (Closes: #114448)
+    + 005_visible_home_dir_in_config_(again!)
+      Name user home directories "Home Directory" by default to make them
+      appear in the MacOS chooser. (Patch had already been applied in
+      1.5pre7-2, but had been lost since.)
+    + Jonas made more patches, which I haven't applied yet, but either
+      committed upstream or sent upstream for discussion.
+      
+ -- Sebastian Rittau <srittau@debian.org>  Thu,  4 Oct 2001 22:31:50 +0200
+
+netatalk (1.5pre7-4) unstable; urgency=low
+
+  * Fixed Build-Dependencies. (pam-cracklib -> cracklib2-dev) (Closes: #113356)
+  * Restored symlinks in /usr/lib/atalk/filters and other directories.
+    (Closes: #113746)
+  * Patches by Jonas Smedegaard <dr@jones.dk>:
+    + 002_correctly_calculate_perl_depends
+    + 003_remove_cap_line_from_logcheck
+      Small logcheck change.
+    + 004_add_misc_logcheck_lines
+      Another logcheck change.
+    + 011_strip_pam_paths
+      Not applied, but patched config/netatalk.pamd to strip /lib/security
+      from its path.
+
+ -- Sebastian Rittau <srittau@debian.org>  Mon,  1 Oct 2001 08:30:17 +0200
+
+netatalk (1.5pre7-3) unstable; urgency=low
+
+  * Fixed a stupid typo I made in the new init script.
+  * Put add_netatalk_printer and netatalkshorternamelinks.pl in the
+    examples directory instead of /usr/bin. Suggestion from Jonas
+    Smedegaard.
+
+ -- Sebastian Rittau <srittau@debian.org>  Sun, 23 Sep 2001 19:08:43 +0200
+
+netatalk (1.5pre7-2) unstable; urgency=low
+
+  * Integrated a lot of patches by Jonas Smedegaard <dr@jones.dk>:
+    + 001_etc2ps paths
+      Correct paths in etc2ps and suggest tetex-base.
+    + 005_visible_home_dir_in_config
+      Name user home directories "Home Directory" by default to make them
+      appear in the MacOS chooser.
+    + 007_logcheck
+      Support for the logcheck log file checking package.
+    + 011_avoid_symlinks_and_force_using_autoconf_2.50
+      Partly applied: Patch configure.in so that the use of autoconf 2.50
+      is forced. (Debian autoconf hack workaround.)
+    + 012_netatalk.conf
+      Improved init script. Also, make use of netatalk.conf again.
+      I patched the patch so that netatalk.conf is placed in /etc/default.
+    + 015_recommend_lsof_(for_macusers)_and_suggest_quota
+      Recommend lsof and suggest quota.
+    + 021_enable_ssl_and_cracklib_and_correct_pam_paths
+      Partly applied: Enable cracklib support.
+  * Fixed paths in add_netatalk_printer.
+  * Removed lp2pap.sh since it's of no use on Debian systems.
+  * Removed test_parse_mtab and afpd-mtab.pl because we are not using
+    the mtab DID scheme.
+  * Comparison operator is '=', not '==' in the 'test' command. Fixed
+    my patch.
+  * Removed netatalk.conf.5 as well, since we don't install netatalk.conf
+    anymore.
+  * Removed superfluous file /etc/netatalk/netatalk.pamd.
+  * Moved all *.la and *.a files to netatalk-dev. Added appropriate
+    conflicts and replaces.
+  * debian/rules: Do not copy files to package build directories instead of
+    removing them afterwards.
+
+ -- Sebastian Rittau <srittau@debian.org>  Sun, 23 Sep 2001 14:04:06 +0200
+
+netatalk (1.5pre7-1) unstable; urgency=medium
+
+  * New upstream version. Most patches were applied upstream.
+  * This release uses libtool for UAM stuff. Also, the correct flag
+    for dynamic linking is supplied, so the problems with unresolved
+    symbols should be gone now. (Closes: #95399)
+  * Non-DSFG free code was removed. Copyright notice was changed accordingly.
+  * Use ./configure --sysconfdir instead of --with-config-dir.
+  * Upstream package does now install PAM file in the correct directory.
+    Removed rule, correcting this from Debian rules file.
+  * Added man pages for netatalk-config(1) and timelord(8). (Upstream
+    does now also include a man page for timeout(1), but since we're not
+    distributing it anymore, we don't care.)
+  * Some doc files were removed, others were added.
+  * Use debhelper compatibility level 3 and performed general packaging
+    cleanups at the same time.
+  * Standards-Version 3.5.6.0. No changes needed.
+  * Netatalk is now GPL'ed. Added a note stating that to copyright.
+    Also, we can't link against libssl anymore. Removed SSL stuff.
+    I had to patch configure.in to do that.
+  * Removed emacs stuff from changelog.
+  * Applied a patch to getiface.c for a problem that could lead to
+    segfaults. Thanks to Kai Henningsen <kaih@khms.westfalen.de>
+    for actually being affected by this bug, and - more importantly -
+    finding the problem. (Closes: #109310)
+
+ -- Sebastian Rittau <srittau@debian.org>  Thu, 30 Aug 2001 02:02:17 +0200
+
+netatalk (1.5pre6-7) unstable; urgency=low
+
+  * Cleaned up CFLAGS handling in ./configure call.
+  * Updated config.{sub,guess} again, just to make sure ...
+  * Depend on the timeout package from tct. Also, don't distribute
+    /usr/bin/timeout and remove the timeout(1) link to undocumented(7).
+    Make preparations to remove the proper timeout(1) man page that will
+    get distributed with netatalk 1.5pre7.
+
+ -- Sebastian Rittau <srittau@debian.org>  Sun, 19 Aug 2001 18:05:55 +0200
+
+netatalk (1.5pre6-6) unstable; urgency=medium
+
+  * ./configure --with-did=last
+    This should fix errors with MacOS X.
+  * Fixed typo in add_netatalk_printer. (Closes: #104192)
+  * Removed /etc/netatalk/netatalk.conf, since it's not used by Debian's
+    init script. (Closes: #103539)
+  * Disabled pam_guest module by default. (Closes: #106637)
+
+ -- Sebastian Rittau <srittau@debian.org>  Sat, 28 Jul 2001 14:49:15 +0200
+
+netatalk (1.5pre6-5) unstable; urgency=low
+
+  * Removed --without-ssl option from ./configure invocation. Not
+    that it had any effect before.
+  * Updated config.{sub,guess} (manually for now). I will switch to
+    dh_autotools if and when this is available. (Closes: #102861)
+
+ -- Sebastian Rittau <srittau@debian.org>  Fri,  6 Jul 2001 00:46:18 +0200
+
+netatalk (1.5pre6-4) unstable; urgency=low
+
+  * Changed section of netatalk-dev to non-US, too.
+  * Make netatalk-dev depend on netatalk.
+
+ -- Sebastian Rittau <srittau@debian.org>  Tue, 19 Jun 2001 01:40:07 +0200
+
+netatalk (1.5pre6-3) unstable; urgency=low
+
+  * Thanks to my former sponsor Michael 'grisu' Bramer for his efforts.
+  * Changed maintainer address to <srittau@debian.org>.
+  * Moved to section non-US and link against libssl. Changed Build-Depends
+    accordingly.
+  * Link against libdb3 instead of libdb2. Changed Build-Depends
+    accordingly.
+  * Sources were not obtained from CVS, and are available by HTTP.
+  * Removed patch to contrib/Makefile.* to enable compilation of timelord.
+    Instead, use configure option --with-timelord.
+  * Added symlinks to megatron. Use patch from upstream CVS. (Closes: #95944)
+  * Clean up patch for etc/psf/Makefile.am.
+  * Added DEB_BUILD_OPTIONS handling. (Closes: #99705)
+  * Added links to undocumented(7) from binheader(1) and nadheader(1).
+  * Standards-Version: 3.5.5.0.
+
+ -- Sebastian Rittau <srittau@debian.org>  Sun, 17 Jun 2001 15:50:13 +0200
+
+netatalk (1.5pre6-2) unstable; urgency=low
+
+  * This version will hopefully clean up the version mess, I created.
+  * Conforms to standards-version 3.5.3.0 (no changes needed).
+  * Link cleanappledouble.pl(1) to undocumented(7).
+  * Removed all hand-crafted {pre,post}{inst,rm} files.
+  * Give files in /etc/netatalk/nls a mode of 0644, instead of 0755. Fixes
+    lintian warnings.
+  * Build-Depends on libdb2-dev do exist since -1. (Closes: #92774)
+  * Distribute missing pagecount.ps. (Closes: #95117)
+  * Compile timelord.
+  * Use --enable-fhs instead of --with-fhs. Should fix some paths.
+  * Compile with shadow support. (Closes: #95186)
+  * Use the pam_unix.so module instead of pam_pwdb.so in /etc/pam.d/netatalk.
+
+ -- Sebastian Rittau <srittau@jroger.in-berlin.de>  Tue,  1 May 2001 03:38:57 +0200
+
+netatalk (1.5pre6-1) unstable; urgency=low
+
+  * New upstream release.
+  * Re-added changes made in 1.4b2+asun2.1.3-8.
+  * Added --prefix=/usr to ./configure options.
+
+ -- Sebastian Rittau <srittau@jroger.in-berlin.de>  Fri, 13 Apr 2001 00:27:47 +0200
+
+netatalk (1.5pre5-3) unstable; urgency=low
+
+  * Re-added changes made in 1.4b2+asun2.1.3-8.
+
+ -- Sebastian Rittau <srittau@jroger.in-berlin.de>  Fri,  6 Apr 2001 23:44:47 +0200
+
+netatalk (1.5pre5-2) unstable; urgency=low
+
+  * Added copyright of University of Newcastle upon Tyne to debian/copyright.
+  * Removed patches/uams_dhx_pam.c.patch as it was applied upstream.
+  * Some documentation files were moved into the doc subdirectory.
+  * Added more documentation files.
+  * Added some temporary build fixes.
+
+ -- Sebastian Rittau <srittau@jroger.in-berlin.de>  Wed,  8 Mar 2001 00:03:30 +0100
+
+netatalk (1.5pre5-1) unstable; urgency=low
+
+  * New upstream version.
+
+ -- Sebastian Rittau <srittau@jroger.in-berlin.de>  Fri, 23 Feb 2001 21:07:18 +0100
+
+netatalk (1.5pre4-1) unstable; urgency=low
+
+  * New upstream version.
+  * Some reorganisations to allow building directly from CVS.
+  * Debian packaging is now included in upstream CVS.
+  * Modified debian/copyright to include CVS instructions.
+  * Call ./configure with --with-fhs and removed --with-uams-path option.
+  * Removed patches/paths.h.patch as this is now supported by --with-fhs.
+  * Removed various build patches now included upstream.
+  * Use dh_installman from debhelper v3. Updated build dependencies
+    accordingly.
+  * Removed comment about Debian specific changes from debian/copyright.
+  * Build with libssl support. (Closes: #48871)
+  * Added libssl096-dev to Build-Depends.
+  * Ship FAQ in /usr/share/doc/netatalk
+
+ -- Sebastian Rittau <srittau@jroger.in-berlin.de>  Thu, 22 Feb 2001 20:44:41 +0100
+
+netatalk (1.5pre3-1) unstable; urgency=low
+
+  * New upstream version from netatalk.sourceforge.net.
+    (Closes: #69232, #78781)
+  * Repackaged using debhelper.
+  * Conforms to policy version 3.5.1.0.
+  * Removed some Debian specific patches integrated upstream.
+  * Updated debian/copyright.
+  * Changed priority from optional to extra.
+
+ -- Sebastian Rittau <srittau@jroger.in-berlin.de>  Thu, 22 Feb 2001 10:18:07 +0100
+
+netatalk (1.4b2+asun2.1.3-8) unstable; urgency=low
+
+  * Added libdb2-dev to build-depends. (Closes: #92774)
+  * Complies with Debian policy version 3.5.2.0.
+  * Added netatalk homepage and current maintainer to debian/copyright.
+
+ -- Sebastian Rittau <srittau@jroger.in-berlin.de>  Tue,  3 Apr 2001 23:59:38 +0200
+
+netatalk (1.4b2+asun2.1.3-7) unstable; urgency=low
+
+  * New maintainer. (Closes: #82386)
+  * Fixed a build problem.
+  * Strip .note and .comment sections from /usr/lib/atalk/psa.
+  * Added debhelper as build-dependency.
+  * Complies with Debian policy version 3.2.1.0.
+
+ -- Sebastian Rittau <srittau@jroger.in-berlin.de>  Sun, 21 Jan 2001 15:49:11 +0100
+
+netatalk (1.4b2+asun2.1.3-6) unstable; urgency=low
+
+  * The "looks like I picked the wrong week to quit sniffing glue" release.
+  * Update the maintainer name in the control file.
+  * Move psa and etc2ps to /usr/lib/atalk, as they are not user binaries
+    (this also shuts lintian up).
+
+ -- David Huggins-Daines <dhd@debian.org>  Fri, 14 Jan 2000 21:04:24 -0500
+
+netatalk (1.4b2+asun2.1.3-5) unstable; urgency=low
+
+  * New maintainer.
+  * Compensate for stupid new 'install -s' behaviour. (closes:Bug#51423)
+  * Fix psf(8) manpage. (closes:Bug#30839)
+  * Updated Standards-Version.
+  * Fixed symlinks to be relative, as per lintian's warnings.
+  * Added /usr/doc symlinks in the postinst/prerm.
+
+ -- David Huggins-Daines <dhd@debian.org>  Wed, 22 Dec 1999 20:24:26 -0500
+
+netatalk (1.4b2+asun2.1.3-4) unstable; urgency=low
+
+  * Fix init script to always kill papd even if ENABLE_PAP=no (closes:Bug#48783).
+
+ -- Joel Klecker <espy@debian.org>  Sun, 31 Oct 1999 07:43:29 -0800
+
+netatalk (1.4b2+asun2.1.3-3) unstable; urgency=low
+
+  * Remove libatalk1 and libatalk1-dev (I think it is a mistake to "fork" a
+    shared version of a library in Debian, if the library is static upstream
+    then upstream isn't gonna be careful with the ABI).
+  * Create netatalk-dev.
+  * netatalk.init: Use $() instead of ``.
+    Use /bin/hostname explicitly.
+    s/daemons/Daemons/g.
+    Remove module fiddling (closes:Bug#44767,#43319).
+  * Remove "glibc 2.1 fix" it's no longer needed.
+  * Compile with sendfile support.
+  * Use /usr/share/doc.
+  * Cleanup bashisms in debian/rules.
+
+ -- Joel Klecker <espy@debian.org>  Sat, 23 Oct 1999 20:59:24 -0700
+
+netatalk (1.4b2+asun2.1.3-2) unstable; urgency=low
+
+  * (netatalk): Make /etc/netatalk/afpd.conf a conffile (closes:Bug#37628).
+
+ -- Joel Klecker <espy@debian.org>  Thu, 13 May 1999 10:54:37 -0700
+
+netatalk (1.4b2+asun2.1.3-1) unstable; urgency=low
+
+  * New upstream release (closes:Bug#33982).
+  * Correct paths in psf.8 (closes:Bug#30839).
+  * There is now a different way to control CRLF translation on a
+    per-volume basis upstream so I have removed the patch that
+    provides the -e option to afpd.
+  * (netatalk): Depend on libpam-modules.
+  * Put man pages in /usr/share/man.
+
+ -- Joel Klecker <espy@debian.org>  Tue, 30 Mar 1999 12:17:36 -0800
+
+netatalk (1.4b2+asun2.1.1-2) frozen unstable; urgency=low
+
+  * Incorporated glibc 2.1 fixes from Christian Meder.
+  * Remove explicit add-log-mailing-address from debian/changelog.
+
+ -- Joel Klecker <espy@debian.org>  Fri, 15 Jan 1999 07:28:11 -0800
+
+netatalk (1.4b2+asun2.1.1-1.1) frozen unstable; urgency=low
+
+  * non maintainer, sparc only upload
+  * fix #includes for glibc2.1
+
+ -- Christian Meder <meder@isr.uni-stuttgart.de>  Mon,  4 Jan 1999 12:37:13 +0100
+
+netatalk (1.4b2+asun2.1.1-1) frozen unstable; urgency=low
+
+  * New upstream bugfix release.
+  * Recompile against libc6 2.0.7u-7 to get rid of versioned
+    libc6 dependency.
+
+ -- Joel Klecker <espy@debian.org>  Thu,  3 Dec 1998 07:45:42 -0800
+
+netatalk (1.4b2+asun2.1.0-5) frozen unstable; urgency=high
+
+  * [libatalk/atp/atp_rsel.c] Minor change for libnatali compatibility
+    (closes:Bug#30092).
+  * Rebuild with libc6 2.0.7u-6 for i386.
+
+ -- Joel Klecker <espy@debian.org>  Fri, 27 Nov 1998 22:58:11 -0800
+
+netatalk (1.4b2+asun2.1.0-4) frozen unstable; urgency=low
+
+  * binary-arch target now depends on pre-binary (closes:Bug#29508)
+
+ -- Joel Klecker <espy@debian.org>  Tue, 17 Nov 1998 04:46:50 -0800
+
+netatalk (1.4b2+asun2.1.0-3) frozen unstable; urgency=low
+
+  * Now installs /usr/lib/atalk/pagecount.ps (closes:Bug#29323)
+
+ -- Joel Klecker <espy@debian.org>  Thu, 12 Nov 1998 00:30:53 -0800
+
+netatalk (1.4b2+asun2.1.0-2) frozen unstable; urgency=low
+
+  * Should build from freshly unpacked source now (Bug#28810)
+
+ -- Joel Klecker <espy@debian.org>  Sun,  1 Nov 1998 19:34:52 -0800
+
+netatalk (1.4b2+asun2.1.0-1) unstable; urgency=low
+  
+  * New upstream release.
+  * Incorporate megatron patch from Rob Browning (Bug#25598).
+  * Don't install /usr/include/netatalk on glibc 2.1 architectures.
+  * Fix paths in /etc/pam.d/netatalk file.
+
+ -- Joel Klecker <espy@debian.org>  Thu, 29 Oct 1998 23:54:13 -0800
+
+netatalk (1.4b2+asun2.0a18.2-1) frozen unstable; urgency=low
+
+  * New "upstream" release.
+  * This does add new features, however, it also fixes at
+    least one nasty bug (Bug#13973).
+  * Applied patch which adds a command-line option to disable
+    CR/LF translation (thanks to Davide Welton and Jon Nelson).
+    (Note to release manager: this patch is applied so this
+     package has the exact functionality of netatalk-asun)
+  * Renamed libatalk-dev to libatalk1-dev.
+  * Symlinked /usr/man/man1/nbpunrgstr.1.gz to /usr/man/man1/nbprgstr.1.gz
+    to keep lintian happy.
+  * Changed the "lock directory" to /var/run and the names of the "lock files" to <foo>.pid,
+    since what the source calls locks are really the same as the .pid files other daemons
+    put in /var/run.
+  * This package provides all the functionality of netatalk-asun, and
+    it will replace netatalk-asun in the distribution.
+
+ -- Joel Klecker <jk@espy.org>  Tue, 12 May 1998 19:31:54 -0700
+
+netatalk (1.4b2-5) frozen unstable; urgency=low
+
+  * New Maintainer (I can finally close bugs
+    I fixed in previous releases ;).
+  * Changed library package names again.
+  * Upgraded to Debian Policy 2.4.0.0.
+  * Moved conffiles to /etc/netatalk.
+  * Fixes almost all lintian warnings/errors.
+  * Cleaned up changelog.
+
+ -- Joel Klecker <jk@espy.org>  Sun, 22 Mar 1998 21:50:00 -0800
+
+netatalk (1.4b2-4.5) unstable; urgency=low
+
+  * Non-maintainer release (again :>)
+  * Made libatalk14g-dev conflict with libc5-dev to fix overlap
+    (Bug:#17848)
+
+ -- Joel Klecker <jk@espy.org>  Thu, 5 Feb 1998 20:42:51 -0800
+
+netatalk (1.4b2-4.4) unstable; urgency=low
+
+  * Yet Another non-maintainer release.
+  * Added patch to fix "dancing icon" problems with Macs running Mac OS 8.
+  * Changed comment in /etc/AppleVolumes.default (Bug:#15279)
+  * Implemented variable for "server name" in init script
+    (as suggested in Bug:#12024)
+  * Added a kluge to /etc/init.d/netatalk to remove kernel appletalk
+    module (if there is one) at stop and reinsert it at start, this
+    is needed or else netatalk will not start once stopped (Bug:#12142,11349)
+
+ -- Joel Klecker <jk@espy.org>  Fri, 30 Jan 1998 07:50:00 -0800
+
+netatalk (1.4b2-4.3) unstable; urgency=low
+
+  * Non-maintainer release.
+  * Fixed dependencies.
+
+ -- Joel Klecker <jk@espy.org>  Thu, 8 Jan 1998 16:14:17 -0800
+
+netatalk (1.4b2-4.2) unstable; urgency=low
+  
+  * Non-maintainer release.
+  * Changed library package names.
+
+ -- Joel Klecker <jk@espy.org>  Wed, 7 Jan 1998 00:00:00 -0800
+
+netatalk (1.4b2-4.1) unstable; urgency=low
+
+  * Non-maintainer libc6 compile.
+
+ -- Joel Klecker <jk@espy.org>  Tue, 6 Jan 1998 00:00:00 -0800
+
+netatalk (1.4b2-4) unstable; urgency=low
+
+  * Recompiled against newer PAM libraries.
+  * Added /etc/pam.d/samba.
+
+ -- Klee Dienes <klee@debian.org>  Sat, 8 Mar 1997 01:17:09 -0500
+
+netatalk (1.4b2-3) unstable; urgency=low
+
+  * Added PAM support.
+  * Split into libatalk, libatalk-dev, and netatalk.
+  * Added patch from Randy Gobbel <gobbel@cogsci.ucsd.edu> to allow case
+    translation to be specified at config-time rather than compile time.
+    Note that configuration files that make use of this feature may not
+    work with other releases of netatalk, and that this feature may be
+    removed in the future if UMich rejects the patch or implements it
+    differently.
+  * Startup messages now conform to 'Standard for Console Messages' (fixes
+    #5399).
+  * No longer creates new subdirectories (to appease dpkg-buildpackage).
+
+ -- Klee Dienes <klee@debian.org>  Wed, 26 Feb 1997 21:02:02 -0500
+
+netatalk (1.4b2-2) unstable; urgency=low
+
+  * Resend_request made external for libnatali.
+  * Added shared libraries.
+  * Next revision will split into libatalk, libatalk-dev, and netatalk.
+
+ -- Klee Dienes <klee@debian.org>  Fri, 24 Jan 1997 22:37:22 -0500
+
+netatalk (1.4b2-1) unstable; urgency=low
+
+  * Updated to upstream version 1.4b2.
+  * Added preliminary PAM support (currently disabled).
+  * Made /etc/init.d/netatalk a conffile.
+  * Changed /etc/init.d/netatalk to complete only once appletalk services
+    are running.  Configurating an Appletalk interface can take many (> 15)
+    seconds, so the previous version would fork a process to configure the
+    interface and then start up the other Appletalk services.  Although
+    possibly controversial, this change is necessary so that packages like
+    ppr can be ensured that netatalk will be started before they run
+    without undue complication.
+
+ -- Klee Dienes <klee@debian.org>  Sat, 2 Nov 1996 19:42:04 -0700
+
+netatalk (1.4b1-1) unstable; urgency=low
+
+  * Updated to new upstream version.
+  * Updated to new packaging format.
+
+ -- Klee Dienes <klee@debian.org>  Wed, 2 Oct 1996 10:18:14 -0700
+
+netatalk (1.3.3-3);
+
+  * Fixed location of include files.
+
+ -- Klee Dienes <klee@mit.edu>  Mon Jan  8 10:46:52 MST 1996
+
+netatalk (1.3.3-2);
+
+  * Fixed bug in postrm script.
+
+ -- Klee Dienes <klee@mit.edu>  Thu Dec 21 08:22:24 MST 1995
+
+netatalk (1.3.3-1);
+
+  * Initial Release.
+
+ -- Klee Dienes <klee@mit.edu>  Wed Dec 13 22:58:31 MST 1995

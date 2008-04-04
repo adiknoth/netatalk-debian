@@ -1,0 +1,11 @@
+--- netatalk/man/man5/Makefile.in.old
++++ netatalk/man/man5/Makefile.in
+@@ -433,6 +433,8 @@
+ 	    -e s@:BINDIR:@${bindir}@ \
+ 	    -e s@:ETCDIR:@${pkgconfdir}@ \
+ 	    -e s@:LIBDIR:@${libdir}@ \
++	    -e s@:DEFAULT_CNID_SCHEME:@${default_cnid_scheme}@ \
++	    -e 's@:COMPILED_BACKENDS:@${compiled_backends}@' \
+ 	    <$< >$@
+ # Tell versions [3.59,3.63) of GNU make to not export all variables.
+ # Otherwise a system limit (for SysV at least) may be exceeded.

@@ -1,0 +1,12 @@
+diff -ruN netatalk-2.0.3.orig/etc/afpd/afp_avahi.c netatalk-2.0.3/etc/afpd/afp_avahi.c
+--- netatalk-2.0.3.orig/etc/afpd/afp_avahi.c	2008-01-08 13:47:25.000000000 +0100
++++ netatalk-2.0.3/etc/afpd/afp_avahi.c	2008-01-08 13:49:22.000000000 +0100
+@@ -91,7 +91,7 @@
+ {
+   struct context *ctx = userdata;
+ 
+-  assert(g == ctx->group);
++  assert(!ctx->group || g == ctx->group);
+ 
+   switch (state) {
+ 

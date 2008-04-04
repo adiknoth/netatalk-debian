@@ -1,0 +1,16 @@
+netatalk (1.6.3-5) unstable; urgency=low
+
+  * This version of Netatalk switches to Berkeley DB 4.2. During the
+    development process of Debian 3.1 (sarge) earlier versions of BDB
+    (3.0 and 4.0) were used. As Netatalk does not automatically update
+    its database, you may experience problems like those described in
+    bug #200373: no files showing up in your folders. This problem
+    should not concern you if you are upgrading from Debian 3.0 (woody).
+
+    If you have such problems, please refer to
+    
+      /usr/share/doc/netatalk/README.Debian
+      
+    for information on how to fix them.
+
+ -- Sebastian Rittau <srittau@debian.org>  Mon, 25 Aug 2003 17:44:29 +0200

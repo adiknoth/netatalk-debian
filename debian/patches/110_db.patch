@@ -1,0 +1,24 @@
+--- netatalk-2.0.3/etc/cnid_dbd/dbif.c	2004-12-21 05:36:12.000000000 -0800
++++ netatalk-2.0.3-new/etc/cnid_dbd/dbif.c	2006-04-22 10:45:56.000000000 -0700
+@@ -163,7 +163,9 @@
+     if (db_errlog != NULL)
+         db_env->set_errfile(db_env, db_errlog); 
+     db_env->set_verbose(db_env, DB_VERB_RECOVERY, 1);
++#if DB_VERSION_MAJOR == 4 && DB_VERSION_MINOR < 3
+     db_env->set_verbose(db_env, DB_VERB_CHKPOINT, 1);
++#endif
+     if ((ret = db_env->open(db_env, ".", DBOPTIONS | DB_PRIVATE | DB_RECOVER, 0))) {
+         LOG(log_error, logtype_cnid, "error opening DB environment: %s", 
+             db_strerror(ret));
+--- netatalk-2.0.3/bin/cnid/cnid_index.c	2005-04-10 05:49:18.000000000 -0700
++++ netatalk-2.0.3-new/bin/cnid/cnid_index.c	2006-04-22 10:45:12.000000000 -0700
+@@ -356,7 +356,9 @@
+     if (db_errlog != NULL)
+         db_env->set_errfile(db_env, db_errlog); 
+     db_env->set_verbose(db_env, DB_VERB_RECOVERY, 1);
++#if DB_VERSION_MAJOR == 4 && DB_VERSION_MINOR < 3
+     db_env->set_verbose(db_env, DB_VERB_CHKPOINT, 1);
++#endif
+     if ((ret = db_env->open(db_env, ".", DBOPTIONS | DB_PRIVATE | DB_RECOVER, 0))) {
+         LOG(log_error, logtype_cnid, "error opening DB environment: %s", 
+             db_strerror(ret));

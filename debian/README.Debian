@@ -1,0 +1,78 @@
+This is the pre-packaged Debian version of the Netatalk protocol suite.
+To find out more about netatalk, visit http://netatalk.sourceforge.net/
+
+This package was originally put together by Klee Dienes <klee@debian.org> and
+was later maintained by late Joel 'espy' Klecker and David Huggins-Daines
+<dhd@debian.org>. It was repackaged by its current maintainer Sebastian Rittau
+<srittau@debian.org>.
+
+
+Notes about OpenSSL
+===================
+
+OpenSSL support is currently disabled, because of licensing issues: The Free
+Software Foundation and Debian consider the GNU General Public License (GPL)
+under which Netatalk is licensed to be incompatible with the OpenSSL license.
+
+Until a final solution is found you can get the source and recompile using the
+following commands (replace XXX with the actual version of the package):
+
+	apt-get source netatalk
+	cd netatalk-XXX
+	DEB_BUILD_OPTIONS=ssl DEB_AUTO_UPDATE_DEBIAN_CONTROL=yes debuild
+	cd ..
+	aptitude install netatalk-XXX.deb
+
+Alternatively you can use an unofficial(!) precompiled binary package:
+
+deb http://debian.jones.dk/ $DIST netatalk
+
+
+MacOS X Specific Notes
+======================
+
+There were problems reported with MacOS X clients and DDP connection.
+The symptom of is the lack of the server name in the chooser of MacOS X
+clients. To work around this problem, you have to insert the server's
+hostname and IP addresses into the file /etc/hosts. Supposing the server
+is called foo.bar.com and the IP addresses are 192.168.1.1 and 192.168.55.23
+this will look like this:
+
+192.168.1.1      foo.bar.com foo
+102.168.55.23    foo.bar.com foo
+
+
+Upgrading Problems
+==================
+
+This version of Netatalk switches to Berkeley DB 4.2. During the development
+process of Debian 3.1 (sarge) earlier versions of BDB (3.0 and 4.0) were used.
+As Netatalk does not automatically update its database, you may experience
+problems like those described in bug #200373: no files showing up in your
+folders. This problem should not concern you if you are upgrading from Debian
+3.0 (woody).
+
+If you have such problems, you may try to upgrade the database manually by
+running the following commands (please set APPLE_DIR to the path to your
+shared files):
+
+  For upgrading from Netatalk 1.6.2-1 or below (you need the packages
+  libdb3-util and db4.1-util installed):
+
+    for db in `find $APPLE_DIR -name ".AppleDB/*.db"`; do \
+      db3_dump -f $db.data $db; \
+      mv $db $db.old; \
+      db4.0_load -f $db.data $db; \
+    done
+
+  For upgrading from Netatalk 1.6.2-2 or up (you need the packages
+  libdb4.0-util and db4.1-util installed):
+
+    for db in `find $APPLE_DIR -name ".AppleDB/*.db"`; do \
+      db3_dump -f $db.data $db; \
+      mv $db $db.old; \
+      db4.0_load -f $db.data $db; \
+    done
+
+If this does not work, you can just delete the database files, but please note
+that this will destroy all stored meta information about these files!

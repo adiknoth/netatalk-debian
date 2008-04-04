@@ -1,0 +1,14 @@
+--- netatalk/distrib/initscripts/rc.atalk.debian.tmpl.old
++++ netatalk/distrib/initscripts/rc.atalk.debian.tmpl
+@@ -36,8 +36,10 @@
+ atalk_startup() {
+ 	if [ "x$ATALKD_RUN" = "xyes" ]; then
+ 
+-	# Try to load the AppleTalk kernel module
++	# Try to load the AppleTalk kernel module if it was intended.
++	if grep -q '^appletalk$' /etc/modules; then
+ 	/sbin/modprobe appletalk || echo "[could not load appletalk module]"
++	fi
+ 
+ 	# Start atalkd server.
+ 	:SBINDIR:/atalkd

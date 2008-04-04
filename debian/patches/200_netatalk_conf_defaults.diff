@@ -1,0 +1,11 @@
+--- netatalk/config/netatalk.conf.old	2005-03-15 12:47:46.160398959 +0100
++++ netatalk/config/netatalk.conf	2005-03-15 12:48:12.387463653 +0100
+@@ -14,7 +14,7 @@
+ #       quotes here if the zone name contains spaces.
+ #
+ #ATALK_ZONE="@some zone"
+-ATALK_NAME=`echo ${HOSTNAME}|cut -d. -f1`
++ATALK_NAME=`/bin/hostname --short`
+ 
+ # specify the Mac and unix charsets to be used
+ ATALK_MAC_CHARSET='MAC_ROMAN'

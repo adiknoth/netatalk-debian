@@ -1,0 +1,42 @@
+--- netatalk/distrib/initscripts/Makefile.in.old
++++ netatalk/distrib/initscripts/Makefile.in
+@@ -243,7 +243,7 @@
+ 	rc.atalk.debian.tmpl
+ 
+ 
+-CLEANFILES = $(GENERATED_FILES) atalk afpd atalkd papd timelord
++CLEANFILES = $(GENERATED_FILES) atalk netatalk afpd atalkd papd timelord
+ EXTRA_DIST = $(TEMPLATES) rc.atalk.cobalt
+ 
+ 
+@@ -298,7 +298,7 @@
+ @USE_GENTOO_TRUE@sysv_SCRIPTS = atalk
+ @USE_REDHAT_TRUE@sysv_SCRIPTS = atalk
+ @USE_COBALT_TRUE@sysv_SCRIPTS = atalk
+-@USE_DEBIAN_TRUE@sysv_SCRIPTS = atalk
++@USE_DEBIAN_TRUE@sysv_SCRIPTS = netatalk
+ @USE_TRU64_TRUE@sysv_SCRIPTS = atalk
+ @USE_SOLARIS_TRUE@sysv_SCRIPTS = atalk
+ subdir = distrib/initscripts
+@@ -580,15 +580,15 @@
+ @USE_GENTOO_TRUE@	rm -f /etc/init.d/atalk
+ 
+-@USE_DEBIAN_TRUE@atalk: rc.atalk.debian
+-@USE_DEBIAN_TRUE@	cp -f rc.atalk.debian atalk
+-@USE_DEBIAN_TRUE@	chmod a+x atalk
++@USE_DEBIAN_TRUE@netatalk: rc.atalk.debian
++@USE_DEBIAN_TRUE@	cp -f rc.atalk.debian netatalk
++@USE_DEBIAN_TRUE@	chmod a+x netatalk
+ 
+ @USE_DEBIAN_TRUE@install-data-hook:
+-@USE_DEBIAN_TRUE@	update-rc.d atalk defaults 90 10
++@USE_DEBIAN_TRUE@	update-rc.d netatalk defaults 90 10
+ 
+ @USE_DEBIAN_TRUE@uninstall-startup:
+-@USE_DEBIAN_TRUE@	rm -f /etc/init.d/atalk
+-@USE_DEBIAN_TRUE@	update-rc.d atalk remove
++@USE_DEBIAN_TRUE@	rm -f /etc/init.d/netatalk
++@USE_DEBIAN_TRUE@	update-rc.d netatalk remove
+ 
+ #
+ # defaults, no init scripts installed

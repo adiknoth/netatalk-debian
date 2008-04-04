@@ -1,0 +1,4 @@
+afpd\[[0-9]+\]: afp_die: asp_shutdown: Connection timed out$
+afpd\[[0-9]+\]: afp_getsrvrparms: stat /[^/]+/: Permission denied$
+afpd\[[0-9]+\]: (afp_flushfork|afp_read|getforkparms): (ad_refresh|of_find): Permission denied$
+afpd\[[0-9]+\]: dsi_stream_read\(0\): Permission denied$

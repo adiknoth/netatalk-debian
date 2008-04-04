@@ -1,0 +1,26 @@
+Source: netatalk
+Section: net
+Priority: extra
+Maintainer: Jonas Smedegaard <dr@jones.dk>
+Build-Depends: autotools-dev, cdbs (>= 0.4.39), debhelper (>= 4.2.0), libtool, automake1.10, autoconf, quilt, patchutils (>= 0.2.25), dh-buildinfo, libdb-dev, libwrap0-dev, libpam0g-dev, libavahi-client-dev (>= 0.6), libcupsys2-dev, libkrb5-dev, libltdl3-dev, d-shlibs (>> 0.19)
+Build-Conflicts: libavahi-compat-libdnssd-dev
+Uploaders: Sebastian Rittau <srittau@debian.org>, Jonas Smedegaard <dr@jones.dk>
+Vcs-Svn: svn://svn.debian.org/svn/pkg-netatalk/trunk
+Vcs-Browser: http://svn.debian.org/wsvn/pkg-netatalk/trunk
+Standards-Version: 3.7.2
+Homepage: http://netatalk.sourceforge.net/
+
+Package: netatalk
+Section: net
+Architecture: any
+Depends: netbase, libpam-modules, ${shlibs:Depends}, ${perl:Depends}, ${misc:Depends}
+Recommends: lsof, rc, db4.2-util, procps, ${ssl:Recommends}
+Suggests: tetex-bin, quota, timeout
+Description: AppleTalk user binaries
+ Netatalk is an implementation of the AppleTalk Protocol Suite for
+ BSD-derived systems.  The current release contains support for
+ EtherTalk Phase I and II, DDP, RTMP, NBP, ZIP, AEP, ATP, PAP, ASP, and
+ AFP.
+ .
+ This package contains all daemon and utility programs as well as Netatalk's
+ static libraries.

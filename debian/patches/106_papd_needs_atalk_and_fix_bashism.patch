@@ -1,0 +1,37 @@
+--- netatalk/distrib/initscripts/rc.atalk.debian.tmpl.old
++++ netatalk/distrib/initscripts/rc.atalk.debian.tmpl
+@@ -52,7 +52,7 @@
+ 	fi
+ 	
+ 	# prepare startup of file services
+-	if [ "x${CNID_METAD_RUN}" = "xyes" -a -x :SBINDIR:/cnid_metad ] ; then
++	if [ "x$CNID_METAD_RUN" = "xyes" -a -x :SBINDIR:/cnid_metad ] ; then
+ 		echo -n " cnid_metad"
+ 		:SBINDIR:/cnid_metad
+ 	fi
+@@ -63,7 +63,9 @@
+ 	echo -n " afpd"
+ 	fi
+ 
+-	if [ "x$ATALKD_RUN" = "xyes" -a "x$PAPD_RUN" = "xyes" ]; then
++	if [ "x$ATALKD_RUN" = "xyes" ]; then
++
++	if [ "x$PAPD_RUN" = "xyes" ]; then
+ 	:SBINDIR:/papd
+ 	echo -n " papd"
+ 	fi
+@@ -72,11 +74,13 @@
+ 	:SBINDIR:/timelord
+ 	echo -n " timelord"
+ 	fi
++
++	fi
+ }
+ 
+ case "$1" in
+ 	start)
+-		if test "x${ATALK_BGROUND}" = "xyes"; then
++		if [ "x$ATALK_BGROUND" = "xyes" ]; then
+ 			echo "Starting Netatalk services in the background."
+ 			atalk_startup >/dev/null &
+ 		else

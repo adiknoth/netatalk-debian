@@ -1,0 +1,27 @@
+000_cvs_20071213.patch
+101_fix_manpage_sed_replacements.patch
+102_rename_initscript.patch
+103_initscript_background_off_by_default.patch
+104_initscript_load_module_only_if_intended.patch
+105_initscript_config_in_etc-default.patch
+106_papd_needs_atalk_and_fix_bashism.patch
+107_afpd-zeroconf.patch
+108_zeroconf.patch
+109_xfs_option.patch
+110_db.patch
+111_db_macro.patch
+112_fix_zeroconf_assertion.patch
+200_netatalk_conf_defaults.diff
+201_etc2ps_paths.diff
+202_psf_8_paths.diff
+204_uniconv_namespace_conflict.diff
+#204a_uniconv_namespace_conflict_autobuilt.diff			# obsoleted by running autotools
+205_applevolumes_default_homedir.diff
+206_fix_cnid_maint_paths.diff
+207_afile_namespace_conflict.diff
+#207a_afile_namespace_conflict_autobuilt.diff			# obsoleted by running autotools
+#208_fix_manpage_sed_replacements_for_automade_file.patch	# obsoleted by running autotools
+#209_rename_initscript_for_automade_file.patch			# obsoleted by running autotools
+210_avoid_update-rc-d.patch
+#211_avoid_update-rc-d_for_automade_file.patch			# obsoleted by running autotools
+212_disable_cnid_metad_by_default.patch

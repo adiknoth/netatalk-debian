@@ -1,0 +1,25 @@
+--- netatalk/bin/cnid/cnid_maint.in.old	2003-02-17 03:32:45.000000000 +0100
++++ netatalk/bin/cnid/cnid_maint.in	2004-08-27 17:10:34.748613050 +0200
+@@ -24,17 +24,17 @@
+ );
+ 
+ ## Edit ME
+-$STOP_CMD  = '/usr/local/etc/rc.d/netatalk.sh stop';
+-$START_CMD = '/usr/local/etc/rc.d/netatalk.sh start';
++$STOP_CMD  = '/etc/init.d/netatalk stop';
++$START_CMD = '/etc/init.d/netatalk start';
+ 
+ # This ps command needs to output the following fields in the following order:
+ # USER,PID,PPID,COMMAND
+ # Below is the example of a BSD ps.  A SYSV example is:
+ # /bin/ps -eflouid,pid,ppid,comm
+ $PS_CMD             = '@PS@ -axouser,pid,ppid,command';
+-$DB_STAT            = '@BDB_BIN@/db_stat';
+-$DB_RECOVER         = '@BDB_BIN@/db_recover';
+-$DB_VERIFY          = '@BDB_BIN@/db_verify';
++$DB_STAT            = '@BDB_BIN@/db4.2_stat';
++$DB_RECOVER         = '@BDB_BIN@/db4.2_recover';
++$DB_VERIFY          = '@BDB_BIN@/db4.2_verify';
+ $APPLE_VOLUMES_FILE = '@PKGCONFDIR@/AppleVolumes.default';
+ ## End edit section
+ 

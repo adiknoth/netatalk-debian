@@ -1,0 +1,3 @@
+0xx: Backports from newer upstream CVS.
+1xx: Possibly relevant for upstream adoption.
+2xx: Only relevant for official Debian release.

@@ -1,0 +1,11 @@
+--- netatalk/distrib/initscripts/rc.atalk.debian.tmpl.old
++++ netatalk/distrib/initscripts/rc.atalk.debian.tmpl
+@@ -22,7 +22,7 @@
+ AFPD_MAX_CLIENTS=50
+ ATALK_ZONE=
+ ATALK_NAME=`/bin/hostname --short`
+-ATALK_BGROUND=yes
++ATALK_BGROUND=no
+ CNID_METAD_RUN=yes
+ ATALK_MAC_CHARSET='MAC_ROMAN'
+ ATALK_UNIX_CHARSET='LOCALE'

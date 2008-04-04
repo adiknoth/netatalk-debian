@@ -1,0 +1,133 @@
+#!/usr/bin/make -f
+
+# NB! Local CDBS tweaks in use. More info in README.cdbs-tweaks
+DEB_AUTO_UPDATE_ACLOCAL = 1.10
+DEB_AUTO_UPDATE_AUTOMAKE = 1.10
+DEB_AUTO_UPDATE_AUTOHEADER = 2.50
+DEB_AUTO_UPDATE_AUTOCONF = 2.50
+DEB_AUTO_UPDATE_LIBTOOL = post
+include debian/cdbs/1/rules/upstream-tarball.mk
+include /usr/share/cdbs/1/rules/debhelper.mk
+include /usr/share/cdbs/1/class/autotools.mk
+include /usr/share/cdbs/1/rules/patchsys-quilt.mk
+include debian/cdbs/1/rules/buildinfo.mk
+include debian/cdbs/1/rules/copyright-check.mk
+
+DEB_UPSTREAM_URL = http://downloads.sourceforge.net/netatalk
+DEB_UPSTREAM_TARBALL_MD5 = 17917abd7d255d231cc0c6188ccd27fb
+
+autotools-files = Makefile.in aclocal.m4 compile config.guess config.h.in config.sub configure depcomp install-sh ltmain.sh missing mkinstalldirs
+
+# No need to check autobuilt files
+DEB_COPYRIGHT_CHECK_IGNORE += $(autotools-files)
+
+DEB_UPDATE_RCD_PARAMS := defaults 50
+
+DEB_CONFIGURE_EXTRA_FLAGS := \
+	--with-shadow --enable-fhs		\
+	--with-tcp-wrappers --with-mangling	\
+	--enable-timelord --enable-overwrite	\
+	--with-pkgconfdir=/etc/netatalk		\
+	--with-nls-dir=/usr/share/netatalk/nls	\
+	--disable-logger			\
+	--disable-slp --enable-zeroconf		\
+	--enable-krb4-uam --enable-krbV-uam	\
+	--with-cnid-dbd-txn			\
+	--enable-debian
+
+# libxfs currently broken: redefines several __swabXXX in xfs/swab.h
+DEB_CONFIGURE_EXTRA_FLAGS += --without-xfs
+
+DEB_INSTALL_EXAMPLES_netatalk = debian/examples/*
+
+ssl_build_depends = libssl-dev, cracklib-dev
+
+# Conditionally avoid or include ssl-related options
+ifneq (,$(findstring ssl,$(DEB_BUILD_OPTIONS)))
+DEB_CONFIGURE_EXTRA_FLAGS += --with-ssl-dir			\
+	--with-cracklib=/var/cache/cracklib/cracklib_dict	\
+	--enable-pgp-uam
+DEB_DH_GENCONTROL_ARGS := -- -Vssl:Recommends=", cracklib-runtime, libpam-cracklib"
+uamlist = uams_dhx.so,uams_clrtxt.so,uams_randnum.so
+pamfile = netatalk.pam-ssl
+else
+DEB_CONFIGURE_EXTRA_FLAGS += --without-ssl-dir
+uamlist = uams_clrtxt.so,uams_randnum.so
+pamfile = netatalk.pam
+endif
+
+# Cheat autotools (as CDBS lack support for autotools options)
+post-patches::
+	touch AUTHORS ChangeLog INSTALL
+	cp -al macros m4
+clean::
+	rm -f AUTHORS ChangeLog INSTALL
+	rm -rf m4
+
+# Refuse non-ssl build with ssl build-dependencies included
+post-patches::
+	$(if $(findstring ssl,$(DEB_BUILD_OPTIONS)),,$(if $(shell egrep -i '^Build-Depends.*$(ssl_build_depends)' debian/control),$(error ssl-related build-dependencies found in non-ssl build!)))
+
+# Re-install initscript with debhelper to add pre- and postinst routines
+install/netatalk::
+	mv debian/netatalk/etc/init.d/netatalk debian/netatalk.init
+
+clean::
+	rm -f debian/netatalk.init
+
+# Move master config file (Debian Policy 9.3.2)
+binary-post-install/netatalk::
+	mv debian/netatalk/etc/netatalk/netatalk.conf debian/netatalk/etc/default/netatalk
+
+# Rename manpages because of namespace conflicts
+binary-post-install/netatalk::
+	mv debian/netatalk/usr/share/man/man1/uniconv.1 debian/netatalk/usr/share/man/man1/netatalk-uniconv.1
+	mv debian/netatalk/usr/share/man/man1/afile.1 debian/netatalk/usr/share/man/man1/apple_file.1
+	mv debian/netatalk/usr/share/man/man1/achfile.1 debian/netatalk/usr/share/man/man1/apple_chfile.1
+
+# Adjust PAM modules and UAMs loaded by default, depending on ssl support
+binary-post-install/netatalk::
+	install -m 644 debian/$(pamfile) debian/netatalk/etc/pam.d/netatalk
+	perl -i -pe 's/^#AFPD_UAMLIST=.*/#AFPD_UAMLIST="-U $(uamlist)"/' debian/netatalk/etc/default/netatalk
+	perl -i -pe 's/^AFPD_UAMLIST=.*/AFPD_UAMLIST="-U $(uamlist)"/' debian/netatalk/etc/init.d/netatalk
+
+# Remove unnecessary files
+binary-post-install/netatalk::
+	rm debian/netatalk/usr/bin/netatalk-config
+	rm debian/netatalk/usr/bin/timeout
+	rm debian/netatalk/usr/lib/libatalk.*
+	rm debian/netatalk/usr/share/man/man1/timeout.1
+	rm debian/netatalk/usr/share/man/man1/afppasswd.1
+	rm -r debian/netatalk/usr/include
+	rm -r debian/netatalk/usr/share/aclocal
+	rm -r debian/netatalk/var
+
+# Create patch to get in sync with upstream CVS
+get-orig-vcs: patchfile = 000_cvs_$(shell date '+%Y%m%d').patch
+get-orig-vcs: get-orig-source
+	f="$(DEB_UPSTREAM_WORKDIR)/$(patchfile)"; \
+		[ ! -e "$$f" ] || ( echo "ERROR: File \"$$f\" already exist!"; exit 1 )
+	d="$(DEB_UPSTREAM_WORKDIR)/vcstemp"; \
+		mkdir "$$d" || ( echo "ERROR: Directory \"$$d\" already exist!"; exit 1 )
+	tar -zx -C "$(DEB_UPSTREAM_WORKDIR)/vcstemp" \
+		< "$(DEB_UPSTREAM_WORKDIR)/$(cdbs_upstream_local_tarball)"
+	d="$(DEB_UPSTREAM_WORKDIR)/vcstemp/netatalk.orig"; \
+		[ -e "$$d" ] || mv "$(DEB_UPSTREAM_WORKDIR)/vcstemp"/* "$$d"
+	cd "$(DEB_UPSTREAM_WORKDIR)/vcstemp" \
+		&& cvs -d:pserver:anonymous@netatalk.cvs.sourceforge.net:/cvsroot/netatalk co -r branch-netatalk-2-0 -P netatalk \
+		&& diff -ruN $(autotools-files:%=-x %) -x doc -x CVS -x .cvsignore netatalk.orig netatalk \
+			> "../$(patchfile)" \
+			|| [ $$? -lt 2 ] # generating a diff is not (at all) fatal
+	rm -rf "$(DEB_UPSTREAM_WORKDIR)/vcstemp"
+
+# Needed for by upstream build process
+CDBS_BUILD_DEPENDS := $(CDBS_BUILD_DEPENDS), libdb-dev, libwrap0-dev, libpam0g-dev, libavahi-client-dev (>= 0.6), libcupsys2-dev, libkrb5-dev, libltdl3-dev
+ifneq (,$(findstring ssl,$(DEB_BUILD_OPTIONS)))
+CDBS_BUILD_DEPENDS := $(CDBS_BUILD_DEPENDS), $(ssl_build_depends)
+endif
+
+# Needed for our packaging routines
+CDBS_BUILD_DEPENDS := $(CDBS_BUILD_DEPENDS), d-shlibs (>> 0.19)
+
+# Fix double cdbs build-dependencies
+CDBS_BUILD_DEPENDS := $(shell echo '$(CDBS_BUILD_DEPENDS)' | sed -e '/\bcdbs (>= 0.4.39)/ s/ *,* *\bcdbs (>= \(0.4.23-1.1\|0.4.27-1\)) *,* */, /g' -e 's/^ *, *//' -e 's/ *, *$$//')
