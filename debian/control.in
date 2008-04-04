@@ -5,8 +5,8 @@ Maintainer: Jonas Smedegaard <dr@jones.dk>
 Build-Depends: @cdbs@
 Build-Conflicts: libavahi-compat-libdnssd-dev
 Uploaders: Sebastian Rittau <srittau@debian.org>, Jonas Smedegaard <dr@jones.dk>
-Vcs-Svn: svn://svn.debian.org/svn/pkg-netatalk/trunk
-Vcs-Browser: http://svn.debian.org/wsvn/pkg-netatalk/trunk
+Vcs-Git: git://git.debian.org/git/collab-maint/netatalk.git
+Vcs-Browser: http://git.debian.org/?p=collab-maint/netatalk.git;a=summary
 Standards-Version: 3.7.2
 Homepage: http://netatalk.sourceforge.net/
 

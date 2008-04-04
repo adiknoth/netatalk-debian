@@ -2,11 +2,11 @@ Source: netatalk
 Section: net
 Priority: extra
 Maintainer: Jonas Smedegaard <dr@jones.dk>
-Build-Depends: autotools-dev, cdbs (>= 0.4.39), debhelper (>= 4.2.0), libtool, automake1.10, autoconf, quilt, patchutils (>= 0.2.25), dh-buildinfo, libdb-dev, libwrap0-dev, libpam0g-dev, libavahi-client-dev (>= 0.6), libcupsys2-dev, libkrb5-dev, libltdl3-dev, d-shlibs (>> 0.19)
+Build-Depends: cdbs (>= 0.4.39), autotools-dev, debhelper (>= 4.2.0), libtool, automake1.10, autoconf, quilt, patchutils (>= 0.2.25), dh-buildinfo, libdb-dev, libwrap0-dev, libpam0g-dev, libavahi-client-dev (>= 0.6), libcupsys2-dev, libkrb5-dev, libltdl3-dev, d-shlibs (>> 0.19)
 Build-Conflicts: libavahi-compat-libdnssd-dev
 Uploaders: Sebastian Rittau <srittau@debian.org>, Jonas Smedegaard <dr@jones.dk>
-Vcs-Svn: svn://svn.debian.org/svn/pkg-netatalk/trunk
-Vcs-Browser: http://svn.debian.org/wsvn/pkg-netatalk/trunk
+Vcs-Git: git://git.debian.org/git/collab-maint/netatalk.git
+Vcs-Browser: http://git.debian.org/?p=collab-maint/netatalk.git;a=summary
 Standards-Version: 3.7.2
 Homepage: http://netatalk.sourceforge.net/
 

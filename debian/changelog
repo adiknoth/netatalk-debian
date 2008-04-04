@@ -1,3 +1,9 @@
+netatalk (2.0.3-9) unstable; urgency=low
+
+  * Update VCS-* hints: packaging moved to collab-maint Git at Alioth.
+
+ -- Jonas Smedegaard <dr@jones.dk>  Fri, 04 Apr 2008 23:08:59 +0200
+
 netatalk (2.0.3-8) unstable; urgency=medium
 
   * Add patch 001 to sync with upstream CVS as of today.
