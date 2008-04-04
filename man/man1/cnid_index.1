@@ -1,0 +1,23 @@
+.TH cnid_index 1 "3 Jan 2005" 2.0.3 Netatalk 
+.SH NAME
+cnid_index \- check and repair Netatalk CNID database indexes
+.SH SYNOPSIS
+\fBcnid_index\fR \fBdbdir\fR 
+.SH DESCRIPTION
+cnid_index is a utility to check CNID databases
+for consistency. If needed, the indexes are repaired. It works for 
+databases created by the cdb and dbd backends.
+.PP
+Volumes usind the dbd CNID scheme can also be checked automatically, 
+for further information please see the \fBcnid_dbd\fR(8) man page.
+.RS 
+\fBWarning\fR
+.PP
+When using cnid_index on cdb handled databases, 
+cnid_index cannot check if another process (afpd) accesses
+the CNID databases. In this case, you have to manually ensure no other process 
+accesses the database when running cnid_index.
+.RE
+.SH "SEE ALSO"
+\fBcnid_dbd\fR(8), \fBafpd\fR(8)
+

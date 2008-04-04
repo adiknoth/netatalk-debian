@@ -1,0 +1,42 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>asip-status.pl</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter 5. Manual Pages"><link rel="previous" href="apple_rm.1.html" title="apple_rm"><link rel="next" href="atalk.4.html" title="atalk"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">asip-status.pl</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="apple_rm.1.html">Prev</a> </td><th width="60%" align="center">Chapter 5. Manual Pages</th><td width="20%" align="right"> <a accesskey="n" href="atalk.4.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="asip-status.pl.1"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>asip-status.pl &#8212; Queries AFP servers for their capabilities</p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><p><span class="emphasis"><em>/usr/bin/asip-status.pl<a class="indexterm" name="id2909695"></a></em></span> ADDRESS<span class="emphasis"><em>:PORT</em></span>...</p></div><div class="refsect1" lang="en"><a name="id2909715"></a><h2>DESCRIPTION</h2><p><span class="emphasis"><em>asip-status.pl</em></span> is a perl script that
+    sends a FPGetSrvrInfo request to an AFP server at ADDRESS:PORT and
+    displays the results, namely "Machine type", the server's name, supported
+    AFP versions, UAMs and AFP flags, the "server signature" and the network
+    addresses, the server provides AFP services on.</p><p>When you don't supply :PORT, then the default AFP port, 548, will be
+    used.</p></div><div class="refsect1" lang="en"><a name="id2909743"></a><h2>EXAMPLES</h2><pre class="programlisting"><span class="emphasis"><em>/usr/bin/asip-status.pl</em></span> 192.168.21.2
+AFP reply from 192.168.21.2:548
+Flags: 1  Cmd: 3  ID: 57005
+Reply: DSIGetStatus
+Request ID: 57005
+Machine type: Macintosh
+AFP versions: AFPVersion 1.1,AFPVersion 2.0,AFPVersion 2.1,AFP2.2
+UAMs: Cleartxt passwrd,Randnum exchange,2-Way Randnum exchange
+Flags: SupportsCopyFile,SupportsChgPwd,SupportsServerMessages,
+SupportsServerSignature,SupportsTCP/IP,SupportsSuperClient
+Server name: PowerMac 9600/200
+Signature:
+04 c1 6e 59 04 c1 6e 59 04 c1 6e 59 04 c1 6e 59  ..nY..nY..nY..nY
+                                                  
+Network address: 192.168.21.2:548 (tcp/ip address and port)
+Network address: 10.20 (ddp address)
+</pre><pre class="programlisting"><span class="emphasis"><em>/usr/bin/asip-status.pl</em></span> 192.168.21.1:10548
+AFP reply from 192.168.21.1:10548
+Flags: 1  Cmd: 3  ID: 57005
+Reply: DSIGetStatus
+Request ID: 57005
+Machine type: Netatalk
+AFP versions: AFPVersion 1.1,AFPVersion 2.0,AFPVersion 2.1,AFP2.2,AFPX03,
+AFP3.1
+UAMs: Cleartxt passwrd,Randnum exchange,2-Way Randnum exchange,DHCAST128
+Flags: SupportsCopyFile,SupportsServerMessages,SupportsServerSignature,
+SupportsTCP/IP,SupportsSrvrNotifications,SupportsOpenDirectory,
+SupportsUTF8Servername,SupportsSuperClient
+Server name: Fire V480
+Signature:
+83 29 cc 60 83 29 cc 60 83 29 cc 60 83 29 cc 60  .).`.).`.).`.).`
+                                                  
+Network address: 192.168.21.1:10548 (TCP/IP address and port)
+Network address: 65282.142 (ddp address)
+UTF8 Servername: Fire V480
+</pre></div><div class="refsect1" lang="en"><a name="id2909808"></a><h2>REPORTING BUGS</h2><p>Report bugs to the Netatalk-devel list
+    &lt;netatalk-devel@lists.sourceforge.net&gt;.</p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="apple_rm.1.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="man-pages.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="atalk.4.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">apple_rm </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> atalk</td></tr></table></div></body></html>

@@ -1,0 +1,103 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>papd.conf</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter 5. Manual Pages"><link rel="previous" href="papd.8.html" title="papd"><link rel="next" href="papstatus.8.html" title="papstatus"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">papd.conf</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="papd.8.html">Prev</a> </td><th width="60%" align="center">Chapter 5. Manual Pages</th><td width="20%" align="right"> <a accesskey="n" href="papstatus.8.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="papd.conf.5"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>papd.conf &#8212; Configuration file used by papd(8) to determine the
+    configuration of printers used by the Netatalk printing daemon<a class="indexterm" name="id2917674"></a></p></div><div class="refsect1" lang="en"><a name="id2917686"></a><h2>DESCRIPTION</h2><p><span class="emphasis"><em>/etc/netatalk/papd.conf</em></span> is the
+    configuration file used by papd to configure the printing services offered
+    by netatalk. Please note that papd must be enabled in <span class="emphasis"><em>/etc/netatalk/netatalk.conf</em></span> for this to take any effect.
+    <span class="emphasis"><em>papd</em></span> shares the same defaults as lpd on
+    many systems, but not Solaris.</p><p>Any line not prefixed with <span class="emphasis"><em>#</em></span> is
+    interpreted. The configuration lines are composed like:</p><p><span class="emphasis"><em>printername:[options]</em></span></p><p>On systems running a System V printing system the simplest case is
+    to have either no papd.conf, or to have one that has no active lines. In
+    this case, atalkd should auto-discover the local printers on the machine.
+    Please note that you can split lines by using <span class="emphasis"><em>\\fR.</em></span></p><p>printername may be just a name (<span class="emphasis"><em>Printer
+    1</em></span>), or it may be a full name in nbp_name format (<span class="emphasis"><em>Printer 1:LaserWriter@My Zone</em></span>).</p><p>Systems using a BSD printing system should make use of a pipe to the
+    printing command in question within the <span class="emphasis"><em>pr</em></span>
+    option (eg. <span class="emphasis"><em>pr=|/usr/bin/lpr -J%J -u%U</em></span>).
+    Note: When printing using a pipe, papd recognizes several wildcards: %F
+    will be replaced by the name present in the "%%For:" comment in the
+    PostScript stream, same with %J for the "%%Title:" comment. %U will be
+    substituted with the login name (the latter applies only when
+    authenticated printing is in effect).</p><p>When CUPS support is compiled in, then <span class="emphasis"><em>cupsautoadd </em></span> as the first entry in papd.conf will
+    automagically share all CUPS printers by papd utilizing the PPDs assigned
+    in CUPS (customizable -- see below). This can be overwritten for individal
+    printers by subsequently adding individual entries using the CUPS queue
+    name as <span class="emphasis"><em>pr </em></span> entry. Note: CUPS support is
+    mutually exclusive with System V support described above.</p><p>The possible options are colon delimited (<span class="emphasis"><em>:</em></span>), and lines must be terminated with colons. The
+    possible options and flags are:</p><div class="variablelist"><dl><dt><span class="term"><span class="emphasis"><em>am=(uams list)</em></span></span></dt><dd><p>The <span class="emphasis"><em>am</em></span> option allows specific
+          UAMs to be specified for a particular printer. It has no effect if
+          the <span class="emphasis"><em>au</em></span> flag is not present or if papd
+          authentication was not built into netatalk. Note: possible values
+          are <span class="emphasis"><em>uams_guest.so</em></span> and <span class="emphasis"><em> uams_clrtxt.so</em></span> only. The first method requires
+          a valid username, but no password. The second requires both a valid
+          username and the correct password.</p></dd><dt><span class="term"><span class="emphasis"><em>au</em></span></span></dt><dd><p>If present, this flag enables authentication for the printer.
+          Please note that papd authentication must be built into netatalk for
+          this to take effect.</p></dd><dt><span class="term"><span class="emphasis"><em>co=(CUPS options)</em></span></span></dt><dd><p>The <span class="emphasis"><em>co</em></span> option allows options to
+          be passed through to CUPS (eg. <span class="emphasis"><em>co="protocol=TBCP" </em></span> or <span class="emphasis"><em>co="raw"</em></span>).</p></dd><dt><span class="term"><span class="emphasis"><em>cupsautoadd[:type][@zone]</em></span></span></dt><dd><p>If used as the first entry in papd.conf this will share all
+          CUPS printers via papd. type/zone settings as well as other
+          parameters assigned to this special printer share will apply to all
+          CUPS printers. Unless the <span class="emphasis"><em>pd</em></span> option
+          is set, the CUPS PPDs will be used. To overwrite these global
+          settings for individual printers simply add them subsequently to
+          papd.conf and assign different settings.</p></dd><dt><span class="term"><span class="emphasis"><em>fo</em></span></span></dt><dd><p>If present, this flag enables a hack to translate line endings
+          originating from pre Mac OS X LaserWriter drivers to let <span class="emphasis"><em>foomatic-rip</em></span> recognize foomatic PPD options set
+          in the printer dialog. Attention: Use with caution since this might
+          corrupt binary print jobs!</p></dd><dt><span class="term"><span class="emphasis"><em>op=(operator)</em></span></span></dt><dd><p>This specifies the operator name, for lpd spooling.</p></dd><dt><span class="term"><span class="emphasis"><em>pa=(appletalk address)</em></span></span></dt><dd><p>Allows specification of Appletalk addresses. Usually not
+          needed.</p></dd><dt><span class="term"><span class="emphasis"><em>pd=(path to ppd file)</em></span></span></dt><dd><p>Specifies a particular PPD (printer description file) to
+          associate with the selected printer.</p></dd><dt><span class="term"><span class="emphasis"><em>pr=(lpd/CUPS printer name or pipe
+        command)</em></span></span></dt><dd><p>Sets the <span class="emphasis"><em>lpd</em></span> or <span class="emphasis"><em>CUPS</em></span> printer that this is spooled to.</p></dd></dl></div></div><div class="refsect1" lang="en"><a name="id2918142"></a><h2>Examples</h2><p>Unless CUPS support has been compiled in (which is default from
+    Netatalk 2.0 on) one simply defines the lpd queue in question by setting
+    the <tt class="option">pr</tt> parameter to the queue name, in the following
+    example "ps". If no <tt class="option">pr</tt> parameter is set, the default
+    printer will be used.</p><div class="example"><a name="id2918166"></a><p class="title"><b>Example 5.10. papd.conf System V printing system examples</b></p><p>The first spooler is known by the AppleTalk name Mac Printer
+      Spooler, and uses a PPD file located in
+      <tt class="filename">/usr/share/lib/ppd</tt>. In addition, the user mcs will
+      be the owner of all jobs that are spooled. The second spooler is known
+      as HP Printer and all options are the default. </p><pre class="programlisting">Mac Printer Spooler:\
+   :pr=ps:\
+   :pd=/usr/share/lib/ppd/HPLJ_4M.PPD:\
+   :op=mcs:
+
+HP Printer:\
+   :</pre></div><p>An alternative to the technique outlined above is to direct papd's
+    output via a pipe into another program. Using this mechanism almost all
+    printing systems can be driven. Netatalk supplies three "wildcards" that
+    get substituted with values of the already printed job:
+    <tt class="option">%F</tt>, <tt class="option">%U</tt> and <tt class="option">%J</tt>. Using
+    these wildcards, one can pass those parameters directly to programs or
+    implement small wrapper scripts to call the printing system in
+    question.</p><div class="example"><a name="id2918225"></a><p class="title"><b>Example 5.11. papd.conf examples using pipes</b></p><p>The first spooler is known as HP 8100. It pipes the print job to
+      <span><b class="command">/usr/bin/lpr</b></span> for printing using the value of the
+      <span class="emphasis"><em>%%Title: </em></span> comment as job name. PSSP authenticated
+      printing is enabled, as is CAP-style authenticated printing. Both
+      methods support guest and cleartext authentication as specified by the
+      '<tt class="option">am</tt>' option. The PPD used is
+      <tt class="filename">/etc/atalk/ppds/hp8100.ppd</tt>. The second spooler is
+      called "Dump PostScript" and uses a pipe to <span><b class="command">cat</b></span> to
+      send the raw PostScript code into the user's home directory into a file
+      called like the printjob. </p><pre class="programlisting">HP 8100:\
+   :pr=|/usr/bin/lpr -Plp -J"%J":\
+   :sp:\
+   :ca=/tmp/print:\
+   :am=uams_guest.so,uams_pam.so:\
+   :pd=/etc/atalk/ppds/hp8100.ppd:
+
+Dump PostScript:LaserWriter@Server:\
+   :pr=|cat &gt;/home/%U/%J-prn.out:\
+   :pd=/usr/share/lib/ppd/mooralana.ppd:\
+   :sp:au:op=lp:\
+   :am=uams_clrtxt.so:</pre></div><p>Starting with Netatalk 2.0 direct CUPS integration is available. In
+    this case, defining only a queue name as <tt class="option">pr</tt> parameter
+    won't invoke the SysV lpd daemon but uses CUPS instead. Unless a specific
+    PPD has been assigned using the <tt class="option">pd</tt> switch, the PPD
+    configured in CUPS will be used by <span><b class="command">papd</b></span>, too.</p><p>There exists one special share named "cupsautoadd". If this is
+    present as the first entry then all available CUPS queues will be served
+    automagically using the parameters assigned to this global share. But
+    subsequent printer definitions can be used to override these global
+    settings for individual spoolers.</p><div class="example"><a name="id2918323"></a><p class="title"><b>Example 5.12. papd.conf CUPS examples</b></p><p>The first entry sets up automatic sharing of all CUPS printers.
+      All those shares appear in the zone "1st floor" and since no additional
+      settings have been made, they use the CUPS printer name as NBP name and
+      use the PPD configured in CUPS. The second entry defines different
+      settings for one single CUPS printer. It's NBP name is differing from
+      the printer's name and the registration happens in another zone.
+      </p><pre class="programlisting">cupsautoadd@1st floor:op=root:
+
+Boss' LaserWriter@2nd floor:\
+   :pr=laserwriter-chief:</pre></div></div><div class="refsect1" lang="en"><a name="id2918354"></a><h2>SEE ALSO</h2><p><a href="papd.8.html"><span class="citerefentry"><span class="refentrytitle">papd</span>(8)</span></a>, <a href="atalkd.conf.5.html"><span class="citerefentry"><span class="refentrytitle">atalkd.conf</span>(5)</span></a>, <a href="lpd.8.html"><span class="citerefentry"><span class="refentrytitle">lpd</span>(8)</span></a>, <a href="lpoptions.8.html"><span class="citerefentry"><span class="refentrytitle">lpoptions</span>(8)</span></a></p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="papd.8.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="man-pages.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="papstatus.8.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">papd </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> papstatus</td></tr></table></div></body></html>

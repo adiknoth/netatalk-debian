@@ -1,0 +1,66 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>afpd</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter 5. Manual Pages"><link rel="previous" href="afile.1.html" title="afile"><link rel="next" href="afpd.conf.5.html" title="afpd.conf"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">afpd</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="afile.1.html">Prev</a> </td><th width="60%" align="center">Chapter 5. Manual Pages</th><td width="20%" align="right"> <a accesskey="n" href="afpd.conf.5.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="afpd.8"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>afpd &#8212; AppleTalk Filing Protocol daemon</p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><div class="cmdsynopsis"><p><tt class="command">afpd<a class="indexterm" name="id2903755"></a></tt>  [-duptDTvI] [-f <i class="replaceable"><tt>defaultvolumes</tt></i>] [-s <i class="replaceable"><tt>systemvolumes</tt></i>] [-n <i class="replaceable"><tt>nbpname</tt></i>] [-c <i class="replaceable"><tt>maxconnections</tt></i>] [-g <i class="replaceable"><tt>guest</tt></i>] [-P <i class="replaceable"><tt>pidfile</tt></i>] [-S <i class="replaceable"><tt>port</tt></i>] [-L <i class="replaceable"><tt>message</tt></i>] [-F <i class="replaceable"><tt>config</tt></i>] [-U <i class="replaceable"><tt>uamsv</tt></i>] [-m <i class="replaceable"><tt>umask</tt></i>]</p></div></div><div class="refsect1" lang="en"><a name="id2903908"></a><h2>Description</h2><p><span><b class="command">afpd</b></span> provides an AppleTalk Filing Protocol (AFP)
+    interface to the Unix file system. It is normally started at boot time
+    from /etc/rc. </p><p>The list of volumes offered to the user is generated from
+    <tt class="filename">/etc/netatalk/AppleVolumes.system</tt> and one of
+    <tt class="filename">/etc/netatalk/AppleVolumes.default</tt>, <tt class="filename">~/AppleVolumes</tt>,
+    or <tt class="filename">~/.AppleVolumes</tt>. The <tt class="filename">AppleVolumes</tt>
+    files is used to specify volumes to mount and file name extension
+    mappings. It is formatted as follows, one specification per line: pathname
+    [ volumename ] .extension [ type [ creator ] ] If volumename is
+    unspecified, the last component of pathname is used. No two volumes may
+    have the same name. If type is unspecified '????' is used. If
+    creator is unspecified 'UNIX' is used. The extension '.'
+    sets the default creator and type for otherwise untyped Unix files. Blank
+    lines and lines beginning with `#' are ignored.</p><p></p></div><div class="refsect1" lang="en"><a name="id2903992"></a><h2>Options</h2><div class="variablelist"><dl><dt><span class="term">-d</span></dt><dd><p>Specifies that the daemon should not fork. If netatalk has been
+          configured with <span class="emphasis"><em>--enable-debug1</em></span>, a trace of
+          all AFP commands will be written to stdout.</p></dd><dt><span class="term">-p</span></dt><dd><p>Prevents clients from saving their passwords. (Equivalent to -<tt class="option">nosavepasswd</tt>
+          in <tt class="filename">afpd.conf</tt>.)</p></dd><dt><span class="term">-t</span></dt><dd><p>Allows clients to change their passwords. (Equivalent to
+          <tt class="option">-setpasswd</tt> in <tt class="filename">afpd.conf</tt>.)</p></dd><dt><span class="term">-D</span></dt><dd><p>Use DDP (AppleTalk) as transport protocol. (Equivalent to
+          <tt class="option">-ddp</tt> in <tt class="filename">afpd.cond</tt>.)</p></dd><dt><span class="term">-T</span></dt><dd><p>Use TCP/IP as transport protocol. (Equivalent to
+          <tt class="option">-tcp</tt> in <tt class="filename">afpd.conf</tt>.)</p></dd><dt><span class="term">-v</span></dt><dd><p>Print version information and exit.</p></dd><dt><span class="term">-I</span></dt><dd><p>Use a platform specific icon. (Equivalent to <tt class="option">-icon</tt>
+          in <tt class="filename">afpd.conf</tt>.)</p></dd><dt><span class="term">-f <i class="replaceable"><tt>defaultvolumes</tt></i></span></dt><dd><p>Specifies that <i class="replaceable"><tt>defaultvolumes</tt></i>
+          should be read for a list of default volumes to offer, instead of
+          <tt class="filename">/etc/netatalk/AppleVolumes.default</tt>.</p></dd><dt><span class="term">-s <i class="replaceable"><tt>systemvolumes</tt></i></span></dt><dd><p>Specifies that <i class="replaceable"><tt>systemvolumes</tt></i> should
+          be read for a list of volume that all users will be offered, instead
+          of <tt class="filename">/etc/netatalk/AppleVolumes.system</tt>.</p></dd><dt><span class="term">-u</span></dt><dd><p>Read the user's <tt class="filename">AppleVolumes</tt> file
+          first. This option causes volume names in the user's
+          <tt class="filename">AppleVolumes</tt> file to override volume names in
+          the system's <tt class="filename">AppleVolumes</tt> file. The default
+          is to read the system <tt class="filename">AppleVolumes</tt> file first.
+          Note that this option doesn't effect the precendence of filename
+          extension mappings: the user's <tt class="filename">AppleVolumes</tt>
+          file always has precedence.</p></dd><dt><span class="term">-n <i class="replaceable"><tt>nbpname</tt></i></span></dt><dd><p>Specifies that <i class="replaceable"><tt>nbpname</tt></i> should be
+          used for NBP registration, instead of the first component of the
+          hostname in the local zone.</p></dd><dt><span class="term">-c <i class="replaceable"><tt>maxconnections</tt></i></span></dt><dd><p>Specifies the maximum number of connections to allow for this
+          <span><b class="command">afpd</b></span>. The default is 20.</p></dd><dt><span class="term">-g <i class="replaceable"><tt>guest</tt></i></span></dt><dd><p>Specifies the name of the guest account. The default is
+          '<span class="emphasis"><em>nobody</em></span>'.</p></dd><dt><span class="term">-P <i class="replaceable"><tt>pidfile</tt></i></span></dt><dd><p>Specifies the file in which <span><b class="command">afpd</b></span> stores its
+          process id.</p></dd><dt><span class="term">-S <i class="replaceable"><tt>port</tt></i></span></dt><dd><p>Specifies the port to register with when doing AFPoverTCP.
+          Defaults to 548. (Equivalent to <tt class="option">-port </tt>in
+          <tt class="filename">afpd.conf</tt>.)</p></dd><dt><span class="term">-L <i class="replaceable"><tt>message</tt></i></span></dt><dd><p>Specifies the login message that will be sent to clients.
+          (Equivalent to <tt class="option">-loginmsg</tt> in <tt class="filename">afpd.conf</tt>.)</p></dd><dt><span class="term">-F <i class="replaceable"><tt>configfile</tt></i></span></dt><dd><p>Specifies the configuration file to use. (Defaults to
+          <tt class="filename">/etc/netatalk/netatalk/afpd.conf</tt>.)</p></dd><dt><span class="term">-U <i class="replaceable"><tt>uams</tt></i></span></dt><dd><p>Comma-separated list of UAMs to use for the authentication
+          process. (Equivalent to <tt class="option">-uamlist</tt> in
+          <tt class="filename">afpd.conf</tt>.)</p></dd><dt><span class="term">-m <i class="replaceable"><tt>umask</tt></i></span></dt><dd><p>Use this <i class="parameter"><tt>umask</tt></i> for the creation of
+          folders in Netatalk.</p></dd></dl></div></div><div class="refsect1" lang="en"><a name="id2904572"></a><h2>SIGNALS</h2><p>Signals that are sent to the main <span><b class="command">afpd</b></span> process
+    are propagated to the children, so all will be affected.</p><div class="variablelist"><dl><dt><span class="term">SIGHUP</span></dt><dd><p>Sending a <span><b class="command">SIGHUP</b></span> to afpd will cause it to
+          reload its configuration files.</p></dd><dt><span class="term">SIGUSR1</span></dt><dd><p>The <span><b class="command">afpd</b></span> process will send the message
+          "The server is going down for maintenance." to the client
+          and shut itself down in 5 minutes. New connections are not allowed.
+          If this is sent to a child afpd, the other children are not
+          affected. However, the main process will still exit, disabling all
+          new connections.</p></dd><dt><span class="term">SIGUSR2</span></dt><dd><p>The <span><b class="command">afpd</b></span> process will look in the message
+          directory configured at build time for a file named message.pid. For
+          each one found, a the contents will be sent as a message to the
+          associated AFP client. The file is removed after the message is
+          sent. This should only be sent to a child <span><b class="command">afpd</b></span>.
+          Warning: If the --with-message-dir option was not used, this will
+          kill the <span><b class="command">afpd</b></span> process</p><p>To shut down a user's <span><b class="command">afpd</b></span> process it
+          is recommended that <span><b class="command">SIGKILL (-9)</b></span>
+          <span class="emphasis"><em>NOT</em></span> be used, except as a last resort, as this
+          may leave the CNID database in an inconsistent state. The safe way
+          to terminate an <span><b class="command">afpd</b></span> is to send it a
+          <span><b class="command">SIGTERM (-15)</b></span> signal and wait for it to die on
+          its own.</p></dd></dl></div></div><div class="refsect1" lang="en"><a name="id2904738"></a><h2>FILES</h2><div class="variablelist"><dl><dt><span class="term"><tt class="filename">/etc/netatalk/AppleVolumes.default</tt></span></dt><dd><p>list of default volumes to mount</p></dd><dt><span class="term"><tt class="filename">/etc/netatalk/AppleVolumes.system</tt></span></dt><dd><p>list of volumes to offer all users</p></dd><dt><span class="term"><tt class="filename">~/AppleVolumes</tt></span></dt><dd><p>user's list of volumes to mount</p></dd><dt><span class="term"><tt class="filename">/etc/netatalk/netatalk/msg/message.pid</tt></span></dt><dd><p>contains messages to be sent to users.</p></dd></dl></div></div><div class="refsect1" lang="en"><a name="id2904836"></a><h2>BUGS</h2><p></p></div><div class="refsect1" lang="en"><a name="id2904847"></a><h2>SEE ALSO</h2><p><a href="hosts_access.5.html"><span class="citerefentry"><span class="refentrytitle">hosts_access</span>(5)</span></a>,
+    <a href="afpd.conf.5.html"><span class="citerefentry"><span class="refentrytitle">afpd.conf</span>(5)</span></a>,
+    <a href="AppleVolumes.default.5.html"><span class="citerefentry"><span class="refentrytitle">AppleVolumes.default</span>(5)</span></a>,
+    <a href="AppleVolumes.system.5.html"><span class="citerefentry"><span class="refentrytitle">AppleVolumes.system</span>(5)</span></a>.</p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="afile.1.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="man-pages.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="afpd.conf.5.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">afile </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> afpd.conf</td></tr></table></div></body></html>

@@ -1,0 +1,150 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>afpd.conf</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter 5. Manual Pages"><link rel="previous" href="afpd.8.html" title="afpd"><link rel="next" href="afppasswd.1.html" title="afppasswd"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">afpd.conf</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="afpd.8.html">Prev</a> </td><th width="60%" align="center">Chapter 5. Manual Pages</th><td width="20%" align="right"> <a accesskey="n" href="afppasswd.1.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="afpd.conf.5"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>afpd.conf &#8212; Configuration file used by afpd(8) to determine the setup of
+    its file sharing services<a class="indexterm" name="id2904944"></a></p></div><div class="refsect1" lang="en"><a name="id2904956"></a><h2>Description</h2><p><tt class="filename">/etc/netatalk/afpd.conf</tt> is the configuration file
+    used by <span><b class="command">afpd</b></span> to determine the behavior and
+    configuration of the different virtual file servers that it
+    provides.</p><p>Any line not prefixed with # is interpreted. The configuration lines
+    are composed like: server name [ options ] If a <tt class="option">-</tt> is used
+    instead of a server name, the default server is specified. Server names
+    must be quoted if they contain spaces. They must not contain ":" or "@".
+    The path name must be a fully qualified path name, or a path name using
+    either the ~ shell shorthand or any of the substitution variables, which
+    are listed below.</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>Each server has to be configured on a <span class="bold"><b>single</b></span> line.</p></div><p>The possible options and their meanings are:</p></div><div class="refsect1" lang="en"><a name="id2905019"></a><h2>AppleVolumes Files</h2><div class="variablelist"><dl><dt><span class="term">-defaultvol <i class="replaceable"><tt>[path]</tt></i></span></dt><dd><p>Specifies path to AppleVolumes.default file (default is
+          <tt class="filename">/etc/netatalk/AppleVolumes.default</tt>).</p></dd><dt><span class="term">-systemvol <i class="replaceable"><tt>[path]</tt></i></span></dt><dd><p>Specifies path to AppleVolumes.system file (default is
+          <tt class="filename">/etc/netatalk/AppleVolumes.system</tt>).</p></dd><dt><span class="term">-[no]uservol</span></dt><dd><p>Enables or disables reading of the users' individual volumes
+          file entirely.</p></dd><dt><span class="term">-[no]uservolfirst</span></dt><dd><p>Enables or disables reading of the users' individual volumes
+          file before processing the global
+          <tt class="filename">AppleVolumes.default</tt> file.</p></dd></dl></div></div><div class="refsect1" lang="en"><a name="id2905133"></a><h2>Authentication Methods</h2><div class="variablelist"><dl><dt><span class="term">-uamlist <i class="replaceable"><tt>[uams list]</tt></i></span></dt><dd><p>Comma separated list of UAMs. (The default is
+          uams_clrtxt.so,uams_dhx.so).</p><p>The most commonly used UAMs are:</p><div class="variablelist"><dl><dt><span class="term">uams_guest.so</span></dt><dd><p>allows guest logins</p></dd><dt><span class="term">uams_clrtxt.so</span></dt><dd><p>(uams_pam.so or uams_passwd.so) Allow logins with
+                passwords transmitted in the clear.</p></dd><dt><span class="term">uams_randum.so</span></dt><dd><p>allows Random Number and Two-Way Random Number Exchange
+                for authentication (requires a separate file containing the
+                passwords, either /etc/netatalk/afppasswd file or the one specified
+                via <tt class="option">-passwdfile</tt>. See <a href="afppasswd.1.html"><span class="citerefentry"><span class="refentrytitle">afppasswd</span>(1)</span></a> for details</p></dd><dt><span class="term">uams_dhx.so</span></dt><dd><p>(uams_dhx_pam.so or uams_dhx_passwd.so) Allow
+                Diffie-Hellman eXchange (DHX) for authentication.</p></dd><dt><span class="term">uam_gss.so</span></dt><dd><p>Allow Kerberos V for authentication (optional)</p></dd></dl></div></dd><dt><span class="term">-uampath <i class="replaceable"><tt>[path]</tt></i></span></dt><dd><p>Sets the default path for UAMs for this server (default is
+          /etc/netatalk/uams).</p></dd><dt><span class="term">-k5keytab <i class="replaceable"><tt>[path]</tt></i>, </span><span class="term">-k5service <i class="replaceable"><tt>[service]</tt></i>, </span><span class="term">-k5realm <i class="replaceable"><tt>[realm]</tt></i></span></dt><dd><p>These are required if the server supports the Kerberos 5
+          authentication UAM.</p></dd></dl></div></div><div class="refsect1" lang="en"><a name="id2905348"></a><h2>Codepage Options</h2><p>With OS X Apple introduced the AFP3 protocol. One of the big changes
+    was, that AFP3 uses Unicode names encoded as UTF-8 decomposed. Previous
+    AFP/OS versions used codepages like MacRoman, MacCentralEurope,
+    etc.</p><p>To be able to serve AFP3 and older clients at the same time,
+    <span><b class="command">afpd</b></span> needs to be able to convert between UTF-8 and Mac
+    codepages. Even OS X clients partly still rely on codepages. As there's no
+    way, <span><b class="command">afpd</b></span> can detect the codepage a pre AFP3 client
+    uses, you have to specify it using the <tt class="option">-maccodepage</tt>
+    option. The default is MacRoman, which should be fine for most western
+    users.</p><p>As <span><b class="command">afpd</b></span> needs to interact with unix operating
+    system as well, it need's to be able to convert from UTF-8/MacCodepage to
+    the unix codepage. By default <span><b class="command">afpd</b></span> uses the systems
+    LOCALE, or ASCII if your system doesn't support locales. You can set the
+    unix codepage using the <tt class="option">-unixcodepage</tt> option. If you're
+    using extended characters in the configuration files for
+    <span><b class="command">afpd</b></span>, make sure your terminal matches the
+    <tt class="option">-unixcodepage</tt>.</p><div class="variablelist"><dl><dt><span class="term">-unixcodepage [<i class="parameter"><tt>CODEPAGE</tt></i>]</span></dt><dd><p>Specifies the servers unix codepage, e.g. "ISO-8859-15" or
+          "UTF8". This is used to convert strings to/from the systems locale,
+          e.g. for authenthication, server messages and volume names. Defaults
+          to LOCALE if your system supports it, otherwise ASCII will be
+          used.</p></dd><dt><span class="term">-maccodepage [<i class="parameter"><tt>CODEPAGE</tt></i>]</span></dt><dd><p>Specifies the mac clients codepage, e.g. "MAC_ROMAN". This is
+          used to convert strings and filenames to the clients codepage for
+          OS9 and Classic, i.e. for authentication and AFP messages (SIGUSR2
+          messaging). This will also be the default for the volumes
+          maccharset. Defaults to MAC_ROMAN.</p></dd></dl></div></div><div class="refsect1" lang="en"><a name="id2905497"></a><h2>Password Options</h2><div class="variablelist"><dl><dt><span class="term">-loginmaxfail [<i class="parameter"><tt>number</tt></i>]</span></dt><dd><p>Sets the maximum number of failed logins, if supported by the
+          UAM (currently none)</p></dd><dt><span class="term">-passwdfile [<i class="parameter"><tt>path</tt></i>]</span></dt><dd><p>Sets the path to the Randnum UAM passwd file for this server
+          (default is /etc/netatalk/afppasswd).</p></dd><dt><span class="term">-passwdminlen [<i class="parameter"><tt>number</tt></i>]</span></dt><dd><p>Sets the minimum password length, if supported by the
+          UAM</p></dd><dt><span class="term">-[no]savepassword</span></dt><dd><p>Enables or disables the ability of clients to save passwords
+          locally</p></dd><dt><span class="term">-[no]setpassword</span></dt><dd><p>Enables or disables the ability of clients to change their
+          passwords via chooser or the "connect to server" dialog</p></dd></dl></div></div><div class="refsect1" lang="en"><a name="id2905624"></a><h2>Transport Protocols</h2><div class="variablelist"><dl><dt><span class="term">-[no]ddp</span></dt><dd><p>Enables or disables AFP-over-Appletalk. If
+          <tt class="option">-proxy</tt> is specified, you must instead use
+          <tt class="option">-uamlist ""</tt> to prevent DDP connections from
+          working.</p></dd><dt><span class="term">-[no]tcp</span></dt><dd><p>Enables or disables AFP-over-TCP</p></dd><dt><span class="term">-transall</span></dt><dd><p>Make both available (default)</p></dd></dl></div></div><div class="refsect1" lang="en"><a name="id2905698"></a><h2>Transport Options</h2><div class="variablelist"><dl><dt><span class="term">-advertise_ssh</span></dt><dd><p>Allows Mac OS X clients (10.3.3 or above) to automagically
+          establish a tunneled AFP connection through SSH. If this option is
+          set, the server's answers to client's FPGetSrvrInfo requests contain
+          an additional entry. It depends on both client's settings and a
+          correctly configured and running <a href="sshd.8.html"><span class="citerefentry"><span class="refentrytitle">sshd</span>(8)</span></a> on the server to let things work.</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>Setting this option is not recommended since globally
+            encrypting AFP connections via SSH will increase the server's load
+            significantly. On the other hand, Apple's client side
+            implementation of this feature in MacOS X versions prior to 10.3.4
+            contained a security flaw.</p></div></dd><dt><span class="term">-ddpaddr <i class="replaceable"><tt>[ddp address]</tt></i></span></dt><dd><p>Specifies the DDP address of the server. The default is to
+          auto-assign an address (0.0). This is only useful if you are running
+          AppleTalk on more than one interface.</p></dd><dt><span class="term">-fqdn <i class="replaceable"><tt>[name:port]</tt></i></span></dt><dd><p>Specifies a fully-qualified domain name, with an optional
+          port. This is discarded if the server cannot resolve it. This option
+          is not honored by AppleShare clients &lt;= 3.8.3. This option is
+          disabled by default. Use with caution as this will involve a second
+          name resolution step on the client side. Also note that afpd will
+          advertise this name:port combination but not automatically listen to
+          it.</p></dd><dt><span class="term">-ipaddr <i class="replaceable"><tt>[ip address]</tt></i></span></dt><dd><p>Specifies the IP address that the server should advertise
+          <span class="bold"><b>and</b></span> listens to (the default is the
+          first IP address of the system). This option also allows to use one
+          machine to advertise the AFP-over-TCP/IP settings of another machine
+          via NBP<a class="indexterm" name="id2905856"></a> when used together with the <tt class="option">-proxy</tt>
+          option.</p></dd><dt><span class="term">-port <i class="replaceable"><tt>[port number]</tt></i></span></dt><dd><p>Allows a different TCP port to be used for AFP-over-TCP. The
+          default is 548.</p></dd><dt><span class="term">-proxy</span></dt><dd><p>Runs an AppleTalk proxy server for the specified AFP-over-TCP
+          server. If the address and port aren't given, then the first IP
+          address of the system and port 548 will be used. If you don't want
+          the proxy server to act as a DDP<a class="indexterm" name="id2905920"></a> server as well, set <tt class="option">-uamlist
+          ""</tt>.</p></dd><dt><span class="term">-server_quantum <i class="replaceable"><tt>[number]</tt></i></span></dt><dd><p>This specifies the DSI server quantum. The minimum value is
+          303840 (0x4A2E0). The maximum value is 0xFFFFFFFFF. If you specify a
+          value that is out of range, the default value will be set (which is
+          the minimum). Do not change this value unless you're absolutely
+          sure, what you're doing</p></dd><dt><span class="term">-noslp</span></dt><dd><p>Do not register this server using the Service Location
+          Protocol (if SLP<a class="indexterm" name="id2905985"></a> support was compiled in). This is useful if you are
+          running multiple servers and want one to be hidden, perhaps because
+          it is advertised elsewhere, ie. by a SLP Directory Agent.</p></dd></dl></div></div><div class="refsect1" lang="en"><a name="id2906010"></a><h2>Miscellaneous Options</h2><div class="variablelist"><dl><dt><span class="term">-admingroup <i class="replaceable"><tt>[group]</tt></i></span></dt><dd><p>Allows users of a certain group to be seen as the superuser
+          when they log in. This option is disabled by default.</p></dd><dt><span class="term">-authprintdir <i class="replaceable"><tt>[path]</tt></i></span></dt><dd><p>Specifies the path to be used (per server) to store the files
+          required to do CAP-style print authentication which papd will
+          examine to determine if a print job should be allowed. These files
+          are created at login and if they are to be properly removed, this
+          directory probably needs to be umode 1777.</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p><tt class="option">-authprintdir</tt> will only work for clients
+            connecting via DDP. Almost all modern Clients will use TCP.</p></div></dd><dt><span class="term">-client_polling</span></dt><dd><p>With this switch enabled, afpd won't advertise that it is
+          capable of server notifications, so that connected clients poll the
+          server every 10 seconds to detect changes in opened server windows.
+          <span class="emphasis"><em>Note</em></span>: Depending on the number of simultaneously
+          connected clients and the network's speed, this can lead to a
+          significant higher load on your network!</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>Do not use this option any longer as Netatalk 2.0 correctly
+            supports server notifications, allowing connected clients to
+            update folder listings in case another client changed the
+            contents.</p></div></dd><dt><span class="term">-cnidserver <i class="replaceable"><tt>[ipaddress:port]</tt></i></span></dt><dd><p>Specifies the IP address and port of a cnid_metad server,
+          required for CNID dbd backend. Defaults to localhost:4700.</p></dd><dt><span class="term">-guestname <i class="replaceable"><tt>[name]</tt></i></span></dt><dd><p>Specifies the user that guests should use (default is
+          "nobody"). The name should be quoted.</p></dd><dt><span class="term">-icon</span></dt><dd><p>Use the platform-specific icon</p></dd><dt><span class="term">-loginmesg <i class="replaceable"><tt>[message]</tt></i></span></dt><dd><p>Sets a message to be displayed when clients logon to the
+          server. The message should be in <tt class="option">unixcodepage</tt> and
+          should be quoted. Extended characters are allowed.</p></dd><dt><span class="term">-nodebug</span></dt><dd><p>Disables debugging.</p></dd><dt><span class="term">-sleep <i class="replaceable"><tt>[number]</tt></i></span></dt><dd><p>AFP 3.x waits <i class="parameter"><tt>number</tt></i> hours before
+          disconnecting clients in sleep mode. Default is 10 hours.</p></dd><dt><span class="term">-signature { user:&lt;text&gt; | host }</span></dt><dd><p>Specify a server signature. This option is useful while
+          running multiple independent instances of afpd on one machine (eg.
+          in clustered environments, to provide fault isolation etc.). "host"
+          signature type allows afpd generating signature automatically (based
+          on machine primary IP address). "user" signature type allows
+          administrator to set up a signature string manually. The maximum
+          length is 16 characters</p><div class="example"><a name="id2906278"></a><p class="title"><b>Example 5.1. Three server definitions using 2 different server
+            signatures</b></p><pre class="programlisting">first -signature user:USERS 
+second -signature user:USERS 
+third -signature user:ADMINS</pre></div><p>First two servers will appear as one logical AFP service to
+          the clients - if user logs in to first one and then connects to
+          second one, session will be automatically redirected to the first
+          one. But if client connects to first and then to third, will be
+          asked for password twice and will see resources of both servers.
+          Traditional method of signature generation causes two independent
+          afpd instances to have the same signature and thus cause clients to
+          be redirected automatically to server (s)he logged in first.</p></dd></dl></div></div><div class="refsect1" lang="en"><a name="id2906318"></a><h2>Logging Options</h2><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>Extended logging capabilities are only available if Netatalk was
+      built using <span><b class="command">--with-logfile</b></span>. As of Netatalk 2.0, the
+      default is <span><b class="command">--without-logfile</b></span> since the logger code is
+      partially broken and needs a complete rewrite (the
+      <tt class="option">-setuplog</tt> option might not work as expected). If
+      Netatalk was built without logger support then the daemons log to
+      syslog.</p></div><div class="variablelist"><dl><dt><span class="term">-[un]setuplog "<i class="parameter"><tt>&lt;logtype&gt; &lt;loglevel&gt;
+        [&lt;filename&gt;]</tt></i>"</span></dt><dd><p>Specify that the given loglevel should be applied to log
+          messages of the given logtype and that these messages should be
+          logged to the given file. If the filename is ommited the loglevel
+          applies to messages passed to syslog. Each logtype may have a
+          loglevel applied to syslog and a loglevel applied to a single file.
+          Latter <tt class="option">-setuplog</tt> settings will override earlier
+          ones of the same logtype (file or syslog).</p><p>logtypes: Default, Core, Logger, CNID, AFP</p><p>Daemon loglevels: LOG_SEVERE, LOG_ERROR, LOG_WARN, LOG_NOTE,
+          LOG_INFO, LOG_DEBUG, LOG_DEBUG6, LOG_DEBUG7, LOG_DEBUG8, LOG_DEBUG9,
+          LOG_MAXDEBUG</p><div class="example"><a name="id2906407"></a><p class="title"><b>Example 5.2. Some ways to change afpd's logging behaviour via
+            -[un]setuplog</b></p><p>Example: </p><pre class="programlisting">-setuplog "logger log_maxdebug /var/log/netatalk-logger.log" 
+-setuplog "afpdaemon log_maxdebug /var/log/netatalk-afp.log" 
+-unsetuplog "default level file" 
+-setuplog "default log_maxdebug"</pre></div></dd></dl></div></div><div class="refsect1" lang="en"><a name="id2906436"></a><h2>Debug Options</h2><p>These options are useful for debugging only.</p><div class="variablelist"><dl><dt><span class="term">-tickleval <i class="replaceable"><tt>[number]</tt></i></span></dt><dd><p>Sets the tickle timeout interval (in seconds). Defaults to
+          30.</p></dd><dt><span class="term">-timeout <i class="replaceable"><tt>[number]</tt></i></span></dt><dd><p>Specify the number of tickles to send before timing out a
+          connection. The default is 4, therefore a connection will timeout
+          after 2 minutes.</p></dd></dl></div></div><div class="refsect1" lang="en"><a name="id2906497"></a><h2>Examples</h2><div class="example"><a name="id2906504"></a><p class="title"><b>Example 5.3. afpd.conf default configuration</b></p><pre class="programlisting">- -transall -uamlist uams_clrtxt.so,uams_dhx.so</pre></div><div class="example"><a name="id2906522"></a><p class="title"><b>Example 5.4. afpd.conf MacCyrillic setup / UTF8 unix locale</b></p><pre class="programlisting">- -transall -maccodepage mac_cyrillic -unixcodepage utf8</pre></div><div class="example"><a name="id2906539"></a><p class="title"><b>Example 5.5. afpd.conf setup for Kerberos V auth</b></p><pre class="programlisting">- -transall -uamlist uams_clrtxt.so,uams_dhx.so,uams_guest.so,uams_gss.so \ 
+-k5service afpserver -k5keytab /path/to/afpserver.keytab \ 
+-k5realm YOUR.REALM -fqdn your.fqdn.namel:548</pre></div><div class="example"><a name="id2906558"></a><p class="title"><b>Example 5.6. afpd.conf letting afpd appear as three servers on the net</b></p><pre class="programlisting">"Guest Server" -uamlist uams_guest.so -loginmesg "Welcome guest!"
+"User Server" -uamlist uams_dhx.so -port 12000
+"special" -notcp -defaultvol &lt;path&gt; -systemvol &lt;path&gt;</pre></div></div><div class="refsect1" lang="en"><a name="id2906581"></a><h2>See also</h2><p><a href="afpd.8.html"><span class="citerefentry"><span class="refentrytitle">afpd</span>(8)</span></a>, <a href="afppasswd.1.html"><span class="citerefentry"><span class="refentrytitle">afppasswd</span>(1)</span></a>, <a href="AppleVolumes.default.5.html"><span class="citerefentry"><span class="refentrytitle">AppleVolumes.default</span>(5)</span></a></p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="afpd.8.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="man-pages.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="afppasswd.1.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">afpd </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> afppasswd</td></tr></table></div></body></html>

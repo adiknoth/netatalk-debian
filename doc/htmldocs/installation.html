@@ -1,0 +1,103 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Chapter 2. Installation</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="index.html" title="Netatalk 2.0 Manual"><link rel="previous" href="intro.html" title="Chapter 1. Introduction to Netatalk"><link rel="next" href="configuration.html" title="Chapter 3. Setting up Netatalk"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Chapter 2. Installation</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="intro.html">Prev</a> </td><th width="60%" align="center"> </th><td width="20%" align="right"> <a accesskey="n" href="configuration.html">Next</a></td></tr></table><hr></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="installation"></a>Chapter 2. Installation</h2></div></div><div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="sect1"><a href="installation.html#id2883185">How to obtain Netatalk</a></span></dt><dd><dl><dt><span class="sect2"><a href="installation.html#id2883208">Binary packages</a></span></dt><dt><span class="sect2"><a href="installation.html#id2832640">Source packages</a></span></dt></dl></dd><dt><span class="sect1"><a href="installation.html#id2832932">Compiling Netatalk</a></span></dt><dd><dl><dt><span class="sect2"><a href="installation.html#id2832939">Prerequisites</a></span></dt><dt><span class="sect2"><a href="installation.html#compiling-netatalk">Compiling Netatalk</a></span></dt><dt><span class="sect2"><a href="installation.html#build-bdb">Compiling a new Berkeley DB for Netatalk</a></span></dt></dl></dd></dl></div><div class="warning" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Warning</h3><p>If you have previously used an older version of Netatalk, please
+    read the chapter about <a href="upgrade.html" title="Chapter 4. Upgrading from a previous version of Netatalk">upgrading</a> first
+    !!!</p></div><p></p><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id2883185"></a>How to obtain Netatalk</h2></div></div><div></div></div><p>Please have a look at the netatalk page on sourceforge for the most
+    recent informations on this issue.</p><p><a href="http://sourceforge.net/projects/netatalk/" target="_top">http://sourceforge.net/projects/netatalk/</a></p><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2883208"></a>Binary packages</h3></div></div><div></div></div><p>Binary packages of Netatalk are included in some Linux and UNIX
+      distributions. You might want to have a look at the usual locations, too
+      (<a href="http://rpmfind.net/" target="_top">http://rpmfind.net/</a>, <a href="http://packages.debian.org/" target="_top">http://packages.debian.org/</a>,
+      <a href="http://www.blastwave.org/" target="_top">http://www.blastwave.org/</a>
+      <a href="http://www.freebsd.org/ports/index.html" target="_top">http://www.freebsd.org/ports/index.html</a>,
+      etc.)<a class="indexterm" name="id2883252"></a><a class="indexterm" name="id2832610"></a><a class="indexterm" name="id2832624"></a></p></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2832640"></a>Source packages</h3></div></div><div></div></div><div class="sect3" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="id2832647"></a>Tarballs</h4></div></div><div></div></div><p>Prepacked tarballs in .tar.gz and tar.bz2 format are available
+        on the netatalk page on sourceforge</p></div><div class="sect3" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="id2832662"></a>Anonymous CVS<a class="indexterm" name="id2832669"></a></h4></div></div><div></div></div><p>Downloading of the CVS source can be done quickly and
+        easily.</p><div class="orderedlist"><ol type="1"><li><p>Make sure you have cvs installed. <span><b class="command">which
+            cvs</b></span> should produce a path to cvs.</p><pre class="screen"><tt class="prompt">$&gt;</tt> <b class="userinput"><tt>which cvs</tt></b>
+<tt class="computeroutput">/usr/bin/cvs</tt></pre></li><li><p>If you don't have one make a source directory.
+            <span><b class="command">cd</b></span> to this directory.</p><pre class="screen"><tt class="prompt">$&gt;</tt> <b class="userinput"><tt>mkdir /path/to/new/source/dir</tt></b>
+<tt class="prompt">$&gt;</tt> <b class="userinput"><tt>cd /path/to/new/source/dir</tt></b></pre></li><li><p>Authenticate yourself with cvs. Just hit enter for the
+            password for the anonymous user.</p><pre class="screen"><tt class="prompt">$&gt;</tt> <b class="userinput"><tt>cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/netatalk login</tt></b>
+<tt class="computeroutput">Logging in to :pserver:anonymous@cvs.sourceforge.net:2401/cvsroot/netatalk
+CVS password: </tt><b class="userinput"><tt>[Enter]</tt></b>
+</pre></li><li><p>Now get the source:</p><pre class="screen"><tt class="prompt">$&gt;</tt> <b class="userinput"><tt>cvs -z3 -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/netatalk
+    -r branch-netatalk-2-0 co netatalk
+</tt></b><tt class="computeroutput">cvs server: Updating netatalk
+U netatalk/.cvsignore
+U netatalk/CONTRIBUTORS
+U netatalk/COPYING
+...
+</tt></pre><p>This will create a local directory called "netatalk" and
+            downloads a complete and fresh copy of the netatalk source from
+            the CVS repository.</p></li><li><p>Now <span><b class="command">cd</b></span> to the netatalk directory and run
+            <span><b class="command">./autogen.sh</b></span>. This will create the
+            <tt class="filename">configure</tt> script required in the next
+            step.</p><pre class="screen"><tt class="prompt">$&gt;</tt> <b class="userinput"><tt>./autogen.sh</tt></b></pre></li></ol></div><p></p></div></div></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id2832932"></a>Compiling Netatalk</h2></div></div><div></div></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id2832939"></a>Prerequisites</h3></div></div><div></div></div><div class="sect3" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="id2832946"></a>System requirements</h4></div></div><div></div></div><p>Your system needs to meet the following requirements:</p><div class="itemizedlist"><ul type="disc"><li><p>A C compiler, Netatalk compiles fine with gcc &gt;
+            2.7.95</p></li></ul></div><p>To be able to compile with AFP3 support, your system has to
+        support large files (&gt;2GB).</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>On linux systems glibc &gt; 2.2 is required.</p></div><p></p></div><div class="sect3" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="id2832995"></a>Required third party software</h4></div></div><div></div></div><p>Netatalk makes use of sleepycats' Berkeley DB<a class="indexterm" name="id2833007"></a>. At the time of writing, the following versions are
+        supported:</p><div class="itemizedlist"><ul type="disc"><li><p>4.1.25</p></li><li><p>4.2.52 (recommended)</p></li></ul></div><p>In case Berkeley DB is not installed on your system, please
+        download it from:</p><p><a href="http://www.sleepycat.com/download/db/index.shtml" target="_top">http://www.sleepycat.com/download/db/index.shtml</a></p><p>and follow the <a href="installation.html#build-bdb" title="Compiling a new Berkeley DB for Netatalk">installation
+        instructions</a>.</p></div><div class="sect3" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="id2833075"></a>Optional third party software</h4></div></div><div></div></div><p>Netatalk can use the following third party software to enhance
+        it's functionality.</p><div class="itemizedlist"><ul type="disc"><li><p>OpenSSL (recommended)</p><p>OpenSSL is required for encrypted passwords. Without it, the
+            password will be sent over the network in clear text.</p></li><li><p>TCP wrappers</p><p>Wietse Venema's network logger, also known as TCPD or
+            LOG_TCP.</p><p>Security options are: access control per host, domain and/or
+            service; detection of host name spoofing or host address spoofing;
+            booby traps to implement an early-warning system.</p><p>TCP Wrappers can be downloaded from: <a href="ftp://ftp.porcupine.org/pub/security" target="_top">ftp://ftp.porcupine.org/pub/security</a>/</p></li><li><p>PAM<a class="indexterm" name="id2833149"></a></p><p>PAM provides a flexible mechanism for authenticating users.
+            PAM was invented by SUN<a class="indexterm" name="id2833172"></a> Microsystems. Linux-PAM is a suite of shared
+            libraries that enable the local system administrator to choose how
+            applications authenticate users.</p><p>You can get the Linux PAM documentation and sources from
+            <a href="http://www.kernel.org/pub/linux/libs/pam/" target="_top">http://www.kernel.org/pub/linux/libs/pam/</a>.</p></li><li><p>OpenSLP</p><p>SLP<a class="indexterm" name="id2833216"></a> (Service Location Protocol) is an IETF<a class="indexterm" name="id2833233"></a> standards track protocol that provides a framework
+            to allow networking applications to discover the existence,
+            location, and configuration of networked services in enterprise
+            networks.</p><p>Mac OS X uses it to locate AFP servers, even though newer
+            version prefer Rendezvous.</p><p>You can download OpenSLP from: <a href="http://www.openslp.org/" target="_top">http://www.openslp.org/</a>.</p></li><li><p>iconv</p><p>iconv provides conversion routines for many character
+            encodings. Netatalk uses it to provide charsets it does not have
+            built in conversions for, like ISO-8859-1. On glibc systems,
+            Netatalk can use the glibc provided iconv implementation.
+            Otherwise you can use the GNU libiconv implementation.</p><p>You can download GNU libiconv from: <a href="http://www.gnu.org/software/libiconv/" target="_top">http://www.gnu.org/software/libiconv/</a>.</p></li></ul></div></div></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="compiling-netatalk"></a>Compiling<a class="indexterm" name="id2833319"></a> Netatalk</h3></div></div><div></div></div><div class="sect3" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="id2833335"></a>Configuring the build</h4></div></div><div></div></div><p>To build the binaries, first run the program
+        <span><b class="command">./configure</b></span> in the source directory. This should
+        automatically configure Netatalk for your operating system. If you
+        have unusual needs, then you may wish to run</p><pre class="screen">$&gt; <b class="userinput"><tt>./configure --help</tt></b></pre><p>to see what special options you can enable.</p><p>The most used configure options are:</p><div class="itemizedlist"><ul type="disc"><li><p>--enable-[redhat/suse/cobalt/netbsd/fhs]</p><p>This option helps netatalk to determine where to install the
+            start scripts.</p></li><li><p><tt class="option">--with-bdb</tt>=<i class="replaceable"><tt>/path/to/bdb/installation/</tt></i></p><p>In case you installed Berkeley DB in a non-standard
+            location, you will <span class="emphasis"><em>have</em></span> to give the install
+            location to netatalk, using this switch.</p></li></ul></div><p>Now run configure with any options you need</p><pre class="screen"><tt class="prompt">$&gt;</tt> <b class="userinput"><tt>./configure [arguments] [--with-bdb=/bdb/install/path]</tt></b></pre><p>Configure will end up in an overview showing the settings the
+        Netatalk Makefiles have been created with.</p><p>If this step fails please visit the <a href="http://netatalk.sourceforge.net/wiki/index.php/Troubleshooting" target="_top">troubleshooting
+        guide</a>.</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>With recent RedHat releases, Berkeley DB links to libpthread.
+          Netatalk does not link to libpthread, so detection of Berkeley DB
+          fails when running configure. It's recommended to <a href="installation.html#build-bdb" title="Compiling a new Berkeley DB for Netatalk">(re)compile Berkeley DB</a> with
+          <tt class="option">--with-mutex="x86/gcc-assembly"</tt> (on x86 platforms)
+          to disable the use of libpthread. Alternatively you could use</p><pre class="screen"><tt class="prompt">$&gt;</tt><b class="userinput"><tt> LIBS="-lpthread" ./configure [arguments]</tt></b></pre><p>to trick Netatalk into linking to libpthread. However, this is
+          not recommended, as there have been some trouble reports indicating
+          that linking to libpthread badly damages performance.</p></div><p>Next, running</p><pre class="screen"><tt class="prompt">$&gt;</tt> <b class="userinput"><tt>make</tt></b></pre><p>should produce the Netatalk binaries (this step can take several
+        minutes to complete).</p><p>When the process finished you can use</p><pre class="screen"><tt class="prompt">$&gt;</tt> <b class="userinput"><tt>make install</tt></b></pre><p>to install the binaries and documentation (must be done as
+        "root" when using default locations).</p></div></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="build-bdb"></a>Compiling a new Berkeley DB for Netatalk</h3></div></div><div></div></div><p>Netatalk 2.0 requires Berkeley DB version 4.1.25 or newer. Even if
+      you already have a supported version of Berkeley DB installed on your
+      system, there are several reasons, why you might still want to consider
+      building a new version for Netatalk.</p><p>Many linux distributions provide a precompiled Berkeley DB
+      version. This is usually nice, but also has one major drawback: If you
+      update your system to a newer release, the installed version of Berkeley
+      DB may change. This can lead to a number of problems, starting with
+      strange behaviour of Netatalk, unreadable CNID Databases. Most likely
+      Netatalk(afpd) won't start anymore, so you'll have to recompile
+      Netatalk.</p><p>For instructions compiling Berkeley DB, you should generally refer
+      to the documentation provided by Sleepycat. The following information is
+      meant to help you avoid problems, users experienced in the past.</p><p>In case you are building on a recent RedHat release, please use
+      <tt class="option">--with-mutex="x86/gcc-assembly"</tt> on x86 platforms to
+      prevent Berkeley DB from linking against libpthread.</p><div class="sect3" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="id2833630"></a>Using a statically linked Berkeley DB</h4></div></div><div></div></div><p>To link Netatalk statically to Berkeley DB, you have to disable
+        shared libraries when building Berkeley DB. If shared libraries exist,
+        Netatalk will always link to them, even if a static version exists in
+        the same location.</p><pre class="screen"><tt class="prompt">root#</tt> <b class="userinput"><tt>cd build_unix</tt></b>
+<tt class="prompt">root#</tt> <b class="userinput"><tt>../dist/configure --prefix=/install/path --disable-shared</tt></b>
+<tt class="prompt">root#</tt> <b class="userinput"><tt>make</tt></b>
+<tt class="prompt">root#</tt> <b class="userinput"><tt>make install</tt></b></pre><p>You should now continue with <a href="installation.html#compiling-netatalk" title="Compiling Netatalk">building Netatalk</a>.</p></div><div class="sect3" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="id2835989"></a>Using a dynamically linked Berkeley DB</h4></div></div><div></div></div><p>Building a shared version of Berkeley DB is rather
+        straightforward. However, especially under Linux, some care needs to
+        be taken. Underlying system libraries, i.e. libnss_db, might be using
+        Berkeley DB as well. As these libraries have likely been build with
+        another, i.e. older, version of Berkeley DB, linking afpd to a newer
+        version can lead to unexpected results.</p><p>You need to configure Berkeley DB with the
+        <tt class="option">--with-uniquename</tt> configure switch to avoid these
+        kind of problems. This insures your new version will not interfere
+        with another installation of Berkeley DB on your system.</p><pre class="screen"><tt class="prompt">root#</tt> <b class="userinput"><tt>cd build_unix</tt></b>
+<tt class="prompt">root#</tt> <b class="userinput"><tt>../dist/configure --prefix=/install/path --with-uniquename</tt></b>
+<tt class="prompt">root#</tt> <b class="userinput"><tt>make</tt></b>
+<tt class="prompt">root#</tt> <b class="userinput"><tt>make install</tt></b></pre><p>If you select an install path other than
+        <tt class="filename">/usr/local</tt>, you will have to configure your
+        linker to look for libraries in this directory.</p><p>On many operating systems, this is done by adding a new entry to
+        <tt class="filename">/etc/ld.so.conf</tt>.</p><pre class="screen"><tt class="prompt">root#</tt> <b class="userinput"><tt>echo /install/path/lib &gt;/etc/ld.so.conf</tt></b>
+<tt class="prompt">root#</tt> <b class="userinput"><tt>ldconfig</tt></b></pre><p>You should now continue with <a href="installation.html#compiling-netatalk" title="Compiling Netatalk">building Netatalk</a>.</p></div></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="intro.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="index.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="configuration.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Chapter 1. Introduction to Netatalk </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> Chapter 3. Setting up Netatalk</td></tr></table></div></body></html>

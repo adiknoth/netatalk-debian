@@ -1,0 +1,30 @@
+/* print stylesheet for documentation */
+
+div#header, div.navheader, div.navfooter {
+	display:none;
+}
+
+h1, h2, h3, h4, h5 {
+        background-color: #FFFFFF;
+        color: #000000;
+}
+
+div.caution, div.tip, div.important, div.warning, div.note {
+        border: dashed 1px;
+        background-color: #EEEEEE;
+        width: 40em;
+        padding: 5px;
+}
+
+pre.programlisting, pre.screen {
+        border: #000 1px dashed;
+        color: #FFFFFF;
+        padding: 2px;
+        font-size: 120%;
+	color: #000;
+}
+
+a, a:visited {
+	color: #000000;
+	text-decoration: none;
+}

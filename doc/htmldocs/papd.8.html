@@ -1,0 +1,71 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>papd</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter 5. Manual Pages"><link rel="previous" href="pap.1.html" title="pap"><link rel="next" href="papd.conf.5.html" title="papd.conf"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">papd</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="pap.1.html">Prev</a> </td><th width="60%" align="center">Chapter 5. Manual Pages</th><td width="20%" align="right"> <a accesskey="n" href="papd.conf.5.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="papd.8"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>papd &#8212; AppleTalk print server daemon</p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><div class="cmdsynopsis"><p><tt class="command">papd<a class="indexterm" name="id2916626"></a><a class="indexterm" name="id2916633"></a></tt>  [-d] [-f configfile] [-p printcap]</p></div></div><div class="refsect1" lang="en"><a name="id2916679"></a><h2>Description</h2><p><span><b class="command">papd</b></span> is the AppleTalk printer daemon. This daemon
+    accepts print jobs from AppleTalk clients (typically Macintosh computers)
+    using the Printer Access Protocol (PAP). When used with System V printing
+    systems, <span><b class="command">papd</b></span> spools jobs directly into an
+    <a href="lpd.8.html"><span class="citerefentry"><span class="refentrytitle">lpd</span>(8)</span></a> spool directory and wakes up <span><b class="command">lpd</b></span>
+    after accepting a job from the network to have it re-examine the
+    appropriate spool directory. The actual printing and spooling is handled
+    entirely by <span><b class="command">lpd</b></span>.</p><p><span><b class="command">papd</b></span> can also pipe the print job to an external
+    program for processing, and this is the preferred method on systems not
+    using CUPS to avoid compatibility problems with all the flavours of
+    <span><b class="command">lpd</b></span> in use.</p><p>As of version 2.0, CUPS is also supported. Simply using <span class="emphasis"><em>cupsautoadd</em></span> as first papd.conf entry will share all
+    CUPS printers automagically using the PPD files configured in CUPS. It ist
+    still possible to overwrite these defaults by individually define printer
+    shares. See <a href="papd.conf.5.html"><span class="citerefentry"><span class="refentrytitle">papd.conf</span>(5)</span></a> for details.</p><p><span><b class="command">papd</b></span> is typically started at boot time, out of
+    system init scripts. It first reads from its configuration file,
+    <tt class="filename">/etc/netatalk/papd.conf</tt>. The file is in the same format as
+    <tt class="filename">/etc/printcap</tt>. See <a href="printcap.5.html"><span class="citerefentry"><span class="refentrytitle">printcap</span>(5)</span></a> for details. The name of the entry is registered with
+    NBP.</p><p>The following options are supported: </p><div class="informaltable"><table border="0"><colgroup><col align="center"><col><col><col></colgroup><thead><tr><th align="center">Name</th><th align="center">Type</th><th align="center">Default</th><th align="char">Description</th></tr></thead><tbody><tr><td align="center">pd</td><td>str</td><td>'.ppd'</td><td>Pathname to PPD file</td></tr><tr><td align="center">pr</td><td>str</td><td>'lp'</td><td>LPD or CUPS printer name (or pipe to a print
+              command)</td></tr><tr><td align="center">op</td><td>str</td><td>'operator'</td><td>Operator name for LPD spooling</td></tr><tr><td align="center">au</td><td>bool</td><td>false</td><td>Whether to do authenticated printing or not</td></tr><tr><td align="center">ca</td><td>str</td><td>NULL</td><td>Pathname used for CAP-style authentification</td></tr><tr><td align="center">sp</td><td>bool</td><td>false</td><td>PSSP-style authetication</td></tr><tr><td align="center">am</td><td>str</td><td>NULL</td><td>UAMS to use for authentication</td></tr><tr><td align="center">pa</td><td>str</td><td>NULL</td><td>Printer's AppleTalk address</td></tr><tr><td align="center">co</td><td>str</td><td>NULL</td><td>CUPS options as supplied to the <a href="lp.1.html"><span class="citerefentry"><span class="refentrytitle">lp</span>(1)</span></a> command with "-o"</td></tr><tr><td align="center">fo</td><td>bool</td><td>false</td><td>adjust lineending for foomatic-rip</td></tr></tbody></table></div><p> If no configuration file is given, the hostname of the
+    machine is used as the NBP name and all options take their default
+    value.</p></div><div class="refsect1" lang="en"><a name="id2917131"></a><h2>Options</h2><div class="variablelist"><dl><dt><span class="term">-d</span></dt><dd><p>Do not fork or disassociate from the terminal. Write some
+          debugging information to stderr.</p></dd><dt><span class="term">-f <i class="replaceable"><tt>configfile</tt></i></span></dt><dd><p>Consult <i class="replaceable"><tt>configfile</tt></i> instead of
+          <tt class="filename">/etc/netatalk/papd.conf</tt> for the configuration
+          information.</p></dd><dt><span class="term">-p <i class="replaceable"><tt>printcap</tt></i></span></dt><dd><p>Consult <i class="replaceable"><tt>printcap</tt></i> instead of
+          <tt class="filename">/etc/printcap</tt> for LPD configuration
+          information.</p></dd></dl></div></div><div class="refsect1" lang="en"><a name="id2917227"></a><h2>Notes</h2><p>PSSP<a class="indexterm" name="id2917238"></a> (Print Server Security Protocol) is an authentication
+    protocol<a class="indexterm" name="id2917254"></a> carried out through postscript printer queries to the print
+    server. Using PSSP requires LaserWriter 8.6.1 or greater on the client
+    mac. The user will be prompted to enter their username and password before
+    they print. It may be necessary to re-setup the printer on each client the
+    first time PSSP is enabled, so that the client can figure out that
+    authentication is required to print. You can enable PSSP on a per-printer
+    basis. PSSP is the recommended method of authenticating printers as it is
+    more robust than CAP-style authentication, described below.</p><p>CAP-style authentication<a class="indexterm" name="id2917292"></a> gets its name from the method the CAP (Columbia APpletalk)
+    package used to authenticate its mac clients' printing. This method
+    requires that a user login to a file share before they print.
+    <span><b class="command">afpd</b></span> records the username in a temporary file named
+    after the client's Appletalk address, and it deletes the temporary file
+    when the user disconnects. Therefore CAP style authentification will
+    <span class="emphasis"><em>not</em></span> work for clients connected to
+    <span><b class="command">afpd</b></span> via TCP/IP. <span><b class="command">papd</b></span> gets the
+    username from the file with the same Appletalk address as the machine
+    connecting to it. CAP-style authentication will work with any mac client.
+    If both CAP and PSSP are enabled for a particular printer, CAP will be
+    tried first, then <span><b class="command">papd</b></span> will fall back to PSSP.</p><p>The list of UAMs to use for authentication (specified with the 'am' option)
+    applies to all printers. It is not possible to define different
+    authentication methods on each printer. You can specify the list of UAMS
+    multiple times, but only the last setting will be used. Currently only
+    uams_guest.so and uams_clrtxt.so are supported as printer authentication
+    methods. The guest method requires a valid username, but not a password.
+    The Cleartext UAM requires both a valid username and the correct
+    password.</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>As of this writing, Mac OS X makes no use of PSSP authentication
+      any longer. CAP-style authentication normally won't be an option, too
+      caused by the use of AFP over TCP these days.</p></div><p></p></div><div class="refsect1" lang="en"><a name="id2917382"></a><h2>Files</h2><div class="variablelist"><dl><dt><span class="term"><tt class="filename">/etc/netatalk/papd.conf</tt></span></dt><dd><p>Default configuration file.</p></dd><dt><span class="term"><tt class="filename">/etc/printcap</tt></span></dt><dd><p>Printer capabilities database.</p></dd><dt><span class="term"><tt class="filename">.ppd</tt></span></dt><dd><p>PostScript Printer Description file. papd answers
+          configuration and font queries from printing clients by consulting
+          the configured PPD file. Such files are available for download from
+          Adobe, Inc. (<a href="http://www.adobe.com/support/downloads/main.html#Printer" target="_top">http://www.adobe.com/support/downloads/main.htm</a>),
+          or from the printer's manufacturer. If no PPD file is configured,
+          papd will return the default answer, possibly causing the client to
+          send excessively large jobs.</p></dd></dl></div></div><div class="refsect1" lang="en"><a name="id2917478"></a><h2>Caveats</h2><p><span><b class="command">papd</b></span> accepts characters with the high bit set (a
+    full 8-bits) from the clients, but some PostScript printers (including
+    Apple Computer's LaserWriter family) only accept 7-bit characters on their
+    serial interface by default. The same applies for some printers when
+    they're accessed via TCP/IP methods (remote LPR or socket). You will need
+    to configure your printer to accept a full 8 bits or take special
+    precautions and convert the printjob's encoding (eg. by using <span class="emphasis"><em>co="protocol=BCP"</em></span> when using CUPS 1.1.19 or
+    above).</p><p>When printing clients run MacOS 10.2 or above, take care that PPDs
+    do not make use of <span class="emphasis"><em>*cupsFilter:</em></span> comments
+    unless the appropriate filters are installed at the client's side, too
+    (remember: Starting with 10.2 Apple chose to integrate CUPS into MacOS X).
+    For in-depth information on how CUPS uses PPDs see chapter 3.4 in <a href="http://tinyurl.com/zbxn" target="_top"> http://tinyurl.com/zbxn</a>).</p></div><div class="refsect1" lang="en"><a name="id2917534"></a><h2>See also</h2><p><a href="lpr.1.html"><span class="citerefentry"><span class="refentrytitle">lpr</span>(1)</span></a>,<a href="lprm.1.html"><span class="citerefentry"><span class="refentrytitle">lprm</span>(1)</span></a>,<a href="printcap.5.html"><span class="citerefentry"><span class="refentrytitle">printcap</span>(5)</span></a>,<a href="lpc.8.html"><span class="citerefentry"><span class="refentrytitle">lpc</span>(8)</span></a>,<a href="lpd.8.html"><span class="citerefentry"><span class="refentrytitle">lpd</span>(8)</span></a>, <a href="lp.1.html"><span class="citerefentry"><span class="refentrytitle">lp</span>(1)</span></a>.</p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="pap.1.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="man-pages.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="papd.conf.5.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">pap </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> papd.conf</td></tr></table></div></body></html>

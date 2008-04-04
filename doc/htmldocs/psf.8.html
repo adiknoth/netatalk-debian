@@ -1,0 +1,50 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>psf</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter 5. Manual Pages"><link rel="previous" href="papstatus.8.html" title="papstatus"><link rel="next" href="psorder.1.html" title="psorder"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">psf</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="papstatus.8.html">Prev</a> </td><th width="60%" align="center">Chapter 5. Manual Pages</th><td width="20%" align="right"> <a accesskey="n" href="psorder.1.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="psf.8"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>psf &#8212; PostScript filter</p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><div class="cmdsynopsis"><p><tt class="command">psf<a class="indexterm" name="id2918954"></a></tt>  [ -n    <i class="replaceable"><tt>name</tt></i> ] [ -h    <i class="replaceable"><tt>host</tt></i> ] [ -w    <i class="replaceable"><tt>width</tt></i> ] [ -l    <i class="replaceable"><tt>length</tt></i> ] [ -i    <i class="replaceable"><tt>indent</tt></i> ] [-c]</p></div></div><div class="refsect1" lang="en"><a name="id2919100"></a><h2>DESCRIPTION</h2><p><span><b class="command">psf</b></span> is an <span class="emphasis"><em>lpd</em></span>
+    filter for PostScript printing. <span><b class="command">psf</b></span> interprets the name
+    it was called with to determine what filters to invoke. First, if the
+    string ``pap'' appears anywhere in the name, <span><b class="command">psf</b></span>
+    invokes <span class="emphasis"><em>pap</em></span> to talk to a printer via
+    AppleTalk. Next, if the string ``rev'' appears,
+    <span><b class="command">psf</b></span> invokes <span class="emphasis"><em>psorder</em></span> to
+    reverse the pages of the job. Finally, if <span><b class="command">psf</b></span> was
+    called with a filter's name as the leading string, it invokes that
+    filter. If there is no filter to run, <span><b class="command">psf</b></span> examines the
+    magic number of the input, and if the input is not PostScript, converts it
+    to PostScript.</p></div><div class="refsect1" lang="en"><a name="id2919182"></a><h2>KLUDGE</h2><p>In the default configuration, <span><b class="command">psf</b></span> supports two
+    kludges. The first causes <span><b class="command">psf</b></span> to check its name for the
+    letter `m'. If this letter is found and accounting is turned on,
+    <span><b class="command">psf</b></span> calls <span class="emphasis"><em>pap</em></span> twice,
+    once to get an initial page count and to print the job, and another time
+    to get a final page count. This is a work-around for bugs in a variety of
+    PAP implementions that cause printers to never properly close the PAP
+    output file. A notable example is any printer by Hewlett-Packard.</p><p>The second kludge causes <span><b class="command">psf</b></span> to examine its name
+    for the letter `w'. If this letter is found and accounting is turned
+    on, <span><b class="command">psf</b></span> calls <span class="emphasis"><em>pap</em></span> with
+    the <tt class="option">-w</tt> flag. This flag causes <span class="emphasis"><em>pap</em></span>
+    to wait until the printer's status contains the string `idle'.
+    Once this string is found, the job is printed as normal. This kludge is a
+    work-around for printers, notably Hewlett-Packard's LaserJet IV, which
+    will report a page count while a previous jobs is still printing.</p></div><div class="refsect1" lang="en"><a name="id2919272"></a><h2>EXAMPLE</h2><p>The sample <span class="emphasis"><em>printcap</em></span> entry below
+    invokes <span><b class="command">psf</b></span> to print text files, PostScript files,
+    <span class="emphasis"><em>troff</em></span>'s C/A/T output, and <span class="emphasis"><em>TeX</em></span>'s DVI output, to an AppleTalk connected
+    LaserWriter Plus. Since the LaserWriter Plus stacks pages in descending
+    order, we reverse the pages and print the burst page last.</p><div class="literallayout"><p><br>
+laser|lp|LaserWriter Plus on AppleTalk:\<br>
+    :sd=/usr/spool/lpd/laser:\<br>
+    :lp=/usr/spool/lpd/laser/null:\<br>
+    :lf=/var/adm/lpd-errs:pw#80:hl:\<br>
+    :of=/usr/libexec/ofpap:\<br>
+    :if=/usr/libexec/ifpaprev:\<br>
+    :tf=/usr/libexec/tfpaprev:\<br>
+    :df=/usr/libexec/dfpaprev:<br>
+</p></div><p>Note that if the host in question spools to more than one AppleTalk
+    printer, <tt class="filename">/dev/null</tt> should not be used for the
+    <span class="emphasis"><em>lp</em></span> capability. Instead, a null device
+    should be created with <span class="emphasis"><em>mknod</em></span> for each
+    printer, as has been done above.</p><p>Finally, there is a file in the spool directory,
+    <tt class="filename">/var/spool/lpd/laser</tt>, called <span class="markup">.paprc</span>,
+    which <span class="emphasis"><em>pap</em></span> reads for the AppleTalk name of
+    the printer.</p></div><div class="refsect1" lang="en"><a name="id2919387"></a><h2>SEE ALSO</h2><p><a href="psorder.1.html"><span class="citerefentry"><span class="refentrytitle">psorder</span>(1)</span></a>,
+    <a href="printcap.5.html"><span class="citerefentry"><span class="refentrytitle">printcap</span>(5)</span></a>,
+    <a href="lpd.1.html"><span class="citerefentry"><span class="refentrytitle">lpd</span>(1)</span></a>,
+    <a href="mknod.1.html"><span class="citerefentry"><span class="refentrytitle">mknod</span>(1)</span></a>,
+    <a href="pap.1.html"><span class="citerefentry"><span class="refentrytitle">pap</span>(1)</span></a>.</p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="papstatus.8.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="man-pages.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="psorder.1.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">papstatus </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> psorder</td></tr></table></div></body></html>

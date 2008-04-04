@@ -1,0 +1,50 @@
+.TH aecho 1 "17 Dec 1991" 2.0.3 Netatalk 
+.SH NAME
+aecho \- send AppleTalk Echo Protocol packets to network hosts
+.SH SYNOPSIS
+aecho [ \fB\-c\fR\fI count\fR
+] ( address | nbpname )
+.SH DESCRIPTION
+aecho repeatedly sends an Apple Echo Protocol
+(AEP) packet to the host specified by the given AppleTalk
+address or nbpname and reports
+whether a reply was received. Requests are sent at the rate of one per
+second.
+.PP
+address is parsed by
+\fBatalk_aton\fR(3).
+nbpname is parsed by \fBnbp_name\fR(3).
+The nbp type defaults to `\fIWorkstation\fR'.
+.PP
+When aecho is terminated, it reports the number
+of packets sent, the number of responses received, and the percentage of
+packets lost. If any responses were received, the minimum, average, and
+maximum round trip times are reported.
+.SH EXAMPLE
+Check to see if a particular host is up and responding to AEP
+packets:
+.PP
+.nf
+example% \fBaecho bloodsport
+11 bytes from 8195.13: aep_seq=0. time=10. ms
+11 bytes from 8195.13: aep_seq=1. time=10. ms
+11 bytes from 8195.13: aep_seq=2. time=10. ms
+11 bytes from 8195.13: aep_seq=3. time=10. ms
+11 bytes from 8195.13: aep_seq=4. time=10. ms
+11 bytes from 8195.13: aep_seq=5. time=9. ms
+^C
+\-\-\-\-8195.13 AEP Statistics\-\-\-\-
+6 packets sent, 6 packets received, 0% packet loss
+round\-trip (ms)  min/avg/max = 9/9/10
+\fR.fi
+.SH OPTIONS
+.TP 
+\fB\-c\fR\fI count\fR
+Stop after \fIcount\fR packets.
+.SH "SEE ALSO"
+\fBping\fR(1),
+\fBatalk_aton\fR(3),
+\fBnbp_name\fR(3),
+\fBaep\fR(4),
+\fBatalkd\fR(8).
+

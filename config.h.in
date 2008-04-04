@@ -1,0 +1,679 @@
+/* config.h.in.  Generated from configure.in by autoheader.  */
+
+/* Define if the admin group should be enabled */
+#undef ADMIN_GRP
+
+/* Define to enable AFP 3.x support */
+#undef AFP3x
+
+/* Define if AFS should be used */
+#undef AFS
+
+/* BSD compatiblity macro */
+#undef BSD4_4
+
+/* Define if CNID Concurrent BDB backend should be compiled. */
+#undef CNID_BACKEND_CDB
+
+/* Define if CNID transactional BDB backend should be compiled. */
+#undef CNID_BACKEND_DB3
+
+/* Define if CNID Database Daemon backend should be compiled. */
+#undef CNID_BACKEND_DBD
+
+/* Define if CNID Database Daemon backend has transaction support */
+#undef CNID_BACKEND_DBD_TXN
+
+/* Define if CNID HASH scheme backend should be compiled. */
+#undef CNID_BACKEND_HASH
+
+/* Define if CNID LAST scheme backend should be compiled. */
+#undef CNID_BACKEND_LAST
+
+/* Define if CNID MTAB scheme backend should be compiled. */
+#undef CNID_BACKEND_MTAB
+
+/* Define if CNID TDB scheme backend should be compiled. */
+#undef CNID_BACKEND_TDB
+
+/* CUPS API Version */
+#undef CUPS_API_VERSION
+
+/* Required BDB version, major */
+#undef DB_MAJOR_REQ
+
+/* Required BDB version, minor */
+#undef DB_MINOR_REQ
+
+/* Required BDB version, patch */
+#undef DB_PATCH_REQ
+
+/* Define if verbose debugging information should be included */
+#undef DEBUG
+
+/* Define if debugging information should be included */
+#undef DEBUG1
+
+/* Default CNID scheme to be used */
+#undef DEFAULT_CNID_SCHEME
+
+/* Define if system (fcntl) locking should be disabled */
+#undef DISABLE_LOCKING
+
+/* Define if the logger should not be used */
+#undef DISABLE_LOGGER
+
+/* Define if shell check should be disabled */
+#undef DISABLE_SHELLCHECK
+
+/* Define to enable spooldir support */
+#undef DISABLE_SPOOL
+
+/* BSD compatibility macro */
+#undef DLSYM_PREPEND_UNDERSCORE
+
+/* Define if you want to use the experimental dropkludge support */
+#undef DROPKLUDGE
+
+/* Define if you want compatibily with the FHS */
+#undef FHS_COMPATIBILITY
+
+/* Define if you want forcing of uid/gid per volume */
+#undef FORCE_UIDGID
+
+/* Define if OS is FreeBSD */
+#undef FREEBSD
+
+/* Define to the type of elements in the array set by `getgroups'. Usually
+   this is either `int' or `gid_t'. */
+#undef GETGROUPS_T
+
+/* Define if dbtob takes two arguments */
+#undef HAVE_2ARG_DBTOB
+
+/* Define if the data type long has 32 bit */
+#undef HAVE_32BIT_LONGS
+
+/* Define if the data type long has 64 bit */
+#undef HAVE_64BIT_LONGS
+
+/* Define to 1 if you have the `access' function. */
+#undef HAVE_ACCESS
+
+/* set if struct at_addr is called atalk_addr */
+#undef HAVE_ATALK_ADDR
+
+/* Define to 1 if you have the `backtrace_symbols' function. */
+#undef HAVE_BACKTRACE_SYMBOLS
+
+/* Define if dbtob is broken */
+#undef HAVE_BROKEN_DBTOB
+
+/* Define to 1 if you have the `chmod' function. */
+#undef HAVE_CHMOD
+
+/* Define to 1 if you have the `chown' function. */
+#undef HAVE_CHOWN
+
+/* Define to 1 if you have the `chroot' function. */
+#undef HAVE_CHROOT
+
+/* Define to 1 if you have the <crypt.h> header file. */
+#undef HAVE_CRYPT_H
+
+/* Define to enable CUPS Support */
+#undef HAVE_CUPS
+
+/* Define if errno declaration exists */
+#undef HAVE_DECL_ERRNO
+
+/* Define if sys_errlist declaration exists */
+#undef HAVE_DECL_SYS_ERRLIST
+
+/* Define if sys_nerr declaration exists */
+#undef HAVE_DECL_SYS_NERR
+
+/* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
+   */
+#undef HAVE_DIRENT_H
+
+/* Define to 1 if you have the `dlclose' function. */
+#undef HAVE_DLCLOSE
+
+/* Define if you have the GNU dld library. */
+#undef HAVE_DLD
+
+/* Define to 1 if you have the `dlerror' function. */
+#undef HAVE_DLERROR
+
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
+
+/* Define to 1 if you have the `dlopen' function. */
+#undef HAVE_DLOPEN
+
+/* Define to 1 if you have the `dlsym' function. */
+#undef HAVE_DLSYM
+
+/* Define if errno declaration exists */
+#undef HAVE_ERRNO
+
+/* Define to 1 if you have the <errno.h> header file. */
+#undef HAVE_ERRNO_H
+
+/* Define to 1 if you have the `fchmod' function. */
+#undef HAVE_FCHMOD
+
+/* Define to 1 if you have the `fchown' function. */
+#undef HAVE_FCHOWN
+
+/* Define to 1 if you have the <fcntl.h> header file. */
+#undef HAVE_FCNTL_H
+
+/* Define if memcpy is buggy */
+#undef HAVE_GCC_MEMCPY_BUG
+
+/* Define to 1 if you have the `getcwd' function. */
+#undef HAVE_GETCWD
+
+/* Define to 1 if you have the `gethostname' function. */
+#undef HAVE_GETHOSTNAME
+
+/* Define to 1 if you have the `getpagesize' function. */
+#undef HAVE_GETPAGESIZE
+
+/* Define to 1 if you have the `gettimeofday' function. */
+#undef HAVE_GETTIMEOFDAY
+
+/* Define to 1 if you have the `getusershell' function. */
+#undef HAVE_GETUSERSHELL
+
+/* Whether to enable GSSAPI support */
+#undef HAVE_GSSAPI
+
+/* Define to 1 if you have the <gssapi/gssapi_generic.h> header file. */
+#undef HAVE_GSSAPI_GSSAPI_GENERIC_H
+
+/* Define to 1 if you have the <gssapi/gssapi.h> header file. */
+#undef HAVE_GSSAPI_GSSAPI_H
+
+/* Define to 1 if you have the <gssapi/gssapi_krb5.h> header file. */
+#undef HAVE_GSSAPI_GSSAPI_KRB5_H
+
+/* Define to 1 if you have the <gssapi.h> header file. */
+#undef HAVE_GSSAPI_H
+
+/* Wheter GSS_C_NT_HOSTBASED_SERVICE is in gssapi.h */
+#undef HAVE_GSS_C_NT_HOSTBASED_SERVICE
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the <langinfo.h> header file. */
+#undef HAVE_LANGINFO_H
+
+/* LARGEFILE support */
+#undef HAVE_LARGEFILE_SUPPORT
+
+/* Define to 1 if you have the `crypt' library (-lcrypt). */
+#undef HAVE_LIBCRYPT
+
+/* Define to 1 if you have the `crypto' library (-lcrypto). */
+#undef HAVE_LIBCRYPTO
+
+/* Define to 1 if you have the `des' library (-ldes). */
+#undef HAVE_LIBDES
+
+/* Define if you have the libdl library or equivalent. */
+#undef HAVE_LIBDL
+
+/* Define to 1 if you have the `gssapi' library (-lgssapi). */
+#undef HAVE_LIBGSSAPI
+
+/* Define to 1 if you have the `gssapi_krb5' library (-lgssapi_krb5). */
+#undef HAVE_LIBGSSAPI_KRB5
+
+/* Define to 1 if you have the `nsl' library (-lnsl). */
+#undef HAVE_LIBNSL
+
+/* Define to 1 if you have the `security' library (-lsecurity). */
+#undef HAVE_LIBSECURITY
+
+/* Define to 1 if you have the `socket' library (-lsocket). */
+#undef HAVE_LIBSOCKET
+
+/* Define to 1 if you have the <limits.h> header file. */
+#undef HAVE_LIMITS_H
+
+/* Define to 1 if you have the `link' function. */
+#undef HAVE_LINK
+
+/* Define to 1 if you have the <linux/dqblk_xfs.h> header file. */
+#undef HAVE_LINUX_DQBLK_XFS_H
+
+/* Define to 1 if you have the <linux/xfs_fs.h> header file. */
+#undef HAVE_LINUX_XFS_FS_H
+
+/* Define to 1 if you have the <linux/xqm.h> header file. */
+#undef HAVE_LINUX_XQM_H
+
+/* Define to 1 if you have the <locale.h> header file. */
+#undef HAVE_LOCALE_H
+
+/* Define if long double is a valid data type */
+#undef HAVE_LONG_DOUBLE
+
+/* Define if long long is a valid data type */
+#undef HAVE_LONG_LONG
+
+/* Define to 1 if you have the `memcpy' function. */
+#undef HAVE_MEMCPY
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Define to 1 if you have the `mkdir' function. */
+#undef HAVE_MKDIR
+
+/* Define to 1 if you have the `mknod' function. */
+#undef HAVE_MKNOD
+
+/* Define to 1 if you have the `mknod64' function. */
+#undef HAVE_MKNOD64
+
+/* Define to 1 if you have a working `mmap' system call. */
+#undef HAVE_MMAP
+
+/* Define to 1 if you have the <mntent.h> header file. */
+#undef HAVE_MNTENT_H
+
+/* Define to 1 if you have the <mount.h> header file. */
+#undef HAVE_MOUNT_H
+
+/* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
+#undef HAVE_NDIR_H
+
+/* Define to 1 if you have the <netdb.h> header file. */
+#undef HAVE_NETDB_H
+
+/* Define to 1 if you have the `nl_langinfo' function. */
+#undef HAVE_NL_LANGINFO
+
+/* Define to 1 if you have the <pam/pam_appl.h> header file. */
+#undef HAVE_PAM_PAM_APPL_H
+
+/* Define to 1 if you have the `pread' function. */
+#undef HAVE_PREAD
+
+/* Define to 1 if you have the `pwrite' function. */
+#undef HAVE_PWRITE
+
+/* Define if quad_t is a valid data type */
+#undef HAVE_QUAD_T
+
+/* Define to 1 if you have the `rmdir' function. */
+#undef HAVE_RMDIR
+
+/* Define to 1 if you have the <rpcsvc/rquota.h> header file. */
+#undef HAVE_RPCSVC_RQUOTA_H
+
+/* Define to 1 if you have the <rpc/pmap_prot.h> header file. */
+#undef HAVE_RPC_PMAP_PROT_H
+
+/* Define to 1 if you have the <rpc/rpc.h> header file. */
+#undef HAVE_RPC_RPC_H
+
+/* Define to 1 if you have the <security/pam_appl.h> header file. */
+#undef HAVE_SECURITY_PAM_APPL_H
+
+/* Define to 1 if you have the `select' function. */
+#undef HAVE_SELECT
+
+/* Whether sendfile() is available */
+#undef HAVE_SENDFILE
+
+/* Define to 1 if you have the `setlinebuf' function. */
+#undef HAVE_SETLINEBUF
+
+/* Define to 1 if you have the `setlocale' function. */
+#undef HAVE_SETLOCALE
+
+/* Define to 1 if you have the <sgtty.h> header file. */
+#undef HAVE_SGTTY_H
+
+/* Define if you have the shl_load function. */
+#undef HAVE_SHL_LOAD
+
+/* Define to 1 if you have the `snprintf' function. */
+#undef HAVE_SNPRINTF
+
+/* Define to 1 if you have the `socket' function. */
+#undef HAVE_SOCKET
+
+/* Define to 1 if you have the <statfs.h> header file. */
+#undef HAVE_STATFS_H
+
+/* Define to 1 if you have the <stdarg.h> header file. */
+#undef HAVE_STDARG_H
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the `strcasestr' function. */
+#undef HAVE_STRCASESTR
+
+/* Define to 1 if you have the `strchr' function. */
+#undef HAVE_STRCHR
+
+/* Define to 1 if you have the `strdup' function. */
+#undef HAVE_STRDUP
+
+/* Define to 1 if you have the `strerror' function. */
+#undef HAVE_STRERROR
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the `strlcat' function. */
+#undef HAVE_STRLCAT
+
+/* Define to 1 if you have the `strlcpy' function. */
+#undef HAVE_STRLCPY
+
+/* Define to 1 if you have the `strndup' function. */
+#undef HAVE_STRNDUP
+
+/* Define to 1 if you have the `strnlen' function. */
+#undef HAVE_STRNLEN
+
+/* Define to 1 if you have the `strstr' function. */
+#undef HAVE_STRSTR
+
+/* Define to 1 if you have the `strtoul' function. */
+#undef HAVE_STRTOUL
+
+/* Define to 1 if `st_rdev' is member of `struct stat'. */
+#undef HAVE_STRUCT_STAT_ST_RDEV
+
+/* Define to 1 if `tm_gmtoff' is member of `struct tm'. */
+#undef HAVE_STRUCT_TM_TM_GMTOFF
+
+/* Define to 1 if your `struct stat' has `st_rdev'. Deprecated, use
+   `HAVE_STRUCT_STAT_ST_RDEV' instead. */
+#undef HAVE_ST_RDEV
+
+/* Define to 1 if you have the <syslog.h> header file. */
+#undef HAVE_SYSLOG_H
+
+/* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.
+   */
+#undef HAVE_SYS_DIR_H
+
+/* Define if sys_errlist declaration exists */
+#undef HAVE_SYS_ERRLIST
+
+/* Define to 1 if you have the <sys/errno.h> header file. */
+#undef HAVE_SYS_ERRNO_H
+
+/* Define to 1 if you have the <sys/fcntl.h> header file. */
+#undef HAVE_SYS_FCNTL_H
+
+/* Define to 1 if you have the <sys/file.h> header file. */
+#undef HAVE_SYS_FILE_H
+
+/* Define to 1 if you have the <sys/filio.h> header file. */
+#undef HAVE_SYS_FILIO_H
+
+/* Define to 1 if you have the <sys/ioctl.h> header file. */
+#undef HAVE_SYS_IOCTL_H
+
+/* Define to 1 if you have the <sys/mnttab.h> header file. */
+#undef HAVE_SYS_MNTTAB_H
+
+/* Define to 1 if you have the <sys/mount.h> header file. */
+#undef HAVE_SYS_MOUNT_H
+
+/* Define to 1 if you have the <sys/ndir.h> header file, and it defines `DIR'.
+   */
+#undef HAVE_SYS_NDIR_H
+
+/* Define if sys_nerr declaration exists */
+#undef HAVE_SYS_NERR
+
+/* Define to 1 if you have the <sys/param.h> header file. */
+#undef HAVE_SYS_PARAM_H
+
+/* Define to 1 if you have the <sys/statvfs.h> header file. */
+#undef HAVE_SYS_STATVFS_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/termios.h> header file. */
+#undef HAVE_SYS_TERMIOS_H
+
+/* Define to 1 if you have the <sys/time.h> header file. */
+#undef HAVE_SYS_TIME_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <sys/uio.h> header file. */
+#undef HAVE_SYS_UIO_H
+
+/* Define to 1 if you have the <sys/vfs.h> header file. */
+#undef HAVE_SYS_VFS_H
+
+/* Define to 1 if you have <sys/wait.h> that is POSIX.1 compatible. */
+#undef HAVE_SYS_WAIT_H
+
+/* Define to 1 if you have the <termios.h> header file. */
+#undef HAVE_TERMIOS_H
+
+/* define for timeout_id_t */
+#undef HAVE_TIMEOUT_ID_T
+
+/* Define to 1 if you have the <time.h> header file. */
+#undef HAVE_TIME_H
+
+/* Whether UCS-2-INTERNAL is supported */
+#undef HAVE_UCS2INTERNAL
+
+/* Define to 1 if you have the <ufs/quota.h> header file. */
+#undef HAVE_UFS_QUOTA_H
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Whether to use native iconv */
+#undef HAVE_USABLE_ICONV
+
+/* Define to 1 if `utime(file, NULL)' sets file's timestamp to the present. */
+#undef HAVE_UTIME_NULL
+
+/* Define to 1 if you have the <varargs.h> header file. */
+#undef HAVE_VARARGS_H
+
+/* Define to 1 if you have the `vsnprintf' function. */
+#undef HAVE_VSNPRINTF
+
+/* Define to 1 if you have the `wait3' system call. Deprecated, you should no
+   longer depend upon `wait3'. */
+#undef HAVE_WAIT3
+
+/* Define to 1 if you have the `waitpid' function. */
+#undef HAVE_WAITPID
+
+/* Define to 1 if you have the <xfs/libxfs.h> header file. */
+#undef HAVE_XFS_LIBXFS_H
+
+/* Define to 1 if you have the <xfs/xfs_fs.h> header file. */
+#undef HAVE_XFS_XFS_FS_H
+
+/* Define to 1 if you have the <xfs/xqm.h> header file. */
+#undef HAVE_XFS_XQM_H
+
+/* Define as const if the declaration of iconv() needs const. */
+#undef ICONV_CONST
+
+/* Whether (linux) sendfile() is broken */
+#undef LINUX_BROKEN_SENDFILE_API
+
+/* Path to the log file */
+#undef LOGFILEPATH
+
+/* Define if compiling for MacOS X Server */
+#undef MACOSX_SERVER
+
+/* Define to 1 if `major', `minor', and `makedev' are declared in <mkdev.h>.
+   */
+#undef MAJOR_IN_MKDEV
+
+/* Define to 1 if `major', `minor', and `makedev' are declared in
+   <sysmacros.h>. */
+#undef MAJOR_IN_SYSMACROS
+
+/* Define if dlsym() requires a leading underscore in symbol names. */
+#undef NEED_USCORE
+
+/* Define if OS is FreeBSD */
+#undef NETBSD
+
+/* Define if DDP should be disabled */
+#undef NO_DDP
+
+/* Define if Quota support should be disabled */
+#undef NO_QUOTA_SUPPORT
+
+/* Define if the gmtoff member of struct tm is not available */
+#undef NO_STRUCT_TM_GMTOFF
+
+/* Define if the OpenSSL DHX modules should be built */
+#undef OPENSSL_DHX
+
+/* Name of package */
+#undef PACKAGE
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* Define as the return type of signal handlers (`int' or `void'). */
+#undef RETSIGTYPE
+
+/* Define if the sendfile() function uses BSD semantics */
+#undef SENDFILE_FLAVOR_BSD
+
+/* Whether linux sendfile() API is available */
+#undef SENDFILE_FLAVOR_LINUX
+
+/* Define if shadow passwords should be used */
+#undef SHADOWPW
+
+/* Solaris compatibility macro */
+#undef SOLARIS
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Define if TCP wrappers should be used */
+#undef TCPWRAP
+
+/* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
+#undef TIME_WITH_SYS_TIME
+
+/* Define to 1 if your <sys/time.h> declares `struct tm'. */
+#undef TM_IN_SYS_TIME
+
+/* Define on Tru64 platforms */
+#undef TRU64
+
+/* Define if the DHX UAM modules should be compiled */
+#undef UAM_DHX
+
+/* Define if the Kerberos 4 UAM module should be compiled */
+#undef UAM_KRB4
+
+/* Define if the PGP UAM module should be compiled */
+#undef UAM_PGP
+
+/* Define if cracklib should be used */
+#undef USE_CRACKLIB
+
+/* Define to use old rquota */
+#undef USE_OLD_RQUOTA
+
+/* Define to enable PAM support */
+#undef USE_PAM
+
+/* Define to enable SLP support */
+#undef USE_SRVLOC
+
+/* Version number of package */
+#undef VERSION
+
+/* Whether sendfile should be used */
+#undef WITH_SENDFILE
+
+/* _FILE_OFFSET_BITS (for LARGEFILE support) */
+#undef _FILE_OFFSET_BITS
+
+/* Compatibility macro */
+#undef _ISOC9X_SOURCE
+
+/* _LARGE_FILES (for LARGEFILE support) */
+#undef _LARGE_FILES
+
+/* Define if the *passwd UAMs should be used */
+#undef _OSF_SOURCE
+
+/* path to cracklib dictionary */
+#undef _PATH_CRACKLIB
+
+/* Define for Berkeley DB 4 */
+#undef _XOPEN_SOURCE_EXTENDED
+
+/* Solaris compatibility macro */
+#undef __svr4__
+
+/* Define to empty if `const' does not conform to ANSI C. */
+#undef const
+
+/* Define to `int' if <sys/types.h> doesn't define. */
+#undef gid_t
+
+/* Define as `__inline' if that's what the C compiler calls it, or to nothing
+   if it is not supported. */
+#undef inline
+
+/* Define to `int' if <sys/types.h> does not define. */
+#undef mode_t
+
+/* Define to `long' if <sys/types.h> does not define. */
+#undef off_t
+
+/* Define to `int' if <sys/types.h> does not define. */
+#undef pid_t
+
+/* Define to `unsigned' if <sys/types.h> does not define. */
+#undef size_t
+
+/* Define to `int' if <sys/types.h> doesn't define. */
+#undef uid_t

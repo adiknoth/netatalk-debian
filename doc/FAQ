@@ -1,0 +1,525 @@
+Netatalk FAQ -- dumped from the online version on Wed Apr 27 20:35:01 UTC 2005
+
+For the most recent version of the FAQ please visit
+http://netatalk.sourceforge.net/wiki/index.php/FrequentlyAskedQuestions
+
+--------------------------------------------------------------------------------
+
+Q1: What is Netatalk for? What can I do with it?
+
+Q2: What platforms does Netatalk runs on?
+
+Q3: Where can I get more information on Netatalk?
+
+Q4: I use an older Netatalk version. Should I upgrade to 2.0?
+
+Q5: I think, I found a bug in netatalk. Where should I report it?
+
+Q6: Is there an RPM, package, or tarball for my platform?
+
+Q7: Which CNID scheme should I choose for my volumes?
+
+Q8: I want to create a new volume to share via Netatalk. How should I start?
+
+Q9: How does Netatalk integrate with Samba?
+
+Q10: I can't seem to use passwords longer than 8 characters for my Netatalk 
+accounts / I would like to use encrypted passwords to authenticate to the 
+Netatalk server. How can I fix that?
+
+Q11: What are the .AppleDouble and .AppleDB directories and .Parent files which 
+are created in the Netatalk Shares?
+
+Q12: I want to contribute to the FAQ. How should I start?
+
+--------------------------------------------------------------------------------
+
+Q1: What is Netatalk for? What can I do with it?
+
+   A: Netatalk is an OpenSource software package, that can be used to
+   turn an inexpensive *NIX machine into an extremely performant and
+   reliable file and print server for Macintosh computers.
+
+   Using Netatalk's AFP 3.1 compliant file-server leads to significantly
+   higher transmissions speeds compared with Macs accessing a server via
+   SaMBa/NFS while providing clients with the best user experience (full
+   support for Macintosh metadata, flawlessly supporting mixed
+   environments of classic MacOS and MacOS X clients)
+
+   Due to Netatalk speaking AppleTalk, the print-server task can provide
+   printing clients with full AppleTalk support as well as the server
+   itself with printing capabilities for AppleTalk-only printers.
+   Starting with version 2.0, Netatalk seamlessly interacts with CUPS on
+   the server
+
+   After all, Netatalk can be used to act as an AppleTalk router,
+   providing both segmentation and zone names in Macintosh networks.
+
+--------------------------------------------------------------------------------
+
+Q2: What platforms does Netatalk runs on?
+
+   A: Currently the following operating systems are supported:
+
+Full support (including the complete AppleTalk protocol suite)
+
+     * FreeBSD
+     * Linux (Debian, Mandrake, RedHat, SuSE, others should work as well)
+     * OpenBSD
+     * NetBSD
+     * Solaris
+
+Limited support (afpd working over TCP only)
+
+     * MacOS X
+     * Tru64 Unix
+
+Platform specific problems:
+
+     * MacOS X 10.0/10.1: If you want to build Netatalk on these versions
+       you'll have to add #define HAVE_BROKEN_CPP 1 to config.h
+     * RedHat 9.x/Debian 3.1 (probably other recent distros as well):
+       Search in the installation chapter for libpthread
+
+--------------------------------------------------------------------------------
+
+Q3: Where can I get more information on Netatalk?
+
+   A: Netatalk's home page can be found at:
+   http://netatalk.sourceforge.net/
+
+   Netatalk is maintained at SourceForge. The Netatalk project page on
+   SourceForge is located at: http://sourceforge.net/projects/netatalk/.
+   The new and improved documentation can be found at:
+   http://netatalk.sourceforge.net/2.0/htmldocs/.
+
+   There are (at least) two very active e-mail lists to which you can
+   subscribe (before asking the lists you should consider searching the
+   documentation)
+
+   The first, netatalk-admins, is for usage and setup/compile questions.
+   Subscription information as well as an archive are available at:
+   http://lists.sourceforge.net/lists/listinfo/netatalk-admins (This can
+   be very high volume, but usually a few messages a day). A searchable
+   list archive is available at: http://marc.theaimsgroup.com/?l=netatalk
+
+   Netatalk-devel list is more specific to coding and testing. The
+   archive and more information can found at:
+   http://lists.sourceforge.net/lists/listinfo/netatalk-devel (This list
+   varies in volume, but is usually moderately active). A searchable
+   archive can be found at:
+   http://marc.theaimsgroup.com/?l=netatalk-devel
+
+   If you want to stay in sync with what's happening in CVS, then
+   netatalk-cvs is the right place:
+   http://lists.sourceforge.net/lists/listinfo/netatalk-cvs. Every commit
+   will automagically generate a mail to this list.
+
+   You can access all lists via NNTP, too (currently read-only). Point
+   your newsreader to news.gmane.org and subscribe to
+   gmane.network.netatalk.user, gmane.network.netatalk.devel and/or
+   gmane.network.netatalk.cvs. You can also use gmane's searchable web
+   interface to crawl through netatalk-admins, netatalk-devel and
+   netatalk-cvs.
+
+   There are other netatalk information sites. Some of these are no
+   longer actively updated, some are site-specific. The informations
+   presented on those sites are rather outdated, and may not apply to
+   this release anymore, so use with care:
+
+     * http://www.anders.com/projects/netatalk/ (covers Netatalk < 1.5)
+     * http://www.faredge.com.au/netatalk/index.html (covers Netatalk <
+       1.6)
+     * http://bloch.anu.edu.au/netatalk/netatalk_sun.html (covers SunOS
+       specific informations)
+
+   The "Linux Magazin" published an article about Netatalk 2.0 --
+   configuration, installation, upgrading -- in its 03/2004 special
+   edition. Unfortunately currently only available in german language:
+
+   http://linux-magazin.de/Artikel/ausgabe/Sonderheft_2004/03/netatalk/
+
+--------------------------------------------------------------------------------
+
+Q4: I use an older Netatalk version. Should I upgrade to 2.0?
+
+   A: Let's have a look at what has changed compared to 1.6.4:
+
+     * Netatalk's file server, afpd, now speaking AFP 3.1 allows long
+       filenames, UTF-8 names, large file support and full MacOS X
+       compatibility
+     * The print server task, papd, can directly interact with CUPS,
+       automagically sharing all CUPS queues
+     * Kerberos V support, allowing true "Single Sign On"
+     * Whole rework of the CNID subsystem, providing reliable and
+       persistant storage of file and directory IDs
+     * Huge improvements regarding product documentation making
+       Netatalk's features accessible more easily
+     * Tons of bugs fixed compared to all previous versions
+
+   To make a long story short, everyone not using symlinks inside
+   Netatalk shares (this violation of AFP specs is not supported any
+   longer) and willing to complete the sometimes extensive upgrade
+   process should switch to 2.0.
+
+   But be sure to read carefully the chapter about upgrading in the docs
+   first.
+
+--------------------------------------------------------------------------------
+
+Q5: I think, I found a bug in netatalk. Where should I report it?
+
+   A: First of all, try to isolate the problem and see whether it's not a
+   feature instead (some of the underlying mac-related basics like
+   file/folder IDs and the like, look irritating for people newly
+   entering the world of cross-platform networking)
+
+   Then have a look in the archives of both netatalk-admins and
+   netatalk-devel list whether it's a known bug, already being worked on,
+   or something special.
+
+     http://marc.theaimsgroup.com/?l=netatalk
+     http://marc.theaimsgroup.com/?l=netatalk-devel
+
+   If that doesn't help, consider asking the lists whether some others
+   might have an idea what's going on (try to avoid using the SourceForge
+   discussion forums since most experienced users and developers only
+   monitor the mailing lists)
+
+   Before asking the list, try to understand and accept the basic
+   principles for reporting bugs and asking for help
+
+   If you're finally sure you found a bug, then please report it at the
+   SF Bugs section and post it to the netatalk-devel list as well (no
+   list subscription required).
+
+   In case, the developers want you to provide more details about
+   crashing processes, have a look at how to use gdb.
+
+--------------------------------------------------------------------------------
+
+Q6: Is there an RPM, package, or tarball for my platform?
+
+   A: Perhaps. These vary in how often they're updated:
+
+   Debian GNU/Linux
+
+     * 1.6 included in all current distributions (1.6.4 available)
+     * Newer packages might be available via http://backports.org or at
+       http://debian.jones.dk/
+     * No version 2 packages currently available (August 2004).
+       v2-rc1 installs fine. See a 1.6.4 to 2rc1 guide here.
+
+   FreeBSD
+
+     * 1.6 port: /usr/ports/net/netatalk - maintained by Joe Clark
+     * 2.0 port: /usr/ports/net/netatalk-devel - maintained by Joe Clark
+
+   Mandrake
+
+     * RPMs available via http://rpmseek.com/rpm-pl/netatalk.html
+
+   OpenBSD
+
+     * 1.6 port: /usr/ports/net/netatalk/ - not actively maintained
+     * 2.0 port: not available, release tarball should build fine
+
+   RedHat Linux
+
+     * 1.6 rpm included in the distribution
+
+   SunOS
+
+     * Recent packages might be available via http://www.blastwave.org
+
+   SuSE Linux
+
+     * 1.6: rpm included in the distribution
+     * 2.0: rpm not available, release tarball should build fine
+
+--------------------------------------------------------------------------------
+
+Q7: Which CNID scheme should I choose for my volumes?
+
+   A: Try to use "dbd" if possible. In case, you're about to reach the
+   cnid_metad limit of max. 128 volumes (compare with the cnid_metad
+   manual page) you should consider using "cdb" instead (for example if
+   you have many users and provide them with home directory shares). You
+   can switch between those 2 CNID backends without any hassles if afpd
+   isn't running while you're changing the backend definition in your
+   AppleVolumes.default file.
+
+   The "last" backend is only suitable for sharing HFS CD-ROMs directly
+   with netatalk. Avoid it if at all possible, as this backend can lead
+   to duplicate IDs which can cause data loss!
+
+   Compare with the relevant chapter in the docs:
+   http://netatalk.sourceforge.net/2.0/htmldocs/upgrade.html#choosecnidsc
+   heme
+
+--------------------------------------------------------------------------------
+
+Q8: I want to create a new volume to share via Netatalk. How should I start?
+
+   A: Always follow these steps unless you know exactly what you do:
+
+     * Create the sharepoint on the Unix side with appropriate
+       permissions. This means setting the SGID bit as well, so the old
+       AppleShare semantics (always treating files/folders with the
+       permissions that apply to the surrounding folder) will work
+       flawlessly. So do not use chmod 775 but chmod 2775 instead.
+     * Then decide which volume charset to use (it is strongly
+       recommended to use the default UTF8 volcharset but in some special
+       cases it might make sense to use another encoding like
+       ISO-8859-15, instead. Have a look at the volcharset option)
+     * Choose a CNID backend that fits your needs (see the chapter about
+       CNID backends in the manual)
+     * Finally add an entry in your AppleVolumes file and connect from a
+       mac to the volume, to see if things work.
+
+   Note: Unless you're using Netatalk 2.0 or above, it is NOT recommended
+   to create a whole bunch of volumes in a batch (eg. by a script) due to
+   the way, macintosh clients differentiate between volumes on a server
+   (the so called "volume creation time" is used, that means the time you
+   created the sharepoint). This issue has been fixed in 2.0, volume
+   creation will always differ by at least 1 second.
+
+--------------------------------------------------------------------------------
+
+Q9: How does Netatalk integrate with Samba?
+
+   A: It depends. There are a couple of problems:
+
+     * Filename/foldername encoding: By default both Netatalk 2.0 and
+       Samba 3.0 use UTF-8 precomposed on the server side. So at a first
+       look, this problem is solved.
+     * "Illegal" names, that make Windows choke, are still a problem.
+       There exists an AppleVolumes option called "mswindows", which will
+       prevent Mac clients from saving such names. But this leads to
+       Netatalk's afpd breaking the AFP specifications and is no real
+       solution (like a working Samba VFS module, that mangles such names
+       on demand in a sane way, would be). Additionally, this option
+       breaks saving to Netatalk volumes for several applications, i.e.
+       OfficeX.
+     * Hiding the metadata stuff from the other platform: You might want
+       to hide all the directories and files described in the
+       SpecialFilesFolders FAQ entry by using Samba's veto option. You
+       can do the same for Mac clients too using Netatalk's veto option
+     * File locking: Isn't working due to Netatalk using POSIX locks and
+       Samba using its own locking.tdb database. Might be possible to
+       work around by a Samba VFS module.
+
+   You might also want to read this discussion on the netatalk-devel
+   list: http://marc.theaimsgroup.com/?t=109111837300003&r=1&w=2
+
+--------------------------------------------------------------------------------
+
+Q10: I can't seem to use passwords longer than 8 characters for my Netatalk
+accounts / I would like to use encrypted passwords to authenticate to the
+Netatalk server. How can I fix that?
+
+   Short answer: On Classic systems, use AppleShare client 3.8.2 or above
+   (this problem does not apply to MacOS X, as OS X has always contained
+   support for UAMs that can use more than 8 characters).
+
+   Long answer: The length of the password that can be used to
+   authenticate against the server depends on the UAM in use. With the
+   older cleartext UAM and the RandNum/2Way RandNum UAMs, the upper limit
+   has been 8 bytes. Apple has since added DHX authentication, which
+   supports up to 64 characters.
+
+   So if both server and client support at least the DHX UAM, then you
+   can use passwords longer than 8 characters.
+
+   Have a look at the authentication chapter in the manual for more
+   details on this whole issue.
+
+--------------------------------------------------------------------------------
+
+Q11: What are the .AppleDouble and .AppleDB directories and .Parent files
+which are created in the Netatalk Shares?
+
+   A: Inside netatalk share points you will find several files and
+   directories which are created automatically by the afpd process either
+   for its own internal use or for the internal use of the MacOS.
+
+   None of them should be directly visible in the Finder on the Mac.
+
+   Many of them have to be writeable in order for netatalk to function
+   properly. This can present problems if users have shell access to the
+   netatalk server. At the very least, users can "hide" files inside
+   these writeable folders. At worst, a malicious user could confuse
+   netatalk in a bad way. It is unlikely that a malicious user could
+   cause loss of another user's data by exploiting permissions on these
+   items.
+
+   Below is what we hope to be a comprehensive list of these files and
+   directories, their purpose, and a discussion of what Unix permissions
+   should be set on them.
+
+   Note that in general on Netatalk shares, all directories should have
+   the setgid bit set. This forces any new files or folders created to
+   have the same group as the folder they were created in. On some
+   operating systems, notably FreeBSD, the group owner is always
+   inherited from the parent directory, so the setgid bit is not
+   necessary.
+
+.AppleDouble
+
+   This directory exists inside each folder on a Netatalk share. It
+   contains meta information like creator/type and eventually the
+   resource fork of each file in that folder. Its permissions should
+   match those of its parent directory, i.e. anyone who has write access
+   to the parent directory must have write access to the corresponding
+   .AppleDouble directory.
+
+.AppleDouble/.Parent
+
+   This file specifically contains meta information about the directory.
+   If the directory is the volume root then it contains the volume
+   specific metadata, especially the "volume creation time" (important
+   since AppleShare clients differentiate bitween different volumes on
+   the same server by this timestamp)
+
+.AppleDesktop/
+
+   This directory exists under the top level of each share point. It
+   contains the "desktop database" which is the method by which the MacOS
+   associates a type/creator code with a particular application (for an
+   in-depth discussion have a look at
+   http://www.tempel.org/macdev/#DTDB). Without it, documents will lose
+   their application-specific icons and will have a generic icon instead.
+   Double-clicking documents will also fail.
+
+   To allow the desktop database to be maintained correctly, any user who
+   is likely to copy an application on to the share must have write
+   access to this directory and all directories below it.
+
+.AppleDesktop/.volinfo
+
+   This file contains afpd internal volume specific information like
+   $MAC_CHARSET/$VOL_CHARSET, AppleDouble scheme, CNID backend (including
+   cnid_metad settings if applicable), dbpath and the like. The
+   information in this file will be also used by tools like megatron(1)
+   to correctly convert files to data exchange formats like MacBinary for
+   example.
+
+Icon\r and .AppleDouble/Icon\r
+
+   These files will exist in any folder, including the top level of a
+   share, if it has a custom icon and has been created with MacOS
+   versions prior to MacOS X. Make them writeable to any user who should
+   be allowed to change that custom icon; make them read-only if you
+   don't want the custom icon to be changeable.
+
+:2eVolumeIcon.icns (.VolumeIcon.icns)
+
+   MacOS X stores a custom volume icon into this file (this won't be
+   displayed on Macs running MacOS versions < X)
+
+.AppleDB/
+
+   This folder will exist eventually at the top level of each sharepoint
+   driven by the cdb or dbd CNID-backends. When using cdb any user who
+   has write access to any part of the share must have full write access
+   to this directory and all the files within it otherwise the
+   CNID-backend will not work properly. Please note that you can force a
+   different location of this folder via the dbpath option in
+   AppleVolumes.default.
+
+Network\ Trash\ Folder/
+
+   This exists at the top level of each sharepoint. This is where files
+   that are put in the Trash on clients (prior to MacOS X) go, until the
+   Trash is emptied.
+
+   The permissions of items in this directory are a pretty complicated
+   subject, but basically you should make this directory and everything
+   in it world-writeable if you want the Trash can to work properly. If
+   you don't make it writeable then users will get a message "That item
+   cannot be put in the Trash. Do you want to delete it immediately?" if
+   they try to put something in the Trash.
+
+   Unfortunately networked trash handling is broken in current versions
+   of Mac OS X even if this directory is writeable. Apple is aware of
+   this problem and is working on a solution.
+
+Temporary\ Items/
+
+   This folder may exist at the top level of a sharepoint. This folder is
+   used by certain applications (Adobe Photoshop among others) to store,
+   well, temporary items. These programs may not work correctly if this
+   folder is missing or not writeable, when a user tries to work on a
+   document stored in that Netatalk share.
+
+TheFindByContentFolder/
+
+   This folder is used by Sherlock 2 (MacOS 8/9) to store information
+   used by its Find by Content feature. Make it writeable by users if you
+   want to allow them to update the Find by Content index on a netatalk
+   share. Otherwise, make it read-only.
+
+:2eFBCIndex (.FBCIndex)
+
+   FBC = FindByContent
+   These Files generated by OS X are roughly equivalent to OS 9's
+   "TheFindByContentFolder". Get generated only if a search with
+   activated indexing was performed. Make it writeable by users if you
+   want to allow them to update the Find by Content index on a netatalk
+   share. Otherwise, make it read-only.
+
+:2eFBCLockFolder (.FBCLockFolder)
+
+   contains the :2eFBCSemaphoreFile (.FBCSemaphoreFile) for OS X. Also
+   used for "Find by Content" indexing. Compare with
+   http://www.thexlab.com/faqs/failedindex.html for details.
+
+TheVolumeSettingsFolder/
+
+   This folder is created at the top level of each share point. It always
+   appears to be empty. It would be wise to set its permissions the same
+   as the top level of the sharepoint.
+
+:2eDS_Store (.DS_Store)
+
+   This file may appear in share points which have been accessed by a
+   machine running Mac OS X and contains folder specific metadata as well
+   as file specific like eg. file comments. Its permissions should be set
+   to match those of the enclosing directory.
+
+   For more info on how this file could pose a potential security risk if
+   you are sharing the same folder by HTTP, see:
+
+   http://cert.uni-stuttgart.de/archive/bugtraq/2001/09/msg00106.html
+
+--------------------------------------------------------------------------------
+
+Q12: I want to contribute to the FAQ. How should I start?
+
+   A: Consider generating a Wiki-Account. That means use a descriptive
+   username as Wikiword and append it to
+   http://netatalk.sourceforge.net/wiki/index.php/ (eg.
+   http://netatalk.sourceforge.net/wiki/index.php/MyUserName). Describe
+   yourselve or simply provide your real name at this page. To assign
+   yourselve a password, you have to enter a password hash, you can get
+   from the password encryption tool.
+
+   If you're in hurry, then skip the above step and concentrate on the
+   contents solely. But before you should become familiar with the Wiki
+   text formatting rules.
+
+   Please post only topics of general interest to the FAQ. If in doubt,
+   consider discussing it at either netatalk-admins or netatalk-devel
+   list.
+
+   Use this as a template for each and every new page you want to create:
+     _________________________________________________________________
+
+   !!Q:
+   A:
+   <i>[ Back to the FAQ | FrequentlyAskedQuestions ]</i>
+     _________________________________________________________________
+
+   Finally add your new page to the index by using the appropriate
+   WikiWord as link.
+

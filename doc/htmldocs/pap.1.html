@@ -1,0 +1,48 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>pap</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter 5. Manual Pages"><link rel="previous" href="netatalkconfig.1.html" title="netatalk-config"><link rel="next" href="papd.8.html" title="papd"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">pap</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="netatalkconfig.1.html">Prev</a> </td><th width="60%" align="center">Chapter 5. Manual Pages</th><td width="20%" align="right"> <a accesskey="n" href="papd.8.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="pap.1"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>pap &#8212; client interface to remote printers using Printer Access
+    Protocol</p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><div class="cmdsynopsis"><p><tt class="command">pap<a class="indexterm" name="id2915854"></a></tt>  [ -A    <i class="replaceable"><tt>address</tt></i> ] [-c] [-d] [-e] [-E] [ -p    <i class="replaceable"><tt>nbpname</tt></i> ] [ -s    <i class="replaceable"><tt>statusfile</tt></i> ] [-w] [-W] [<i class="replaceable"><tt>FILES</tt></i>]</p></div></div><div class="refsect1" lang="en"><a name="id2916007"></a><h2>DESCRIPTION</h2><p><span><b class="command">pap</b></span> is used to connect and send files to an
+    AppleTalk connected printer using the Apple Printer Access Protocol (PAP).
+    When <span><b class="command">pap</b></span> starts execution, it tries to open a session
+    with the printer using PAP, and then downloads the <span class="emphasis"><em>files</em></span>
+    to the printer.</p><p>If no <span class="emphasis"><em>files</em></span> are given on the command
+    line, <span><b class="command">pap</b></span> begins reading from standard input.</p><p>If no printer is specified on the command line, <span><b class="command">pap</b></span>
+    looks for a file called <span class="markup">.paprc</span> in the current working
+    directory and reads it to obtain the <span class="emphasis"><em>nbpname</em></span>
+    of a printer. Blank lines and lines that begin with a `<span class="emphasis"><em>#</em></span>'
+    are ignored. <span class="emphasis"><em>type</em></span> and <span class="emphasis"><em>zone</em></span>
+    default to <span class="emphasis"><em>LaserWriter</em></span> and the zone of the
+    local host, respectively.</p><p>Note that <span><b class="command">pap</b></span> is designed to be useful as a
+    communication filter for sending <a href="lpd.8.html"><span class="citerefentry"><span class="refentrytitle">lpd</span>(8)</span></a>
+    spooled print jobs to AppleTalk connected printers. See
+    <a href="psf.8.html"><span class="citerefentry"><span class="refentrytitle">psf</span>(8)</span></a>
+    for hints on how to use it this way.</p></div><div class="refsect1" lang="en"><a name="id2916146"></a><h2>OPTIONS</h2><div class="variablelist"><dl><dt><span class="term"><tt class="option">-A </tt><i class="replaceable"><tt>address</tt></i></span></dt><dd><p>Connect to the printer with Appletalk address <span class="emphasis"><em>address</em></span> and do not consult the
+          <span class="markup">.paprc</span> file to find a printer name. See
+          <a href="atalk_aton.3.html"><span class="citerefentry"><span class="refentrytitle">atalk_aton</span>(3)</span></a>
+          for the syntax of <span class="emphasis"><em>address</em></span>.</p></dd><dt><span class="term"><tt class="option">-c</tt></span></dt><dd><p>Take cuts. The PAP protocol specified a simple queuing
+          procedure, such that the clients tell the printer how long they have
+          been waiting to print. This option causes <span><b class="command">pap</b></span> to
+          lie about how long it has been waiting.</p></dd><dt><span class="term"><tt class="option">-d</tt></span></dt><dd><p>Enable debug output.</p></dd><dt><span class="term"><tt class="option">-e</tt></span></dt><dd><p>Send any message from the printer to stderr instead of stdout.
+          <a href="psf.8.html"><span class="citerefentry"><span class="refentrytitle">psf</span>(8)</span></a>
+          invokes <span><b class="command">pap</b></span> with this option.</p></dd><dt><span class="term"><tt class="option">-E</tt></span></dt><dd><p>Don't wait for EOF from the printer. This option is useful
+          for printers which don't implement PAP correctly. In a correct
+          implementation, the client side should wait for the printer to
+          return EOF before closing the connection. Some clients don't
+          wait, and hence some printers have related bugs in their
+          implementation.</p></dd><dt><span class="term"><tt class="option">-p</tt> <i class="replaceable"><tt>nbpname</tt></i></span></dt><dd><p>Connect to the printer named <span class="emphasis"><em>nbpname</em></span>
+          and do not consult the <span class="markup">.paprc</span> file to find a
+          printer name. See <a href="nbp_name.3.html"><span class="citerefentry"><span class="refentrytitle">nbp_name</span>(3)</span></a>
+          for the syntax of <span class="emphasis"><em>nbpname</em></span>.</p></dd><dt><span class="term"><tt class="option">-s</tt> <i class="replaceable"><tt>statusfile</tt></i></span></dt><dd><p>Update the file called <span class="emphasis"><em>statusfile</em></span>
+          to contain the most recent status message from the printer.
+          <span><b class="command">pap</b></span> gets the status from the printer when it is
+          waiting for the printer to process input. The <span class="emphasis"><em>statusfile</em></span>
+          will contain a single line terminated with a newline. This is useful
+          when <span><b class="command">pap</b></span> is invoked by
+          <a href="psf.8.html"><span class="citerefentry"><span class="refentrytitle">psf</span>(8)</span></a>
+          within <span class="emphasis"><em>lpd</em></span>'s spool directory.</p></dd><dt><span class="term"><tt class="option">-w</tt></span></dt><dd><p>Wait for the printer status to contain the word
+          "waiting" before sending the job. This is to defeat
+          printer-side spool available on HP IV and V printers.</p></dd><dt><span class="term"><tt class="option">-W</tt></span></dt><dd><p>Wait for the printer status to contain the word "idle"
+          before sending the job. This is to defeat printer-side spool
+          available on HP IV and V printers.</p></dd></dl></div></div><div class="refsect1" lang="en"><a name="id2916484"></a><h2>FILES</h2><div class="variablelist"><dl><dt><span class="term"><span class="markup">.paprc</span></span></dt><dd><p>file read to obtain printer name if not specified on command
+          line</p></dd></dl></div></div><div class="refsect1" lang="en"><a name="id2916518"></a><h2>SEE ALSO</h2><p><a href="nbp_name.3.html"><span class="citerefentry"><span class="refentrytitle">nbp_name</span>(3)</span></a>,
+    <a href="atalk_aton.3.html"><span class="citerefentry"><span class="refentrytitle">atalk_aton</span>(3)</span></a>,
+    <a href="lpd.8.html"><span class="citerefentry"><span class="refentrytitle">lpd</span>(8)</span></a>,
+    <a href="psf.8.html"><span class="citerefentry"><span class="refentrytitle">psf</span>(8)</span></a>.</p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="netatalkconfig.1.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="man-pages.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="papd.8.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">netatalk-config </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> papd</td></tr></table></div></body></html>
