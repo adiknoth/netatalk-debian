@@ -1,5 +1,5 @@
 # -*- mode: makefile; coding: utf-8 -*-
-# Copyright © 2005-2007 Jonas Smedegaard <dr@jones.dk>
+# Copyright © 2005-2008 Jonas Smedegaard <dr@jones.dk>
 # Description: Check for changes to copyright notices in source
 #
 # This program is free software; you can redistribute it and/or
@@ -17,10 +17,6 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 # 02111-1307 USA.
 
-# TODO: Save scan as "file: match" (needs rewrite of main loop in perl)
-
-# TODO: Save scan as "file (license): match" (needs /usr/bin/licensecheck from kdesdk-scripts)
-
 _cdbs_scripts_path ?= /usr/lib/cdbs
 _cdbs_rules_path ?= /usr/share/cdbs/1/rules
 _cdbs_class_path ?= /usr/share/cdbs/1/class
@@ -30,33 +26,56 @@ _cdbs_rules_copyright-check := 1
 
 include $(_cdbs_rules_path)/buildcore.mk$(_cdbs_makefile_suffix)
 
-# Space-delimited lists of (regular expressions for) files to ignore
-# (use DEB_COPYRIGHT_CHECK_FIND_OPTS directly for regexes containing spaces)
-DEB_COPYRIGHT_CHECK_IGNORE = 
-DEB_COPYRIGHT_CHECK_IGNORE_REGEX = debian/.* \(.*/\)?config\.\(guess\|sub\|rpath\)\(\..*\)?
+CDBS_BUILD_DEPENDS := $(CDBS_BUILD_DEPENDS), devscripts (>= 2.10.7)
 
-DEB_COPYRIGHT_CHECK_FIND_OPTS = $(DEB_COPYRIGHT_CHECK_IGNORE:%=-not -name %) $(DEB_COPYRIGHT_CHECK_IGNORE_REGEX:%=-not -regex '%')
-DEB_COPYRIGHT_CHECK_EGREP_OPTS = --text -rih '(copyright|\(c\) ).*[0-9]{4}'
+# Single regular expression for files to include or ignore
+DEB_COPYRIGHT_CHECK_REGEX = .*
+DEB_COPYRIGHT_CHECK_IGNORE_REGEX = ^(debian/.*|(.*/)?config\.(guess|sub|rpath)(\..*)?)$
 
 pre-build:: debian/stamp-copyright-check
 
 debian/stamp-copyright-check:
 	@echo 'Scanning upstream source for new/changed copyright notices (except debian subdir!)...'
-	find * -type f $(cdbs_copyright-check_find_opts) -exec cat '{}' ';' \
-		| tr '\r' '\n' \
-		| LC_ALL=C sed -e 's/[^[:print:]]//g' \
-		| egrep $(cdbs_copyright-check_egrep_opts) \
-		| sed -e 's/^[[:space:]*#]*//' -e 's/[[:space:]]*$$//' \
-		| LC_ALL=C sort -u \
+
+# Perl in shell in make requires extra care:
+#  * Single-quoting ('...') protects against shell expansion
+#  * Double-dollar ($$) expands to plain dollar ($) in make
+	licensecheck -c '$(DEB_COPYRIGHT_CHECK_REGEX)' -r --copyright -i '$(DEB_COPYRIGHT_CHECK_IGNORE_REGEX)' * \
+		| LC_ALL=C perl -e \
+	'$$n=0; while (<>) {'\
+	'	if (/^([^:\s][^:]+):[\s]+(\S.*?)\s*$$/) {'\
+	'		$$files[$$n]{name}=$$1;'\
+	'		$$files[$$n]{license}=$$2;'\
+	'	};'\
+	'	if (/^\s*\[Copyright:\s*(\S.*?)\s*\]/) {'\
+	'		$$files[$$n]{copyright}=$$1;'\
+	'	};'\
+	'	/^$$/ and $$n++;'\
+	'};'\
+	'foreach $$file (@files) {'\
+	'	$$file->{license} =~ s/\s*\(with incorrect FSF address\)//;'\
+	'	$$file->{license} =~ s/\s+\(v([^)]+) or later\)/-$$1+/;'\
+	'	$$file->{copyright} =~ s/(?<=(\b\d{4}))(?{$$y=$$^N})\s*[,-]\s*((??{$$y+1}))\b/-$$2/g;'\
+	'	$$file->{copyright} =~ s/(?<=\b\d{4})\s*-\s*\d{4}(?=\s*-\s*(\d{4})\b)//g;'\
+	'	$$pattern = "$$file->{license} [$$file->{copyright}]";'\
+	'	push @{ $$patternfiles{"$$pattern"} }, $$file->{name};'\
+	'};'\
+	'foreach $$pattern ( sort {'\
+	'			@{$$patternfiles{$$b}} <=> @{$$patternfiles{$$a}}'\
+	'			||'\
+	'			$$a cmp $$b'\
+	'		} keys %patternfiles ) {'\
+	'	print "$$pattern: ", join("\n\t", sort @{ $$patternfiles{$$pattern} }), "\n";'\
+	'};'\
 		> debian/copyright_newhints
+	@patterncount="`cat debian/copyright_newhints | sed 's/^[^:]*://' | LANG=C sort -u | grep . -c -`"; \
+		echo "Found $$patterncount different copyright and licensing combinations."
 	@if [ ! -f debian/copyright_hints ]; then touch debian/copyright_hints; fi
-	@newstrings=`diff -u debian/copyright_hints debian/copyright_newhints | sed '1,2d' | egrep '^\+' | sed 's/^\+//'`; \
+	@newstrings=`diff -u debian/copyright_hints debian/copyright_newhints | sed '1,2d' | egrep '^\+' - | sed 's/^\+//'`; \
 		if [ -n "$$newstrings" ]; then \
-			echo "Error: The following new or changed copyright notices discovered:"; \
+			echo "ERROR: The following new or changed copyright notices discovered:"; \
+			echo; \
 			echo "$$newstrings"; \
-			echo "Trying to locate the files containing the new/changed copyright notices..."; \
-			echo "(Strings part of binary data you need to resolve yourself)"; \
-			find * -type f $(cdbs_copyright-check_find_opts) -exec grep -F -l -e "$$newstrings" '{}' ';'; \
 			echo; \
 			echo "To fix the situation please do the following:"; \
 			echo "  1) Investigate the above changes and update debian/copyright as needed"; \

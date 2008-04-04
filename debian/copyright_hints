@@ -1,142 +1,736 @@
-(c) 2001 (see COPYING)
-+    Copyright (c) 2004 Didier Gautheron
-+   Copyright (c) 2004 Didier Gautheron
-+ * Copyright (C) Alexander Bokovoy, 2002-2003
-+ * Copyright (C) Didier Gautheron 2004
-+ * Copyright (C) Stefan (metze) Metzmacher, 2003
-+ * Copyright (C) TAKAHASHI Motonobu (monyo), 2003
-+ * Copyright (C) Tim Potter, 1999-2000
-/*   Copyright (C) 1999-2000 Free Software Foundation, Inc.
-/* Copyright (c) 1999 Adrian Sun (asun@zoology.washington.edu)
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>AppleVolumes.default</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="previous" href="afppasswd.1.html" title="afppasswd"><link rel="next" href="apple_cp.1.html" title="apple_cp"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">AppleVolumes.default</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="afppasswd.1.html">Prev</a></td><th width="60%" align="center">Chapter5.Manual Pages</th><td width="20%" align="right"><a accesskey="n" href="apple_cp.1.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="AppleVolumes.default.5"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>AppleVolumes.default &#8212; Configuration file used by <span><b class="command">afpd</b></span>(8) to
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Chapter1.Introduction to Netatalk</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="index.html" title="Netatalk 2.0 Manual"><link rel="previous" href="pr01.html" title="Legal Notice"><link rel="next" href="installation.html" title="Chapter2.Installation"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Chapter1.Introduction to Netatalk</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="pr01.html">Prev</a></td><th width="60%" align="center"></th><td width="20%" align="right"><a accesskey="n" href="installation.html">Next</a></td></tr></table><hr></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="intro"></a>Chapter1.Introduction to Netatalk</h2></div></div><div></div></div><p>Netatalk is an OpenSource software package, that can be used to turn
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Chapter2.Installation</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="index.html" title="Netatalk 2.0 Manual"><link rel="previous" href="intro.html" title="Chapter1.Introduction to Netatalk"><link rel="next" href="configuration.html" title="Chapter3.Setting up Netatalk"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Chapter2.Installation</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="intro.html">Prev</a></td><th width="60%" align="center"></th><td width="20%" align="right"><a accesskey="n" href="configuration.html">Next</a></td></tr></table><hr></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="installation"></a>Chapter2.Installation</h2></div></div><div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="sect1"><a href="installation.html#id2883185">How to obtain Netatalk</a></span></dt><dd><dl><dt><span class="sect2"><a href="installation.html#id2883208">Binary packages</a></span></dt><dt><span class="sect2"><a href="installation.html#id2832640">Source packages</a></span></dt></dl></dd><dt><span class="sect1"><a href="installation.html#id2832932">Compiling Netatalk</a></span></dt><dd><dl><dt><span class="sect2"><a href="installation.html#id2832939">Prerequisites</a></span></dt><dt><span class="sect2"><a href="installation.html#compiling-netatalk">Compiling Netatalk</a></span></dt><dt><span class="sect2"><a href="installation.html#build-bdb">Compiling a new Berkeley DB for Netatalk</a></span></dt></dl></dd></dl></div><div class="warning" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Warning</h3><p>If you have previously used an older version of Netatalk, please
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Chapter3.Setting up Netatalk</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="index.html" title="Netatalk 2.0 Manual"><link rel="previous" href="installation.html" title="Chapter2.Installation"><link rel="next" href="upgrade.html" title="Chapter4.Upgrading from a previous version of Netatalk"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Chapter3.Setting up Netatalk</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="installation.html">Prev</a></td><th width="60%" align="center"></th><td width="20%" align="right"><a accesskey="n" href="upgrade.html">Next</a></td></tr></table><hr></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="configuration"></a>Chapter3.Setting up Netatalk</h2></div></div><div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="sect1"><a href="configuration.html#id2836170">Appletalk</a></span></dt><dd><dl><dt><span class="sect2"><a href="configuration.html#id2836205">To use AppleTalk or not</a></span></dt><dt><span class="sect2"><a href="configuration.html#id2836304">No AppleTalk routing</a></span></dt><dt><span class="sect2"><a href="configuration.html#id2836512">atalkd acting as an AppleTalk router</a></span></dt></dl></dd><dt><span class="sect1"><a href="configuration.html#id2836984">File Services</a></span></dt><dd><dl><dt><span class="sect2"><a href="configuration.html#id2837047">Setting up the AFP file server</a></span></dt><dt><span class="sect2"><a href="configuration.html#CNID-backends">CNID backends</a></span></dt><dt><span class="sect2"><a href="configuration.html#charsets">Charsets/Unicode</a></span></dt><dt><span class="sect2"><a href="configuration.html#authentication">Authentication</a></span></dt></dl></dd><dt><span class="sect1"><a href="configuration.html#printing">Printing</a></span></dt><dd><dl><dt><span class="sect2"><a href="configuration.html#papserver">Setting up the PAP print server</a></span></dt><dt><span class="sect2"><a href="configuration.html#papclient">Using AppleTalk printers</a></span></dt></dl></dd><dt><span class="sect1"><a href="configuration.html#timeservices">Time Services</a></span></dt><dd><dl><dt><span class="sect2"><a href="configuration.html#timelord">Using Netatalk as a time server for Macintoshes</a></span></dt></dl></dd><dt><span class="sect1"><a href="configuration.html#id2900410">Starting and stopping Netatalk</a></span></dt></dl></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id2836170"></a>Appletalk<a class="indexterm" name="id2836176"></a></h2></div></div><div></div></div><p>AppleTalk, the network protocol family founded by Apple, contains
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Chapter4.Upgrading from a previous version of Netatalk</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="index.html" title="Netatalk 2.0 Manual"><link rel="previous" href="configuration.html" title="Chapter3.Setting up Netatalk"><link rel="next" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Chapter4.Upgrading from a previous version of Netatalk</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="configuration.html">Prev</a></td><th width="60%" align="center"></th><td width="20%" align="right"><a accesskey="n" href="man-pages.html">Next</a></td></tr></table><hr></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="upgrade"></a>Chapter4.Upgrading from a previous version of Netatalk</h2></div><div><div class="author"><h3 class="author"><span class="firstname">Jrg</span> <span class="surname">Lenneis</span></h3><span class="contrib">initial version</span></div></div><div><p class="pubdate">26 June, 2004</p></div></div><div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="sect1"><a href="upgrade.html#id2900700">Overview</a></span></dt><dt><span class="sect1"><a href="upgrade.html#volumes-and-filenames">Volumes and filenames</a></span></dt><dd><dl><dt><span class="sect2"><a href="upgrade.html#volupgrade">How to upgrade a volume to 2.0</a></span></dt><dt><span class="sect2"><a href="upgrade.html#capvol">How to use a 1.x CAP encoded volume with 2.0</a></span></dt><dt><span class="sect2"><a href="upgrade.html#id2901130">How to use a 1.x NLS volume with 2.0</a></span></dt></dl></dd><dt><span class="sect1"><a href="upgrade.html#choosecnidscheme">Choosing a CNID storage scheme</a></span></dt><dd><dl><dt><span class="sect2"><a href="upgrade.html#id2901698">How to upgrade if no persistent CNID storage was used</a></span></dt><dt><span class="sect2"><a href="upgrade.html#id2901737">How to upgrade if a persistent CNID storage scheme was
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Chapter5.Manual Pages</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="index.html" title="Netatalk 2.0 Manual"><link rel="previous" href="upgrade.html" title="Chapter4.Upgrading from a previous version of Netatalk"><link rel="next" href="achfile.1.html" title="achfile"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Chapter5.Manual Pages</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="upgrade.html">Prev</a></td><th width="60%" align="center"></th><td width="20%" align="right"><a accesskey="n" href="achfile.1.html">Next</a></td></tr></table><hr></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="man-pages"></a>Chapter5.Manual Pages</h2></div></div><div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><a href="achfile.1.html">achfile</a> - change type and/or creator of Apple Macintosh files (netatalk
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Index</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="index.html" title="Netatalk 2.0 Manual"><link rel="previous" href="uniconv.1.html" title="uniconv"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Index</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="uniconv.1.html">Prev</a></td><th width="60%" align="center"></th><td width="20%" align="right"></td></tr></table><hr></div><div class="index"><div class="titlepage"><div><div><h2 class="title"><a name="manual-index"></a>Index</h2></div></div><div></div></div><div class="index"><div class="indexdiv"><h3>Symbols</h3><dl><dt>2-Way Randnum exchange</dt><dd><dl><dt>"2-Way Randnum exchange" UAM, <a href="configuration.html#id2898081">UAMs supported by Netatalk</a></dt></dl></dd></dl></div><div class="indexdiv"><h3>A</h3><dl><dt>achfile, <a href="achfile.1.html">achfile</a></dt><dt>acleandir, <a href="acleandir.1.html">acleandir</a></dt><dt>ADv1</dt><dd><dl><dt>AppleDouble v1, <a href="upgrade.html#volumes-and-filenames">Volumes and filenames</a></dt></dl></dd><dt>ADv2</dt><dd><dl><dt>AppleDouble v2, <a href="configuration.html#CNID-backends">CNID backends</a>, <a href="upgrade.html#volumes-and-filenames">Volumes and filenames</a></dt></dl></dd><dt>aecho, <a href="aecho.1.html">aecho</a></dt><dt>AEP</dt><dd><dl><dt>Apple Echo Protocol, <a href="aecho.1.html">aecho</a>, <a href="atalkd.8.html">atalkd</a></dt></dl></dd><dt>afile, <a href="afile.1.html">afile</a></dt><dt>AFP</dt><dd><dl><dt>Apple Filing Protocol, <a href="configuration.html#id2836984">File Services</a></dt></dl></dd><dt>afpd, <a href="configuration.html#id2900410">Starting and stopping Netatalk</a>, <a href="afpd.8.html">afpd</a></dt><dt>afpd.conf, <a href="afpd.conf.5.html">afpd.conf</a></dt><dt>AFPD_GUEST, <a href="netatalk.conf.5.html">netatalk.conf</a></dt><dt>AFPD_MAX_CLIENTS, <a href="netatalk.conf.5.html">netatalk.conf</a></dt><dt>AFPD_RUN, <a href="netatalk.conf.5.html">netatalk.conf</a></dt><dt>AFPD_UAM_LIST, <a href="netatalk.conf.5.html">netatalk.conf</a></dt><dt>afppasswd, <a href="afppasswd.1.html">afppasswd</a></dt><dt>AFS Kerberos</dt><dd><dl><dt>"AFS Kerberos" UAM (Kerberos IV), <a href="configuration.html#id2898081">UAMs supported by Netatalk</a></dt></dl></dd><dt>ALLMULTI</dt><dd><dl><dt>NIC multicast settings, <a href="atalkd.conf.5.html">atalkd.conf</a></dt></dl></dd><dt>AppleDB</dt><dd><dl><dt>.AppleDB CNID database store, <a href="upgrade.html#id2901698">How to upgrade if no persistent CNID storage was used</a></dt><dt>CNID database folder, <a href="configuration.html#CNID-backends">CNID backends</a></dt></dl></dd><dt>AppleShare</dt><dd><dl><dt>Synonym for an AFP server, <a href="configuration.html#id2837047">Setting up the AFP file server</a></dt></dl></dd><dt>Appletalk</dt><dd><dl><dt>The AppleTalk protocol suite, <a href="configuration.html#id2836170">Appletalk</a></dt></dl></dd><dt>AppleVolumes.default, <a href="AppleVolumes.default.5.html">AppleVolumes.default</a></dt><dt>apple_cp, <a href="apple_cp.1.html">apple_cp</a></dt><dt>apple_mv, <a href="apple_mv.1.html">apple_mv</a></dt><dt>apple_rm, <a href="apple_rm.1.html">apple_rm</a></dt><dt>ASCII</dt><dd><dl><dt>afpd's unixcodepage setting, <a href="configuration.html#id2897647">afpd and character sets</a></dt><dt>afpd's volcharset setting, <a href="AppleVolumes.default.5.html#id2908484">Compatibility with earlier versions</a></dt><dt>American Standard Code for Information
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Legal Notice</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="index.html" title="Netatalk 2.0 Manual"><link rel="previous" href="index.html" title="Netatalk 2.0 Manual"><link rel="next" href="intro.html" title="Chapter1.Introduction to Netatalk"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Legal Notice</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="index.html">Prev</a></td><th width="60%" align="center"></th><td width="20%" align="right"><a accesskey="n" href="intro.html">Next</a></td></tr></table><hr></div><div class="preface" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="id2896279"></a>Legal Notice</h2></div></div><div></div></div><p>
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Netatalk 2.0 Manual</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="next" href="pr01.html" title="Legal Notice"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Netatalk 2.0 Manual</th></tr><tr><td width="20%" align="left"></td><th width="60%" align="center"></th><td width="20%" align="right"><a accesskey="n" href="pr01.html">Next</a></td></tr></table><hr></div><div class="book" lang="en"><div class="titlepage"><div><div><h1 class="title"><a name="netatalk-manual"></a>Netatalk 2.0 Manual</h1></div><div><p class="releaseinfo">2.0.3</p></div></div><div></div><hr></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="preface"><a href="pr01.html">Legal Notice</a></span></dt><dt><span class="chapter"><a href="intro.html">1. Introduction to Netatalk</a></span></dt><dt><span class="chapter"><a href="installation.html">2. Installation</a></span></dt><dd><dl><dt><span class="sect1"><a href="installation.html#id2883185">How to obtain Netatalk</a></span></dt><dd><dl><dt><span class="sect2"><a href="installation.html#id2883208">Binary packages</a></span></dt><dt><span class="sect2"><a href="installation.html#id2832640">Source packages</a></span></dt></dl></dd><dt><span class="sect1"><a href="installation.html#id2832932">Compiling Netatalk</a></span></dt><dd><dl><dt><span class="sect2"><a href="installation.html#id2832939">Prerequisites</a></span></dt><dt><span class="sect2"><a href="installation.html#compiling-netatalk">Compiling Netatalk</a></span></dt><dt><span class="sect2"><a href="installation.html#build-bdb">Compiling a new Berkeley DB for Netatalk</a></span></dt></dl></dd></dl></dd><dt><span class="chapter"><a href="configuration.html">3. Setting up Netatalk</a></span></dt><dd><dl><dt><span class="sect1"><a href="configuration.html#id2836170">Appletalk</a></span></dt><dd><dl><dt><span class="sect2"><a href="configuration.html#id2836205">To use AppleTalk or not</a></span></dt><dt><span class="sect2"><a href="configuration.html#id2836304">No AppleTalk routing</a></span></dt><dt><span class="sect2"><a href="configuration.html#id2836512">atalkd acting as an AppleTalk router</a></span></dt></dl></dd><dt><span class="sect1"><a href="configuration.html#id2836984">File Services</a></span></dt><dd><dl><dt><span class="sect2"><a href="configuration.html#id2837047">Setting up the AFP file server</a></span></dt><dt><span class="sect2"><a href="configuration.html#CNID-backends">CNID backends</a></span></dt><dt><span class="sect2"><a href="configuration.html#charsets">Charsets/Unicode</a></span></dt><dt><span class="sect2"><a href="configuration.html#authentication">Authentication</a></span></dt></dl></dd><dt><span class="sect1"><a href="configuration.html#printing">Printing</a></span></dt><dd><dl><dt><span class="sect2"><a href="configuration.html#papserver">Setting up the PAP print server</a></span></dt><dt><span class="sect2"><a href="configuration.html#papclient">Using AppleTalk printers</a></span></dt></dl></dd><dt><span class="sect1"><a href="configuration.html#timeservices">Time Services</a></span></dt><dd><dl><dt><span class="sect2"><a href="configuration.html#timelord">Using Netatalk as a time server for Macintoshes</a></span></dt></dl></dd><dt><span class="sect1"><a href="configuration.html#id2900410">Starting and stopping Netatalk</a></span></dt></dl></dd><dt><span class="chapter"><a href="upgrade.html">4. Upgrading from a previous version of Netatalk</a></span></dt><dd><dl><dt><span class="sect1"><a href="upgrade.html#id2900700">Overview</a></span></dt><dt><span class="sect1"><a href="upgrade.html#volumes-and-filenames">Volumes and filenames</a></span></dt><dd><dl><dt><span class="sect2"><a href="upgrade.html#volupgrade">How to upgrade a volume to 2.0</a></span></dt><dt><span class="sect2"><a href="upgrade.html#capvol">How to use a 1.x CAP encoded volume with 2.0</a></span></dt><dt><span class="sect2"><a href="upgrade.html#id2901130">How to use a 1.x NLS volume with 2.0</a></span></dt></dl></dd><dt><span class="sect1"><a href="upgrade.html#choosecnidscheme">Choosing a CNID storage scheme</a></span></dt><dd><dl><dt><span class="sect2"><a href="upgrade.html#id2901698">How to upgrade if no persistent CNID storage was used</a></span></dt><dt><span class="sect2"><a href="upgrade.html#id2901737">How to upgrade if a persistent CNID storage scheme was
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Netatalk 2.0 Manual</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="book" lang="en"><div class="titlepage"><div><div><h1 class="title"><a name="netatalk-manual"></a>Netatalk 2.0 Manual</h1></div><div><p class="releaseinfo">2.0.3</p></div></div><div></div><hr></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="preface"><a href="#id2878179">Legal Notice</a></span></dt><dt><span class="chapter"><a href="#intro">1. Introduction to Netatalk</a></span></dt><dt><span class="chapter"><a href="#installation">2. Installation</a></span></dt><dd><dl><dt><span class="sect1"><a href="#id2865486">How to obtain Netatalk</a></span></dt><dd><dl><dt><span class="sect2"><a href="#id2865508">Binary packages</a></span></dt><dt><span class="sect2"><a href="#id2816810">Source packages</a></span></dt></dl></dd><dt><span class="sect1"><a href="#id2817100">Compiling Netatalk</a></span></dt><dd><dl><dt><span class="sect2"><a href="#id2817106">Prerequisites</a></span></dt><dt><span class="sect2"><a href="#compiling-netatalk">Compiling Netatalk</a></span></dt><dt><span class="sect2"><a href="#build-bdb">Compiling a new Berkeley DB for Netatalk</a></span></dt></dl></dd></dl></dd><dt><span class="chapter"><a href="#configuration">3. Setting up Netatalk</a></span></dt><dd><dl><dt><span class="sect1"><a href="#id2815063">Appletalk</a></span></dt><dd><dl><dt><span class="sect2"><a href="#id2815098">To use AppleTalk or not</a></span></dt><dt><span class="sect2"><a href="#id2815197">No AppleTalk routing</a></span></dt><dt><span class="sect2"><a href="#id2815406">atalkd acting as an AppleTalk router</a></span></dt></dl></dd><dt><span class="sect1"><a href="#id2815878">File Services</a></span></dt><dd><dl><dt><span class="sect2"><a href="#id2815941">Setting up the AFP file server</a></span></dt><dt><span class="sect2"><a href="#CNID-backends">CNID backends</a></span></dt><dt><span class="sect2"><a href="#charsets">Charsets/Unicode</a></span></dt><dt><span class="sect2"><a href="#authentication">Authentication</a></span></dt></dl></dd><dt><span class="sect1"><a href="#printing">Printing</a></span></dt><dd><dl><dt><span class="sect2"><a href="#papserver">Setting up the PAP print server</a></span></dt><dt><span class="sect2"><a href="#papclient">Using AppleTalk printers</a></span></dt></dl></dd><dt><span class="sect1"><a href="#timeservices">Time Services</a></span></dt><dd><dl><dt><span class="sect2"><a href="#timelord">Using Netatalk as a time server for Macintoshes</a></span></dt></dl></dd><dt><span class="sect1"><a href="#id2882707">Starting and stopping Netatalk</a></span></dt></dl></dd><dt><span class="chapter"><a href="#upgrade">4. Upgrading from a previous version of Netatalk</a></span></dt><dd><dl><dt><span class="sect1"><a href="#id2882998">Overview</a></span></dt><dt><span class="sect1"><a href="#volumes-and-filenames">Volumes and filenames</a></span></dt><dd><dl><dt><span class="sect2"><a href="#volupgrade">How to upgrade a volume to 2.0</a></span></dt><dt><span class="sect2"><a href="#capvol">How to use a 1.x CAP encoded volume with 2.0</a></span></dt><dt><span class="sect2"><a href="#id2883427">How to use a 1.x NLS volume with 2.0</a></span></dt></dl></dd><dt><span class="sect1"><a href="#choosecnidscheme">Choosing a CNID storage scheme</a></span></dt><dd><dl><dt><span class="sect2"><a href="#id2883994">How to upgrade if no persistent CNID storage was used</a></span></dt><dt><span class="sect2"><a href="#id2884034">How to upgrade if a persistent CNID storage scheme was
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>achfile</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="previous" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="next" href="acleandir.1.html" title="acleandir"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">achfile</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="man-pages.html">Prev</a></td><th width="60%" align="center">Chapter5.Manual Pages</th><td width="20%" align="right"><a accesskey="n" href="acleandir.1.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="achfile.1"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>achfile &#8212; change type and/or creator of Apple Macintosh files (netatalk
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>acleandir</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="previous" href="achfile.1.html" title="achfile"><link rel="next" href="aecho.1.html" title="aecho"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">acleandir</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="achfile.1.html">Prev</a></td><th width="60%" align="center">Chapter5.Manual Pages</th><td width="20%" align="right"><a accesskey="n" href="aecho.1.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="acleandir.1"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>acleandir &#8212; clean up a directory containing netatalk Apple Macintosh files</p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><div class="cmdsynopsis"><p><tt class="command">acleandir<a class="indexterm" name="id2902824"></a></tt>  [-rnvi]  <i class="replaceable"><tt>dirname</tt></i> <br></p></div></div><div class="refsect1" lang="en"><a name="id2902857"></a><h2>DESCRIPTION</h2><p><span><b class="command">acleandir</b></span> cleans up the directory <span class="emphasis"><em>dirname.</em></span> By default it simply removes
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>aecho</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="previous" href="acleandir.1.html" title="acleandir"><link rel="next" href="afile.1.html" title="afile"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">aecho</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="acleandir.1.html">Prev</a></td><th width="60%" align="center">Chapter5.Manual Pages</th><td width="20%" align="right"><a accesskey="n" href="afile.1.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="aecho.1"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>aecho &#8212; send AppleTalk Echo Protocol packets to network hosts</p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><p><span><b class="command">aecho<a class="indexterm" name="id2903143"></a><a class="indexterm" name="id2903150"></a></b></span> [ <tt class="option">-c</tt><i class="replaceable"><tt> count</tt></i>
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>afile</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="previous" href="aecho.1.html" title="aecho"><link rel="next" href="afpd.8.html" title="afpd"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">afile</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="aecho.1.html">Prev</a></td><th width="60%" align="center">Chapter5.Manual Pages</th><td width="20%" align="right"><a accesskey="n" href="afpd.8.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="afile.1"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>afile &#8212; display type and creator of Apple Macintosh files (netatalk
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>afpd.conf</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="previous" href="afpd.8.html" title="afpd"><link rel="next" href="afppasswd.1.html" title="afppasswd"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">afpd.conf</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="afpd.8.html">Prev</a></td><th width="60%" align="center">Chapter5.Manual Pages</th><td width="20%" align="right"><a accesskey="n" href="afppasswd.1.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="afpd.conf.5"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>afpd.conf &#8212; Configuration file used by afpd(8) to determine the setup of
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>afpd</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="previous" href="afile.1.html" title="afile"><link rel="next" href="afpd.conf.5.html" title="afpd.conf"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">afpd</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="afile.1.html">Prev</a></td><th width="60%" align="center">Chapter5.Manual Pages</th><td width="20%" align="right"><a accesskey="n" href="afpd.conf.5.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="afpd.8"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>afpd &#8212; AppleTalk Filing Protocol daemon</p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><div class="cmdsynopsis"><p><tt class="command">afpd<a class="indexterm" name="id2903755"></a></tt>  [-duptDTvI] [-f <i class="replaceable"><tt>defaultvolumes</tt></i>] [-s <i class="replaceable"><tt>systemvolumes</tt></i>] [-n <i class="replaceable"><tt>nbpname</tt></i>] [-c <i class="replaceable"><tt>maxconnections</tt></i>] [-g <i class="replaceable"><tt>guest</tt></i>] [-P <i class="replaceable"><tt>pidfile</tt></i>] [-S <i class="replaceable"><tt>port</tt></i>] [-L <i class="replaceable"><tt>message</tt></i>] [-F <i class="replaceable"><tt>config</tt></i>] [-U <i class="replaceable"><tt>uamsv</tt></i>] [-m <i class="replaceable"><tt>umask</tt></i>]</p></div></div><div class="refsect1" lang="en"><a name="id2903908"></a><h2>Description</h2><p><span><b class="command">afpd</b></span> provides an AppleTalk Filing Protocol (AFP)
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>afppasswd</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="previous" href="afpd.conf.5.html" title="afpd.conf"><link rel="next" href="AppleVolumes.default.5.html" title="AppleVolumes.default"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">afppasswd</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="afpd.conf.5.html">Prev</a></td><th width="60%" align="center">Chapter5.Manual Pages</th><td width="20%" align="right"><a accesskey="n" href="AppleVolumes.default.5.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="afppasswd.1"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>afppasswd &#8212; netatalk password maintenance utility</p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><div class="cmdsynopsis"><p><tt class="command">afppasswd<a class="indexterm" name="id2906691"></a><a class="indexterm" name="id2906701"></a></tt>  [-acfn] [ -p
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>apple_cp</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="previous" href="AppleVolumes.default.5.html" title="AppleVolumes.default"><link rel="next" href="apple_mv.1.html" title="apple_mv"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">apple_cp</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="AppleVolumes.default.5.html">Prev</a></td><th width="60%" align="center">Chapter5.Manual Pages</th><td width="20%" align="right"><a accesskey="n" href="apple_mv.1.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="apple_cp.1"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>apple_cp &#8212; Do an apple copy, copying file metadata and the resource fork as well</p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><p><span class="emphasis"><em>/usr/bin/apple_cp<a class="indexterm" name="id2909108"></a></em></span> <span class="emphasis"><em>SOURCE
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>apple_mv</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="previous" href="apple_cp.1.html" title="apple_cp"><link rel="next" href="apple_rm.1.html" title="apple_rm"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">apple_mv</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="apple_cp.1.html">Prev</a></td><th width="60%" align="center">Chapter5.Manual Pages</th><td width="20%" align="right"><a accesskey="n" href="apple_rm.1.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="apple_mv.1"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>apple_mv &#8212; Do an apple move, moving metadata and the resource fork as well</p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><p><span class="emphasis"><em>/usr/bin/apple_mv<a class="indexterm" name="id2909308"></a></em></span> <span class="emphasis"><em>SOURCE
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>apple_rm</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="previous" href="apple_mv.1.html" title="apple_mv"><link rel="next" href="asip-status.pl.1.html" title="asip-status.pl"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">apple_rm</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="apple_mv.1.html">Prev</a></td><th width="60%" align="center">Chapter5.Manual Pages</th><td width="20%" align="right"><a accesskey="n" href="asip-status.pl.1.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="apple_rm.1"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>apple_rm &#8212; Do an apple remove, remove metadata and resource fork as
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>asip-status.pl</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="previous" href="apple_rm.1.html" title="apple_rm"><link rel="next" href="atalk.4.html" title="atalk"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">asip-status.pl</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="apple_rm.1.html">Prev</a></td><th width="60%" align="center">Chapter5.Manual Pages</th><td width="20%" align="right"><a accesskey="n" href="atalk.4.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="asip-status.pl.1"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>asip-status.pl &#8212; Queries AFP servers for their capabilities</p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><p><span class="emphasis"><em>/usr/bin/asip-status.pl<a class="indexterm" name="id2909695"></a></em></span> ADDRESS<span class="emphasis"><em>:PORT</em></span>...</p></div><div class="refsect1" lang="en"><a name="id2909715"></a><h2>DESCRIPTION</h2><p><span class="emphasis"><em>asip-status.pl</em></span> is a perl script that
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>atalk</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="previous" href="asip-status.pl.1.html" title="asip-status.pl"><link rel="next" href="atalkd.8.html" title="atalkd"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">atalk</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="asip-status.pl.1.html">Prev</a></td><th width="60%" align="center">Chapter5.Manual Pages</th><td width="20%" align="right"><a accesskey="n" href="atalkd.8.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="atalk.4"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>atalk &#8212; AppleTalk protocol family<a class="indexterm" name="id2909866"></a></p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><div class="funcsynopsis"><pre class="funcsynopsisinfo">#include &lt;sys/types.h&gt;
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>atalk_aton</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="previous" href="atalkd.conf.5.html" title="atalkd.conf"><link rel="next" href="cnid_dbd.8.html" title="cnid_dbd"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">atalk_aton</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="atalkd.conf.5.html">Prev</a></td><th width="60%" align="center">Chapter5.Manual Pages</th><td width="20%" align="right"><a accesskey="n" href="cnid_dbd.8.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="atalk_aton.3"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>atalk_aton &#8212; AppleTalk address parsing<a class="indexterm" name="id2911066"></a></p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><div class="funcsynopsis"><pre class="funcsynopsisinfo">#include &lt;sys/types.h&gt;
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>atalkd.conf</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="previous" href="atalkd.8.html" title="atalkd"><link rel="next" href="atalk_aton.3.html" title="atalk_aton"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">atalkd.conf</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="atalkd.8.html">Prev</a></td><th width="60%" align="center">Chapter5.Manual Pages</th><td width="20%" align="right"><a accesskey="n" href="atalk_aton.3.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="atalkd.conf.5"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>atalkd.conf &#8212; Configuration file used by atalkd(8) to determine the
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>atalkd</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="previous" href="atalk.4.html" title="atalk"><link rel="next" href="atalkd.conf.5.html" title="atalkd.conf"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">atalkd</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="atalk.4.html">Prev</a></td><th width="60%" align="center">Chapter5.Manual Pages</th><td width="20%" align="right"><a accesskey="n" href="atalkd.conf.5.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="atalkd.8"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>atalkd &#8212; AppleTalk RTMP, NBP, ZIP, and AEP manager</p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><div class="cmdsynopsis"><p><tt class="command">atalkd<a class="indexterm" name="id2910148"></a><a class="indexterm" name="id2910158"></a><a class="indexterm" name="id2910173"></a><a class="indexterm" name="id2910187"></a><a class="indexterm" name="id2910201"></a><a class="indexterm" name="id2910216"></a></tt>  [-f <i class="replaceable"><tt>configfile</tt></i>] [-1] [-2]</p></div></div><div class="refsect1" lang="en"><a name="id2910264"></a><h2>Description</h2><p><span><b class="command">atalkd</b></span> is responsible for all user level
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>cnid_dbd</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="previous" href="atalk_aton.3.html" title="atalk_aton"><link rel="next" href="cnid_index.1.html" title="cnid_index"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">cnid_dbd</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="atalk_aton.3.html">Prev</a></td><th width="60%" align="center">Chapter5.Manual Pages</th><td width="20%" align="right"><a accesskey="n" href="cnid_index.1.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="cnid_dbd.8"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>cnid_dbd &#8212; implement access to CNID databases through a dedicated daemon
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>cnid_index</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="previous" href="cnid_dbd.8.html" title="cnid_dbd"><link rel="next" href="cnid_metad.8.html" title="cnid_metad"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">cnid_index</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="cnid_dbd.8.html">Prev</a></td><th width="60%" align="center">Chapter5.Manual Pages</th><td width="20%" align="right"><a accesskey="n" href="cnid_metad.8.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="cnid_index.1"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>cnid_index &#8212; check and repair Netatalk CNID database indexes</p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><div class="cmdsynopsis"><p><tt class="command">cnid_index<a class="indexterm" name="id2912177"></a><a class="indexterm" name="id2912184"></a></tt>   <i class="replaceable"><tt>dbdir</tt></i> </p></div></div><div class="refsect1" lang="en"><a name="id2912207"></a><h2>DESCRIPTION</h2><p><span><b class="command">cnid_index</b></span> is a utility to check CNID databases
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>cnid_metad</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="previous" href="cnid_index.1.html" title="cnid_index"><link rel="next" href="getzones.1.html" title="getzones"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">cnid_metad</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="cnid_index.1.html">Prev</a></td><th width="60%" align="center">Chapter5.Manual Pages</th><td width="20%" align="right"><a accesskey="n" href="getzones.1.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="cnid_metad.8"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>cnid_metad &#8212; start cnid_dbd daemons on request</p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><div class="cmdsynopsis"><p><tt class="command">cnid_metad<a class="indexterm" name="id2912372"></a></tt>  [-d] [ -h    <i class="replaceable"><tt>hostname</tt></i> ] [ -p    <i class="replaceable"><tt>port</tt></i> ] [ -u    <i class="replaceable"><tt>user</tt></i> ] [ -g    <i class="replaceable"><tt>group</tt></i> ] [ -s    <i class="replaceable"><tt>cnid_dbdpathname</tt></i> ]</p></div></div><div class="refsect1" lang="en"><a name="id2912519"></a><h2>DESCRIPTION</h2><p><span><b class="command">cnid_metad</b></span> waits for requests from <span class="emphasis"><em>afpd</em></span> to start up instances of the <span class="emphasis"><em>cnid_dbd</em></span>
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>getzones</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="previous" href="cnid_metad.8.html" title="cnid_metad"><link rel="next" href="megatron.1.html" title="megatron"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">getzones</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="cnid_metad.8.html">Prev</a></td><th width="60%" align="center">Chapter5.Manual Pages</th><td width="20%" align="right"><a accesskey="n" href="megatron.1.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="getzones.1"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>getzones &#8212; list AppleTalk zone names</p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><div class="cmdsynopsis"><p><tt class="command">getzones<a class="indexterm" name="id2913014"></a></tt>  [ -m  |   -l ] [<i class="replaceable"><tt>address</tt></i>]</p></div></div><div class="refsect1" lang="en"><a name="id2913062"></a><h2>DESCRIPTION</h2><p><span class="emphasis"><em>Getzones</em></span> is used to obtain a list of
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>megatron</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="previous" href="getzones.1.html" title="getzones"><link rel="next" href="nbp.1.html" title="nbp"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">megatron</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="getzones.1.html">Prev</a></td><th width="60%" align="center">Chapter5.Manual Pages</th><td width="20%" align="right"><a accesskey="n" href="nbp.1.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="megatron.1"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><a name="name"></a><h2>Name</h2><p>megatron, unhex, unbin, unsingle, hqx2bin, single2bin, macbinary &#8212; Macintosh file format transformer</p></div><div class="refsynopsisdiv"><a name="synopsis"></a><h2>Synopsis</h2><div class="cmdsynopsis"><p><tt class="command">megatron<a class="indexterm" name="id2913314"></a></tt>  [<i class="replaceable"><tt>sourcefile</tt></i>...]<br><br><tt class="command">unbin<a class="indexterm" name="id2913342"></a></tt>  [<i class="replaceable"><tt>sourcefile</tt></i>...]<br><br><tt class="command">unhex<a class="indexterm" name="id2913369"></a></tt>  [<i class="replaceable"><tt>sourcefile</tt></i>...]<br><br><tt class="command">unsingle<a class="indexterm" name="id2913396"></a></tt>  [<i class="replaceable"><tt>sourcefile</tt></i>...]<br><br><tt class="command">hqx2bin<a class="indexterm" name="id2913423"></a></tt>  [<i class="replaceable"><tt>sourcefile</tt></i>...]<br><br><tt class="command">single2bin<a class="indexterm" name="id2913451"></a></tt>  [<i class="replaceable"><tt>sourcefile</tt></i>...]<br><br><tt class="command">macbinary<a class="indexterm" name="id2913478"></a></tt>  [<i class="replaceable"><tt>sourcefile</tt></i>...]</p></div></div><div class="refsect1" lang="en"><a name="description"></a><h2>DESCRIPTION</h2><p><span><b class="command">megatron</b></span> is used to transform files from BinHex,
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>nbp</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="previous" href="megatron.1.html" title="megatron"><link rel="next" href="nbp_name.3.html" title="nbp_name"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">nbp</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="megatron.1.html">Prev</a></td><th width="60%" align="center">Chapter5.Manual Pages</th><td width="20%" align="right"><a accesskey="n" href="nbp_name.3.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="nbp.1"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>nbplkup, nbprgstr, nbpunrgstr &#8212; access NBP database</p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><div class="cmdsynopsis"><p><tt class="command">nbplkup<a class="indexterm" name="id2913807"></a><a class="indexterm" name="id2913814"></a> </tt>  [-r <i class="replaceable"><tt>maxresponses</tt></i>] [-A <i class="replaceable"><tt>address</tt></i>] [-m <i class="replaceable"><tt>maccodepage</tt></i>]  <i class="replaceable"><tt>nbpname</tt></i> </p></div><div class="cmdsynopsis"><p><tt class="command">nbprgstr<a class="indexterm" name="id2913883"></a> </tt>  [-A <i class="replaceable"><tt>address</tt></i>] [-p <i class="replaceable"><tt>port</tt></i>] [-m <i class="replaceable"><tt>maccodepage</tt></i>]  <i class="replaceable"><tt>nbpname</tt></i> </p></div><div class="cmdsynopsis"><p><tt class="command">nbpunrgstr<a class="indexterm" name="id2913953"></a> </tt>  [-A <i class="replaceable"><tt>address</tt></i>] [-m <i class="replaceable"><tt>maccodepage</tt></i>]  <i class="replaceable"><tt>nbpname</tt></i> </p></div></div><div class="refsect1" lang="en"><a name="id2913999"></a><h2>Description</h2><p><span><b class="command">nbprgstr</b></span> registers <i class="replaceable"><tt>nbpname</tt></i>
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>nbp_name</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="previous" href="nbp.1.html" title="nbp"><link rel="next" href="netatalk.conf.5.html" title="netatalk.conf"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">nbp_name</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="nbp.1.html">Prev</a></td><th width="60%" align="center">Chapter5.Manual Pages</th><td width="20%" align="right"><a accesskey="n" href="netatalk.conf.5.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="nbp_name.3"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>nbp_name &#8212; NBP name parsing<a class="indexterm" name="id2914337"></a></p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><div class="funcsynopsis"><table border="0" summary="Function synopsis" cellspacing="0" cellpadding="0" style="padding-bottom: 1em"><tr><td><code class="funcdef">int <b class="fsfunc">nbp_name</b>(</code></td><td><var class="pdparam">name</var>, </td><td></td></tr><tr><td></td><td><var class="pdparam">obj</var>, </td><td></td></tr><tr><td></td><td><var class="pdparam">type</var>, </td><td></td></tr><tr><td></td><td><var class="pdparam">zone</var><code>)</code>;</td><td></td></tr></table><table border="0" summary="Function argument synopsis" cellspacing="0" cellpadding="0"><tr><td>char *</td><td><var class="pdparam">name</var>;</td></tr><tr><td>char **</td><td><var class="pdparam">obj</var>;</td></tr><tr><td>char **</td><td><var class="pdparam">type</var>;</td></tr><tr><td>char **</td><td><var class="pdparam">zone</var>;</td></tr></table></div></div><div class="refsect1" lang="en"><a name="id2914408"></a><h2>DESCRIPTION</h2><p><tt class="function">nbp_name()</tt> parses user supplied names into
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>netatalk-config</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="previous" href="netatalk.conf.5.html" title="netatalk.conf"><link rel="next" href="pap.1.html" title="pap"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">netatalk-config</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="netatalk.conf.5.html">Prev</a></td><th width="60%" align="center">Chapter5.Manual Pages</th><td width="20%" align="right"><a accesskey="n" href="pap.1.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="netatalkconfig.1"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>netatalk-config &#8212; script to get information about the installed version of
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>netatalk.conf</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="previous" href="nbp_name.3.html" title="nbp_name"><link rel="next" href="netatalkconfig.1.html" title="netatalk-config"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">netatalk.conf</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="nbp_name.3.html">Prev</a></td><th width="60%" align="center">Chapter5.Manual Pages</th><td width="20%" align="right"><a accesskey="n" href="netatalkconfig.1.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="netatalk.conf.5"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>netatalk.conf &#8212; Configuration file used by netatalk(8) to determine its
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>pap</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="previous" href="netatalkconfig.1.html" title="netatalk-config"><link rel="next" href="papd.8.html" title="papd"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">pap</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="netatalkconfig.1.html">Prev</a></td><th width="60%" align="center">Chapter5.Manual Pages</th><td width="20%" align="right"><a accesskey="n" href="papd.8.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="pap.1"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>pap &#8212; client interface to remote printers using Printer Access
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>papd.conf</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="previous" href="papd.8.html" title="papd"><link rel="next" href="papstatus.8.html" title="papstatus"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">papd.conf</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="papd.8.html">Prev</a></td><th width="60%" align="center">Chapter5.Manual Pages</th><td width="20%" align="right"><a accesskey="n" href="papstatus.8.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="papd.conf.5"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>papd.conf &#8212; Configuration file used by papd(8) to determine the
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>papd</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="previous" href="pap.1.html" title="pap"><link rel="next" href="papd.conf.5.html" title="papd.conf"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">papd</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="pap.1.html">Prev</a></td><th width="60%" align="center">Chapter5.Manual Pages</th><td width="20%" align="right"><a accesskey="n" href="papd.conf.5.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="papd.8"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>papd &#8212; AppleTalk print server daemon</p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><div class="cmdsynopsis"><p><tt class="command">papd<a class="indexterm" name="id2916626"></a><a class="indexterm" name="id2916633"></a></tt>  [-d] [-f configfile] [-p printcap]</p></div></div><div class="refsect1" lang="en"><a name="id2916679"></a><h2>Description</h2><p><span><b class="command">papd</b></span> is the AppleTalk printer daemon. This daemon
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>papstatus</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="previous" href="papd.conf.5.html" title="papd.conf"><link rel="next" href="psf.8.html" title="psf"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">papstatus</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="papd.conf.5.html">Prev</a></td><th width="60%" align="center">Chapter5.Manual Pages</th><td width="20%" align="right"><a accesskey="n" href="psf.8.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="papstatus.8"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>papstatus &#8212; get the status of an AppleTalk-connected printer</p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><div class="cmdsynopsis"><p><tt class="command">/usr/sbin/papstatus<a class="indexterm" name="id2918476"></a></tt>  [-d] [ -p    <i class="replaceable"><tt>printer</tt></i> ] [<i class="replaceable"><tt>retrytime</tt></i>]</p></div></div><div class="refsect1" lang="en"><a name="id2918532"></a><h2>DESCRIPTION</h2><p><span class="emphasis"><em>papstatus</em></span> is used to obtain the
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>psf</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="previous" href="papstatus.8.html" title="papstatus"><link rel="next" href="psorder.1.html" title="psorder"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">psf</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="papstatus.8.html">Prev</a></td><th width="60%" align="center">Chapter5.Manual Pages</th><td width="20%" align="right"><a accesskey="n" href="psorder.1.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="psf.8"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>psf &#8212; PostScript filter</p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><div class="cmdsynopsis"><p><tt class="command">psf<a class="indexterm" name="id2918954"></a></tt>  [ -n    <i class="replaceable"><tt>name</tt></i> ] [ -h    <i class="replaceable"><tt>host</tt></i> ] [ -w    <i class="replaceable"><tt>width</tt></i> ] [ -l    <i class="replaceable"><tt>length</tt></i> ] [ -i    <i class="replaceable"><tt>indent</tt></i> ] [-c]</p></div></div><div class="refsect1" lang="en"><a name="id2919100"></a><h2>DESCRIPTION</h2><p><span><b class="command">psf</b></span> is an <span class="emphasis"><em>lpd</em></span>
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>psorder</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="previous" href="psf.8.html" title="psf"><link rel="next" href="timelord.8.html" title="timelord"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">psorder</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="psf.8.html">Prev</a></td><th width="60%" align="center">Chapter5.Manual Pages</th><td width="20%" align="right"><a accesskey="n" href="timelord.8.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="psorder.1"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>psorder &#8212; PostScript pageorder filter</p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><div class="cmdsynopsis"><p><tt class="command">psorder<a class="indexterm" name="id2919503"></a></tt>  [-duf]  <i class="replaceable"><tt>sourcefile</tt></i> </p></div></div><div class="refsect1" lang="en"><a name="id2919534"></a><h2>DESCRIPTION</h2><p><span><b class="command">psorder</b></span> is a filter that re-orders the pages of a
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>timelord</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="previous" href="psorder.1.html" title="psorder"><link rel="next" href="timeout.1.html" title="timeout"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">timelord</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="psorder.1.html">Prev</a></td><th width="60%" align="center">Chapter5.Manual Pages</th><td width="20%" align="right"><a accesskey="n" href="timeout.1.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="timelord.8"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>timelord &#8212; Macintosh time server daemon</p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><a class="indexterm" name="id2919765"></a></div><div class="refsect1" lang="en"><a name="id2919778"></a><h2>SYNTAX</h2><p>timelord [-d] [-n <span class="emphasis"><em>filename</em></span>]</p></div><div class="refsect1" lang="en"><a name="id2919796"></a><h2>DESCRIPTION</h2><p><span class="emphasis"><em>timelord</em></span> is a simple time server for
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>timeout</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="previous" href="timelord.8.html" title="timelord"><link rel="next" href="uniconv.1.html" title="uniconv"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">timeout</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="timelord.8.html">Prev</a></td><th width="60%" align="center">Chapter5.Manual Pages</th><td width="20%" align="right"><a accesskey="n" href="uniconv.1.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="timeout.1"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>timeout &#8212; Send a signal to a program after a certain time<a class="indexterm" name="id2919940"></a></p></div><div class="refsect1" lang="en"><a name="id2919948"></a><h2>SYNTAX</h2><p>timeout [-s <span class="emphasis"><em>signal</em></span>] <span class="emphasis"><em>seconds</em></span> <span class="emphasis"><em>program</em></span> [<span class="emphasis"><em>args</em></span>]</p></div><div class="refsect1" lang="en"><a name="id2919988"></a><h2>DESCRIPTION</h2><p><span class="emphasis"><em>timeout</em></span> executes a <span class="emphasis"><em>program</em></span> (with arguments <span class="emphasis"><em>args</em></span>)
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>uniconv</title><link rel="stylesheet" href="netatalk.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"><link rel="home" href="index.html" title="Netatalk 2.0 Manual"><link rel="up" href="man-pages.html" title="Chapter5.Manual Pages"><link rel="previous" href="timeout.1.html" title="timeout"><link rel="next" href="manual-index.html" title="Index"><link rel="stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" media="print"><link rel="alternate stylesheet" type="text/css" charset="iso-8859-1" href="printer.css" title="Printer"><link rel="copyright" title="GNU General Public License" href="http://www.gnu.org/copyleft/gpl.html#SEC1"><link rel="author" title="The Netatalk Development Team" href="http://netatalk.sf.net"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">uniconv</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="timeout.1.html">Prev</a></td><th width="60%" align="center">Chapter5.Manual Pages</th><td width="20%" align="right"><a accesskey="n" href="manual-index.html">Next</a></td></tr></table><hr></div><div class="refentry" lang="en"><a name="uniconv.1"></a><div class="titlepage"><div></div><div></div></div><div class="refnamediv"><h2>Name</h2><p>uniconv &#8212; convert Netatalk volume encoding</p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><div class="cmdsynopsis"><p><tt class="command">uniconv<a class="indexterm" name="id2920231"></a></tt>  [-ndv]  -c <i class="replaceable"><tt>cnidbackend</tt></i>   -f <i class="replaceable"><tt>fromcode</tt></i>   -t <i class="replaceable"><tt>tocode</tt></i>  [-m <i class="replaceable"><tt>maccode</tt></i>]  <i class="replaceable"><tt>volumepath</tt></i> </p></div></div><div class="refsect1" lang="en"><a name="id2920310"></a><h2>Description</h2><p><span><b class="command">uniconv</b></span> converts the volume encoding of
-Copyright  1998 Owen Taylor
-Copyright (C) 1989, 1991 Free Software Foundation, Inc.
-Copyright (C) 1990, 1993 Regents of The University of Michigan
-Copyright (C) 1994 X Consortium
-Copyright (C) 1994, 1996, 1997 Free Software Foundation, Inc.
-Copyright (C) 1996 by Sun Microsystems Computer Co.
-Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001
-Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002
-Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003
-Copyright (C) 1996, 1997, 1999, 2000, 2002 Free Software Foundation, Inc.
-Copyright (C) 1996-2000 Free Software Foundation, Inc.
-Copyright (C) 1999, 2000, 2001, 2002, 2003  Free Software Foundation, Inc.
-Copyright (C) 1999-2001 Free Software Foundation, Inc.
-Copyright (C) 2001 Heath Kehoe <hakehoe@avalon.net>
-Copyright (C) 2001 Sebastian Rittau.
-Copyright (C) 2001, 2002, 2003 Free Software Foundation, Inc.
-Copyright (C) 2003  Free Software Foundation, Inc.
-Copyright (C) Andrew Tridgell              1999-2000
-Copyright (C) Andrew Tridgell 1992-1998
-Copyright (C) Andrew Tridgell 1999
-Copyright (C) Andrew Tridgell 2001
-Copyright (C) Anton Blanchard                   2001
-Copyright (C) Bjoern Fernhomberg 2002,2003
-Copyright (C) Bjoern Fernhomberg 2004
-Copyright (C) Igor Vergeichik <iverg@mail.ru> 2001
-Copyright (C) Jelmer Vernooij 2002,2003
-Copyright (C) Jeremy Allison   2000-2003
-Copyright (C) Jeremy Allison 2002.
-Copyright (C) Joerg Lenneis 2003
-Copyright (C) Luke Kenneth Casson Leighton      2000
-Copyright (C) Martin Pool 2003
-Copyright (C) Paul `Rusty' Russell   2000
-Copyright (C) Simo Sorce 2001
-Copyright (c) 1980, 1990 Regents of the University of California. All
-Copyright (c) 1980, 1990, 1993
-Copyright (c) 1983 Regents of the University of California.
-Copyright (c) 1985 Regents of the University of California.
-Copyright (c) 1987 Regents of the University of California.
-Copyright (c) 1988 Regents of the University of California.
-Copyright (c) 1990 The Regents of the University of California.
-Copyright (c) 1990, The University of Melbourne.
-Copyright (c) 1990,1991 Regents of The University of Michigan.
-Copyright (c) 1990,1992 Regents of The University of Michigan.
-Copyright (c) 1990,1993 Regents of The University of Michigan.
-Copyright (c) 1990,1994 Regents of The University of Michigan.
-Copyright (c) 1990,1995 Regents of The University of Michigan.
-Copyright (c) 1990,1996 Regents of The University of Michigan.
-Copyright (c) 1990,1997 Regents of The University of Michigan.
-Copyright (c) 1995 Regents of The University of Michigan.
-Copyright (c) 1996 Regents of The University of Michigan.
-Copyright (c) 1996-2001 SuSE GmbH Nuernberg, Germany.  All rights reserved.
-Copyright (c) 1997 Adrian Sun (asun@zoology.washington.edu)
-Copyright (c) 1997, 1998 Adrian Sun (asun@zoology.washington.edu)
-Copyright (c) 1997,1998,1999,2000 Adrian Sun (asun@cobalt.com)
-Copyright (c) 1998 Adrian Sun (asun@zoology.washington.edu)
-Copyright (c) 1998,1999 Adrian Sun (asun@zoology.washington.edu)
-Copyright (c) 1999 Adrian Sun (asun@u.washington.edu)
-Copyright (c) 1999 Adrian Sun (asun@zoology.washington.edu)
-Copyright (c) 1999-2000 Adrian Sun.
-Copyright (c) 1999. Adrian Sun (asun@zoology.washington.edu)
-Copyright (c) 2002 netatalk
-Copyright (c) 2002. Joe Marcus Clarke (marcus@marcuscom.com)
-Copyright (c) 2003 Rafal Lewczuk <rlewczuk@pronet.pl>
-Copyright (c) 2003 The Reed Institute
-Copyright (c) 2003 the Netatalk Team
-Copyright (c) 2004 Bjoern Fernhomberg
-Copyright 1987, 1988 by the Massachusetts Institute of Technology.
-Copyright 1992, 1993, 1994, 1995, 1996, 1998, 1999, 2000, 2001
-Copyright 1992, 1993, 1994, 1995, 1996, 1998, 1999, 2000, 2001, 2002
-Copyright 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003
-Copyright 1994-2000 Patrick Powell, San Diego, CA <papowell@astart.com>
-Copyright 1996, 1997, 1998, 1999, 2000, 2001
-Copyright 1996, 1997, 2000, 2001 Free Software Foundation, Inc.
-Copyright 1997, 1999, 2000, 2001 Free Software Foundation, Inc.
-Copyright 1997, 2000, 2001 Free Software Foundation, Inc.
-Copyright 1999 (c) Adrian Sun (asun@u.washington.edu)
-Copyright 1999, 2000 Free Software Foundation, Inc.
-Copyright 1999, 2000, 2001, 2002 Free Software Foundation, Inc.
-Copyright 1999-2003 by Michael R Sweet.
-Copyright 2001 Free Software Foundation, Inc.
-Copyright 2001, 2002  Free Software Foundation, Inc.
-Copyright 2002  Free Software Foundation, Inc.
-Copyright 2004 Bjoern Fernhomberg.
-Copyright \(co 1998 Owen Taylor
-copyright Bjoern Fernhomberg, 2004
-distributed with CAP, Copyright (c) 1990, The University of
-option must be specified before any --libs or --cflags options.</p></dd></dl></div></div><div class="refsect1" lang="en"><a name="id2898052"></a><h2>COPYRIGHT</h2><p>Copyright  1998 Owen Taylor</p><p>Permission to use, copy, modify, and distribute this software and
-option must be specified before any --libs or --cflags options.</p></dd></dl></div></div><div class="refsect1" lang="en"><a name="id2915756"></a><h2>COPYRIGHT</h2><p>Copyright  1998 Owen Taylor</p><p>Permission to use, copy, modify, and distribute this software and
-static char *const _id = "plp_snprintf V98.12.21 Copyright Patrick Powell 1988-2000 "
+*No copyright* UNKNOWN []: CONTRIBUTORS
+	NEWS
+	README
+	TODO
+	VERSION
+	bin/Makefile.am
+	bin/adv1tov2/Makefile.am
+	bin/adv1tov2/adv1tov2.c
+	bin/aecho/Makefile.am
+	bin/afile/Makefile.am
+	bin/afile/acleandir.rc
+	bin/afppasswd/Makefile.am
+	bin/cnid/Makefile.am
+	bin/cnid/cnid_index.c
+	bin/cnid/cnid_maint.in
+	bin/getzones/Makefile.am
+	bin/getzones/getzones.c
+	bin/megatron/Makefile.am
+	bin/megatron/asingle.c
+	bin/megatron/asingle.h
+	bin/megatron/hqx.c
+	bin/megatron/hqx.h
+	bin/megatron/macbin.c
+	bin/megatron/macbin.h
+	bin/megatron/megatron.c
+	bin/megatron/megatron.h
+	bin/megatron/nad.c
+	bin/megatron/nad.h
+	bin/megatron/updcrc.c
+	bin/nbp/Makefile.am
+	bin/pap/Makefile.am
+	bin/psorder/Makefile.am
+	bin/uniconv/Makefile.am
+	config.h.in
+	config/AppleVolumes.default.tmpl
+	config/AppleVolumes.system
+	config/AppleVolumes.system.cobalt
+	config/Makefile.am
+	config/afpd.conf.tmpl
+	config/atalkd.conf
+	config/atalkd.conf.cobalt
+	config/netatalk.conf
+	config/netatalk.conf.cobalt
+	config/netatalk.pamd
+	config/netatalk.pamd.shadow
+	config/papd.conf
+	configure.in
+	contrib/ICDumpSuffixMap
+	contrib/Makefile.am
+	contrib/a2boot/VERSION
+	contrib/macusers/Makefile.am
+	contrib/macusers/README.macusers
+	contrib/macusers/macusers.in
+	contrib/nu/Makefile.am
+	contrib/nu/nu.in
+	contrib/patches/README
+	contrib/patches/patch.mangled_trash_with_ip
+	contrib/patches/patch.samba.3.0.5pre2-SVN
+	contrib/patches/patch.samba.3.0a20
+	contrib/patches/patch.vfs
+	contrib/printing/Makefile.am
+	contrib/printing/timeout.c
+	contrib/shell_utils/Makefile.am
+	contrib/shell_utils/apple_cp.in
+	contrib/shell_utils/apple_mv.in
+	contrib/shell_utils/apple_rm.in
+	contrib/shell_utils/asip-status.pl.in
+	contrib/shell_utils/lp2pap.sh.tmpl
+	contrib/timelord/VERSION
+	distrib/Makefile.am
+	distrib/config/Makefile.am
+	distrib/config/netatalk-config.in
+	distrib/debian/README.Debian
+	distrib/debian/changelog
+	distrib/debian/control
+	distrib/debian/cvs2deb.sh
+	distrib/debian/logcheck/ignore.d.server
+	distrib/debian/logcheck/violations.ignore.d
+	distrib/debian/netatalk-dev.docs
+	distrib/debian/netatalk-dev.files
+	distrib/debian/netatalk.dirs
+	distrib/debian/netatalk.docs
+	distrib/debian/netatalk.examples
+	distrib/debian/netatalk.files
+	distrib/debian/netatalk.init
+	distrib/debian/netatalk.links
+	distrib/debian/netatalk.undocumented
+	distrib/debian/patches/add_printer.patch
+	distrib/debian/patches/etc2ps.sh.patch
+	distrib/debian/patches/filterdir.patch
+	distrib/debian/patches/netatalk.conf.patch
+	distrib/debian/patches/netatalk.pamd.patch
+	distrib/debian/patches/psf.8.patch
+	distrib/debian/rules
+	distrib/initscripts/Makefile.am
+	distrib/initscripts/rc.afpd.netbsd.tmpl
+	distrib/initscripts/rc.atalk.bsd.tmpl
+	distrib/initscripts/rc.atalk.cobalt
+	distrib/initscripts/rc.atalk.debian.tmpl
+	distrib/initscripts/rc.atalk.gentoo.tmpl
+	distrib/initscripts/rc.atalk.redhat.tmpl
+	distrib/initscripts/rc.atalk.sysv.tmpl
+	distrib/initscripts/rc.atalk.tru64.tmpl
+	distrib/initscripts/rc.atalkd.netbsd.tmpl
+	distrib/initscripts/rc.cnid_metad.netbsd.tmpl
+	distrib/initscripts/rc.papd.netbsd.tmpl
+	distrib/initscripts/rc.timelord.netbsd.tmpl
+	distrib/m4/Makefile.am
+	distrib/m4/netatalk.m4
+	distrib/rpm/buildrpm
+	distrib/rpm/netatalk-rpmbuild.patch
+	doc/DEVELOPER
+	doc/FAQ
+	doc/Makefile.am
+	doc/Netatalk-Manual.pdf
+	doc/Netatalk-Manual.txt
+	doc/README.hidden-items
+	doc/README.ids
+	doc/README.logger
+	doc/README.platforms
+	doc/htmldocs/netatalk.css
+	doc/htmldocs/printer.css
+	etc/Makefile.am
+	etc/afpd/Makefile.am
+	etc/afpd/afp_config.h
+	etc/afpd/filedir.h
+	etc/afpd/mangle.h
+	etc/afpd/misc.h
+	etc/afpd/status.h
+	etc/afpd/uid.c
+	etc/afpd/uid.h
+	etc/afpd/unix.h
+	etc/atalkd/Makefile.am
+	etc/atalkd/main.h
+	etc/atalkd/route.h
+	etc/cnid_dbd/Makefile.am
+	etc/cnid_dbd/README
+	etc/papd/Makefile.am
+	etc/papd/lp.h
+	etc/papd/print_cups.h
+	etc/papd/printcap.h
+	etc/papd/session.h
+	etc/psf/Makefile.am
+	etc/psf/etc2ps.sh
+	etc/psf/pagecount.ps
+	etc/uams/Makefile.am
+	etc/uams/uams_guest.c
+	etc/uams/uams_krb4/Makefile.am
+	etc/uams/uams_krb4/lifetime.c
+	include/Makefile.am
+	include/atalk/Makefile.am
+	include/atalk/boolean.h
+	include/atalk/cnid_dbd_private.h
+	include/atalk/list.h
+	include/atalk/logger.h
+	include/atalk/paths.h
+	include/atalk/server_ipc.h
+	include/atalk/unicode.h
+	include/atalk/util.h
+	include/atalk/volinfo.h
+	libatalk/Makefile.am
+	libatalk/adouble/Makefile.am
+	libatalk/adouble/ad_attr.c
+	libatalk/adouble/ad_date.c
+	libatalk/adouble/ad_mmap.c
+	libatalk/adouble/ad_private.h
+	libatalk/asp/Makefile.am
+	libatalk/asp/asp_tickle.c
+	libatalk/atp/Makefile.am
+	libatalk/cnid/Makefile.am
+	libatalk/cnid/README
+	libatalk/cnid/cdb/Makefile.am
+	libatalk/cnid/cdb/README
+	libatalk/cnid/cdb/cnid_cdb.h
+	libatalk/cnid/cdb/cnid_cdb_close.c
+	libatalk/cnid/cdb/cnid_cdb_get.c
+	libatalk/cnid/cdb/cnid_cdb_lookup.c
+	libatalk/cnid/cdb/cnid_cdb_meta.h
+	libatalk/cnid/cdb/cnid_cdb_nextid.c
+	libatalk/cnid/cdb/cnid_cdb_private.h
+	libatalk/cnid/cdb/cnid_cdb_resolve.c
+	libatalk/cnid/cdb/cnid_cdb_update.c
+	libatalk/cnid/db3/Makefile.am
+	libatalk/cnid/db3/README
+	libatalk/cnid/db3/cnid_db3.h
+	libatalk/cnid/db3/cnid_db3_close.c
+	libatalk/cnid/db3/cnid_db3_get.c
+	libatalk/cnid/db3/cnid_db3_lookup.c
+	libatalk/cnid/db3/cnid_db3_meta.h
+	libatalk/cnid/db3/cnid_db3_nextid.c
+	libatalk/cnid/db3/cnid_db3_private.h
+	libatalk/cnid/db3/cnid_db3_resolve.c
+	libatalk/cnid/db3/cnid_db3_update.c
+	libatalk/cnid/dbd/Makefile.am
+	libatalk/cnid/hash/Makefile.am
+	libatalk/cnid/hash/README
+	libatalk/cnid/hash/cnid_hash.h
+	libatalk/cnid/hash/cnid_hash_close.c
+	libatalk/cnid/hash/cnid_hash_get.c
+	libatalk/cnid/hash/cnid_hash_lookup.c
+	libatalk/cnid/hash/cnid_hash_nextid.c
+	libatalk/cnid/hash/cnid_hash_resolve.c
+	libatalk/cnid/hash/cnid_hash_update.c
+	libatalk/cnid/last/Makefile.am
+	libatalk/cnid/last/README
+	libatalk/cnid/last/cnid_last.h
+	libatalk/cnid/mtab/Makefile.am
+	libatalk/cnid/mtab/README
+	libatalk/cnid/mtab/cnid_mtab.h
+	libatalk/cnid/tdb/Makefile.am
+	libatalk/cnid/tdb/README
+	libatalk/cnid/tdb/cnid_tdb.h
+	libatalk/cnid/tdb/cnid_tdb_close.c
+	libatalk/cnid/tdb/cnid_tdb_get.c
+	libatalk/cnid/tdb/cnid_tdb_lookup.c
+	libatalk/cnid/tdb/cnid_tdb_nextid.c
+	libatalk/cnid/tdb/cnid_tdb_resolve.c
+	libatalk/cnid/tdb/cnid_tdb_update.c
+	libatalk/compat/Makefile.am
+	libatalk/compat/inet_aton.c
+	libatalk/compat/strdup.c
+	libatalk/dsi/Makefile.am
+	libatalk/dsi/README
+	libatalk/dummy.c
+	libatalk/nbp/Makefile.am
+	libatalk/netddp/Makefile.am
+	libatalk/tdb/Makefile.am
+	libatalk/tdb/spinlock.h
+	libatalk/unicode/Makefile.am
+	libatalk/unicode/charsets/Makefile.am
+	libatalk/unicode/charsets/generic_mb.h
+	libatalk/unicode/precompose.h
+	libatalk/unicode/ucs2_casetable.h
+	libatalk/unicode/util_unistr.c
+	libatalk/util/Makefile.am
+	libatalk/util/atalk_addr.c
+	libatalk/util/bprint.c
+	libatalk/util/logger.c
+	libatalk/util/module.c
+	libatalk/util/strdicasecmp.c
+	libatalk/util/test/build.sh
+	libatalk/util/test/logger_test.c
+	macros/Makefile.am
+	macros/afs-check.m4
+	macros/cnid-backend.m4
+	macros/config-checks.m4
+	macros/cups.m4
+	macros/db3-check.m4
+	macros/grep-check.m4
+	macros/gssapi-check.m4
+	macros/iconv.m4
+	macros/largefile-check.m4
+	macros/pam-check.m4
+	macros/perl-check.m4
+	macros/ps-check.m4
+	macros/quota-check.m4
+	macros/snprintf-check.m4
+	macros/srvloc.m4
+	macros/ssl-check.m4
+	macros/summary.m4
+	macros/tcp-wrappers.m4
+	macros/util.m4
+	man/Makefile.am
+	man/man1/Makefile.am
+	man/man1/achfile.1
+	man/man1/acleandir.1
+	man/man1/aecho.1
+	man/man1/afile.1
+	man/man1/afppasswd.1
+	man/man1/apple_cp.1.tmpl
+	man/man1/apple_mv.1.tmpl
+	man/man1/apple_rm.1.tmpl
+	man/man1/asip-status.pl.1.tmpl
+	man/man1/cnid_index.1
+	man/man1/getzones.1
+	man/man1/hqx2bin.1
+	man/man1/macbinary.1
+	man/man1/megatron.1
+	man/man1/nbp.1
+	man/man1/nbplkup.1
+	man/man1/nbprgstr.1
+	man/man1/nbpunrgstr.1
+	man/man1/pap.1
+	man/man1/papstatus.1
+	man/man1/psorder.1
+	man/man1/single2bin.1
+	man/man1/timeout.1
+	man/man1/unbin.1
+	man/man1/unhex.1
+	man/man1/uniconv.1.tmpl
+	man/man1/unsingle.1
+	man/man3/Makefile.am
+	man/man3/atalk_aton.3
+	man/man3/nbp_name.3
+	man/man4/Makefile.am
+	man/man4/atalk.4
+	man/man5/AppleVolumes.default.5.tmpl
+	man/man5/Makefile.am
+	man/man5/afpd.conf.5.tmpl
+	man/man5/atalkd.conf.5.tmpl
+	man/man5/netatalk.conf.5.tmpl
+	man/man5/papd.conf.5.tmpl
+	man/man8/Makefile.am
+	man/man8/afpd.8.tmpl
+	man/man8/atalkd.8.tmpl
+	man/man8/cnid_dbd.8.tmpl
+	man/man8/cnid_metad.8.tmpl
+	man/man8/papd.8.tmpl
+	man/man8/papstatus.8.tmpl
+	man/man8/psf.8.tmpl
+	man/man8/timelord.8
+	mkinstalldirs
+	services.atalk
+	sys/Makefile.am
+	sys/generic/Makefile.am
+	sys/generic/sys/Makefile.am
+	sys/generic/sys/cdefs.h
+	sys/netatalk/Makefile.am
+	sys/netbsd/Makefile.am
+	sys/netbsd/netatalk/Makefile.am
+	sys/netbsd/netatalk/endian.h
+	sys/solaris/Makefile.in
+	sys/solaris/aarp.c
+	sys/solaris/ddp.c
+	sys/solaris/ddp.conf
+	sys/solaris/dlpi.c
+	sys/solaris/if.c
+	sys/solaris/if.h
+	sys/solaris/ioc.c
+	sys/solaris/ioc.h
+	sys/solaris/linkage.c
+	sys/solaris/rt.c
+	sys/solaris/rt.h
+	sys/solaris/sock.c
+	sys/solaris/sock.h
+	sys/solaris/tpi.c
+	sys/sunos/Makefile.am
+	sys/sunos/Makefile.kernel
+	sys/sunos/at_sun.c
+	sys/ultrix/Makefile.am
+	sys/ultrix/Makefile.kernel
+	sys/ultrix/kpatch-4.1
+	sys/ultrix/kpatch-4.2
+GENERATED FILE [1994-2003]: Makefile.in
+	bin/Makefile.in
+	bin/adv1tov2/Makefile.in
+	bin/aecho/Makefile.in
+	bin/afile/Makefile.in
+	bin/afppasswd/Makefile.in
+	bin/cnid/Makefile.in
+	bin/getzones/Makefile.in
+	bin/megatron/Makefile.in
+	bin/nbp/Makefile.in
+	bin/pap/Makefile.in
+	bin/psorder/Makefile.in
+	bin/uniconv/Makefile.in
+	config/Makefile.in
+	contrib/Makefile.in
+	contrib/a2boot/Makefile.in
+	contrib/macusers/Makefile.in
+	contrib/nu/Makefile.in
+	contrib/printing/Makefile.in
+	contrib/shell_utils/Makefile.in
+	contrib/timelord/Makefile.in
+	distrib/Makefile.in
+	distrib/config/Makefile.in
+	distrib/initscripts/Makefile.in
+	distrib/m4/Makefile.in
+	doc/Makefile.in
+	etc/Makefile.in
+	etc/afpd/Makefile.in
+	etc/atalkd/Makefile.in
+	etc/cnid_dbd/Makefile.in
+	etc/papd/Makefile.in
+	etc/psf/Makefile.in
+	etc/uams/Makefile.in
+	etc/uams/uams_krb4/Makefile.in
+	include/Makefile.in
+	include/atalk/Makefile.in
+	libatalk/Makefile.in
+	libatalk/adouble/Makefile.in
+	libatalk/asp/Makefile.in
+	libatalk/atp/Makefile.in
+	libatalk/cnid/Makefile.in
+	libatalk/cnid/cdb/Makefile.in
+	libatalk/cnid/db3/Makefile.in
+	libatalk/cnid/dbd/Makefile.in
+	libatalk/cnid/hash/Makefile.in
+	libatalk/cnid/last/Makefile.in
+	libatalk/cnid/mtab/Makefile.in
+	libatalk/cnid/tdb/Makefile.in
+	libatalk/compat/Makefile.in
+	libatalk/dsi/Makefile.in
+	libatalk/nbp/Makefile.in
+	libatalk/netddp/Makefile.in
+	libatalk/tdb/Makefile.in
+	libatalk/unicode/Makefile.in
+	libatalk/unicode/charsets/Makefile.in
+	libatalk/util/Makefile.in
+	macros/Makefile.in
+	man/Makefile.in
+	man/man1/Makefile.in
+	man/man3/Makefile.in
+	man/man4/Makefile.in
+	man/man5/Makefile.in
+	man/man8/Makefile.in
+	sys/Makefile.in
+	sys/generic/Makefile.in
+	sys/generic/sys/Makefile.in
+	sys/netatalk/Makefile.in
+	sys/netbsd/Makefile.in
+	sys/netbsd/netatalk/Makefile.in
+	sys/sunos/Makefile.in
+	sys/ultrix/Makefile.in
+UNKNOWN []: doc/htmldocs/AppleVolumes.default.5.html
+	doc/htmldocs/Netatalk-Manual.html
+	doc/htmldocs/achfile.1.html
+	doc/htmldocs/acleandir.1.html
+	doc/htmldocs/aecho.1.html
+	doc/htmldocs/afile.1.html
+	doc/htmldocs/afpd.8.html
+	doc/htmldocs/afpd.conf.5.html
+	doc/htmldocs/afppasswd.1.html
+	doc/htmldocs/apple_cp.1.html
+	doc/htmldocs/apple_mv.1.html
+	doc/htmldocs/apple_rm.1.html
+	doc/htmldocs/asip-status.pl.1.html
+	doc/htmldocs/atalk.4.html
+	doc/htmldocs/atalk_aton.3.html
+	doc/htmldocs/atalkd.8.html
+	doc/htmldocs/atalkd.conf.5.html
+	doc/htmldocs/cnid_dbd.8.html
+	doc/htmldocs/cnid_index.1.html
+	doc/htmldocs/cnid_metad.8.html
+	doc/htmldocs/configuration.html
+	doc/htmldocs/getzones.1.html
+	doc/htmldocs/index.html
+	doc/htmldocs/installation.html
+	doc/htmldocs/intro.html
+	doc/htmldocs/man-pages.html
+	doc/htmldocs/manual-index.html
+	doc/htmldocs/megatron.1.html
+	doc/htmldocs/nbp.1.html
+	doc/htmldocs/nbp_name.3.html
+	doc/htmldocs/netatalk.conf.5.html
+	doc/htmldocs/pap.1.html
+	doc/htmldocs/papd.8.html
+	doc/htmldocs/papd.conf.5.html
+	doc/htmldocs/papstatus.8.html
+	doc/htmldocs/pr01.html
+	doc/htmldocs/psf.8.html
+	doc/htmldocs/psorder.1.html
+	doc/htmldocs/timelord.8.html
+	doc/htmldocs/timeout.1.html
+	doc/htmldocs/uniconv.1.html
+	doc/htmldocs/upgrade.html
+	etc/afpd/desktop.c
+	libatalk/util/server_ipc.c
+UNKNOWN [notice appears in all copies and / notice and this permission notice appear / 1990-1991 Regents of The University of Michigan]: bin/aecho/aecho.c
+	bin/nbp/nbplkup.c
+	bin/nbp/nbpunrgstr.c
+	bin/pap/papstatus.c
+	bin/psorder/pa.c
+	bin/psorder/pa.h
+	bin/psorder/psorder.c
+	bin/psorder/psorder.h
+	etc/afpd/desktop.h
+	etc/afpd/directory.h
+	etc/afpd/file.h
+	etc/afpd/switch.c
+	etc/afpd/switch.h
+	include/atalk/adouble.h
+	include/atalk/aep.h
+	include/atalk/afp.h
+	include/atalk/asp.h
+	include/atalk/atp.h
+	include/atalk/ddp.h
+	include/atalk/nbp.h
+	include/atalk/pap.h
+	include/atalk/rtmp.h
+	include/atalk/zip.h
+	libatalk/adouble/ad_flush.c
+	libatalk/adouble/ad_read.c
+	libatalk/asp/asp_child.h
+	libatalk/asp/asp_close.c
+	libatalk/asp/asp_cmdreply.c
+	libatalk/asp/asp_getreq.c
+	libatalk/asp/asp_init.c
+	libatalk/asp/asp_write.c
+	libatalk/atp/atp_bufs.c
+	libatalk/atp/atp_internals.h
+	libatalk/atp/atp_open.c
+	libatalk/atp/atp_packet.c
+	libatalk/atp/atp_rreq.c
+	libatalk/atp/atp_rresp.c
+	libatalk/atp/atp_sreq.c
+	libatalk/atp/atp_sresp.c
+	libatalk/nbp/nbp_conf.h
+	sys/ultrix/at_ultrix.c
+UNKNOWN [1990,1993 Regents of The University of Michigan]: bin/nbp/nbprgstr.c
+	etc/afpd/afs.c
+	etc/afpd/appl.c
+	etc/afpd/auth.c
+	etc/afpd/auth.h
+	etc/afpd/directory.c
+	etc/afpd/enumerate.c
+	etc/afpd/file.c
+	etc/afpd/filedir.c
+	etc/afpd/fork.c
+	etc/afpd/fork.h
+	etc/afpd/globals.h
+	etc/afpd/main.c
+	etc/afpd/quota.c
+	etc/afpd/status.c
+	etc/afpd/unix.c
+	etc/afpd/volume.c
+	etc/atalkd/aep.c
+	etc/atalkd/config.c
+	etc/atalkd/gate.h
+	etc/atalkd/main.c
+	etc/atalkd/multicast.c
+	etc/atalkd/nbp.c
+	etc/atalkd/nbp.h
+	etc/atalkd/rtmp.c
+	etc/atalkd/rtmp.h
+	etc/atalkd/zip.c
+	etc/atalkd/zip.h
+	etc/papd/auth.c
+	etc/uams/uams_krb4/uams_krb4.c
+	libatalk/nbp/nbp_rgstr.c
+UNKNOWN [Joerg Lenneis 2003]: bin/cnid/cnid2_create.in
+	etc/cnid_dbd/cnid_metad.c
+	etc/cnid_dbd/comm.c
+	etc/cnid_dbd/comm.h
+	etc/cnid_dbd/db_param.c
+	etc/cnid_dbd/db_param.h
+	etc/cnid_dbd/dbd.h
+	etc/cnid_dbd/dbd_add.c
+	etc/cnid_dbd/dbd_dbcheck.c
+	etc/cnid_dbd/dbd_delete.c
+	etc/cnid_dbd/dbd_get.c
+	etc/cnid_dbd/dbd_getstamp.c
+	etc/cnid_dbd/dbd_lookup.c
+	etc/cnid_dbd/dbd_resolve.c
+	etc/cnid_dbd/dbd_update.c
+	etc/cnid_dbd/dbif.c
+	etc/cnid_dbd/dbif.h
+	etc/cnid_dbd/main.c
+	etc/cnid_dbd/pack.c
+	etc/cnid_dbd/pack.h
+	etc/cnid_dbd/usockfd.c
+	etc/cnid_dbd/usockfd.h
+	libatalk/cnid/dbd/cnid_dbd.c
+	libatalk/cnid/dbd/cnid_dbd.h
+UNKNOWN [1997 Adrian Sun (asun@zoology.washington.edu)]: etc/afpd/afp_config.c
+	etc/afpd/messages.c
+	include/atalk/dsi.h
+	include/atalk/server_child.h
+	libatalk/adouble/ad_size.c
+	libatalk/asp/asp_attn.c
+	libatalk/dsi/dsi_attn.c
+	libatalk/dsi/dsi_close.c
+	libatalk/dsi/dsi_cmdreply.c
+	libatalk/dsi/dsi_getsess.c
+	libatalk/dsi/dsi_getstat.c
+	libatalk/dsi/dsi_init.c
+	libatalk/dsi/dsi_opensess.c
+	libatalk/dsi/dsi_private.h
+	libatalk/dsi/dsi_read.c
+	libatalk/dsi/dsi_tickle.c
+	libatalk/dsi/dsi_write.c
+	libatalk/util/server_child.c
+UNKNOWN [1999. Adrian Sun (asun@zoology.washington.edu)]: libatalk/cnid/cdb/cnid_cdb_add.c
+	libatalk/cnid/cdb/cnid_cdb_delete.c
+	libatalk/cnid/cdb/cnid_cdb_meta.c
+	libatalk/cnid/cdb/cnid_cdb_open.c
+	libatalk/cnid/db3/cnid_db3_add.c
+	libatalk/cnid/db3/cnid_db3_delete.c
+	libatalk/cnid/db3/cnid_db3_meta.c
+	libatalk/cnid/db3/cnid_db3_open.c
+	libatalk/cnid/hash/cnid_hash_add.c
+	libatalk/cnid/hash/cnid_hash_delete.c
+	libatalk/cnid/hash/cnid_hash_open.c
+	libatalk/cnid/last/cnid_last.c
+	libatalk/cnid/mtab/cnid_mtab.c
+	libatalk/cnid/tdb/cnid_tdb_add.c
+	libatalk/cnid/tdb/cnid_tdb_delete.c
+	libatalk/cnid/tdb/cnid_tdb_open.c
+UNKNOWN [1990,1994 Regents of The University of Michigan]: bin/pap/pap.c
+	etc/afpd/gettok.c
+	etc/afpd/icon.h
+	etc/afpd/volume.h
+	etc/papd/comment.c
+	etc/papd/file.c
+	etc/papd/headers.c
+	etc/papd/magics.c
+	etc/papd/queries.c
+	etc/papd/session.c
+	etc/uams/uams_krb4/kuam.c
+	sys/netatalk/ddp_input.c
+	sys/netatalk/ddp_usrreq.c
+	sys/netatalk/ddp_var.h
+UNKNOWN [1990-1991 Regents of The University of Michigan]: etc/papd/comment.h
+	etc/papd/file.h
+	sys/netatalk/aarp.c
+	sys/netatalk/aarp.h
+	sys/netatalk/at.h
+	sys/netatalk/at_control.c
+	sys/netatalk/at_proto.c
+	sys/netatalk/at_var.h
+	sys/netatalk/ddp.h
+	sys/netatalk/ddp_output.c
+	sys/netatalk/endian.h
+GPL-2+ [Andrew Tridgell 2001 / Jelmer Vernooij 2002-2003]: libatalk/unicode/charsets/generic_mb.c
+	libatalk/unicode/charsets/mac_centraleurope.c
+	libatalk/unicode/charsets/mac_cyrillic.c
+	libatalk/unicode/charsets/mac_hebrew.c
+	libatalk/unicode/charsets/mac_roman.c
+	libatalk/unicode/charsets/mac_turkish.c
+	libatalk/unicode/iconv.c
+	libatalk/unicode/utf8.c
+UNKNOWN [1990,1993 Regents of The University of Michigan / 1999 Adrian Sun (asun@u.washington.edu)]: etc/uams/uams_dhx_pam.c
+	etc/uams/uams_dhx_passwd.c
+	etc/uams/uams_pam.c
+	etc/uams/uams_passwd.c
+	etc/uams/uams_pgp.c
+	etc/uams/uams_randnum.c
+UNKNOWN [1990,1997 Regents of The University of Michigan]: etc/atalkd/multicast.h
+	libatalk/atp/atp_close.c
+	libatalk/atp/atp_rsel.c
+	libatalk/nbp/nbp_lkup.c
+	libatalk/nbp/nbp_unrgstr.c
+	libatalk/nbp/nbp_util.c
+UNKNOWN [1999 Adrian Sun (asun@zoology.washington.edu)]: etc/afpd/uam.c
+	etc/afpd/uam_auth.h
+	etc/papd/uam.c
+	etc/papd/uam_auth.h
+	include/atalk/netddp.h
+	include/atalk/uam.h
+UNKNOWN [1990,1995 Regents of The University of Michigan]: etc/papd/main.c
+	etc/papd/printer.h
+	etc/psf/psa.c
+	etc/psf/psf.c
+	libatalk/adouble/ad_write.c
+BSD (3 clause) [2001 Sebastian Rittau]: bin/afile/achfile.c
+	bin/afile/afile.c
+	bin/afile/common.c
+	bin/afile/common.h
+GPL-2+ [Andrew Tridgell 1992-1998]: etc/afpd/afprun.c
+	libatalk/unicode/byteorder.h
+	libatalk/util/fault.c
+	libatalk/util/strlcpy.c
+LGPL-2+ [1999-2001 Free Software Foundation, Inc]: libatalk/unicode/charsets/mac_centraleurope.h
+	libatalk/unicode/charsets/mac_cyrillic.h
+	libatalk/unicode/charsets/mac_hebrew.h
+	libatalk/unicode/charsets/mac_turkish.h
+UNKNOWN [1990,1992 Regents of The University of Michigan]: etc/atalkd/atserv.h
+	etc/atalkd/interface.h
+	etc/atalkd/list.h
+UNKNOWN [1990,1993 Regents of The University of Michigan / 1997 Adrian Sun (asun@zoology.washington.edu)]: etc/afpd/afp_asp.c
+	etc/afpd/afp_options.c
+	libatalk/util/server_lock.c
+UNKNOWN [1995 Regents of The University of Michigan]: etc/papd/ppd.c
+	etc/papd/ppd.h
+	etc/papd/showppd.c
+UNKNOWN [1996 Regents of The University of Michigan]: etc/afpd/ofork.c
+	include/atalk/compat.h
+	libatalk/asp/asp_shutdown.c
+UNKNOWN [1999 Adrian Sun (asun@zoology.washington.edu) / 1990-1991 Regents of The University of Michigan]: libatalk/netddp/netddp_open.c
+	libatalk/netddp/netddp_recvfrom.c
+	libatalk/netddp/netddp_sendto.c
+UNKNOWN [2003 Rafal Lewczuk <rlewczuk@pronet.pl> / 2003 the Netatalk Team / holders]: include/atalk/cnid.h
+	libatalk/cnid/cnid.c
+	libatalk/cnid/cnid_init.c
+UNKNOWN [BSD]: distrib/rpm/netatalk-asun.spec.old
+	distrib/rpm/netatalk-mandrake.spec
+	distrib/rpm/netatalk-redhat.spec
+BSD (4 clause) [1983 Regents of the University of California / 1990,1994 Regents of The University of Michigan]: etc/papd/lp.c
+	etc/papd/printcap.c
+GPL GENERATED FILE [1999-2000 Free Software Foundation, Inc]: compile
+	depcomp
+UNKNOWN [1987 Regents of the University of California]: libatalk/compat/mktemp.c
+	libatalk/compat/strcasecmp.c
+UNKNOWN [1990, The University of Melbourne / 1990,1992 Regents of The University of Michigan / 1990, The University of]: contrib/a2boot/a2boot.c
+	contrib/timelord/timelord.c
+UNKNOWN [1990,1996 Regents of The University of Michigan]: etc/atalkd/route.c
+	libatalk/asp/asp_getsess.c
+UNKNOWN [notice and this permission / notice appears in all copies and / 1997-2000 Adrian Sun (asun@cobalt.com) / 1996 by Sun Microsystems Computer Co / notice appear in all / 1990,1996 Regents of The University of Michigan / notice and this permission notice appear]: COPYRIGHT
+	distrib/debian/copyright
+UNKNOWN [notice appears in all copies and / 1990,1994 Regents of The University of Michigan / 1990, The University of Melbourne / notice and this permission notice appear / 1990, The University of]: contrib/a2boot/COPYRIGHT
+	contrib/timelord/COPYRIGHT
+*No copyright* GENERATED FILE []: contrib/shell_utils/afpd-mtab.pl.in
+*No copyright* GPL-2+ []: libatalk/unicode/charsets/mac_roman.h
+BSD (4 clause) [1990 The Regents of the University of California]: libatalk/compat/strstr.c
+GENERATED FILE [1992-1996, 1998-2002]: configure
+GPL GENERATED FILE [1996-1997, 1999-2000, 2002 Free Software Foundation, Inc]: missing
+GPL [1996-2003 / 1996-2002]: aclocal.m4
+GPL-2+ GENERATED FILE [1996-2001]: ltmain.sh
+GPL-2+ [1999 Adrian Sun (asun@zoology.washington.edu) / Jeremy Allison 2002]: libatalk/adouble/ad_sendfile.c
+GPL-2+ [1999-2003 by Michael R Sweet / 2004 Bjoern Fernhomberg]: etc/papd/print_cups.c
+GPL-2+ [2001 Heath Kehoe <hakehoe@avalon.net>]: contrib/shell_utils/cleanappledouble.pl.in
+GPL-2+ [2004 Didier Gautheron]: contrib/patches/patch.afp_vfs
+GPL-2+ [Andrew Tridgell 1999]: include/atalk/tdb.h
+GPL-2+ [Anton Blanchard 2001]: libatalk/tdb/spinlock.c
+GPL-2+ [Bjoern Fernhomberg 2002-2003]: bin/uniconv/iso8859_1_adapted.c
+GPL-2+ [Bjoern Fernhomberg 2004]: bin/uniconv/uniconv.c
+GPL-2+ [Bjoern Fernhomberg, 2004]: libatalk/util/volinfo.c
+GPL-2+ [Luke Kenneth Casson Leighton 2000 / Jeremy Allison 2000-2003 / Paul `Rusty' Russell 2000 / Andrew Tridgell 1999-2000]: libatalk/tdb/tdb.c
+GPL-2+ [Martin Pool 2003 / Andrew Tridgell 2001 / Igor Vergeichik <iverg@mail.ru> 2001 / Simo Sorce 2001]: libatalk/unicode/charcnv.c
+LGPL-2+ [1994, 1996-1997 Free Software Foundation, Inc]: libatalk/util/strcasestr.c
+MIT/X11 (BSD like) [and license / notice and this permission notice shall be included in / 1994 X Consortium]: install-sh
+UNKNOWN [1980, 1990 Regents of the University of California. All]: libatalk/compat/rquota_xdr.c
+UNKNOWN [1980, 1990, 1993]: etc/afpd/nfsquota.c
+UNKNOWN [1985 Regents of the University of California]: libatalk/compat/getusershell.c
+UNKNOWN [1988 Regents of the University of California / 1990-1991 Regents of The University of Michigan]: sys/netatalk/phase2.h
+UNKNOWN [1989, 1991 Free Software Foundation, Inc / the software, and]: COPYING
+UNKNOWN [1990, 1993 Regents of The University of Michigan]: etc/afpd/catsearch.c
+UNKNOWN [1990,1993 Regents of The University of Michigan / 1999 Adrian Sun (asun@zoology.washington.edu)]: etc/afpd/afp_dsi.c
+UNKNOWN [1990,1993 Regents of The University of Michigan / 1999-2000 Adrian Sun]: libatalk/util/getiface.c
+UNKNOWN [1990,1994 Regents of The University of Michigan / 1987-1988 by the Massachusetts Institute of Technology]: etc/uams/uams_krb4/send_to_kdc.c
+UNKNOWN [1996-2001 SuSE GmbH Nuernberg, Germany. All rights reserved]: distrib/initscripts/rc.atalk.suse.tmpl
+UNKNOWN [1997-1998 Adrian Sun (asun@zoology.washington.edu)]: libatalk/dsi/dsi_tcp.c
+UNKNOWN [1998 Adrian Sun (asun@zoology.washington.edu)]: libatalk/dsi/dsi_stream.c
+UNKNOWN [1999 Adrian Sun (asun@u.washington.edu)]: bin/afppasswd/afppasswd.c
+UNKNOWN [2002 netatalk / 1990,1993 Regents of The University of Michigan / 1999 Adrian Sun (asun@zoology.washington.edu)]: etc/afpd/afp_util.c
+UNKNOWN [2002. Joe Marcus Clarke (marcus@marcuscom.com)]: etc/afpd/mangle.c
+UNKNOWN [2003 The Reed Institute / 1990,1993 Regents of The University of Michigan / 1999 Adrian Sun (asun@u.washington.edu) / 2004 Bjoern Fernhomberg]: etc/uams/uams_gss.c
+UNKNOWN [COPYING NEWS\]: Makefile.am
+UNKNOWN [README VERSION]: contrib/timelord/Makefile.am
+UNKNOWN [VERSION]: contrib/a2boot/Makefile.am
+UNKNOWN [\(co 1998 Owen Taylor / notice appear in all copies and that / notice and this permission notice appear in supporting]: man/man1/netatalk-config.1
+UNKNOWN [for more information / 1998-1999 Adrian Sun (asun@zoology.washington.edu)]: libatalk/adouble/ad_lock.c
+UNKNOWN [in the documentation and source code as well as the / AND TERMS OF USE: / 1994-2000 Patrick Powell, San Diego, CA <papowell@astart.com>]: libatalk/compat/snprintf.c
+UNKNOWN [is *not* the same as netatalk's]: contrib/timelord/README
+UNKNOWN [notice appears in all copies and / 1999 Adrian Sun (asun@u.washington.edu) / notice and this permission notice appear / 1990-1991 Regents of The University of Michigan]: libatalk/adouble/ad_open.c
+UNKNOWN [© 1998 Owen Taylor</p><p>Permission to use, copy, modify, and distribute this software and / notice appear in all copies and that / notice and this permission notice appear in supporting]: doc/htmldocs/netatalkconfig.1.html

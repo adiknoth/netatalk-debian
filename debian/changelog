@@ -1,6 +1,14 @@
 netatalk (2.0.3-9) unstable; urgency=low
 
-  * Update VCS-* hints: packaging moved to collab-maint Git at Alioth.
+  * Packaging moved to collab-maint Git at Alioth. Update VCS-* hints.
+  * Update local cdbs snippets:
+    + Major improvements to copyright-check, including new versioned
+      build-dependency on devscripts.  Update debian/copyright_hints.
+    + Drop wget options broken with recent versions of wget in
+      update-tarball.mk.
+    + Update debian/README.cdbs-tweaks.
+  * Semi-auto-update debian/control to apply changes contained in the above:
+    DEB_AUTO_UPDATE_DEBIAN_CONTROL=yes fakeroot debian/rules clean
 
  -- Jonas Smedegaard <dr@jones.dk>  Fri, 04 Apr 2008 23:08:59 +0200
 

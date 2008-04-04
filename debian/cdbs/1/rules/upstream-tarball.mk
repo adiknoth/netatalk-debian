@@ -1,5 +1,5 @@
 # -*- mode: makefile; coding: utf-8 -*-
-# Copyright © 2007 Jonas Smedegaard <dr@jones.dk>
+# Copyright © 2007-2008 Jonas Smedegaard <dr@jones.dk>
 # Description: Convenience rules for dealing with upstream tarballs
 #
 # This program is free software; you can redistribute it and/or
@@ -43,7 +43,7 @@ DEB_UPSTREAM_WORKDIR = ../tarballs
 #DEB_UPSTREAM_TARBALL_VERSION_MANGLE
 cdbs_upstream_tarball_version_mangled = $(if $(strip $(DEB_UPSTREAM_TARBALL_VERSION_MANGLE)),$(shell echo '$(DEB_UPSTREAM_TARBALL_VERSION)' | perl -pe '$(DEB_UPSTREAM_TARBALL_VERSION_MANGLE)'),$(DEB_UPSTREAM_TARBALL_VERSION))
 
-# Base filename (withour extension) as used in upstream URL
+# Base filename (without extension) as used in upstream URL
 DEB_UPSTREAM_TARBALL_BASENAME = $(DEB_UPSTREAM_PACKAGE)-$(cdbs_upstream_tarball_version_mangled)
 
 # Base directory within tarball
@@ -77,7 +77,7 @@ get-orig-source:
 			rm "$(DEB_UPSTREAM_WORKDIR)/$(cdbs_upstream_local_tarball)" ; \
 		fi ; \
 		echo "Downloading $(cdbs_upstream_local_tarball) from $(DEB_UPSTREAM_URL)/$(cdbs_upstream_tarball) ..." ; \
-		wget -N -nv -T10 -t3 -O "$(DEB_UPSTREAM_WORKDIR)/$(cdbs_upstream_local_tarball)" "$(DEB_UPSTREAM_URL)/$(cdbs_upstream_tarball)" ; \
+		wget -nv -T10 -t3 -O "$(DEB_UPSTREAM_WORKDIR)/$(cdbs_upstream_local_tarball)" "$(DEB_UPSTREAM_URL)/$(cdbs_upstream_tarball)" ; \
 	else \
 		echo "Upstream source tarball have been already downloaded: $(DEB_UPSTREAM_WORKDIR)/$(cdbs_upstream_local_tarball)" ; \
 	fi
