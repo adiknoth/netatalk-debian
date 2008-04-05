@@ -1,0 +1,14 @@
+--- netatalk/distrib/initscripts/rc.atalk.debian.tmpl.orig	2008-04-05 03:09:54.000000000 +0200
++++ netatalk/distrib/initscripts/rc.atalk.debian.tmpl	2008-04-05 03:11:45.000000000 +0200
+@@ -1,4 +1,11 @@
+ #!/bin/sh
++### BEGIN INIT INFO
++# Provides:          netatalk
++# Required-Start:    $remote_fs $syslog
++# Required-Stop:     $remote_fs $syslog
++# Default-Start:     2 3 4 5
++# Default-Stop:      1
++### END INIT INFO
+ #
+ # atalk         Netatalk 2.x initscript
+ #

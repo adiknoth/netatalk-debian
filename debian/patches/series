@@ -10,6 +10,7 @@
 110_db.patch
 111_db_macro.patch
 112_fix_zeroconf_assertion.patch
+113_LSB_sysv_dep_info.patch
 200_netatalk_conf_defaults.diff
 201_etc2ps_paths.diff
 202_psf_8_paths.diff

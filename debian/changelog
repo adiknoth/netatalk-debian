@@ -4,6 +4,10 @@ netatalk (2.0.3-9) unstable; urgency=low
     + Enable zeroconf only if srvloc is not enabled.
     + Use Avahis threaded poll implementation only for Avahi >= 0.6.4,
       and fallback to handling it internally.
+  * Extend patch 110 to theoretically support db > 4 (grabbed from
+    Gentoo patch).
+  * Add patch 113 to add LSB dependency info to sysV script, and leave
+    shutdown process to core sendsigs routine. Closes: bug#459442.
   * Disable zeroconf support (enable by rebuilding with
     DEB_BUILD_OPTIONS=zeroconf).  Closes: bug#462082, #463544.
   * Packaging moved to collab-maint Git at Alioth. Update VCS-* hints.
