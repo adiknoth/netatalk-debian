@@ -30,7 +30,6 @@ DEB_CONFIGURE_EXTRA_FLAGS := \
 	--with-pkgconfdir=/etc/netatalk		\
 	--with-nls-dir=/usr/share/netatalk/nls	\
 	--disable-logger			\
-	--disable-slp --enable-zeroconf		\
 	--enable-krb4-uam --enable-krbV-uam	\
 	--with-cnid-dbd-txn			\
 	--enable-debian
@@ -41,6 +40,14 @@ DEB_CONFIGURE_EXTRA_FLAGS += --without-xfs
 DEB_INSTALL_EXAMPLES_netatalk = debian/examples/*
 
 ssl_build_depends = libssl-dev, cracklib-dev
+
+# Zeroconf is cool, but not yet stable, so disabled by default
+# Always disable SLP, as it was never really used by Apple
+ifneq (,$(findstring zeroconf,$(DEB_BUILD_OPTIONS)))
+DEB_CONFIGURE_EXTRA_FLAGS += --disable-slp --enable-zeroconf
+else
+DEB_CONFIGURE_EXTRA_FLAGS += --disable-slp --disable-zeroconf
+endif
 
 # Conditionally avoid or include ssl-related options
 ifneq (,$(findstring ssl,$(DEB_BUILD_OPTIONS)))

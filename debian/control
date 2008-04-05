@@ -2,7 +2,7 @@ Source: netatalk
 Section: net
 Priority: extra
 Maintainer: Jonas Smedegaard <dr@jones.dk>
-Build-Depends: cdbs (>= 0.4.39), autotools-dev, debhelper (>= 4.2.0), libtool, automake1.10, autoconf, quilt, patchutils (>= 0.2.25), dh-buildinfo, libdb-dev, libwrap0-dev, libpam0g-dev, libavahi-client-dev (>= 0.6), libcupsys2-dev, libkrb5-dev, libltdl3-dev, d-shlibs (>> 0.19)
+Build-Depends: cdbs (>= 0.4.39), autotools-dev, debhelper (>= 4.2.0), libtool, automake1.10, autoconf, quilt, patchutils (>= 0.2.25), dh-buildinfo, devscripts (>= 2.10.7), libdb-dev, libwrap0-dev, libpam0g-dev, libavahi-client-dev (>= 0.6), libcupsys2-dev, libkrb5-dev, libltdl3-dev, d-shlibs (>> 0.19)
 Build-Conflicts: libavahi-compat-libdnssd-dev
 Uploaders: Sebastian Rittau <srittau@debian.org>, Jonas Smedegaard <dr@jones.dk>
 Vcs-Git: git://git.debian.org/git/collab-maint/netatalk.git
