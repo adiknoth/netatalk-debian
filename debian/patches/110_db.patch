@@ -4,7 +4,7 @@
      if (db_errlog != NULL)
          db_env->set_errfile(db_env, db_errlog); 
      db_env->set_verbose(db_env, DB_VERB_RECOVERY, 1);
-+#if DB_VERSION_MAJOR > 4 || ( DB_VERSION_MAJOR == 4 && DB_VERSION_MINOR >= 3 )
++#if DB_VERSION_MAJOR == 4 && DB_VERSION_MINOR < 3
      db_env->set_verbose(db_env, DB_VERB_CHKPOINT, 1);
 +#endif
      if ((ret = db_env->open(db_env, ".", DBOPTIONS | DB_PRIVATE | DB_RECOVER, 0))) {
@@ -16,7 +16,7 @@
      if (db_errlog != NULL)
          db_env->set_errfile(db_env, db_errlog); 
      db_env->set_verbose(db_env, DB_VERB_RECOVERY, 1);
-+#if DB_VERSION_MAJOR > 4 || ( DB_VERSION_MAJOR == 4 && DB_VERSION_MINOR >= 3 )
++#if DB_VERSION_MAJOR == 4 && DB_VERSION_MINOR < 3
      db_env->set_verbose(db_env, DB_VERB_CHKPOINT, 1);
 +#endif
      if ((ret = db_env->open(db_env, ".", DBOPTIONS | DB_PRIVATE | DB_RECOVER, 0))) {
