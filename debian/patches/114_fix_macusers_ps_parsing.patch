@@ -1,0 +1,18 @@
+--- netatalk/contrib/macusers/macusers.in.orig	2003-01-26 17:40:44.000000000 +0100
++++ netatalk/contrib/macusers/macusers.in	2008-04-05 03:25:44.000000000 +0200
+@@ -80,7 +80,14 @@
+         $time = $4;
+ 
+         if ($ppid != 1) {
+-                ($t, $t, $uid, $t, $t, $t, $name, $t, $t) = getpwnam($user);
++                # Deal with truncated usernames. Caution: this does make the
++                # assumption that no username will be all-numeric.
++                if ($user =~ /^[0-9]+$/) {
++                        $uid = $user;
++                        ($user, $t, $t, $t, $t, $t, $name, $t, $t) = getpwuid($uid);
++                } else {
++                        ($t, $t, $uid, $t, $t, $t, $name, $t, $t) = getpwnam($user);
++                }
+                 ($name) = ( $name =~ /(^[^,]+)/ );
+                 printf "%-8d %-8d %-16s %-20s %-9s %s\n", $pid, $uid, $user,
+                     $name, $time, $mac{$pid};

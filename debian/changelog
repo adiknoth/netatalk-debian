@@ -8,6 +8,7 @@ netatalk (2.0.3-9) unstable; urgency=low
     Gentoo patch).
   * Add patch 113 to add LSB dependency info to sysV script, and leave
     shutdown process to core sendsigs routine. Closes: bug#459442.
+  * Add patch 114 to fix macusers ps parsing bug. Closes: bug#462186.
   * Disable zeroconf support (enable by rebuilding with
     DEB_BUILD_OPTIONS=zeroconf).  Closes: bug#462082, #463544.
   * Packaging moved to collab-maint Git at Alioth. Update VCS-* hints.
