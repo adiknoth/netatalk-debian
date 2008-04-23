@@ -721,6 +721,7 @@ UNKNOWN [1990,1994 Regents of The University of Michigan / 1987-1988 by the Mass
 UNKNOWN [1996-2001 SuSE GmbH Nuernberg, Germany. All rights reserved]: distrib/initscripts/rc.atalk.suse.tmpl
 UNKNOWN [1997-1998 Adrian Sun (asun@zoology.washington.edu)]: libatalk/dsi/dsi_tcp.c
 UNKNOWN [1998 Adrian Sun (asun@zoology.washington.edu)]: libatalk/dsi/dsi_stream.c
+UNKNOWN [1998 Owen Taylor</p><p>Permission to use, copy, modify, and distribute this software and / notice appear in all copies and that / notice and this permission notice appear in supporting]: doc/htmldocs/netatalkconfig.1.html
 UNKNOWN [1999 Adrian Sun (asun@u.washington.edu)]: bin/afppasswd/afppasswd.c
 UNKNOWN [2002 netatalk / 1990,1993 Regents of The University of Michigan / 1999 Adrian Sun (asun@zoology.washington.edu)]: etc/afpd/afp_util.c
 UNKNOWN [2002. Joe Marcus Clarke (marcus@marcuscom.com)]: etc/afpd/mangle.c
@@ -733,4 +734,3 @@ UNKNOWN [for more information / 1998-1999 Adrian Sun (asun@zoology.washington.ed
 UNKNOWN [in the documentation and source code as well as the / AND TERMS OF USE: / 1994-2000 Patrick Powell, San Diego, CA <papowell@astart.com>]: libatalk/compat/snprintf.c
 UNKNOWN [is *not* the same as netatalk's]: contrib/timelord/README
 UNKNOWN [notice appears in all copies and / 1999 Adrian Sun (asun@u.washington.edu) / notice and this permission notice appear / 1990-1991 Regents of The University of Michigan]: libatalk/adouble/ad_open.c
-UNKNOWN [© 1998 Owen Taylor</p><p>Permission to use, copy, modify, and distribute this software and / notice appear in all copies and that / notice and this permission notice appear in supporting]: doc/htmldocs/netatalkconfig.1.html
