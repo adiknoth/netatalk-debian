@@ -3,6 +3,9 @@ netatalk (2.0.3-10) UNRELEASED; urgency=low
   * Update cdbs tweaks:
     + Strip any non-printable characters in copyright-check.mk.  Update
       copyright-hints.
+  * Bump debhelper compatibility level to 6 (was 4).
+  * Semi-auto-update debian/control to apply changes contained in the above:
+    DEB_AUTO_UPDATE_DEBIAN_CONTROL=yes fakeroot debian/rules clean
 
  -- Jonas Smedegaard <dr@jones.dk>  Wed, 23 Apr 2008 11:04:57 +0200
 
