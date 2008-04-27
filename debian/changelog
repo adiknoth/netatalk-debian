@@ -4,7 +4,7 @@ netatalk (2.0.3-10) unstable; urgency=low
     + Strip any non-printable characters in copyright-check.mk.  Update
       copyright-hints.  This (and earlier updates) closes: bug#477967.
   * Bump debhelper compatibility level to 6 (was 4).
-  * Semi-auto-update debian/control to apply changes contained in the above:
+  * Semi-auto-update debian/control to update build-dependencies:
     DEB_AUTO_UPDATE_DEBIAN_CONTROL=yes fakeroot debian/rules clean
 
  -- Jonas Smedegaard <dr@jones.dk>  Sun, 27 Apr 2008 13:35:04 +0200
