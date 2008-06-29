@@ -1,9 +1,16 @@
-netatalk (2.0.3-11) unstable; urgency=low
+netatalk (2.0.3-11) unstable; urgency=medium
 
   * Add patch 001 from upstream CVS to fix LFS test for cross
     compilation.
+  * Update cdbs tweaks:
+    + Relax copyright-check.mk to only warn about its discoveries.
+      Closes: bug#487061, thanks to Lucas Nussbaum.
+    + Correct abbreviation of BSD licenses in copyright-check.mk.
+    + Update dependency cleanup to strip cdbs 0.4.27 (not 0.4.27-1).
+  * Update debian/copyright-hints.
+  * Raise urgency to medium due to FTBFS bugfix.
 
- -- Jonas Smedegaard <dr@jones.dk>  sÃ¸n, 29 jun 2008 13:57:28 +0200
+ -- Jonas Smedegaard <dr@jones.dk>  Sun, 29 jun 2008 13:57:28 +0200
 
 netatalk (2.0.3-10) unstable; urgency=low
 
