@@ -1,5 +1,5 @@
 /*
- * $Id: directory.h,v 1.13.2.4.2.2 2004/05/10 18:40:32 didg Exp $
+ * $Id: directory.h,v 1.13.2.4.2.2.2.1 2008/11/25 15:16:32 didg Exp $
  *
  * Copyright (c) 1990,1991 Regents of The University of Michigan.
  * All Rights Reserved.
@@ -70,7 +70,7 @@ struct path {
 };
 
 #ifndef ATACC
-static __inline__ int path_isadir(struct path *o_path)
+static inline int path_isadir(struct path *o_path)
 {
     return o_path->d_dir != NULL;
 #if 0
@@ -196,7 +196,7 @@ extern struct dir	*adddir __P((struct vol *, struct dir *,
 
 extern struct dir       *dirinsert __P((struct vol *, struct dir *));
 extern int              movecwd __P((const struct vol *, struct dir *));
-extern int              deletecurdir __P((const struct vol *, char *, int));
+extern int              deletecurdir __P((const struct vol *, char *));
 extern struct path      *cname __P((const struct vol *, struct dir *,
                              char **));
 extern mode_t           mtoumode __P((struct maccess *));

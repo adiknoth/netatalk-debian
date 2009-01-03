@@ -1,0 +1,16 @@
+/.cvsignore/1.1/Mon Feb 19 15:16:58 2001//Tbranch-netatalk-2-0
+/aarp.c/1.3/Thu Jan  3 17:49:39 2002//Tbranch-netatalk-2-0
+/aarp.h/1.2/Fri Jun 29 14:14:47 2001//Tbranch-netatalk-2-0
+/at_control.c/1.2/Fri Jun 29 14:14:47 2001//Tbranch-netatalk-2-0
+/at_proto.c/1.2/Fri Jun 29 14:14:47 2001//Tbranch-netatalk-2-0
+/at_var.h/1.2/Fri Jun 29 14:14:47 2001//Tbranch-netatalk-2-0
+/ddp.h/1.2/Fri Jun 29 14:14:47 2001//Tbranch-netatalk-2-0
+/ddp_input.c/1.4/Fri Jan  4 04:45:48 2002//Tbranch-netatalk-2-0
+/ddp_output.c/1.4/Fri Jan  4 04:45:49 2002//Tbranch-netatalk-2-0
+/ddp_usrreq.c/1.2/Fri Jun 29 14:14:47 2001//Tbranch-netatalk-2-0
+/ddp_var.h/1.2/Fri Jun 29 14:14:47 2001//Tbranch-netatalk-2-0
+/phase2.h/1.2/Fri Jun 29 14:14:47 2001//Tbranch-netatalk-2-0
+/Makefile.am/1.2.16.1/Thu Apr 28 19:01:53 2005//Tbranch-netatalk-2-0
+/endian.h/1.7.12.1/Wed Feb  8 01:38:42 2006//Tbranch-netatalk-2-0
+/at.h/1.3.10.1.2.1/Thu Dec 18 18:22:40 2008//Tbranch-netatalk-2-0
+D

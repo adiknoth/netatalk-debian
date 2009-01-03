@@ -1,5 +1,5 @@
 /*
- * $Id: desktop.c,v 1.26.2.4.2.18.2.2 2005/02/10 01:23:10 didg Exp $
+ * $Id: desktop.c,v 1.26.2.4.2.18.2.7 2006/09/19 00:08:00 didg Exp $
  *
  * See COPYRIGHT.
  *
@@ -41,9 +41,9 @@
 
 
 int afp_opendt(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
+AFPObj  *obj _U_;
 char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+int	ibuflen _U_, *rbuflen;
 {
     struct vol	*vol;
     u_int16_t	vid;
@@ -62,9 +62,9 @@ int		ibuflen, *rbuflen;
 }
 
 int afp_closedt(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
-char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+AFPObj  *obj _U_;
+char	*ibuf _U_, *rbuf _U_;
+int	ibuflen _U_, *rbuflen;
 {
     *rbuflen = 0;
     return( AFP_OK );
@@ -127,9 +127,9 @@ int mode;
 }
 
 int afp_addicon(obj, ibuf, ibuflen, rbuf, rbuflen)
-AFPObj      *obj;
+AFPObj  *obj;
 char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+int	ibuflen _U_, *rbuflen;
 {
     struct vol		*vol;
 #ifndef NO_DDP
@@ -311,11 +311,13 @@ addicon_err:
     return( AFP_OK );
 }
 
-static u_char	utag[] = { 0, 0, 0, 0 };
-static u_char	ucreator[] = { 0, 0, 0, 0 };/* { 'U', 'N', 'I', 'X' };*/
-static u_char	utype[] = { 0, 0, 0, 0 };/* { 'T', 'E', 'X', 'T' };*/
-static short	usize = 256;
-static u_char	uicon[] = {
+static const u_char	utag[] = { 0, 0, 0, 0 };
+static const u_char	ucreator[] = { 0, 0, 0, 0 };/* { 'U', 'N', 'I', 'X' };*/
+static const u_char	utype[] = { 0, 0, 0, 0 };/* { 'T', 'E', 'X', 'T' };*/
+static const short	usize = 256;
+
+#if 0
+static const u_char	uicon[] = {
     0x1F, 0xFF, 0xFC, 0x00, 0x10, 0x00, 0x06, 0x00,
     0x10, 0x00, 0x05, 0x00, 0x10, 0x00, 0x04, 0x80,
     0x10, 0x00, 0x04, 0x40, 0x10, 0x00, 0x04, 0x20,
@@ -349,11 +351,12 @@ static u_char	uicon[] = {
     0x1F, 0xFF, 0xFF, 0xF0, 0x1F, 0xFF, 0xFF, 0xF0,
     0x1F, 0xFF, 0xFF, 0xF0, 0x1F, 0xFF, 0xFF, 0xF0,
 };
+#endif
 
 int afp_geticoninfo(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
+AFPObj  *obj _U_;
 char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+int	ibuflen _U_, *rbuflen;
 {
     struct vol	*vol;
     u_char	fcreator[ 4 ], ih[ 12 ];
@@ -425,9 +428,9 @@ int		ibuflen, *rbuflen;
 
 
 int afp_geticon(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
+AFPObj  *obj;
 char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+int	ibuflen _U_, *rbuflen;
 {
     struct vol	*vol;
     off_t       offset;
@@ -454,6 +457,7 @@ int		ibuflen, *rbuflen;
     memcpy( &bsize, ibuf, sizeof( bsize ));
     bsize = ntohs( bsize );
 
+#if 0
     if ( memcmp( fcreator, ucreator, sizeof( ucreator )) == 0 &&
             memcmp( ftype, utype, sizeof( utype )) == 0 &&
             itype == 1 &&
@@ -462,6 +466,7 @@ int		ibuflen, *rbuflen;
         *rbuflen = bsize;
         return( AFP_OK );
     }
+#endif
 
     if ( iconopen( vol, fcreator, O_RDONLY, 0 ) < 0) {
         return( AFPERR_NOITEM );
@@ -574,7 +579,7 @@ geticon_exit:
 }
 
 /* ---------------------- */
-static char		hexdig[] = "0123456789abcdef";
+static const char		hexdig[] = "0123456789abcdef";
 char *dtfile(const struct vol *vol, u_char creator[], char *ext )
 {
     static char	path[ MAXPATHLEN + 1];
@@ -613,8 +618,8 @@ char *dtfile(const struct vol *vol, u_char creator[], char *ext )
  * mpath is only a filename 
  * did filename parent directory ID.
 */
-static char  upath[ MAXPATHLEN + 1];
-static char  mpath[ MAXPATHLEN + 1];
+static char  upath[ MAXPATHLEN + 2]; /* for convert_charset dest_len parameter +2 */
+static char  mpath[ MAXPATHLEN + 2];/* for convert_charset dest_len parameter +2 */
 
 char *mtoupath(const struct vol *vol, char *mpath, cnid_t did, int utf8)
 {
@@ -653,7 +658,6 @@ char *mtoupath(const struct vol *vol, char *mpath, cnid_t did, int utf8)
         LOG(log_error, logtype_afpd, "conversion from %s to %s for %s failed.", (utf8)?"UTF8-MAC":vol->v_maccodepage, vol->v_volcodepage, mpath);
 	    return NULL;
     }
-    upath[outlen] = 0;
 
 #ifdef DEBUG
     LOG(log_debug, logtype_afpd, "mtoupath: '%s':'%s'", mpath, upath);
@@ -686,7 +690,6 @@ char *utompath(const struct vol *vol, char *upath, cnid_t id, int utf8)
 	goto utompath_error;
     }
 
-    mpath[outlen] = 0; 
     if (!(flags & CONV_REQMANGLE)) 
         flags = 0;
     else
@@ -757,9 +760,9 @@ static int ad_addcomment(struct vol *vol, struct path *path, char *ibuf)
 
 /* ----------------------------- */
 int afp_addcomment(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
-char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+AFPObj      *obj _U_;
+char	*ibuf, *rbuf _U_;
+int		ibuflen _U_, *rbuflen;
 {
     struct vol		*vol;
     struct dir		*dir;
@@ -800,7 +803,7 @@ static int ad_getcomment(struct vol *vol, struct path *path, char *rbuf, int *rb
     struct ofork        *of;
     char		*upath;
     int                 isadir;
-
+    int			clen;
 
     upath = path->u_name;
     isadir = path_isadir(path);
@@ -815,6 +818,7 @@ static int ad_getcomment(struct vol *vol, struct path *path, char *rbuf, int *rb
     }
 
     if (!ad_getentryoff(adp, ADEID_COMMENT)) {
+        ad_close( adp, ADFLAGS_HF );
         return AFPERR_NOITEM;
     }
     /*
@@ -826,10 +830,10 @@ static int ad_getcomment(struct vol *vol, struct path *path, char *rbuf, int *rb
         return( AFPERR_NOITEM );
     }
 
-    *rbuf++ = ad_getentrylen( adp, ADEID_COMMENT );
-    memcpy( rbuf, ad_entry( adp, ADEID_COMMENT ),
-            ad_getentrylen( adp, ADEID_COMMENT ));
-    *rbuflen = ad_getentrylen( adp, ADEID_COMMENT ) + 1;
+    clen = min( ad_getentrylen( adp, ADEID_COMMENT ), 128 ); /* OSX only use 128, greater kill Adobe CS2 */
+    *rbuf++ = clen;
+    memcpy( rbuf, ad_entry( adp, ADEID_COMMENT ), clen);
+    *rbuflen = clen + 1;
     ad_close( adp, ADFLAGS_HF );
 
     return( AFP_OK );
@@ -837,9 +841,9 @@ static int ad_getcomment(struct vol *vol, struct path *path, char *rbuf, int *rb
 
 /* -------------------- */
 int afp_getcomment(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
+AFPObj      *obj _U_;
 char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+int		ibuflen _U_, *rbuflen;
 {
     struct vol		*vol;
     struct dir		*dir;
@@ -912,9 +916,9 @@ static int ad_rmvcomment(struct vol *vol, struct path *path)
 
 /* ----------------------- */
 int afp_rmvcomment(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
-char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+AFPObj      *obj _U_;
+char	*ibuf, *rbuf _U_;
+int		ibuflen _U_, *rbuflen;
 {
     struct vol		*vol;
     struct dir		*dir;

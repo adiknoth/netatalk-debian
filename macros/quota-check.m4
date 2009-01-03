@@ -1,8 +1,12 @@
-dnl $Id: quota-check.m4,v 1.1.12.3 2004/01/15 08:12:57 bfernhomberg Exp $
+dnl $Id: quota-check.m4,v 1.1.12.3.2.1 2005/07/21 00:12:25 didg Exp $
 dnl Autoconf macro to check for quota support
 dnl FIXME: This is in now way complete.
 
 AC_DEFUN([AC_CHECK_QUOTA], [
+	AC_ARG_ENABLE(quota,
+	[  --enable-quota           Turn on quota support (default=auto)])
+
+	if test x$enable_quota != xno; then
 	QUOTA_LIBS=""
 	netatalk_cv_quotasupport="yes"
 	AC_CHECK_LIB(rpcsvc, main, [QUOTA_LIBS="-lrpcsvc"])
@@ -11,6 +15,10 @@ AC_DEFUN([AC_CHECK_QUOTA], [
 		netatalk_cv_quotasupport="no"
 		AC_DEFINE(NO_QUOTA_SUPPORT, 1, [Define if quota support should not compiled])
 	])
+	else
+		netatalk_cv_quotasupport="no"
+		AC_DEFINE(NO_QUOTA_SUPPORT, 1, [Define if quota support should not compiled])
+	fi
 
 	AC_SUBST(QUOTA_LIBS)
 ])

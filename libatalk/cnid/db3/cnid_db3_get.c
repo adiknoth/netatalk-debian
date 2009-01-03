@@ -1,5 +1,5 @@
 /*
- * $Id: cnid_db3_get.c,v 1.1.4.2.2.1 2005/01/30 20:56:22 didg Exp $
+ * $Id: cnid_db3_get.c,v 1.1.4.2.2.2 2005/09/27 10:40:41 didg Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -27,8 +27,7 @@
 #include "cnid_db3_private.h"
 
 /* Return CNID for a given did/name. */
-cnid_t cnid_db3_get(struct _cnid_db *cdb, const cnid_t did, char *name,
-                const int len)
+cnid_t cnid_db3_get(struct _cnid_db *cdb, const cnid_t did, char *name, const size_t len)
 {
     char start[CNID_DID_LEN + MAXPATHLEN + 1], *buf;
     CNID_private *db;

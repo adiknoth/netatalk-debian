@@ -1,5 +1,5 @@
 /*
- * $Id: magics.c,v 1.11.6.2.2.1 2005/02/06 10:16:02 didg Exp $
+ * $Id: magics.c,v 1.11.6.2.2.2 2005/09/27 10:40:41 didg Exp $
  *
  * Copyright (c) 1990,1994 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -89,7 +89,7 @@ int ps( infile, outfile, sat )
 
 int cm_psquery( in, out, sat )
     struct papfile	*in, *out;
-    struct sockaddr_at	*sat;
+    struct sockaddr_at	*sat _U_;
 {
     struct papd_comment	*comment;
     char		*start;
@@ -122,7 +122,7 @@ int cm_psquery( in, out, sat )
 
 int cm_psadobe( in, out, sat )
     struct papfile	*in, *out;
-    struct sockaddr_at	*sat;
+    struct sockaddr_at	*sat _U_;
 {
     char		*start;
     int			linelength, crlflength;
@@ -163,7 +163,7 @@ char	*Query = "Query";
 
 int cm_psswitch( in, out, sat )
     struct papfile	*in, *out;
-    struct sockaddr_at	*sat;
+    struct sockaddr_at	*sat _U_;
 {
     char		*start, *stop, *p;
     int			linelength, crlflength;

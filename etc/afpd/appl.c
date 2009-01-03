@@ -1,5 +1,5 @@
 /*
- * $Id: appl.c,v 1.12.2.1.2.2.2.1 2005/02/06 10:16:00 didg Exp $
+ * $Id: appl.c,v 1.12.2.1.2.2.2.3 2008/11/25 15:16:32 didg Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -29,7 +29,7 @@
 
 static struct savedt	sa = { { 0, 0, 0, 0 }, -1, 0, 0};
 
-static __inline__ int pathcmp( p, plen, q, qlen )
+static int pathcmp( p, plen, q, qlen )
 char	*p;
 int	plen;
 char	*q;
@@ -160,9 +160,9 @@ char	*path;
 
 
 int afp_addappl(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
-char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+AFPObj  *obj;
+char	*ibuf, *rbuf _U_;
+int	ibuflen _U_, *rbuflen;
 {
     struct vol		*vol;
     struct dir		*dir;
@@ -250,9 +250,9 @@ int		ibuflen, *rbuflen;
 }
 
 int afp_rmvappl(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
-char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+AFPObj  *obj;
+char	*ibuf, *rbuf _U_;
+int	ibuflen _U_, *rbuflen;
 {
     struct vol		*vol;
     struct dir		*dir;
@@ -324,9 +324,9 @@ int		ibuflen, *rbuflen;
 }
 
 int afp_getappl(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
+AFPObj  *obj;
 char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+int	ibuflen _U_, *rbuflen;
 {
     struct vol		*vol;
     char		*p, *q;

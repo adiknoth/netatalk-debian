@@ -66,7 +66,7 @@
  */
 
 
-#define MAX_CHARSETS 10
+#define MAX_CHARSETS 20
 
 #define CHECK_FLAGS(a,b) (((a)!=NULL) ? (*(a) & (b)) : 0 )
 
@@ -275,6 +275,28 @@ void init_iconv(void)
 }
 
 /**
+ *
+ **/
+static size_t add_null(charset_t to, char *buf, size_t bytesleft, size_t len)
+{
+	/* Terminate the string */
+	if (to == CH_UCS2 && bytesleft >= 2) {
+		buf[len]   = 0;
+		buf[len+1] = 0;
+
+	}
+	else if ( to != CH_UCS2 && bytesleft > 0 )
+		buf[len]   = 0;
+	else {
+		errno = E2BIG;
+ 	        return (size_t)(-1);
+	}
+
+	return len;
+}
+
+ 
+/**
  * Convert string from one encoding to another, making error checking etc
  *
  * @param src pointer to source string (multibyte or singlebyte)
@@ -324,19 +346,9 @@ static size_t convert_string_internal(charset_t from, charset_t to,
 		LOG(log_debug, logtype_default,"Conversion error: %s",reason);
 		return (size_t)-1;
 	}
-
+	
 	/* Terminate the string */
-	if (to == CH_UCS2 && destlen-o_len >= 2) {
-		o_save[destlen-o_len]   = 0;
-		o_save[destlen-o_len+1] = 0;
-	}
-	else if ( to != CH_UCS2 && destlen-o_len > 0 )
-		o_save[destlen-o_len] = 0;
-	else {
-		/* FIXME: what should we do here, string *might* be unterminated. E2BIG? */
-	}
-
-	return destlen-o_len;
+	return add_null( to, o_save, o_len, destlen -o_len);
 }
 
 
@@ -700,7 +712,6 @@ size_t charset_precompose ( charset_t ch, char * src, size_t inlen, char * dst, 
 	}
 	
 	free(buffer);
-	dst[len] = 0;
 	return (len);
 }
 
@@ -727,7 +738,6 @@ size_t charset_decompose ( charset_t ch, char * src, size_t inlen, char * dst, s
 	}
 
 	free(buffer);
-	dst[len] = 0;
 	return (len);
 }
 
@@ -783,7 +793,7 @@ static size_t pull_charset_flags (charset_t from_set, charset_t cap_charset, cha
 	char* outbuf = (char*)dest;
 	atalk_iconv_t descriptor;
 	atalk_iconv_t descriptor_cap;
-	char *o_save, *s;
+	char *s;
 	char h[MAXPATHLEN];
 	const char *h_buf;
 
@@ -801,7 +811,6 @@ static size_t pull_charset_flags (charset_t from_set, charset_t cap_charset, cha
 
 	i_len=srclen;
 	o_len=destlen;
-	o_save=outbuf;
 	
 conversion_loop:
 	if ( flags && (*flags & CONV_UNESCAPEHEX)) {
@@ -999,19 +1008,23 @@ escape_slash:
     return destlen -o_len;
 }
 
+/*
+ * FIXME the size is a mess we really need a malloc/free logic
+ *`dest size must be dest_len +2
+*/
 size_t convert_charset ( charset_t from_set, charset_t to_set, charset_t cap_charset, char* src, size_t src_len, char* dest, size_t dest_len, u_int16_t *flags)
 {
 	size_t i_len, o_len;
 	ucs2_t *u;
-	ucs2_t buffer[MAXPATHLEN];
-	ucs2_t buffer2[MAXPATHLEN];
+	ucs2_t buffer[MAXPATHLEN +2];
+	ucs2_t buffer2[MAXPATHLEN +2];
  	int composition = 0;
 	
 	lazy_initialize_conv();
 
 	/* convert from_set to UCS2 */
  	if ((size_t)(-1) == ( o_len = pull_charset_flags( from_set, cap_charset, src, src_len, 
-                                                          (char *) buffer, sizeof(buffer), flags)) ) {
+                                                          (char *) buffer, sizeof(buffer) -2, flags)) ) {
 		LOG(log_error, logtype_default, "Conversion failed ( %s to CH_UCS2 )", charset_name(from_set));
 		return (size_t) -1;
 	}
@@ -1027,7 +1040,7 @@ size_t convert_charset ( charset_t from_set, charset_t to_set, charset_t cap_cha
  	if (CHECK_FLAGS(flags, CONV_DECOMPOSE) || (charsets[to_set] && charsets[to_set]->flags & CHARSET_DECOMPOSED) )
  	    composition = 2;
  
-	i_len = sizeof(buffer2);
+	i_len = sizeof(buffer2) -2;
 	u = buffer2;
 
 	switch (composition) {
@@ -1044,6 +1057,9 @@ size_t convert_charset ( charset_t from_set, charset_t to_set, charset_t cap_cha
  	        return (size_t)(-1);
 	    break;
 	}
+	/* null terminate */
+	u[i_len] = 0;
+	u[i_len +1] = 0;
 		
   	/* Do case conversions */	
  	if (CHECK_FLAGS(flags, CONV_TOUPPER)) {
@@ -1059,6 +1075,9 @@ size_t convert_charset ( charset_t from_set, charset_t to_set, charset_t cap_cha
 		       "Conversion failed (CH_UCS2 to %s):%s", charset_name(to_set), strerror(errno));
 		return (size_t) -1;
 	}
+	/* null terminate */
+	dest[o_len] = 0;
+	dest[o_len +1] = 0;
 
 	return o_len;
 }

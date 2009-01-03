@@ -1,4 +1,4 @@
-dnl $Id: db3-check.m4,v 1.11.6.9 2004/08/11 03:01:11 bfernhomberg Exp $
+dnl $Id: db3-check.m4,v 1.11.6.9.2.3 2008/12/03 19:17:27 didg Exp $
 dnl Autoconf macros to check for the Berkeley DB library
 
 
@@ -111,7 +111,12 @@ int main(void) {
 	CFLAGS="$savedcflags"
 ])
 
-
+dnl I don't understand this stuff below
+dnl AFAIK it works for 4.1 and 4.2 and (4.3 xor 4.4) 
+dnl you can have 4.2 and 4.3 installed
+dnl but If you have 4.3 and 4.4 it won't work with 4.3
+dnl only 4.4
+dnl didier 
 AC_DEFUN([NETATALK_BERKELEY_LINK],
 [
 atalk_cv_lib_db=no
@@ -119,6 +124,17 @@ NETATALK_BDB_LINK_TRY(atalk_cv_db_db_4_dot_2,[-ldb-4.2])
 NETATALK_BDB_LINK_TRY(atalk_cv_db_db42,[-ldb42])
 NETATALK_BDB_LINK_TRY(atalk_cv_db_db_42,[-ldb-42])
 NETATALK_BDB_LINK_TRY(atalk_cv_db_db_4_2,[-ldb-4-2])
+
+NETATALK_BDB_LINK_TRY(atalk_cv_db_db_4_dot_2,[-ldb-4.4])
+NETATALK_BDB_LINK_TRY(atalk_cv_db_db42,[-ldb44])
+NETATALK_BDB_LINK_TRY(atalk_cv_db_db_42,[-ldb-44])
+NETATALK_BDB_LINK_TRY(atalk_cv_db_db_4_2,[-ldb-4-4])
+
+NETATALK_BDB_LINK_TRY(atalk_cv_db_db_4_dot_2,[-ldb-4.3])
+NETATALK_BDB_LINK_TRY(atalk_cv_db_db42,[-ldb43])
+NETATALK_BDB_LINK_TRY(atalk_cv_db_db_42,[-ldb-43])
+NETATALK_BDB_LINK_TRY(atalk_cv_db_db_4_2,[-ldb-4-3])
+
 NETATALK_BDB_LINK_TRY(atalk_cv_db_db_4_dot_1,[-ldb-4.1])
 NETATALK_BDB_LINK_TRY(atalk_cv_db_db41,[-ldb41])
 NETATALK_BDB_LINK_TRY(atalk_cv_db_db_41,[-ldb-41])
@@ -134,7 +150,7 @@ AC_DEFUN([AC_PATH_BDB],
 	trybdbdir=""
 	dobdbsearch=yes
 	bdb_search_dirs="/usr/local/include /usr/include"
-	search_subdirs="/db4.2 /db42 /db4.1 /db41 /db4 /"
+	search_subdirs="/db4.2 /db42 /db4.3 /db43 /db4.4 /db44 /db4.1 /db41 /db4 /"
 
 dnl required BDB version
 	DB_MAJOR_REQ=4
@@ -191,11 +207,17 @@ dnl			  bdbbindir="`echo $bdbdir | sed 's/include\/db4\.*.*/bin/'`"
 			  CPPFLAGS="-I${bdbdir}${subdir} $CFLAGS"
 			  CFLAGS=""
 			  LDFLAGS="-L$bdblibdir $LDFLAGS"
+			  if test "x$need_dash_r" = "xyes"; then
+				LDFLAGS="$LDFLAGS -R${bdblibdir}"
+			  fi
 			  NETATALK_BERKELEY_LINK
 			  if test x"${atalk_cv_lib_db}" != x"no"; then
 				NETATALK_BDB_CHECK_VERSION
 				if test x"${atalk_cv_bdb_version}" != x"no"; then
 				    BDB_LIBS="-L${bdblibdir} ${atalk_cv_lib_db}"
+				    if test "x$need_dash_r" = "xyes"; then
+					BDB_LIBS="$BDB_LIBS -R${bdblibdir}"
+				    fi
 				    BDB_CFLAGS="-I${bdbdir}${subdir}"
                                     BDB_BIN=$bdbbindir
                                     BDB_PATH="`echo $bdbdir | sed 's,include\/db4$,,'`"

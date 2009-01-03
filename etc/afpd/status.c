@@ -1,5 +1,5 @@
 /*
- * $Id: status.c,v 1.13.6.11.2.1 2005/01/31 19:50:38 didg Exp $
+ * $Id: status.c,v 1.13.6.11.2.3 2006/09/18 00:23:58 didg Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -36,10 +36,10 @@
 #include "afp_config.h"
 #include "icon.h"
 
-static   int maxstatuslen = 0;
+static   size_t maxstatuslen = 0;
 
 static void status_flags(char *data, const int notif, const int ipok,
-                         const unsigned char passwdbits, const int dirsrvcs)
+                         const unsigned char passwdbits, const int dirsrvcs _U_)
 {
     u_int16_t           status;
 
@@ -85,7 +85,7 @@ static int status_server(char *data, const char *server, const struct afp_option
     nbp_name(server, &Obj, &Type, &Zone);
     if ((size_t)-1 == (len = convert_string( 
 			options->unixcharset, options->maccharset, 
-			Obj, strlen(Obj), buf, 31)) ) {
+			Obj, strlen(Obj), buf, sizeof(buf))) ) {
 	len = MIN(strlen(Obj), 31);
     	*data++ = len;
     	memcpy( data, Obj, len );
@@ -228,7 +228,7 @@ server_signature_done:
     return sigoff;
 }
 
-static int status_netaddress(char *data, int *servoffset,
+static size_t status_netaddress(char *data, int *servoffset,
                              const ASP asp, const DSI *dsi,
                              const struct afp_options *options)
 {
@@ -282,7 +282,7 @@ static int status_netaddress(char *data, int *servoffset,
 
     /* handle DNS names */
     if (options->fqdn && dsi) {
-        int len = strlen(options->fqdn);
+        size_t len = strlen(options->fqdn);
         if ( len + 2 + addresses_len < maxstatuslen - offset) {
             *data++ = len +2;
             *data++ = 0x04;
@@ -333,8 +333,8 @@ static int status_netaddress(char *data, int *servoffset,
     return (data - begin);
 }
 
-static int status_directorynames(char *data, int *diroffset, 
-				 const DSI *dsi, 
+static size_t status_directorynames(char *data, int *diroffset, 
+				 const DSI *dsi _U_, 
 				 const struct afp_options *options)
 {
     char *begin = data;
@@ -352,7 +352,7 @@ static int status_directorynames(char *data, int *diroffset,
      */
     if (options->k5service && options->k5realm && options->fqdn) {
 	/* should k5princ be utf8 encoded? */
-	u_int8_t len;
+	size_t len;
 	char *p = strchr( options->fqdn, ':' );
 	if (p) 
 	    *p = '\0';
@@ -360,7 +360,7 @@ static int status_directorynames(char *data, int *diroffset,
 			+ strlen( options->fqdn )
 			+ strlen( options->k5realm );
 	len+=2; /* '/' and '@' */
-	if ( len+2 > maxstatuslen - offset) {
+	if ( len > 255 || len+2 > maxstatuslen - offset) {
 	    *data++ = 0;
 	    LOG ( log_error, logtype_afpd, "status: could not set directory service list, no more room");
 	}	 
@@ -386,8 +386,8 @@ static int status_directorynames(char *data, int *diroffset,
     return (data - begin);
 }
 
-static int status_utf8servername(char *data, int *nameoffset,
-				 const DSI *dsi,
+static size_t status_utf8servername(char *data, int *nameoffset,
+				 const DSI *dsi _U_,
 				 const struct afp_options *options)
 {
     char *Obj, *Type, *Zone;
@@ -481,8 +481,9 @@ void status_init(AFPConfig *aspconfig, AFPConfig *dsiconfig,
 {
     ASP asp;
     DSI *dsi;
-    u_int8_t *status = NULL;
-    int statuslen, c, sigoff;
+    char *status = NULL;
+    size_t statuslen;
+    int c, sigoff;
 
     if (!(aspconfig || dsiconfig) || !options)
         return;
@@ -570,9 +571,9 @@ void status_init(AFPConfig *aspconfig, AFPConfig *dsiconfig,
 
 /* this is the same as asp/dsi_getstatus */
 int afp_getsrvrinfo(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
-char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+AFPObj  *obj;
+char	*ibuf _U_, *rbuf;
+int	ibuflen _U_, *rbuflen;
 {
     AFPConfig *config = obj->config;
 

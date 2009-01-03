@@ -1,5 +1,5 @@
 /*
- * $Id: ofork.c,v 1.20.6.6.2.2 2005/02/10 01:23:15 didg Exp $
+ * $Id: ofork.c,v 1.20.6.6.2.7 2008/11/25 15:16:33 didg Exp $
  *
  * Copyright (c) 1996 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -38,7 +38,7 @@ static u_short		lastrefnum = 0;
 
 
 /* OR some of each character for the hash*/
-static __inline__ unsigned long hashfn(const struct file_key *key)
+static unsigned long hashfn(const struct file_key *key)
 {
 #if 0
     unsigned long i = 0;
@@ -49,7 +49,7 @@ static __inline__ unsigned long hashfn(const struct file_key *key)
     return key->inode & (OFORK_HASHSIZE - 1);
 }
 
-static __inline__ void of_hash(struct ofork *of)
+static void of_hash(struct ofork *of)
 {
     struct ofork **table;
 
@@ -60,7 +60,7 @@ static __inline__ void of_hash(struct ofork *of)
     of->prevp = table;
 }
 
-static __inline__ void of_unhash(struct ofork *of)
+static void of_unhash(struct ofork *of)
 {
     if (of->prevp) {
         if (of->next)
@@ -80,7 +80,7 @@ FILE	*f;
 
     for ( ofrefnum = 0; ofrefnum < nforks; ofrefnum++ ) {
         if ( oforks[ ofrefnum ] != NULL ) {
-            fprintf( f, "%hu <%s>\n", ofrefnum, oforks[ ofrefnum ]->of_name);
+            fprintf( f, "%hu <%s>\n", ofrefnum, of_name(oforks[ ofrefnum ]));
         }
     }
 }
@@ -106,9 +106,10 @@ int of_rename(vol, s_of, olddir, oldpath, newdir, newpath)
 const struct vol *vol;
 struct ofork *s_of;
 struct dir *olddir, *newdir;
-const char *oldpath, *newpath;
+const char *oldpath _U_, *newpath;
 {
     struct ofork *of, *next, *d_ofork;
+    int done = 0;
 
     if (!s_of)
         return AFP_OK;
@@ -120,7 +121,10 @@ const char *oldpath, *newpath;
         if (vol == of->of_vol && olddir == of->of_dir &&
 	         s_of->key.dev == of->key.dev && 
 	         s_of->key.inode == of->key.inode ) {
-            strlcpy( of->of_name, newpath, of->of_namelen);
+	    if (!done) {
+	        strlcpy( of_name(of), newpath, of->of_ad->ad_m_namelen);
+	        done = 1;
+	    }
             if (newdir != olddir) {
                 of->of_d_prev->of_d_next = of->of_d_next;
                 of->of_d_next->of_d_prev = of->of_d_prev;
@@ -162,7 +166,7 @@ struct stat     *st;
     int			i;
 
     if (!oforks) {
-        nforks = (getdtablesize() - 10) / 2;
+        nforks = getdtablesize() - 10;
 	/* protect against insane ulimit -n */
         nforks = min(nforks, 0xffff);
         oforks = (struct ofork **) calloc(nforks, sizeof(struct ofork *));
@@ -215,12 +219,27 @@ struct stat     *st;
         ad = malloc( sizeof( struct adouble ) );
         if (!ad) {
             LOG(log_error, logtype_afpd, "of_alloc: malloc: %s", strerror(errno) );
+            free(of);
+            oforks[ of_refnum ] = NULL;
             return NULL;
         }
 
         /* initialize to zero. This is important to ensure that
            ad_open really does reinitialize the structure. */
         ad_init(ad, vol->v_adouble, vol->v_ad_options);
+
+        ad->ad_m_namelen = 255 +1;
+        /* here's the deal: we allocate enough for the standard mac file length.
+         * in the future, we'll reallocate in fairly large jumps in case
+         * of long unicode names */
+        if (( ad->ad_m_name =(char *)malloc( ad->ad_m_namelen )) == NULL ) {
+            LOG(log_error, logtype_afpd, "of_alloc: malloc: %s", strerror(errno) );
+            free(ad);
+            free(of);
+            oforks[ of_refnum ] = NULL;
+            return NULL;
+        }
+        strlcpy( ad->ad_m_name, path, ad->ad_m_namelen);
     } else {
         /* Increase the refcount on this struct adouble. This is
            decremented again in oforc_dealloc. */
@@ -228,7 +247,6 @@ struct stat     *st;
     }
 
     of->of_ad = ad;
-
     of->of_vol = vol;
     of->of_dir = dir;
 
@@ -242,18 +260,6 @@ struct stat     *st;
         d_ofork->of_d_prev = of;
     }
 
-    /* here's the deal: we allocate enough for the standard mac file length.
-     * in the future, we'll reallocate in fairly large jumps in case
-     * of long unicode names */
-    if (( of->of_name =(char *)malloc(255 + 1)) == NULL ) {
-        LOG(log_error, logtype_afpd, "of_alloc: malloc: %s", strerror(errno) );
-        if (!ad)
-            free(of->of_ad);
-        free(of);
-        oforks[ of_refnum ] = NULL;
-        return NULL;
-    }
-    strlcpy( of->of_name, path, of->of_namelen = 255 + 1);
     *ofrefnum = refnum;
     of->of_refnum = refnum;
     of->key.dev = st->st_dev;
@@ -359,12 +365,12 @@ struct ofork	*of;
     }
 
     oforks[ of->of_refnum % nforks ] = NULL;
-    free( of->of_name );
 
     /* decrease refcount */
     of->of_ad->ad_refcount--;
 
     if ( of->of_ad->ad_refcount <= 0) {
+        free( of->of_ad->ad_m_name );
         free( of->of_ad);
     } else {/* someone's still using it. just free this user's locks */
         ad_unlock(of->of_ad, of->of_refnum);

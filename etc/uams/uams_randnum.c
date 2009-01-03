@@ -1,5 +1,5 @@
 /* 
- * $Id: uams_randnum.c,v 1.12.6.4 2004/10/08 00:54:40 bfernhomberg Exp $
+ * $Id: uams_randnum.c,v 1.12.6.4.2.2 2008/11/25 15:16:33 didg Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * Copyright (c) 1999 Adrian Sun (asun@u.washington.edu) 
@@ -53,10 +53,6 @@ char *strchr (), *strrchr ();
 #include <crack.h>
 #endif /* USE_CRACKLIB */
 
-#ifndef __inline__
-#define __inline__
-#endif /* __inline__ */
-
 #define PASSWDLEN 8
 
 static C_Block		seskey;
@@ -71,9 +67,9 @@ static u_int8_t         randbuf[8];
 
 
 /* handle ~/.passwd. courtesy of shirsch@ibm.net. */
-static  __inline__ int home_passwd(const struct passwd *pwd, 
-				   const char *path, const int pathlen, 
-				   char *passwd, const int len,
+static  int home_passwd(const struct passwd *pwd, 
+				   const char *path, const int pathlen _U_, 
+				   unsigned char *passwd, const int len,
 				   const int set)
 {
   struct stat st;
@@ -145,7 +141,7 @@ home_passwd_fail:
 #define unhex(x)  (isdigit(x) ? (x) - '0' : toupper(x) + 10 - 'A')
 static int afppasswd(const struct passwd *pwd, 
 		     const char *path, const int pathlen, 
-		     char *passwd, int len, 
+		     unsigned char *passwd, int len, 
 		     const int set)
 {
   u_int8_t key[DES_KEY_SZ*2];
@@ -264,7 +260,7 @@ afppasswd_done:
  * depending upon whether or not the password is in ~/.passwd
  * or in a global location */
 static int randpass(const struct passwd *pwd, const char *file,
-		    char *passwd, const int len, const int set) 
+		    unsigned char *passwd, const int len, const int set) 
 {
   int i;
   uid_t uid = geteuid();
@@ -303,8 +299,8 @@ static int randpass(const struct passwd *pwd, const char *file,
 
 /* randnum sends an 8-byte number and uses the user's password to
  * check against the encrypted reply. */
-static int rand_login(void *obj, char *username, int ulen, struct passwd **uam_pwd,
-                        char *ibuf, int ibuflen,
+static int rand_login(void *obj, char *username, int ulen, struct passwd **uam_pwd _U_,
+                        char *ibuf _U_, int ibuflen _U_,
                         char *rbuf, int *rbuflen)
 {
 
@@ -350,8 +346,8 @@ static int rand_login(void *obj, char *username, int ulen, struct passwd **uam_p
 /* check encrypted reply. we actually setup the encryption stuff
  * here as the first part of randnum and rand2num are identical. */
 static int randnum_logincont(void *obj, struct passwd **uam_pwd,
-			     char *ibuf, int ibuflen, 
-			     char *rbuf, int *rbuflen)
+			     char *ibuf, int ibuflen _U_, 
+			     char *rbuf _U_, int *rbuflen)
 {
   u_int16_t sessid;
 
@@ -389,7 +385,7 @@ static int randnum_logincont(void *obj, struct passwd **uam_pwd,
  *    and sends it back as part of the reply.
  */
 static int rand2num_logincont(void *obj, struct passwd **uam_pwd,
-			      char *ibuf, int ibuflen, 
+			      char *ibuf, int ibuflen _U_, 
 			      char *rbuf, int *rbuflen)
 {
   u_int16_t sessid;
@@ -437,9 +433,9 @@ static int rand2num_logincont(void *obj, struct passwd **uam_pwd,
  * NOTE: an FPLogin must already have completed successfully for this
  *       to work. 
  */
-static int randnum_changepw(void *obj, const char *username, 
+static int randnum_changepw(void *obj, const char *username _U_, 
 			    struct passwd *pwd, char *ibuf,
-			    int ibuflen, char *rbuf, int *rbuflen)
+			    int ibuflen _U_, char *rbuf _U_, int *rbuflen _U_)
 {
     char *passwdfile;
     int err, len;

@@ -1,5 +1,5 @@
 /*
- * $Id: dbd_getstamp.c,v 1.1.2.3 2004/02/07 19:46:08 didg Exp $
+ * $Id: dbd_getstamp.c,v 1.1.2.3.2.1 2005/09/27 10:40:41 didg Exp $
  *
  * Copyright (C) Joerg Lenneis 2003
  * All Rights Reserved.  See COPYING.
@@ -21,7 +21,7 @@
 
 /* Return the unique stamp associated with this database */
 
-int dbd_getstamp(struct cnid_dbd_rqst *rqst, struct cnid_dbd_rply *rply)
+int dbd_getstamp(struct cnid_dbd_rqst *rqst _U_, struct cnid_dbd_rply *rply)
 {
     DBT key, data;
     int rc;

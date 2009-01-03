@@ -1,5 +1,5 @@
 /*
- * $Id: fork.c,v 1.51.2.2.2.10.2.2 2004/12/07 03:23:49 didg Exp $
+ * $Id: fork.c,v 1.51.2.2.2.10.2.6 2008/11/25 15:16:33 didg Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -83,10 +83,10 @@ const u_int16_t     attrbits;
     vol = ofork->of_vol;
     dir = ofork->of_dir;
 
-    if (NULL == (path.u_name = mtoupath(vol, ofork->of_name, dir->d_did, utf8_encoding()))) {
+    if (NULL == (path.u_name = mtoupath(vol, of_name(ofork), dir->d_did, utf8_encoding()))) {
         return( AFPERR_MISC );
     }
-    path.m_name = ofork->of_name;
+    path.m_name = of_name(ofork);
     st = &path.st;
     if ( bitmap & ( (1<<FILPBIT_DFLEN) | (1<<FILPBIT_EXTDFLEN) | 
                     (1<<FILPBIT_FNUM) | (1 << FILPBIT_CDATE) | 
@@ -162,7 +162,7 @@ static int is_neg(int is64, off_t val)
     return 0;
 }
 
-static __inline__ int sum_neg(int is64, off_t offset, off_t reqcount) 
+static int sum_neg(int is64, off_t offset, off_t reqcount) 
 {
     if (is_neg(is64, offset +reqcount) ) 
    	return 1;
@@ -259,9 +259,9 @@ static int fork_setmode(struct adouble *adp, int eid, int access, int ofrefnum)
 
 /* ----------------------- */
 int afp_openfork(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
+AFPObj  *obj _U_;
 char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+int	ibuflen _U_, *rbuflen;
 {
     struct vol		*vol;
     struct dir		*dir;
@@ -536,9 +536,9 @@ openfork_err:
 }
 
 int afp_setforkparams(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
-char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+AFPObj  *obj _U_;
+char	*ibuf, *rbuf _U_;
+int	ibuflen, *rbuflen;
 {
     struct ofork	*ofork;
     off_t		size;
@@ -630,7 +630,7 @@ int		ibuflen, *rbuflen;
             goto afp_setfork_err;
 
         if (ad_flush( ofork->of_ad, ADFLAGS_HF ) < 0) {
-            LOG(log_error, logtype_afpd, "afp_setforkparams(%s): ad_flush: %s", ofork->of_name, strerror(errno) );
+            LOG(log_error, logtype_afpd, "afp_setforkparams(%s): ad_flush: %s", of_name(ofork), strerror(errno) );
             return AFPERR_PARAM;
         }
     } else
@@ -638,7 +638,7 @@ int		ibuflen, *rbuflen;
 
 #ifdef AFS
     if ( flushfork( ofork ) < 0 ) {
-        LOG(log_error, logtype_afpd, "afp_setforkparams(%s): flushfork: %s", ofork->of_name, strerror(errno) );
+        LOG(log_error, logtype_afpd, "afp_setforkparams(%s): flushfork: %s", of_name(ofork), strerror(errno) );
     }
 #endif /* AFS */
 
@@ -676,9 +676,9 @@ afp_setfork_err:
 
 /* ---------------------- */
 static int byte_lock(obj, ibuf, ibuflen, rbuf, rbuflen, is64 )
-AFPObj  *obj;
+AFPObj  *obj _U_;
 char	*ibuf, *rbuf;
-int	ibuflen, *rbuflen;
+int	ibuflen _U_, *rbuflen;
 int     is64;
 {
     struct ofork	*ofork;
@@ -778,14 +778,14 @@ int	ibuflen, *rbuflen;
 #undef UNLOCKBIT
 
 /* --------------------------- */
-static __inline__ int crlf( of )
+static int crlf( of )
 struct ofork	*of;
 {
     struct extmap	*em;
 
     if ( ad_hfileno( of->of_ad ) == -1 || !memcmp( ufinderi, ad_entry( of->of_ad, ADEID_FINDERI),8)) {
         /* no resource fork or no finderinfo, use our files extension mapping */
-        if (!( em = getextmap( of->of_name )) || memcmp( "TEXT", em->em_type, sizeof( em->em_type ))) {
+        if (!( em = getextmap( of_name(of) )) || memcmp( "TEXT", em->em_type, sizeof( em->em_type ))) {
             return 0;
         } 
         /* file type is TEXT */
@@ -798,7 +798,7 @@ struct ofork	*of;
 }
 
 
-static __inline__ ssize_t read_file(struct ofork *ofork, int eid,
+static ssize_t read_file(struct ofork *ofork, int eid,
                                     off_t offset, u_char nlmask,
                                     u_char nlchar, char *rbuf,
                                     int *rbuflen, const int xlate)
@@ -809,7 +809,7 @@ static __inline__ ssize_t read_file(struct ofork *ofork, int eid,
 
     cc = ad_read(ofork->of_ad, eid, offset, rbuf, *rbuflen);
     if ( cc < 0 ) {
-        LOG(log_error, logtype_afpd, "afp_read(%s): ad_read: %s", ofork->of_name, strerror(errno) );
+        LOG(log_error, logtype_afpd, "afp_read(%s): ad_read: %s", of_name(ofork), strerror(errno) );
         *rbuflen = 0;
         return( AFPERR_PARAM );
     }
@@ -867,10 +867,10 @@ static __inline__ ssize_t read_file(struct ofork *ofork, int eid,
  * with dsi, should we check that reqcount < server quantum? 
 */
 static int read_fork(obj, ibuf, ibuflen, rbuf, rbuflen, is64)
-AFPObj      *obj;
+AFPObj  *obj;
 char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
-int is64;
+int	ibuflen _U_, *rbuflen;
+int     is64;
 {
     struct ofork	*ofork;
     off_t		offset, saveoff, reqcount, savereqcount;
@@ -979,7 +979,7 @@ int is64;
                 if (errno == EINVAL || errno == ENOSYS)
                     goto afp_read_loop;
                 else {
-                    LOG(log_error, logtype_afpd, "afp_read(%s): ad_readfile: %s", ofork->of_name, strerror(errno));
+                    LOG(log_error, logtype_afpd, "afp_read(%s): ad_readfile: %s", of_name(ofork), strerror(errno));
                     goto afp_read_exit;
                 }
             }
@@ -1024,7 +1024,7 @@ afp_read_loop:
         goto afp_read_done;
 
 afp_read_exit:
-        LOG(log_error, logtype_afpd, "afp_read(%s): %s", ofork->of_name, strerror(errno));
+        LOG(log_error, logtype_afpd, "afp_read(%s): %s", of_name(ofork), strerror(errno));
         dsi_readdone(dsi);
         ad_tmplock(ofork->of_ad, eid, ADLOCK_CLR, saveoff, savereqcount,ofork->of_refnum);
         obj->exit(EXITERR_CLNT);
@@ -1059,9 +1059,9 @@ int	ibuflen, *rbuflen;
 
 /* ---------------------- */
 int afp_flush(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
-char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+AFPObj  *obj _U_;
+char	*ibuf, *rbuf _U_;
+int	ibuflen _U_, *rbuflen;
 {
     struct vol *vol;
     u_int16_t vid;
@@ -1079,9 +1079,9 @@ int		ibuflen, *rbuflen;
 }
 
 int afp_flushfork(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
-char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+AFPObj  *obj _U_;
+char	*ibuf, *rbuf _U_;
+int	ibuflen _U_, *rbuflen;
 {
     struct ofork	*ofork;
     u_int16_t		ofrefnum;
@@ -1096,7 +1096,7 @@ int		ibuflen, *rbuflen;
     }
 
     if ( flushfork( ofork ) < 0 ) {
-        LOG(log_error, logtype_afpd, "afp_flushfork(%s): %s", ofork->of_name, strerror(errno) );
+        LOG(log_error, logtype_afpd, "afp_flushfork(%s): %s", of_name(ofork), strerror(errno) );
     }
 
     return( AFP_OK );
@@ -1113,7 +1113,7 @@ struct ofork	*ofork;
     if ( ad_dfileno( ofork->of_ad ) != -1 &&
             fsync( ad_dfileno( ofork->of_ad )) < 0 ) {
         LOG(log_error, logtype_afpd, "flushfork(%s): dfile(%d) %s",
-            ofork->of_name, ad_dfileno(ofork->of_ad), strerror(errno) );
+            of_name(ofork), ad_dfileno(ofork->of_ad), strerror(errno) );
         err = -1;
     }
 
@@ -1139,21 +1139,23 @@ struct ofork	*ofork;
 
         if (err < 0)
             LOG(log_error, logtype_afpd, "flushfork(%s): hfile(%d) %s",
-                ofork->of_name, ad_hfileno(ofork->of_ad), strerror(errno) );
+                of_name(ofork), ad_hfileno(ofork->of_ad), strerror(errno) );
     }
 
     return( err );
 }
 
 int afp_closefork(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
-char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+AFPObj      *obj _U_;
+char	*ibuf, *rbuf _U_;
+int		ibuflen _U_, *rbuflen;
 {
     struct ofork	*ofork;
     struct timeval      tv;
     int			adflags, doflush = 0;
     u_int16_t		ofrefnum;
+    int			ret;
+    
 
     *rbuflen = 0;
     ibuf += 2;
@@ -1184,18 +1186,18 @@ int		ibuflen, *rbuflen;
             }
         }
     }
-
+    ret = AFP_OK;
     if ( ad_close( ofork->of_ad, adflags ) < 0 ) {
-        LOG(log_error, logtype_afpd, "afp_closefork(%s): ad_close: %s", ofork->of_name, strerror(errno) );
-        return( AFPERR_PARAM );
+        LOG(log_error, logtype_afpd, "afp_closefork(%s): ad_close: %s", of_name(ofork), strerror(errno) );
+        ret = AFPERR_PARAM;
     }
 
     of_dealloc( ofork );
-    return( AFP_OK );
+    return ret;
 }
 
 
-static __inline__ ssize_t write_file(struct ofork *ofork, int eid,
+static ssize_t write_file(struct ofork *ofork, int eid,
                                      off_t offset, char *rbuf,
                                      size_t rbuflen, const int xlate)
 {
@@ -1223,7 +1225,7 @@ static __inline__ ssize_t write_file(struct ofork *ofork, int eid,
         case ENOSPC :
             return( AFPERR_DFULL );
         default :
-            LOG(log_error, logtype_afpd, "afp_write(%s): ad_write: %s", ofork->of_name, strerror(errno) );
+            LOG(log_error, logtype_afpd, "afp_write(%s): ad_write: %s", of_name(ofork), strerror(errno) );
             return( AFPERR_PARAM );
         }
     }
@@ -1238,7 +1240,7 @@ static __inline__ ssize_t write_file(struct ofork *ofork, int eid,
 static int write_fork(obj, ibuf, ibuflen, rbuf, rbuflen, is64)
 AFPObj              *obj;
 char                *ibuf, *rbuf;
-int                 ibuflen, *rbuflen;
+int                 ibuflen _U_, *rbuflen;
 int                 is64;
 {
     struct ofork	*ofork;
@@ -1439,9 +1441,9 @@ int                 ibuflen, *rbuflen;
 
 /* ---------------------------- */
 int afp_getforkparams(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
+AFPObj  *obj _U_;
 char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+int	ibuflen _U_, *rbuflen;
 {
     struct ofork	*ofork;
     int			buflen, ret;
@@ -1465,7 +1467,7 @@ int		ibuflen, *rbuflen;
 
     if ( ad_hfileno( ofork->of_ad ) != -1 ) {
         if ( ad_refresh( ofork->of_ad ) < 0 ) {
-            LOG(log_error, logtype_afpd, "getforkparams(%s): ad_refresh: %s", ofork->of_name, strerror(errno) );
+            LOG(log_error, logtype_afpd, "getforkparams(%s): ad_refresh: %s", of_name(ofork), strerror(errno) );
             return( AFPERR_PARAM );
         }
     }

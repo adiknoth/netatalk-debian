@@ -1,5 +1,5 @@
 /*
- * $Id: volume.h,v 1.19.2.5.2.7.2.1 2005/02/10 01:23:16 didg Exp $
+ * $Id: volume.h,v 1.19.2.5.2.7.2.3 2006/09/19 02:24:06 didg Exp $
  *
  * Copyright (c) 1990,1994 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -48,6 +48,7 @@ struct vol {
     struct _cnid_db     *v_cdb;
     char                v_stamp[ADEDLEN_PRIVSYN];
     mode_t		v_umask;
+    mode_t		v_perm;             /* default permission value OR with requested perm*/
 
 #ifdef FORCE_UIDGID
     char		*v_forceuid;
@@ -87,8 +88,8 @@ typedef u_int64_t VolSpace;
 #endif /* NO_LARGE_VOL_SUPPORT */
 
 #define AFPVOL_OPEN	(1<<0)
-#define AFPVOL_DT	(1<<1)
 
+/* flags  for AFS and quota 0xxx0 */
 #define AFPVOL_GVSMASK	(7<<2)
 #define AFPVOL_NONE	(0<<2)
 #define AFPVOL_AFSGVS	(1<<2)
@@ -116,6 +117,7 @@ this is going away. */
                                      * NOTE symlink to a different device will return an ACCESS error
                                      */
 #define AFPVOL_CACHE      (1 << 19)  /* Use adouble v2 CNID caching, default don't use it */
+#define AFPVOL_INV_DOTS   (1 << 20)  /* dots files are invisible */
 
 /* FPGetSrvrParms options */
 #define AFPSRVR_CONFIGINFO     (1 << 0)
@@ -176,6 +178,8 @@ int wincheck(const struct vol *vol, const char *path);
 #define vol_nodev(vol) (((vol)->v_flags & AFPVOL_NODEV) ? 1 : 0)
 
 #define vol_unix_priv(vol) (afp_version >= 30 && ((vol)->v_flags & AFPVOL_UNIX_PRIV))
+
+#define vol_inv_dots(vol) (((vol)->v_flags & AFPVOL_INV_DOTS) ? 1 : 0)
 
 extern struct vol	*getvolbyvid __P((const u_int16_t));
 extern int              ustatfs_getvolspace __P((const struct vol *,

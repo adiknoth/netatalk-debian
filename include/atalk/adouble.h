@@ -1,5 +1,5 @@
 /*
- * $Id: adouble.h,v 1.21.6.20.2.3 2005/02/12 11:22:05 didg Exp $
+ * $Id: adouble.h,v 1.21.6.20.2.8 2008/11/25 15:16:33 didg Exp $
  * Copyright (c) 1990,1991 Regents of The University of Michigan.
  * All Rights Reserved.
  *
@@ -246,12 +246,16 @@ struct adouble {
     char		ad_filler[ 16 ];
     struct ad_entry	ad_eid[ ADEID_MAX ];
     struct ad_fd	ad_df, ad_hf;
-    int                 ad_flags, ad_inited;
+    int                 ad_flags;
+    unsigned		ad_inited;
     int                 ad_options;
     int                 ad_refcount; /* used in afpd/ofork.c */
     off_t               ad_rlen;     /* ressource fork len with AFP 3.0
                                         the header parameter size is too small.
                                      */
+    char                *ad_m_name;   /* mac name for open fork */
+    int                 ad_m_namelen;
+
     char                *(*ad_path)(const char *, int);
                            
 #ifdef USE_MMAPPED_HEADERS
@@ -268,10 +272,15 @@ struct adouble {
 #define ADFLAGS_V1COMPAT  (1<<4)
 #define ADFLAGS_NOHF      (1<<5)  /* not an error if no ressource fork */
 #define ADFLAGS_RDONLY    (1<<6)  /* don't try readwrite */
+#define ADFLAGS_CREATE    (1<<7)
 
 /* adouble v2 cnid cache */
 #define ADVOL_NODEV      (1 << 0)   
 #define ADVOL_CACHE      (1 << 1)
+/* adouble unix priv */
+#define ADVOL_UNIXPRIV   (1 << 2)   
+/* dot files (.DS_Store) are invisible) */
+#define ADVOL_INVDOTS    (1 << 3)   
 
 /* lock flags */
 #define ADLOCK_CLR      (0)
@@ -411,17 +420,13 @@ extern int ad_metadata    __P((const char *, int, struct adouble *));
 #define ad_metadata(name, flags, adp)  ad_open(name, ADFLAGS_HF|(flags), O_RDONLY, 0666, adp)
 #endif
 
-/* extend header to RW if R or W (W if R for locking),
+/* build a resource fork mode from the data fork mode:
+ * remove X mode and extend header to RW if R or W (W if R for locking),
  */ 
 #ifndef ATACC
-#ifndef __inline__
-#define __inline__
-#endif
-static __inline__ mode_t ad_hf_mode (mode_t mode)
+static inline mode_t ad_hf_mode (mode_t mode)
 {
-#if 0
-    mode |= S_IRUSR;
-#endif    
+    mode &= ~(S_IXUSR | S_IXGRP | S_IXOTH);
     /* fnctl lock need write access */
     if ((mode & S_IRUSR))
         mode |= S_IWUSR;

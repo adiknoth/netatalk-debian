@@ -1,6 +1,6 @@
 
 /*
- * $Id: cnid_cdb_open.c,v 1.1.4.10 2004/03/22 04:38:51 bfernhomberg Exp $
+ * $Id: cnid_cdb_open.c,v 1.1.4.10.2.1 2005/09/27 10:40:41 didg Exp $
  *
  * Copyright (c) 1999. Adrian Sun (asun@zoology.washington.edu)
  * All Rights Reserved. See COPYRIGHT.
@@ -86,8 +86,8 @@ static int my_yield(void)
 
 /* --------------- */
 static int didname(dbp, pkey, pdata, skey)
-DB *dbp;
-const DBT *pkey, *pdata;
+DB *dbp _U_;
+const DBT *pkey _U_, *pdata;
 DBT *skey;
 {
 int len;
@@ -101,8 +101,8 @@ int len;
  
 /* --------------- */
 static int devino(dbp, pkey, pdata, skey)
-DB *dbp;
-const DBT *pkey, *pdata;
+DB *dbp _U_;
+const DBT *pkey _U_, *pdata;
 DBT *skey;
 {
     memset(skey, 0, sizeof(DBT));

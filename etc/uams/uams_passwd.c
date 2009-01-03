@@ -1,5 +1,5 @@
 /*
- * $Id: uams_passwd.c,v 1.19.2.1.2.9 2004/06/15 00:52:09 bfernhomberg Exp $
+ * $Id: uams_passwd.c,v 1.19.2.1.2.9.2.2 2006/12/03 16:23:08 didg Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * Copyright (c) 1999 Adrian Sun (asun@u.washington.edu) 
@@ -75,7 +75,7 @@ extern void append(void *, const char *, int);
 
 static int pwd_login(void *obj, char *username, int ulen, struct passwd **uam_pwd,
                         char *ibuf, int ibuflen,
-                        char *rbuf, int *rbuflen)
+                        char *rbuf _U_, int *rbuflen _U_)
 {
     char  *p;
     struct passwd *pwd;
@@ -412,6 +412,12 @@ static void uam_cleanup(void)
 }
 
 UAM_MODULE_EXPORT struct uam_export uams_clrtxt = {
+            UAM_MODULE_SERVER,
+            UAM_MODULE_VERSION,
+            uam_setup, uam_cleanup
+        };
+
+UAM_MODULE_EXPORT struct uam_export uams_passwd = {
             UAM_MODULE_SERVER,
             UAM_MODULE_VERSION,
             uam_setup, uam_cleanup

@@ -1,5 +1,5 @@
 /*
- * $Id: print_cups.c,v 1.1.2.1.2.1 2005/01/11 23:00:40 didg Exp $
+ * $Id: print_cups.c,v 1.1.2.1.2.3 2008/11/14 10:04:52 didg Exp $
  *
  * Copyright 2004 Bjoern Fernhomberg.
  *
@@ -79,7 +79,7 @@ char * cups_get_language ()
  */
 
 static const char *                            /* O - Password or NULL */
-cups_passwd_cb(const char *prompt)      /* I - Prompt */
+cups_passwd_cb(const char *prompt _U_)      /* I - Prompt */
 {
  /*
   * Always return NULL to indicate that no password is available...
@@ -384,7 +384,7 @@ cups_autoadd_printers ( struct printer	*defprinter, struct printer *printers)
         for  (i=0; i< num_dests; i++)
         {
 		if (( pr = (struct printer *)malloc( sizeof( struct printer )))	== NULL ) {
-			LOG(log_error, logtype_papd, "malloc: %m" );
+			LOG(log_error, logtype_papd, "malloc: %s", strerror(errno) );
 			exit( 1 );
 		}
 	
@@ -403,7 +403,7 @@ cups_autoadd_printers ( struct printer	*defprinter, struct printer *printers)
 		}
 
 		if (( pr->p_name = (char *)malloc( strlen( name ) + 1 )) == NULL ) {
-			LOG(log_error, logtype_papd, "malloc: %m" );
+			LOG(log_error, logtype_papd, "malloc: %s", strerror(errno) );
 			exit( 1 );
 		}
 		strcpy( pr->p_name, name );
@@ -415,14 +415,14 @@ cups_autoadd_printers ( struct printer	*defprinter, struct printer *printers)
 		pr->p_flags |= P_CUPS_AUTOADDED;
 			
 		if (( pr->p_printer = (char *)malloc( strlen( dests[i].name ) + 1 )) == NULL ) {
-			LOG(log_error, logtype_papd, "malloc: %m" );
+			LOG(log_error, logtype_papd, "malloc: %s", strerror(errno) );
                		exit( 1 );
         	}
         	strcpy( pr->p_printer, dests[i].name );			
 
         	if ( (p = (char *) cups_get_printer_ppd ( pr->p_printer )) != NULL ) {
         		if (( pr->p_ppdfile = (char *)malloc( strlen( p ) + 1 )) == NULL ) {
-				LOG(log_error, logtype_papd, "malloc: %m" );
+				LOG(log_error, logtype_papd, "malloc: %s", strerror(errno) );
                			exit( 1 );
         		}
         		strcpy( pr->p_ppdfile, p );
@@ -493,7 +493,7 @@ to_ascii ( char  *inptr, char **outptr)
 	char *out, *osav;
 
 	if ( NULL == (out = (char*) malloc ( strlen ( inptr) + 1 )) ) {
-		LOG(log_error, logtype_papd, "malloc: %m" );
+		LOG(log_error, logtype_papd, "malloc: %s", strerror(errno) );
 		exit (1);
 	}
 

@@ -1,5 +1,5 @@
 /*
- * $Id: dsi_stream.c,v 1.11.6.5.2.1 2005/01/31 19:50:53 didg Exp $
+ * $Id: dsi_stream.c,v 1.11.6.5.2.2 2005/09/27 10:40:41 didg Exp $
  *
  * Copyright (c) 1998 Adrian Sun (asun@zoology.washington.edu)
  * All rights reserved. See COPYRIGHT.
@@ -112,7 +112,7 @@ void dsi_buffer(DSI *dsi)
  * write raw data. return actual bytes read. checks against EINTR
  * aren't necessary if all of the signals have SA_RESTART
  * specified. */
-size_t dsi_stream_write(DSI *dsi, void *data, const size_t length, int mode)
+size_t dsi_stream_write(DSI *dsi, void *data, const size_t length, int mode _U_)
 {
   size_t written;
   ssize_t len;

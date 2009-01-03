@@ -124,6 +124,10 @@
 /* Define to enable CUPS Support */
 #undef HAVE_CUPS
 
+/* Define to 1 if you have the declaration of `cygwin_conv_path', and to 0 if
+   you don't. */
+#undef HAVE_DECL_CYGWIN_CONV_PATH
+
 /* Define if errno declaration exists */
 #undef HAVE_DECL_ERRNO
 
@@ -154,6 +158,9 @@
 
 /* Define to 1 if you have the `dlsym' function. */
 #undef HAVE_DLSYM
+
+/* Define if you have the _dyld_func_lookup function. */
+#undef HAVE_DYLD
 
 /* Define if errno declaration exists */
 #undef HAVE_ERRNO
@@ -226,6 +233,12 @@
 
 /* Define if you have the libdl library or equivalent. */
 #undef HAVE_LIBDL
+
+/* Define if libdlloader will be built on this platform */
+#undef HAVE_LIBDLLOADER
+
+/* Define if the DHX2 modules should be built with libgcrypt */
+#undef HAVE_LIBGCRYPT
 
 /* Define to 1 if you have the `gssapi' library (-lgssapi). */
 #undef HAVE_LIBGSSAPI
@@ -494,6 +507,9 @@
 /* Whether to use native iconv */
 #undef HAVE_USABLE_ICONV
 
+/* Define to 1 if you have the <utime.h> header file. */
+#undef HAVE_UTIME_H
+
 /* Define to 1 if `utime(file, NULL)' sets file's timestamp to the present. */
 #undef HAVE_UTIME_NULL
 
@@ -527,6 +543,10 @@
 
 /* Path to the log file */
 #undef LOGFILEPATH
+
+/* Define to the sub-directory in which libtool stores uninstalled libraries.
+   */
+#undef LT_OBJDIR
 
 /* Define if compiling for MacOS X Server */
 #undef MACOSX_SERVER
@@ -608,6 +628,9 @@
 /* Define if the DHX UAM modules should be compiled */
 #undef UAM_DHX
 
+/* Define if the DHX2 UAM modules should be compiled */
+#undef UAM_DHX2
+
 /* Define if the Kerberos 4 UAM module should be compiled */
 #undef UAM_KRB4
 
@@ -659,20 +682,22 @@
 /* Define to `int' if <sys/types.h> doesn't define. */
 #undef gid_t
 
-/* Define as `__inline' if that's what the C compiler calls it, or to nothing
-   if it is not supported. */
+/* Define to `__inline__' or `__inline' if that's what the C compiler
+   calls it, or to nothing if 'inline' is not supported under any name.  */
+#ifndef __cplusplus
 #undef inline
+#endif
 
 /* Define to `int' if <sys/types.h> does not define. */
 #undef mode_t
 
-/* Define to `long' if <sys/types.h> does not define. */
+/* Define to `long int' if <sys/types.h> does not define. */
 #undef off_t
 
 /* Define to `int' if <sys/types.h> does not define. */
 #undef pid_t
 
-/* Define to `unsigned' if <sys/types.h> does not define. */
+/* Define to `unsigned int' if <sys/types.h> does not define. */
 #undef size_t
 
 /* Define to `int' if <sys/types.h> doesn't define. */
