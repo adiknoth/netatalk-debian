@@ -1,5 +1,5 @@
 /*
- * $Id: pack.c,v 1.1.4.9 2004/02/07 19:46:08 didg Exp $
+ * $Id: pack.c,v 1.1.4.9.2.1 2005/09/27 10:40:41 didg Exp $
  *
  * Copyright (C) Joerg Lenneis 2003
  * All Rights Reserved.  See COPYING.
@@ -57,8 +57,8 @@ static void pack_devino(unsigned char *buf, dev_t dev, ino_t ino)
 
 /* --------------- */
 int didname(dbp, pkey, pdata, skey)
-DB *dbp;
-const DBT *pkey, *pdata;
+DB *dbp _U_;
+const DBT *pkey _U_, *pdata;
 DBT *skey;
 {
 int len;
@@ -75,8 +75,8 @@ int len;
  
 /* --------------- */
 int devino(dbp, pkey, pdata, skey)
-DB *dbp;
-const DBT *pkey, *pdata;
+DB *dbp _U_;
+const DBT *pkey _U_, *pdata;
 DBT *skey;
 {
     memset(skey, 0, sizeof(DBT));
@@ -89,10 +89,10 @@ DBT *skey;
    differ from make_cnid_data in that we never return NULL, rqst->name cannot
    ever cause start[] to overflow because name length is checked in libatalk. */
 
-char *pack_cnid_data(struct cnid_dbd_rqst *rqst)
+unsigned char *pack_cnid_data(struct cnid_dbd_rqst *rqst)
 {
-    static char start[CNID_HEADER_LEN + MAXPATHLEN + 1];
-    char *buf = start +CNID_LEN;
+    static unsigned char start[CNID_HEADER_LEN + MAXPATHLEN + 1];
+    unsigned char *buf = start +CNID_LEN;
     u_int32_t i;
 
     pack_devino(buf, rqst->dev, rqst->ino);

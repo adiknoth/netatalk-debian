@@ -1,5 +1,5 @@
 /*
- * $Id: volume.c,v 1.51.2.7.2.33.2.5 2005/04/24 22:26:31 didg Exp $
+ * $Id: volume.c,v 1.51.2.7.2.33.2.15 2008/11/25 15:16:33 didg Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -115,11 +115,13 @@ m=u -> map both ways
 #define VOLOPT_FORCEUID  19  /* force uid for username x */
 #define VOLOPT_FORCEGID  20  /* force gid for group x */
 #define VOLOPT_UMASK     21
+#define VOLOPT_DFLTPERM  22
 #else 
 #define VOLOPT_UMASK     19
+#define VOLOPT_DFLTPERM  20
 #endif /* FORCE_UIDGID */
 
-#define VOLOPT_MAX       (VOLOPT_UMASK +1)
+#define VOLOPT_MAX       (VOLOPT_DFLTPERM +1)
 
 #define VOLOPT_NUM        (VOLOPT_MAX + 1)
 
@@ -169,6 +171,7 @@ static const _vol_opt_name vol_opt_names[] = {
                                          * maybe because it will be mounted later in preexec */
     {AFPVOL_UNIX_PRIV,  "UNIXPRIV"},    /* support unix privileges */
     {AFPVOL_NODEV,      "NODEV"},       /* always use 0 for device number in cnid calls */
+    {AFPVOL_CACHE,      "CACHEID"},     /* Use adouble v2 CNID caching, default don't use it */
     {0, NULL}
 };
 
@@ -183,7 +186,7 @@ static const _vol_opt_name vol_opt_casefold[] = {
 static void handle_special_folders (const struct vol *);
 static int savevoloptions (const struct vol *);
 
-static __inline__ void volfree(struct vol_option *options,
+static void volfree(struct vol_option *options,
                                const struct vol_option *save)
 {
     int i;
@@ -242,7 +245,7 @@ static char *volxlate(AFPObj *obj, char *dest, size_t destlen,
         return ret;
 
     /* first part of the path. just forward to the next variable. */
-    len = MIN(p - src, destlen);
+    len = MIN((size_t)(p - src), destlen);
     if (len > 0) {
         destlen -= len;
         dest += len;
@@ -338,7 +341,7 @@ static char *volxlate(AFPObj *obj, char *dest, size_t destlen,
         /* stuff up to next $ */
         src = p + 2;
         p = strchr(src, '$');
-        len = p ? MIN(p - src, destlen) : destlen;
+        len = p ? MIN((size_t)(p - src), destlen) : destlen;
         if (len > 0) {
             strncpy(dest, src, len);
             dest += len;
@@ -449,6 +452,8 @@ static void volset(struct vol_option *options, struct vol_option *save,
                 options[VOLOPT_FLAGS].i_value |= AFPVOL_NOHEX;
             else if (strcasecmp(p, "usedots") == 0)
                 options[VOLOPT_FLAGS].i_value |= AFPVOL_USEDOTS;
+            else if (strcasecmp(p, "invisibledots") == 0)
+                options[VOLOPT_FLAGS].i_value |= AFPVOL_USEDOTS | AFPVOL_INV_DOTS;
             else if (strcasecmp(p, "limitsize") == 0)
                 options[VOLOPT_FLAGS].i_value |= AFPVOL_LIMITSIZE;
             /* support for either "dropbox" or "dropkludge" */
@@ -478,7 +483,9 @@ static void volset(struct vol_option *options, struct vol_option *save,
         setoption(options, save, VOLOPT_DBPATH, val);
 
     } else if (optionok(tmp, "umask:", val)) {
-	options[VOLOPT_UMASK].i_value = (int)strtol(val, (char **)NULL, 8);
+	options[VOLOPT_UMASK].i_value = (int)strtol(val +1, NULL, 8);
+    } else if (optionok(tmp, "perm:", val)) {
+        options[VOLOPT_DFLTPERM].i_value = (int)strtol(val+1, NULL, 8);
     } else if (optionok(tmp, "mapchars:",val)) {
         setoption(options, save, VOLOPT_MAPCHARS, val);
 
@@ -530,12 +537,16 @@ static void showvol(const ucs2_t *name)
 */
 static int validupath_adouble(const struct vol *vol, const char *name) 
 {
-    return (vol->v_flags & AFPVOL_USEDOTS) ? strncasecmp(name,".Apple", 6) && strcasecmp(name, ".Parent")
+    return (vol->v_flags & AFPVOL_USEDOTS) ? 
+        strcasecmp(name,".AppleDB") &&
+        strcasecmp(name,".AppleDouble") &&
+        strcasecmp(name,".AppleDesktop") &&
+        strcasecmp(name,".Parent")
                                            : name[0] != '.';
 }                                           
 
 /* ----------------- */
-static int validupath_osx(const struct vol *vol, const char *name) 
+static int validupath_osx(const struct vol *vol _U_, const char *name) 
 {
     return strncasecmp(name,".Apple", 6) && strncasecmp(name,"._", 2);
 }             
@@ -635,7 +646,11 @@ static int creatvol(AFPObj *obj, struct passwd *pwd,
             volume->v_ad_options |= ADVOL_NODEV;
         if ((volume->v_flags & AFPVOL_CACHE))
             volume->v_ad_options |= ADVOL_CACHE;
-        
+        if ((volume->v_flags & AFPVOL_UNIX_PRIV))
+            volume->v_ad_options |= ADVOL_UNIXPRIV;
+        if ((volume->v_flags & AFPVOL_INV_DOTS))
+            volume->v_ad_options |= ADVOL_INVDOTS;
+
         if (options[VOLOPT_PASSWORD].c_value)
             volume->v_password = strdup(options[VOLOPT_PASSWORD].c_value);
 
@@ -656,6 +671,9 @@ static int creatvol(AFPObj *obj, struct passwd *pwd,
 
 	if (options[VOLOPT_UMASK].i_value)
 	    volume->v_umask = (mode_t)options[VOLOPT_UMASK].i_value;
+
+	if (options[VOLOPT_DFLTPERM].i_value)
+	    volume->v_perm = (mode_t)options[VOLOPT_DFLTPERM].i_value;
 
 	if (options[VOLOPT_ADOUBLE].i_value)
 	    volume->v_adouble = options[VOLOPT_ADOUBLE].i_value;
@@ -1398,7 +1416,8 @@ int		*buflen;
     if ( nameoff ) {
         ashort = htons( data - buf );
         memcpy(nameoff, &ashort, sizeof( ashort ));
-	aint = ucs2_to_charset( (utf8_encoding()?CH_UTF8_MAC:vol->v_maccharset), vol->v_name, data+1, 255);
+        /* name is always in mac charset, FIXME mangle if length > 27 char */
+	aint = ucs2_to_charset( vol->v_maccharset, vol->v_name, data+1, 255);
 	if ( aint <= 0 ) {
 	    *buflen = 0;
             return AFPERR_MISC;
@@ -1499,8 +1518,8 @@ void load_volumes(AFPObj *obj)
 /* ------------------------------- */
 int afp_getsrvrparms(obj, ibuf, ibuflen, rbuf, rbuflen )
 AFPObj      *obj;
-char	*ibuf, *rbuf;
-int 	ibuflen, *rbuflen;
+char	*ibuf _U_, *rbuf;
+int 	ibuflen _U_, *rbuflen;
 {
     struct timeval	tv;
     struct stat		st;
@@ -1515,6 +1534,8 @@ int 	ibuflen, *rbuflen;
     data = rbuf + 5;
     for ( vcnt = 0, volume = Volumes; volume; volume = volume->v_next ) {
         if (!(volume->v_flags & AFPVOL_NOSTAT)) {
+            struct maccess ma;
+
             if ( stat( volume->v_path, &st ) < 0 ) {
                 LOG(log_info, logtype_afpd, "afp_getsrvrparms(%s): stat: %s",
                         volume->v_path, strerror(errno) );
@@ -1522,6 +1543,10 @@ int 	ibuflen, *rbuflen;
             }
             if (!S_ISDIR(st.st_mode)) {
                 continue;		/* not a dir */
+            }
+            accessmode(volume->v_path, &ma, NULL, &st);
+            if ((ma.ma_user & (AR_UREAD | AR_USEARCH)) != (AR_UREAD | AR_USEARCH)) {
+                continue;   /* no r-x access */
             }
         }
         if (volume->v_hide) {
@@ -1570,7 +1595,7 @@ int 	ibuflen, *rbuflen;
 int afp_openvol(obj, ibuf, ibuflen, rbuf, rbuflen )
 AFPObj      *obj;
 char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+int		ibuflen _U_, *rbuflen;
 {
     struct stat	st;
     char	*volname;
@@ -1841,9 +1866,9 @@ void close_all_vol(void)
 
 /* ------------------------- */
 int afp_closevol(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
-char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+AFPObj      *obj _U_;
+char	*ibuf, *rbuf _U_;
+int		ibuflen _U_, *rbuflen;
 {
     struct vol	*vol, *ovol;
     u_int16_t	vid;
@@ -1996,9 +2021,9 @@ struct vol	*vol;
 
 /* ------------------------- */
 int afp_getvolparams(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
+AFPObj      *obj _U_;
 char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+int		ibuflen _U_, *rbuflen;
 {
     struct vol	*vol;
     u_int16_t	vid, bitmap;
@@ -2019,9 +2044,9 @@ int		ibuflen, *rbuflen;
 
 /* ------------------------- */
 int afp_setvolparams(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
-char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+AFPObj      *obj _U_;
+char	*ibuf, *rbuf _U_;
+int		ibuflen _U_, *rbuflen;
 {
     struct adouble ad;
     struct vol	*vol;
@@ -2162,14 +2187,14 @@ static int create_special_folder (const struct vol *vol, const struct _special_f
 		ad_getattr(&ad, &attr);
 		attr |= htons( ntohs( attr ) | ATTRBIT_INVISIBLE );
 		ad_setattr(&ad, attr);
-#if 0		
+
 		/* do the same with the finder info */
 		if (ad_entry(&ad, ADEID_FINDERI)) {
 			memcpy(&attr, ad_entry(&ad, ADEID_FINDERI) + FINDERINFO_FRFLAGOFF, sizeof(attr));
 			attr   |= htons(FINDERINFO_INVISIBLE);
 			memcpy(ad_entry(&ad, ADEID_FINDERI) + FINDERINFO_FRFLAGOFF,&attr, sizeof(attr));
 		}
-#endif    
+
         	ad_flush( &ad, ADFLAGS_HF );
         	ad_close( &ad, ADFLAGS_HF );
 	}

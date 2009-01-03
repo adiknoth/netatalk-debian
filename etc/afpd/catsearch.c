@@ -97,7 +97,7 @@ struct scrit {
     u_int16_t offcnt;           /* Offspring count */
 	struct finderinfo finfo;    /* Finder info */
 	char lname[64];             /* Long name */ 
-	char utf8name[512];         /* UTF8 name */
+	char utf8name[514];         /* UTF8 or UCS2 name */ /* for convert_charset dest_len parameter +2 */
 };
 
 /*
@@ -233,12 +233,13 @@ static struct finderinfo *unpack_buffer(struct finderinfo *finfo, char *buffer)
 
 /* -------------------- */
 static struct finderinfo *
-unpack_finderinfo(char *upath, struct adouble *adp, struct finderinfo *finfo)
+unpack_finderinfo(struct vol *vol, struct path *path, struct adouble **adp, struct finderinfo *finfo)
 {
 	packed_finder  buf;
 	void           *ptr;
 	
-	ptr = get_finderinfo(upath, adp, &buf);
+    *adp = adl_lkup(vol, path, *adp);
+	ptr = get_finderinfo(vol, path->u_name, *adp, &buf);
 	return unpack_buffer(finfo, ptr);
 }
 
@@ -258,7 +259,7 @@ static int crit_check(struct vol *vol, struct path *path) {
 	struct adouble *adp = NULL;
 	time_t c_date, b_date;
 	u_int32_t ac_date, ab_date;
-	static char convbuf[512];
+	static char convbuf[514]; /* for convert_charset dest_len parameter +2 */
 	size_t len;
 
 	if (S_ISDIR(path->st.st_mode)) {
@@ -301,7 +302,7 @@ static int crit_check(struct vol *vol, struct path *path) {
 	if ((c1.rbitmap & (1<<DIRPBIT_LNAME))) { 
 		if ( (size_t)(-1) == (len = convert_string(vol->v_maccharset, CH_UCS2, path->m_name, strlen(path->m_name), convbuf, 512)) )
 			goto crit_check_ret;
-		convbuf[len] = 0; 
+
 		if ((c1.rbitmap & (1<<CATPBIT_PARTIAL))) {
 			if (strcasestr_w( (ucs2_t*) convbuf, (ucs2_t*) c1.lname) == NULL)
 				goto crit_check_ret;
@@ -314,7 +315,7 @@ static int crit_check(struct vol *vol, struct path *path) {
 		if ( (size_t)(-1) == (len = convert_charset( CH_UTF8_MAC, CH_UCS2, CH_UTF8, path->m_name, strlen(path->m_name), convbuf, 512, &flags))) {
 			goto crit_check_ret;
 		}
-		convbuf[len] = 0; 
+
 		if (c1.rbitmap & (1<<CATPBIT_PARTIAL)) {
 			if (strcasestr_w((ucs2_t *) convbuf, (ucs2_t*)c1.utf8name) == NULL)
 				goto crit_check_ret;
@@ -372,8 +373,7 @@ static int crit_check(struct vol *vol, struct path *path) {
 
         /* Check file type ID */
 	if ((c1.rbitmap & (1<<DIRPBIT_FINFO)) && c2.finfo.f_type != 0) {
-		adp = adl_lkup(vol, path, adp);
-	    finfo = unpack_finderinfo(path->u_name, adp, &finderinfo);
+	    finfo = unpack_finderinfo(vol, path, &adp, &finderinfo);
 		if (finfo->f_type != c1.finfo.f_type)
 			goto crit_check_ret;
 	}
@@ -381,8 +381,7 @@ static int crit_check(struct vol *vol, struct path *path) {
 	/* Check creator ID */
 	if ((c1.rbitmap & (1<<DIRPBIT_FINFO)) && c2.finfo.creator != 0) {
 		if (!finfo) {
-	    	adp = adl_lkup(vol, path, adp);
-			finfo = unpack_finderinfo(path->u_name, adp, &finderinfo);
+			finfo = unpack_finderinfo(vol, path, &adp, &finderinfo);
 		}
 		if (finfo->creator != c1.finfo.creator)
 			goto crit_check_ret;
@@ -391,8 +390,7 @@ static int crit_check(struct vol *vol, struct path *path) {
 	/* Check finder info attributes */
 	if ((c1.rbitmap & (1<<DIRPBIT_FINFO)) && c2.finfo.attrs != 0) {
 		if (!finfo) {
-	    	adp = adl_lkup(vol, path, adp);
-			finfo = unpack_finderinfo(path->u_name, adp, &finderinfo);
+			finfo = unpack_finderinfo(vol, path, &adp, &finderinfo);
 		}
 
 		if ((finfo->attrs & c2.finfo.attrs) != c1.finfo.attrs)
@@ -402,8 +400,7 @@ static int crit_check(struct vol *vol, struct path *path) {
 	/* Check label */
 	if ((c1.rbitmap & (1<<DIRPBIT_FINFO)) && c2.finfo.label != 0) {
 		if (!finfo) {
-	    	adp = adl_lkup(vol, path, adp);
-			finfo = unpack_finderinfo(path->u_name, adp, &finderinfo);
+			finfo = unpack_finderinfo(vol, path, &adp, &finderinfo);
 		}
 		if ((finfo->label & c2.finfo.label) != c1.finfo.label)
 			goto crit_check_ret;
@@ -663,7 +660,7 @@ catsearch_end: /* Exiting catsearch: error condition */
 } /* catsearch() */
 
 /* -------------------------- */
-int catsearch_afp(AFPObj *obj, char *ibuf, int ibuflen,
+int catsearch_afp(AFPObj *obj _U_, char *ibuf, int ibuflen,
                   char *rbuf, int *rbuflen, int ext)
 {
     struct vol *vol;
@@ -827,10 +824,9 @@ int catsearch_afp(AFPObj *obj, char *ibuf, int ibuflen,
         /* Get the long filename */	
 		memcpy(tmppath, bspec1 + spec1[1] + 1, (bspec1 + spec1[1])[0]);
 		tmppath[(bspec1 + spec1[1])[0]]= 0;
-		len = convert_string ( vol->v_maccharset, CH_UCS2, tmppath, strlen(tmppath), c1.lname, 64);
+		len = convert_string ( vol->v_maccharset, CH_UCS2, tmppath, strlen(tmppath), c1.lname, sizeof(c1.lname));
         if (len == (size_t)(-1))
             return AFPERR_PARAM;
-		c1.lname[len] = 0;
 
 #if 0	
 		/* FIXME: do we need it ? It's always null ! */
@@ -861,7 +857,6 @@ int catsearch_afp(AFPObj *obj, char *ibuf, int ibuflen,
  		len = convert_charset(CH_UTF8_MAC, CH_UCS2, CH_UTF8, c1.utf8name, namelen, c1.utf8name, 512, &flags);
         if (len == (size_t)(-1))
             return AFPERR_PARAM;
- 		c1.utf8name[len]=0;
     }
     
     /* Call search */

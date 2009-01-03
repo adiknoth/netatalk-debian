@@ -1,5 +1,5 @@
 /*
- * $Id: hqx.c,v 1.12.4.1.4.1 2005/02/06 10:16:00 didg Exp $
+ * $Id: hqx.c,v 1.12.4.1.4.2 2005/09/27 10:40:40 didg Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -393,7 +393,7 @@ int hqx_header_read( fh )
  */
 
 int hqx_header_write( fh )
-    struct FHeader	*fh;
+    struct FHeader	*fh _U_;
 {
     return( -1 );
 }

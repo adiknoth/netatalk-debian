@@ -1,5 +1,5 @@
 /*
- * $Id: ad_mmap.c,v 1.4.8.1 2004/02/20 19:57:14 didg Exp $
+ * $Id: ad_mmap.c,v 1.4.8.1.2.1 2008/11/25 15:16:33 didg Exp $
  *
  * ad_mmap provides interfaces to memory mapped files. as this is the
  * case, we don't have to deal w/ temporary buffers such as
@@ -19,7 +19,7 @@
 
 #include "ad_private.h"
 
-static __inline__ void *ad_mmap(const size_t length, const int prot,
+static void *ad_mmap(const size_t length, const int prot,
 				const int flags, const int fd, 
 				const off_t offset)
 {

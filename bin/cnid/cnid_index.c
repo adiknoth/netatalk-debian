@@ -1,5 +1,5 @@
 /*
- * $Id: cnid_index.c,v 1.1.2.4 2005/04/10 12:49:18 didg Exp $
+ * $Id: cnid_index.c,v 1.1.2.7 2008/08/07 07:05:31 didg Exp $
  *
  * All Rights Reserved.  See COPYING.
  */
@@ -73,8 +73,8 @@ static char *old_dbfiles[] = {"cnid.db", NULL};
 
 /* --------------- */
 int didname(dbp, pkey, pdata, skey)
-DB *dbp;
-const DBT *pkey, *pdata;
+DB *dbp _U_;
+const DBT *pkey _U_, *pdata;
 DBT *skey;
 {
 int len;
@@ -91,8 +91,8 @@ int len;
  
 /* --------------- */
 int devino(dbp, pkey, pdata, skey)
-DB *dbp;
-const DBT *pkey, *pdata;
+DB *dbp _U_;
+const DBT *pkey _U_, *pdata;
 DBT *skey;
 {
     memset(skey, 0, sizeof(DBT));
@@ -274,7 +274,11 @@ static int dbif_count(const int dbi, u_int32_t *count)
     DB_BTREE_STAT *sp;
     DB *db = db_table[dbi].db;
 
+#if DB_VERSION_MAJOR > 4 || (DB_VERSION_MAJOR == 4 && DB_VERSION_MINOR >= 3)
+    ret = db->stat(db, db_txn, &sp, 0);
+#else
     ret = db->stat(db, &sp, 0);
+#endif
 
     if (ret) {
         LOG(log_error, logtype_cnid, "error getting stat infotmation on database: %s", db_strerror(errno));
@@ -352,7 +356,6 @@ static int dbif_env_init(void)
     if (db_errlog != NULL)
         db_env->set_errfile(db_env, db_errlog); 
     db_env->set_verbose(db_env, DB_VERB_RECOVERY, 1);
-    db_env->set_verbose(db_env, DB_VERB_CHKPOINT, 1);
     if ((ret = db_env->open(db_env, ".", DBOPTIONS | DB_PRIVATE | DB_RECOVER, 0))) {
         LOG(log_error, logtype_cnid, "error opening DB environment: %s", 
             db_strerror(ret));

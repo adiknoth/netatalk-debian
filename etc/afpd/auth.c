@@ -1,5 +1,5 @@
 /*
- * $Id: auth.c,v 1.44.2.3.2.15.2.3 2005/03/11 15:36:58 didg Exp $
+ * $Id: auth.c,v 1.44.2.3.2.15.2.4 2005/09/27 10:40:41 didg Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -154,18 +154,17 @@ static int send_reply(const AFPObj *obj, const int err)
     return AFP_OK;
 }
 
-
 static int afp_errpwdexpired(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
-char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+AFPObj  *obj _U_;
+char	*ibuf _U_, *rbuf _U_;
+int	ibuflen _U_, *rbuflen;
 {
     *rbuflen = 0;
     return AFPERR_PWDEXPR;
 }
 
 
-static int set_auth_switch(AFPObj *obj, int expired)
+static int set_auth_switch(int expired)
 {
     int i;
 
@@ -364,7 +363,7 @@ static int login(AFPObj *obj, struct passwd *pwd, void (*logout)(void), int expi
 #endif /* ADMIN_GRP */
         uuid = pwd->pw_uid;
 
-    set_auth_switch(obj, expired);
+    set_auth_switch(expired);
 
     obj->logout = logout;
 
@@ -379,8 +378,8 @@ static int login(AFPObj *obj, struct passwd *pwd, void (*logout)(void), int expi
 /* ---------------------- */
 int afp_zzz (obj, ibuf, ibuflen, rbuf, rbuflen ) /* Function 122 */
 AFPObj       *obj;
-char         *ibuf, *rbuf;
-unsigned int ibuflen, *rbuflen;
+char         *ibuf  _U_, *rbuf;
+unsigned int ibuflen  _U_, *rbuflen;
 {
     u_int32_t	retdata;
 
@@ -530,9 +529,9 @@ unsigned int ibuflen, *rbuflen;
 
 /* ---------------------- */
 int afp_disconnect(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
-char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+AFPObj  *obj  _U_;
+char	*ibuf, *rbuf  _U_;
+int	ibuflen  _U_, *rbuflen;
 {
     u_int16_t           type;
 
@@ -827,8 +826,8 @@ int		ibuflen, *rbuflen;
 
 int afp_logout(obj, ibuf, ibuflen, rbuf, rbuflen)
 AFPObj     *obj;
-char       *ibuf, *rbuf;
-int        ibuflen, *rbuflen;
+char       *ibuf _U_, *rbuf  _U_;
+int        ibuflen  _U_, *rbuflen  _U_;
 {
     LOG(log_info, logtype_afpd, "logout %s", obj->username);
     close_all_vol();
@@ -906,7 +905,7 @@ int		ibuflen, *rbuflen;
         (ret == AFPERR_AUTHCONT) ? "continued" :
         (ret ? "failed" : "succeeded"));
     if ( ret == AFP_OK )
-	set_auth_switch(obj, 0);
+	set_auth_switch(0);
 	
     return ret;
 }
@@ -914,9 +913,9 @@ int		ibuflen, *rbuflen;
 
 /* FPGetUserInfo */
 int afp_getuserinfo(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
+AFPObj  *obj _U_;
 char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+int	ibuflen _U_, *rbuflen;
 {
     u_int8_t  thisuser;
     u_int32_t id;

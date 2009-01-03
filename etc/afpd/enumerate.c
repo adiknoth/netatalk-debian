@@ -1,5 +1,5 @@
 /*
- * $Id: enumerate.c,v 1.39.2.2.2.5 2004/06/20 15:10:14 bfernhomberg Exp $
+ * $Id: enumerate.c,v 1.39.2.2.2.5.2.1 2005/09/27 10:40:41 didg Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -110,7 +110,7 @@ struct savedir {
 };
 #define SDBUFBRK	2048
 
-static int enumerate_loop(struct dirent *de, char *mname, void *data)
+static int enumerate_loop(struct dirent *de, char *mname _U_, void *data)
 {
     struct savedir *sd = data; 
     char *start, *end;
@@ -221,9 +221,9 @@ for_each_dirent(const struct vol *vol, char *name, dir_loop fn, void *data)
 
 /* ----------------------------- */
 static int enumerate(obj, ibuf, ibuflen, rbuf, rbuflen, ext )
-AFPObj       *obj;
+AFPObj       *obj _U_;
 char	     *ibuf, *rbuf;
-unsigned int ibuflen, *rbuflen;
+unsigned int ibuflen _U_, *rbuflen;
 int     ext;
 {
     static struct savedir	sd = { 0, 0, 0, NULL, NULL, 0 };

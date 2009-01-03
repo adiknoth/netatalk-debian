@@ -1,5 +1,5 @@
 /*
- * $Id: quota.c,v 1.22.8.11.2.1 2005/01/31 17:01:00 didg Exp $
+ * $Id: quota.c,v 1.22.8.11.2.3 2006/09/11 08:05:02 didg Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -46,7 +46,9 @@ char *strchr (), *strrchr ();
 #include "volume.h"
 #include "unix.h"
 
+/* if you want to debug quota
 #define DEBUG_QUOTA 0
+*/
 #define WANT_USER_QUOTA 0
 #define WANT_GROUP_QUOTA 1
 
@@ -67,6 +69,11 @@ static int overquota( struct dqblk *);
 #ifdef HAVE_XFS_XQM_H
 #include <xfs/xqm.h>
 #define HAVE_LINUX_XQM_H
+#else
+#ifdef  HAVE_LINUX_DQBLK_XFS_H
+#include <linux/dqblk_xfs.h>
+#define HAVE_LINUX_XQM_H
+#endif /* HAVE_LINUX_DQBLK_XFS_H */
 #endif /* HAVE_XFS_XQM_H */
 #endif /* HAVE_LINUX_XQM_H */
 
@@ -712,7 +719,7 @@ const u_int32_t bsize;
 	this_bsize = dqblk.bsize;
 #endif
 
-#if DEBUG_QUOTA
+#ifdef DEBUG_QUOTA
         LOG(log_info, logtype_afpd, "after calling getquota in uquota_getvolspace!" );
         LOG(log_info, logtype_afpd, "dqb_ihardlimit: %u", dqblk.dqb_ihardlimit );
         LOG(log_info, logtype_afpd, "dqb_isoftlimit: %u", dqblk.dqb_isoftlimit );
@@ -747,7 +754,7 @@ const u_int32_t bsize;
                  	  tobytes( dqblk.dqb_curblocks, this_bsize );
     	}
 
-#if DEBUG_QUOTA
+#ifdef DEBUG_QUOTA
         LOG(log_info, logtype_afpd, "bfree          : %u", *bfree );
         LOG(log_info, logtype_afpd, "btotal         : %u", *btotal );
         LOG(log_info, logtype_afpd, "bfree          : %uKB", *bfree/1024 );

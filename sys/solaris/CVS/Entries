@@ -1,0 +1,17 @@
+/.cvsignore/1.4.10.1/Sun Feb 29 15:25:09 2004//Tbranch-netatalk-2-0
+/Makefile.in/1.1.2.4/Wed Oct  6 01:05:32 2004//Tbranch-netatalk-2-0
+/aarp.c/1.3.10.1/Sun Feb 29 15:25:09 2004//Tbranch-netatalk-2-0
+/ddp.c/1.3/Thu Jan 17 06:13:02 2002//Tbranch-netatalk-2-0
+/ddp.conf/1.1.1.1/Tue Jul 25 21:09:04 2000//Tbranch-netatalk-2-0
+/dlpi.c/1.2/Thu Jan 17 06:13:02 2002//Tbranch-netatalk-2-0
+/if.c/1.2.10.1/Sun Feb 29 15:25:09 2004//Tbranch-netatalk-2-0
+/if.h/1.1.1.1.14.1/Sun Feb 29 15:25:09 2004//Tbranch-netatalk-2-0
+/ioc.c/1.2.10.1/Sun Feb 29 15:25:09 2004//Tbranch-netatalk-2-0
+/ioc.h/1.1.1.1/Tue Jul 25 21:09:04 2000//Tbranch-netatalk-2-0
+/linkage.c/1.1.1.1/Tue Jul 25 21:09:04 2000//Tbranch-netatalk-2-0
+/rt.c/1.1.1.1/Tue Jul 25 21:09:04 2000//Tbranch-netatalk-2-0
+/rt.h/1.1.1.1/Tue Jul 25 21:09:04 2000//Tbranch-netatalk-2-0
+/sock.c/1.2/Thu Jan 17 07:11:13 2002//Tbranch-netatalk-2-0
+/sock.h/1.1.1.1/Tue Jul 25 21:09:04 2000//Tbranch-netatalk-2-0
+/tpi.c/1.1.1.1.14.2.2.1/Thu Dec 18 18:20:06 2008//Tbranch-netatalk-2-0
+D

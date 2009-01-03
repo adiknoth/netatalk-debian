@@ -1,5 +1,5 @@
 /*
- * $Id: file.c,v 1.92.2.2.2.31.2.13 2005/04/28 09:24:04 didg Exp $
+ * $Id: file.c,v 1.92.2.2.2.31.2.22 2008/11/25 15:16:33 didg Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -89,7 +89,7 @@ static int default_type(void *finder)
 }
 
 /* FIXME path : unix or mac name ? (for now it's unix name ) */
-void *get_finderinfo(const char *upath, struct adouble *adp, void *data)
+void *get_finderinfo(const struct vol *vol, const char *upath, struct adouble *adp, void *data)
 {
     struct extmap	*em;
     void                *ad_finder = NULL;
@@ -107,11 +107,11 @@ void *get_finderinfo(const char *upath, struct adouble *adp, void *data)
     else {
         memcpy(data, ufinderi, ADEDLEN_FINDERI);
         chk_ext = 1;
-        if (*upath == '.') { /* make it invisible */
+        if (vol_inv_dots(vol) && *upath == '.') { /* make it invisible */
             u_int16_t ashort;
             
             ashort = htons(FINDERINFO_INVISIBLE);
-            memcpy(data + FINDERINFO_FRFLAGOFF, &ashort, sizeof(ashort));
+            memcpy((char *)data + FINDERINFO_FRFLAGOFF, &ashort, sizeof(ashort));
         }
     }
     /** Only enter if no appledouble information and no finder information found. */
@@ -282,7 +282,7 @@ int getmetadata(struct vol *vol,
         case FILPBIT_ATTR :
             if ( adp ) {
                 ad_getattr(adp, &ashort);
-            } else if (*upath == '.') {
+            } else if (vol_inv_dots(vol) && *upath == '.') {
                 ashort = htons(ATTRBIT_INVISIBLE);
             } else
                 ashort = 0;
@@ -336,7 +336,7 @@ int getmetadata(struct vol *vol,
             break;
 
         case FILPBIT_FINFO :
-	    get_finderinfo(upath, adp, (char *)data);
+	    get_finderinfo(vol, upath, adp, (char *)data);
             data += ADEDLEN_FINDERI;
             break;
 
@@ -584,9 +584,9 @@ int getfilparams(struct vol *vol,
 
 /* ----------------------------- */
 int afp_createfile(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
-char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+AFPObj  *obj;
+char	*ibuf, *rbuf _U_;
+int	ibuflen _U_, *rbuflen;
 {
     struct adouble	ad, *adp;
     struct vol		*vol;
@@ -657,7 +657,7 @@ int		ibuflen, *rbuflen;
         openf = O_RDWR|O_CREAT|O_EXCL;
     }
 
-    if ( ad_open( upath, vol_noadouble(vol)|ADFLAGS_DF|ADFLAGS_HF|ADFLAGS_NOHF,
+    if ( ad_open( upath, vol_noadouble(vol)|ADFLAGS_DF|ADFLAGS_HF|ADFLAGS_NOHF|ADFLAGS_CREATE,
                   openf, 0666, adp) < 0 ) {
         switch ( errno ) {
         case EROFS:
@@ -668,6 +668,9 @@ int		ibuflen, *rbuflen;
             return( AFPERR_EXIST );
         case EACCES :
             return( AFPERR_ACCESS );
+        case EDQUOT:
+        case ENOSPC :
+            return( AFPERR_DFULL );
         default :
             return( AFPERR_PARAM );
         }
@@ -710,9 +713,9 @@ createfile_done:
 }
 
 int afp_setfilparams(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
-char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+AFPObj  *obj;
+char	*ibuf, *rbuf _U_;
+int	ibuflen _U_, *rbuflen;
 {
     struct vol	*vol;
     struct dir	*dir;
@@ -1199,9 +1202,9 @@ u_int32_t   hint;
 /* -----------------------------------
 */
 int afp_copyfile(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
-char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+AFPObj  *obj;
+char	*ibuf, *rbuf _U_;
+int	ibuflen _U_, *rbuflen;
 {
     struct vol	*s_vol, *d_vol;
     struct dir	*dir;
@@ -1323,7 +1326,7 @@ int		ibuflen, *rbuflen;
 }
 
 /* ----------------------- */
-static __inline__ int copy_all(const int dfd, const void *buf,
+static int copy_all(const int dfd, const void *buf,
                                size_t buflen)
 {
     ssize_t cc;
@@ -1405,6 +1408,7 @@ static int copy_fd(int dfd, int sfd)
 /* ----------------------------------
  * if newname is NULL (from directory.c) we don't want to copy ressource fork.
  * because we are doing it elsewhere.
+ * currently if newname is NULL then adp is NULL. 
  */
 int copyfile(s_vol, d_vol, src, dst, newname, adp )
 const struct vol *s_vol, *d_vol;
@@ -1416,6 +1420,7 @@ struct adouble *adp;
     int                 ret_err = 0;
     int                 adflags;
     int                 noadouble = vol_noadouble(d_vol);
+    int                 stat_result;
     struct stat         st;
     
 #ifdef DEBUG
@@ -1442,7 +1447,14 @@ struct adouble *adp;
         adflags &= ~ADFLAGS_HF;
     }
 
-    if (ad_open(dst , adflags | noadouble, O_RDWR|O_CREAT|O_EXCL, 0666, &add) < 0) {
+    stat_result = fstat(ad_dfileno(adp), &st); /* saving stat exit code, thus saving us on one more stat later on */
+
+    if (stat_result < 0) {           
+      /* unlikely but if fstat fails, the default file mode will be 0666. */
+      st.st_mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+    }
+
+    if (ad_open(dst , adflags, O_RDWR|O_CREAT|O_EXCL, st.st_mode, &add) < 0) {
         ret_err = errno;
         ad_close( adp, adflags );
         if (EEXIST != ret_err) {
@@ -1451,6 +1463,8 @@ struct adouble *adp;
         }
         return AFPERR_EXIST;
     }
+    /* XXX if the source and the dest don't use the same resource type it's broken
+    */
     if (ad_hfileno(adp) == -1 || 0 == (err = copy_fd(ad_hfileno(&add), ad_hfileno(adp)))){
         /* copy the data fork */
 	err = copy_fd(ad_dfileno(&add), ad_dfileno(adp));
@@ -1463,29 +1477,32 @@ struct adouble *adp;
     ad_close( adp, adflags );
 
     if (ad_close( &add, adflags ) <0) {
+        if (!ret_err) {
+            ret_err = errno;
+        }
         deletefile(d_vol, dst, 0);
-        ret_err = errno;
         goto done;
     } 
-    else {
+
+    if (!ret_err && newname && (adflags & ADFLAGS_HF)) {
+        /* set the new name in the resource fork */
 	ad_init(&add, d_vol->v_adouble, d_vol->v_ad_options);
-	if (ad_open(dst , adflags | noadouble, O_RDWR, 0666, &add) < 0) {
+	if (ad_open(dst , ADFLAGS_HF | noadouble, O_RDWR, 0666, &add) < 0) {
 	    ret_err = errno;
 	}
+	else {
+            ad_setname(&add, newname);
+            ad_flush( &add, ADFLAGS_HF );
+            if (ad_close( &add, ADFLAGS_HF ) <0) {
+                ret_err = errno;
+            }
+        }
     }
 
-    if (!ret_err && newname) {
-        ad_setname(&add, newname);
-    }
-
-    ad_flush( &add, adflags );
-    if (ad_close( &add, adflags ) <0) {
-       ret_err = errno;
-    }
     if (ret_err) {
         deletefile(d_vol, dst, 0);
     }
-    else if (!stat(src, &st)) {
+    else if (stat_result == 0) {
         /* set dest modification date to src date */
         struct utimbuf	ut;
 
@@ -1635,9 +1652,9 @@ int         checkAttrib;
 /* ------------------------------------ */
 /* return a file id */
 int afp_createid(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
+AFPObj  *obj _U_;
 char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+int	ibuflen _U_, *rbuflen;
 {
     struct stat         *st;
     struct vol		*vol;
@@ -1773,9 +1790,9 @@ reenumerate_id(const struct vol *vol, char *name, cnid_t did)
 /* ------------------------------
    resolve a file id */
 int afp_resolveid(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
+AFPObj      *obj _U_;
 char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+int		ibuflen _U_, *rbuflen;
 {
     struct vol		*vol;
     struct dir		*dir;
@@ -1885,9 +1902,9 @@ retry:
 
 /* ------------------------------ */
 int afp_deleteid(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
-char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+AFPObj  *obj _U_;
+char	*ibuf, *rbuf _U_;
+int	ibuflen _U_, *rbuflen;
 {
     struct stat         st;
     struct vol		*vol;
@@ -2021,9 +2038,9 @@ static struct adouble *find_adouble(struct path *path, struct ofork **of, struct
 #define APPLETEMP ".AppleTempXXXXXX"
 
 int afp_exchangefiles(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
-char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+AFPObj  *obj;
+char	*ibuf, *rbuf _U_ ;
+int	ibuflen _U_, *rbuflen;
 {
     struct stat         srcst, destst;
     struct vol		*vol;

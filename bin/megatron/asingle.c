@@ -1,5 +1,5 @@
 /*
- * $Id: asingle.c,v 1.8.6.1.4.1 2005/02/06 10:16:00 didg Exp $
+ * $Id: asingle.c,v 1.8.6.1.4.3 2006/02/26 22:41:19 didg Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -64,7 +64,7 @@ u_char		header_buf[ AD_HEADER_LEN ];
 
 int single_open( singlefile, flags, fh, options )
     char		*singlefile;
-    int			flags, options;
+    int			flags, options _U_;
     struct FHeader	*fh;
 {
     int			rc;
@@ -268,7 +268,7 @@ int single_header_read( fh, version )
  * Unless I can't get the current date, in which case use time zero.
  */
     if (( date_entry < 7 ) || ( date_entry > 8 )) {
-	if (( time_seconds = time( NULL )) == -1 ) {
+	if (( time_seconds = time( NULL )) == (u_int32_t)-1 ) {
 	    time_seconds = AD_DATE_START;
 	} else {
 	    time_seconds = AD_DATE_FROM_UNIX(time_seconds);
@@ -310,9 +310,9 @@ int single_header_read( fh, version )
 		sizeof(fh->backup_date));
     }
     if ( single.entry[ ADEID_RFORK ].ade_off == 0 ) {
-	fh->forklen[ ADEID_RFORK ] = 0;
+	fh->forklen[RESOURCE] = 0;
     } else {
-	fh->forklen[ ADEID_RFORK ] =
+	fh->forklen[RESOURCE] =
 		htonl( single.entry[ ADEID_RFORK ].ade_len );
     }
     if ( single.entry[ ADEID_DFORK ].ade_off == 0 ) {
@@ -344,11 +344,11 @@ u_char		sixteennulls[] = { 0, 0, 0, 0, 0, 0, 0, 0,
 
 int single_header_test(void)
 {
-    int			cc;
+    ssize_t		cc;
     u_int32_t		templong;
 
     cc = read( single.filed, (char *)header_buf, sizeof( header_buf ));
-    if ( cc < sizeof( header_buf )) {
+    if ( cc < (ssize_t)sizeof( header_buf )) {
 	perror( "Premature end of file :" );
 	return( -1 );
     }
@@ -398,7 +398,7 @@ int single_header_test(void)
 int single_read( fork, buffer, length )
     int			fork;
     char		*buffer;
-    int			length;
+    u_int32_t		length;
 {
     u_int32_t		entry_id;
     char		*buf_ptr;

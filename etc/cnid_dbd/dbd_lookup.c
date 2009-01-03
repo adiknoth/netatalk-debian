@@ -1,5 +1,5 @@
 /*
- * $Id: dbd_lookup.c,v 1.1.4.7 2004/02/07 19:46:08 didg Exp $
+ * $Id: dbd_lookup.c,v 1.1.4.7.2.1 2005/09/27 10:40:41 didg Exp $
  *
  * Copyright (C) Joerg Lenneis 2003
  * All Rights Reserved.  See COPYING.
@@ -29,7 +29,7 @@
 
 int dbd_lookup(struct cnid_dbd_rqst *rqst, struct cnid_dbd_rply *rply)
 {
-    char *buf;
+    unsigned char *buf;
     DBT key, devdata, diddata;
     char dev[CNID_DEV_LEN];
     char ino[CNID_INO_LEN];

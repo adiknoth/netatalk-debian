@@ -1,5 +1,5 @@
 /*
- * $Id: config.c,v 1.13.6.5.2.3 2005/02/06 10:16:02 didg Exp $
+ * $Id: config.c,v 1.13.6.5.2.6 2008/12/03 19:17:27 didg Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved. See COPYRIGHT.
@@ -271,7 +271,7 @@ int writeconf( cf )
                                       &zonename)) ) {
                     if ( NULL == 
                       (zonename = strdup(((struct ziptab *)l->l_data)->zt_name))) {
-		        LOG(log_error, logtype_atalkd, "malloc: %m" );
+		        LOG(log_error, logtype_atalkd, "malloc: %s",  strerror(errno) );
 		        return( -1 );
                     }
                     len = ((struct ziptab *)l->l_data)->zt_len;
@@ -476,7 +476,7 @@ read_conf_err:
 
 int noallmulti( iface, av )
     struct interface	*iface;
-    char		**av;
+    char		**av _U_;
 {
     /* Linux specific, no effect on other platforms */
     iface->i_flags &= !IFACE_ALLMULTI;
@@ -487,7 +487,7 @@ int noallmulti( iface, av )
 /*ARGSUSED*/
 int router( iface, av )
     struct interface	*iface;
-    char		**av;
+    char		**av _U_;
 {
     /* make sure "-router" and "-dontroute" aren't both on the same line. */
     if (iface->i_flags & IFACE_DONTROUTE) {
@@ -511,7 +511,7 @@ int router( iface, av )
 /*ARGSUSED*/
 int dontroute( iface, av )
     struct interface	*iface;
-    char		**av;
+    char		**av _U_;
 {
     /* make sure "-router" and "-dontroute" aren't both on the same line. */
     if (iface->i_flags & IFACE_RSEED) {
@@ -526,7 +526,7 @@ int dontroute( iface, av )
 /*ARGSUSED*/
 int seed( iface, av )
     struct interface	*iface;
-    char		**av;
+    char		**av _U_;
 {
     /*
      * Check to be sure "-seed" is before "-zone". we keep the old
@@ -832,8 +832,9 @@ struct interface *newiface( name )
 int plumb()
 {
     struct interface	*iface;
-    char		device[ MAXPATHLEN + 1], *p;
+    char		device[ MAXPATHLEN + 1], *p, *t;
     int			fd, ppa;
+    int			digits = 0;
 
     for ( iface = interfaces; iface != NULL; iface = iface->i_next ) {
 	if ( strcmp( iface->i_name, LOOPIFACE ) == 0 ) {
@@ -842,7 +843,16 @@ int plumb()
 
 	strcpy( device, "/dev/" );
 	strcat( device, iface->i_name );
-	if (( p = strpbrk( device, "0123456789" )) == NULL ) {
+	for (t = device; *t != '\0' ; ++t) {
+	    if (isdigit(*t) == 0) {
+		p = t + 1;
+	    }
+	    else {
+		digits++;
+	    }
+	}
+
+	if (digits == 0) {
 	    LOG(log_error, logtype_atalkd, "plumb: invalid device: %s", device );
 	    return -1;
 	}
@@ -850,16 +860,16 @@ int plumb()
 	*p = '\0';
 
 	if (( fd = open( device, O_RDWR, 0 )) < 0 ) {
-	    LOG(log_error, logtype_atalkd, "%s: %m", device );
+	    LOG(log_error, logtype_atalkd, "%s: %s", device, strerror(errno) );
 	    return -1;
 	}
 	if ( ioctl( fd, I_PUSH, "ddp" ) < 0 ) {
-	    LOG(log_error, logtype_atalkd, "I_PUSH: %m" );
+	    LOG(log_error, logtype_atalkd, "I_PUSH: %s", strerror(errno) );
 	    close(fd);
 	    return -1;
 	}
 	if ( ioctl( fd, IF_UNITSEL, ppa ) < 0 ) {
-	    LOG(log_error, logtype_atalkd, "IF_UNITSEL: %m" );
+	    LOG(log_error, logtype_atalkd, "IF_UNITSEL: %s", strerror(errno) );
 	    close(fd);
 	    return -1;
 	}

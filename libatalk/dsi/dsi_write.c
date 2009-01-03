@@ -1,5 +1,5 @@
 /*
- * $Id: dsi_write.c,v 1.3.14.2 2004/05/04 14:26:14 didg Exp $
+ * $Id: dsi_write.c,v 1.3.14.2.2.1 2005/09/27 10:40:41 didg Exp $
  *
  * Copyright (c) 1997 Adrian Sun (asun@zoology.washington.edu)
  * All rights reserved. See COPYRIGHT.
@@ -34,7 +34,7 @@
 /* initialize relevant things for dsi_write. this returns the amount
  * of data in the data buffer. the interface has been reworked to allow
  * for arbitrary buffers. */
-size_t dsi_writeinit(DSI *dsi, void *buf, const size_t buflen)
+size_t dsi_writeinit(DSI *dsi, void *buf, const size_t buflen _U_)
 {
 #ifdef TIMER_ON_READ
   const struct itimerval none = {{0, 0}, {0, 0}};

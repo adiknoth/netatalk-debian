@@ -1,5 +1,5 @@
 /*
- * $Id: cnid_dbd.c,v 1.1.4.18.2.2 2005/02/06 10:16:03 didg Exp $
+ * $Id: cnid_dbd.c,v 1.1.4.18.2.4 2007/06/06 10:13:17 didg Exp $
  *
  * Copyright (C) Joerg Lenneis 2003
  * All Rights Reserved.  See COPYING.
@@ -284,6 +284,7 @@ static int transmit(CNID_private *db, struct cnid_dbd_rqst *rqst, struct cnid_db
     struct timeval tv;
     time_t orig, t;
     int silent = 1;
+    int clean = 1; /* no errors so far - to prevent sleep on first try */
     
     if (db->changed) {
         /* volume and db don't have the same timestamp
@@ -330,6 +331,7 @@ transmit_fail:
                        will log messages if something goes wrong again */
         if (db->fd != -1) {
             close(db->fd);
+            db->fd = -1; /* FD not valid... will need to reconnect */
         }
         time(&t);
         if (t - orig > MAX_DELAY) {
@@ -337,11 +339,14 @@ transmit_fail:
             return -1;
 	}
 
-        /* sleep a little before retry */
-        db->fd = -1;
-        tv.tv_usec = 0;
-        tv.tv_sec  = 5;
-        select(0, NULL, NULL, NULL, &tv);
+	if (!clean) { /* don't sleep if just got disconnected by cnid server */
+            /* sleep a little before retry */
+            tv.tv_usec = 0;
+            tv.tv_sec  = 5;
+            select(0, NULL, NULL, NULL, &tv); /* sleep for 5 seconds */
+	} else {
+            clean = 0; /* false... next time sleep */
+        }
     }
     return -1;
 }
@@ -375,7 +380,7 @@ static struct _cnid_db *cnid_dbd_new(const char *volpath)
 }
 
 /* ---------------------- */
-struct _cnid_db *cnid_dbd_open(const char *dir, mode_t mask)
+struct _cnid_db *cnid_dbd_open(const char *dir, mode_t mask _U_)
 {
     CNID_private *db = NULL;
     struct _cnid_db *cdb = NULL;
@@ -446,8 +451,8 @@ void cnid_dbd_close(struct _cnid_db *cdb)
 
 /* ---------------------- */
 cnid_t cnid_dbd_add(struct _cnid_db *cdb, const struct stat *st,
-                const cnid_t did, char *name, const int len,
-                cnid_t hint)
+                const cnid_t did, char *name, const size_t len,
+                cnid_t hint _U_)
 {
     CNID_private *db;
     struct cnid_dbd_rqst rqst;
@@ -479,6 +484,7 @@ cnid_t cnid_dbd_add(struct _cnid_db *cdb, const struct stat *st,
     rqst.name = name;
     rqst.namelen = len;
 
+    rply.namelen = 0;
     if (transmit(db, &rqst, &rply) < 0) {
         errno = CNID_ERR_DB;
         return CNID_INVALID;
@@ -504,8 +510,7 @@ cnid_t cnid_dbd_add(struct _cnid_db *cdb, const struct stat *st,
 }
 
 /* ---------------------- */
-cnid_t cnid_dbd_get(struct _cnid_db *cdb, const cnid_t did, char *name,
-                const int len)
+cnid_t cnid_dbd_get(struct _cnid_db *cdb, const cnid_t did, char *name, const size_t len)
 {
     CNID_private *db;
     struct cnid_dbd_rqst rqst;
@@ -531,6 +536,7 @@ cnid_t cnid_dbd_get(struct _cnid_db *cdb, const cnid_t did, char *name,
     rqst.name = name;
     rqst.namelen = len;
 
+    rply.namelen = 0;
     if (transmit(db, &rqst, &rply) < 0) {
         errno = CNID_ERR_DB;
         return CNID_INVALID;
@@ -555,7 +561,7 @@ cnid_t cnid_dbd_get(struct _cnid_db *cdb, const cnid_t did, char *name,
 }
 
 /* ---------------------- */
-char *cnid_dbd_resolve(struct _cnid_db *cdb, cnid_t *id, void *buffer, u_int32_t len)
+char *cnid_dbd_resolve(struct _cnid_db *cdb, cnid_t *id, void *buffer, size_t len)
 {
     CNID_private *db;
     struct cnid_dbd_rqst rqst;
@@ -630,7 +636,7 @@ static int dbd_getstamp(CNID_private *db, void *buffer, const size_t len)
 }
 
 /* ---------------------- */
-int cnid_dbd_getstamp(struct _cnid_db *cdb, void *buffer, const int len)
+int cnid_dbd_getstamp(struct _cnid_db *cdb, void *buffer, const size_t len)
 {
     CNID_private *db;
     int ret;
@@ -650,7 +656,7 @@ int cnid_dbd_getstamp(struct _cnid_db *cdb, void *buffer, const int len)
 
 /* ---------------------- */
 cnid_t cnid_dbd_lookup(struct _cnid_db *cdb, const struct stat *st, const cnid_t did,
-                   char *name, const int len)
+                   char *name, const size_t len)
 {
     CNID_private *db;
     struct cnid_dbd_rqst rqst;
@@ -682,6 +688,7 @@ cnid_t cnid_dbd_lookup(struct _cnid_db *cdb, const struct stat *st, const cnid_t
     rqst.name = name;
     rqst.namelen = len;
 
+    rply.namelen = 0;
     if (transmit(db, &rqst, &rply) < 0) {
         errno = CNID_ERR_DB;
         return CNID_INVALID;
@@ -707,7 +714,7 @@ cnid_t cnid_dbd_lookup(struct _cnid_db *cdb, const struct stat *st, const cnid_t
 
 /* ---------------------- */
 int cnid_dbd_update(struct _cnid_db *cdb, const cnid_t id, const struct stat *st,
-                const cnid_t did, char *name, const int len)
+                const cnid_t did, char *name, const size_t len)
 {
     CNID_private *db;
     struct cnid_dbd_rqst rqst;
@@ -738,6 +745,7 @@ int cnid_dbd_update(struct _cnid_db *cdb, const cnid_t id, const struct stat *st
     rqst.name = name;
     rqst.namelen = len;
 
+    rply.namelen = 0;
     if (transmit(db, &rqst, &rply) < 0) {
         errno = CNID_ERR_DB;
         return -1;
@@ -773,6 +781,7 @@ int cnid_dbd_delete(struct _cnid_db *cdb, const cnid_t id)
     rqst.op = CNID_DBD_OP_DELETE;
     rqst.cnid = id;
 
+    rply.namelen = 0;
     if (transmit(db, &rqst, &rply) < 0) {
         errno = CNID_ERR_DB;
         return -1;
@@ -789,6 +798,7 @@ int cnid_dbd_delete(struct _cnid_db *cdb, const cnid_t id)
         abort();
     }
 }
+
 
 struct _cnid_module cnid_dbd_module = {
     "dbd",

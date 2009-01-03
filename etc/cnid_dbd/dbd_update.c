@@ -1,5 +1,5 @@
 /*
- * $Id: dbd_update.c,v 1.1.4.12 2004/03/21 23:04:07 lenneis Exp $
+ * $Id: dbd_update.c,v 1.1.4.12.2.1 2005/09/27 10:40:41 didg Exp $
  *
  * Copyright (C) Joerg Lenneis 2003
  * All Rights Reserved.  See COPYING.
@@ -36,7 +36,7 @@ int dbd_update(struct cnid_dbd_rqst *rqst, struct cnid_dbd_rply *rply)
 {
     DBT key,pkey, data;
     int rc;
-    char *buf;                            
+    unsigned char *buf;                            
     int notfound = 0;
     char getbuf[CNID_HEADER_LEN + MAXPATHLEN +1];
 #ifdef DEBUG

@@ -80,7 +80,7 @@ char_ucs2_to_mac_hebrew ( unsigned char *r, ucs2_t wc)
     return 0;
 }
 
-static size_t mac_hebrew_push( void *cd, char **inbuf, size_t *inbytesleft,
+static size_t mac_hebrew_push( void *cd _U_, char **inbuf, size_t *inbytesleft,
                          char **outbuf, size_t *outbytesleft)
 {
     unsigned char c = 0;
@@ -152,7 +152,7 @@ char_mac_hebrew_to_ucs2 (ucs2_t *pwc, const unsigned char *s)
 	return 0;
 }
 
-static size_t mac_hebrew_pull ( void *cd, char **inbuf, size_t *inbytesleft,
+static size_t mac_hebrew_pull ( void *cd _U_, char **inbuf, size_t *inbytesleft,
                          char **outbuf, size_t *outbytesleft)
 {
     ucs2_t         temp;

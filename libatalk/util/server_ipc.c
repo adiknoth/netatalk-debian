@@ -1,5 +1,5 @@
 /*
- * $Id: server_ipc.c,v 1.1.4.1.2.2 2004/07/01 01:27:34 didg Exp $
+ * $Id: server_ipc.c,v 1.1.4.1.2.2.2.1 2005/09/27 10:40:41 didg Exp $
  *
  * All rights reserved. See COPYRIGHT.
  *
@@ -42,7 +42,7 @@ void *server_ipc_create(void)
 }
 
 /* ----------------- */
-int server_ipc_child(void *obj)
+int server_ipc_child(void *obj _U_)
 {
     /* close input */
     close(pipe_fd[0]);
@@ -50,7 +50,7 @@ int server_ipc_child(void *obj)
 }
 
 /* ----------------- */
-int server_ipc_parent(void *obj)
+int server_ipc_parent(void *obj _U_)
 {
     return pipe_fd[0];
 }

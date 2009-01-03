@@ -1,5 +1,5 @@
 /*
- * $Id: rtmp.c,v 1.12.8.1 2004/05/12 21:21:48 didg Exp $
+ * $Id: rtmp.c,v 1.12.8.1.2.1 2008/11/14 10:04:52 didg Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved. See COPYRIGHT.
@@ -968,8 +968,8 @@ int gateroute( command, rtmp )
 		    (struct sockaddr_at *) &dst,
 		    (struct sockaddr_at *) &gate,
 		    RTF_UP | RTF_GATEWAY )) {
-	    LOG(log_error, logtype_atalkd, "route: %u -> %u.%u: %m", net,
-	    	    ntohs( gate.sat_addr.s_net ), gate.sat_addr.s_node );
+	    LOG(log_error, logtype_atalkd, "route: %u -> %u.%u: %s", net,
+	    	    ntohs( gate.sat_addr.s_net ), gate.sat_addr.s_node, strerror(errno) );
 	    continue;
 	}
 #endif /* ! BSD4_4 */

@@ -1,5 +1,5 @@
 /*
- * $Id: globals.h,v 1.18.2.2.2.5 2004/06/15 00:35:06 bfernhomberg Exp $
+ * $Id: globals.h,v 1.18.2.2.2.5.2.1 2008/11/25 15:16:33 didg Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -25,11 +25,6 @@
 #include <atalk/compat.h>
 #include <atalk/unicode.h>
 #include <atalk/uam.h>
-
-/* test for inline */
-#ifndef __inline__
-#define __inline__
-#endif
 
 #define MACFILELEN 31
 

@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.17.8.6.2.1 2005/01/31 17:01:04 didg Exp $
+ * $Id: main.c,v 1.17.8.6.2.2 2005/09/27 10:40:41 didg Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved. See COPYRIGHT.
@@ -108,13 +108,13 @@ extern int	zip_packet();
 
 int		rtfd;
 
-struct atserv	atserv[] = {
+static struct atserv	atserv[] = {
     { "rtmp",		1,	rtmp_packet },		/* 0 */
     { "nbp",		2,	nbp_packet },		/* 1 */
     { "echo",		4,	aep_packet },		/* 2 */
     { "zip",		6,	zip_packet },		/* 3 */
 };
-int		atservNATSERV = elements( atserv );
+static int		atservNATSERV = elements( atserv );
 
 struct interface	*interfaces = NULL, *ciface = NULL;
 
@@ -168,7 +168,7 @@ static void atalkd_exit(const int i)
 }
 
 
-static void as_timer(int sig)
+static void as_timer(int sig _U_)
 {
     struct sockaddr_at	sat;
     struct ziphdr	zh;

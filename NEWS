@@ -1,3 +1,33 @@
+Changes in 2.0.4
+================
+
+* NEW: afpd: DHX2 uams using GNU libgcrypt.
+* NEW: afpd: volume options 'perm' and 'invisibledots'
+       'perm' value OR with the client requested permissions. (help with OSX 10.5
+       strange permissions).
+       Make dot files visible by default with 'usedots', use 'invisibledots' 
+       for keeping the old behavior, ie for OS9 (OSX hide dot files on its
+       own).
+* NEW: afpd: Mac greek encoding.
+* FIX: afpd: return the right error in createfile and copyfile if the disk
+       is full.
+* FIX: afpd: server name check, test for the whole loopback subnet 
+       not only 127.0.0.1.
+* UPD: afpd: limit comments size to 128 bytes, (workaround for Adobe CS2 bug).
+* UPD: afpd: no more daemon icon.
+* UPD: usedots, return an invalide name only for .Applexxx files used by netatalk not
+       all files starting with .apple.
+* FIX: cnid: dbd detach the daemon from the control terminal.
+* UPD: cnid: never ending Berkeley API changes...
+* UPD: cnid: dbd add a timeout when reading data from afpd client.
+* UPD: Don't wait five second after the first error when speaking to the dbd
+       backend.
+* FIX: papd: vars use % not $
+* FIX: papd: quote chars in popen variables expansion. security fix.
+* FIX: papd: papd -d didn't write to stderr.
+* FIX: papd: ps comments don't always use ()
+* FIX: many compilation errors (solaris, AFS, Tru64, xfs quota...).
+
 Changes in 2.0.3
 ================
 

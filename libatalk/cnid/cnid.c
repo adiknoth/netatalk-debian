@@ -1,5 +1,5 @@
 /* 
- * $Id: cnid.c,v 1.1.4.11.2.2 2005/01/31 17:01:16 didg Exp $
+ * $Id: cnid.c,v 1.1.4.11.2.4 2008/11/25 15:16:34 didg Exp $
  *
  * Copyright (c) 2003 the Netatalk Team
  * Copyright (c) 2003 Rafal Lewczuk <rlewczuk@pronet.pl>
@@ -98,8 +98,8 @@ struct _cnid_db *cnid_open(const char *volpath, mode_t mask, char *type, int fla
     struct _cnid_db *db;
     cnid_module *mod = NULL;
     struct list_head *ptr;
-    uid_t uid;  /* uninitialized, OK 310105 */
-    gid_t gid;
+    uid_t uid = -1;  
+    gid_t gid = -1;
     
     list_for_each(ptr, &modules) {
         if (0 == strcmp(list_entry(ptr, cnid_module, db_list)->name, type)) {
@@ -196,7 +196,7 @@ u_int32_t flags;
 
 /* --------------- */
 cnid_t cnid_add(struct _cnid_db *cdb, const struct stat *st, const cnid_t did, 
-			char *name, const int len, cnid_t hint)
+			char *name, const size_t len, cnid_t hint)
 {
 cnid_t ret;
 
@@ -219,7 +219,7 @@ int ret;
 
 
 /* --------------- */
-cnid_t cnid_get(struct _cnid_db *cdb, const cnid_t did, char *name,const int len)
+cnid_t cnid_get(struct _cnid_db *cdb, const cnid_t did, char *name,const size_t len)
 {
 cnid_t ret;
 
@@ -230,7 +230,7 @@ cnid_t ret;
 }
 
 /* --------------- */
-int cnid_getstamp(struct _cnid_db *cdb,  void *buffer, const int len)
+int cnid_getstamp(struct _cnid_db *cdb,  void *buffer, const size_t len)
 {
 cnid_t ret;
 time_t t;
@@ -252,7 +252,7 @@ time_t t;
 
 /* --------------- */
 cnid_t cnid_lookup(struct _cnid_db *cdb, const struct stat *st, const cnid_t did,
-			char *name, const int len)
+			char *name, const size_t len)
 {
 cnid_t ret;
 
@@ -263,7 +263,7 @@ cnid_t ret;
 }
 
 /* --------------- */
-char *cnid_resolve(struct _cnid_db *cdb, cnid_t *id, void *buffer, u_int32_t len)
+char *cnid_resolve(struct _cnid_db *cdb, cnid_t *id, void *buffer, size_t len)
 {
 char *ret;
 
@@ -275,7 +275,7 @@ char *ret;
 
 /* --------------- */
 int cnid_update   (struct _cnid_db *cdb, const cnid_t id, const struct stat *st, 
-			const cnid_t did, char *name, const int len)
+			const cnid_t did, char *name, const size_t len)
 {
 int ret;
 

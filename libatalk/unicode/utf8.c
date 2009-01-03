@@ -61,7 +61,7 @@ struct charset_functions charset_utf8_mac =
 };
 
 /* ------------------------ */
-static size_t utf8_pull(void *cd, char **inbuf, size_t *inbytesleft,
+static size_t utf8_pull(void *cd _U_, char **inbuf, size_t *inbytesleft,
 			 char **outbuf, size_t *outbytesleft)
 {
 	ucs2_t uc = 0;
@@ -113,7 +113,7 @@ badseq:
 }
 
 /* ------------------------ */
-static size_t utf8_push(void *cd, char **inbuf, size_t *inbytesleft,
+static size_t utf8_push(void *cd _U_, char **inbuf, size_t *inbytesleft,
 			 char **outbuf, size_t *outbytesleft)
 {
 	ucs2_t uc=0;

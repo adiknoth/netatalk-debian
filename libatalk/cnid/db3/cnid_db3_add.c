@@ -1,5 +1,5 @@
 /*
- * $Id: cnid_db3_add.c,v 1.1.4.2.2.1 2005/01/30 20:56:22 didg Exp $
+ * $Id: cnid_db3_add.c,v 1.1.4.2.2.2 2005/09/27 10:40:41 didg Exp $
  *
  * Copyright (c) 1999. Adrian Sun (asun@zoology.washington.edu)
  * All Rights Reserved. See COPYRIGHT.
@@ -118,7 +118,6 @@ static cnid_t get_cnid(CNID_private *db)
     DBT rootinfo_key, rootinfo_data;
     DB_TXN *tid;
     int rc;
-    int flag;
     cnid_t hint,id;
 
     memset(&rootinfo_key, 0, sizeof(rootinfo_key));
@@ -203,7 +202,7 @@ cleanup_abort:
 
 /* ------------------------ */
 cnid_t cnid_db3_add(struct _cnid_db *cdb, const struct stat *st,
-                const cnid_t did, char *name, const int len,
+                const cnid_t did, char *name, const size_t len,
                 cnid_t hint)
 {
     CNID_private *db;

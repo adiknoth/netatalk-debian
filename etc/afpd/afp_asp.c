@@ -1,5 +1,5 @@
 /*
- * $Id: afp_asp.c,v 1.18.6.6 2004/05/04 15:38:23 didg Exp $
+ * $Id: afp_asp.c,v 1.18.6.6.2.2 2008/11/25 15:16:31 didg Exp $
  *
  * Copyright (c) 1997 Adrian Sun (asun@zoology.washington.edu)
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
@@ -47,9 +47,9 @@ extern struct oforks	*writtenfork;
 
 static AFPObj *child;
 
-static __inline__ void afp_authprint_remove(AFPObj *);
+static void afp_authprint_remove(AFPObj *);
 
-static __inline__ void afp_asp_close(AFPObj *obj)
+static void afp_asp_close(AFPObj *obj)
 {
     ASP asp = obj->handle;
 
@@ -65,7 +65,7 @@ static __inline__ void afp_asp_close(AFPObj *obj)
 }
 
 /* removes the authprint trailing when appropriate */
-static __inline__ void afp_authprint_remove(AFPObj *obj)
+static void afp_authprint_remove(AFPObj *obj)
 {
     ASP asp = obj->handle;
     char addr_filename[256];
@@ -196,7 +196,7 @@ static void afp_asp_reload()
 
 /* ---------------------- */
 #ifdef SERVERTEXT
-static void afp_asp_getmesg (int sig)
+static void afp_asp_getmesg (int sig _U_)
 {
     readmessage(child);
     asp_attention(child->handle, AFPATTN_MESG | AFPATTN_TIME(5));

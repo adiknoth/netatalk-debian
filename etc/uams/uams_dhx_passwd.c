@@ -1,5 +1,5 @@
 /*
- * $Id: uams_dhx_passwd.c,v 1.18.6.6 2004/03/18 02:56:32 bfernhomberg Exp $
+ * $Id: uams_dhx_passwd.c,v 1.18.6.6.2.2 2006/12/03 16:23:07 didg Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * Copyright (c) 1999 Adrian Sun (asun@u.washington.edu) 
@@ -74,8 +74,8 @@ static char *clientname;
 #endif /* TRU64 */
 
 /* dhx passwd */
-static int pwd_login(void *obj, char *username, int ulen, struct passwd **uam_pwd,
-			char *ibuf, int ibuflen,
+static int pwd_login(void *obj, char *username, int ulen, struct passwd **uam_pwd _U_,
+			char *ibuf, int ibuflen _U_,
 			char *rbuf, int *rbuflen)
 {
     unsigned char iv[] = "CJalbert";
@@ -277,7 +277,7 @@ static int passwd_login_ext(void *obj, char *uname, struct passwd **uam_pwd,
 }
 			
 static int passwd_logincont(void *obj, struct passwd **uam_pwd,
-			    char *ibuf, int ibuflen, 
+			    char *ibuf, int ibuflen _U_, 
 			    char *rbuf, int *rbuflen)
 {
 #ifdef SHADOWPW
@@ -399,6 +399,12 @@ static void uam_cleanup(void)
 }
 
 UAM_MODULE_EXPORT struct uam_export uams_dhx = {
+  UAM_MODULE_SERVER,
+  UAM_MODULE_VERSION,
+  uam_setup, uam_cleanup
+};
+
+UAM_MODULE_EXPORT struct uam_export uams_dhx_passwd = {
   UAM_MODULE_SERVER,
   UAM_MODULE_VERSION,
   uam_setup, uam_cleanup

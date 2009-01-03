@@ -1,5 +1,5 @@
 /*
- * $Id: directory.c,v 1.71.2.4.2.15.2.5 2005/02/10 01:23:10 didg Exp $
+ * $Id: directory.c,v 1.71.2.4.2.15.2.10 2008/11/25 15:16:32 didg Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -392,9 +392,7 @@ struct dir *dir;
 /* remove the node from the tree. this is just like insertion, but
  * different. actually, it has to worry about a bunch of things that
  * insertion doesn't care about. */
-static void dir_remove( vol, dir )
-struct vol	*vol;
-struct dir	*dir;
+static void dir_remove( const struct vol *vol _U_, struct dir	*dir)
 {
 #ifdef REMOVE_NODES
     struct ofork *of, *last;
@@ -1116,7 +1114,7 @@ char	**cpath;
                     static char	temp[ MAXPATHLEN + 1];
 
                     /* not an UTF8 name */
-                    if (mtoUTF8(vol, path, strlen(path), temp, MAXPATHLEN) == -1) {
+                    if (mtoUTF8(vol, path, strlen(path), temp, MAXPATHLEN) == (size_t)-1) {
                         afp_errno = AFPERR_PARAM;
                         return( NULL );
                     }
@@ -1290,6 +1288,12 @@ struct maccess ma;
 
 }
 
+/* --------------------- */
+static int invisible_dots(const struct vol *vol, const char *name)
+{ 
+  return vol_inv_dots(vol) && *name  == '.' && strcmp(name, ".") && strcmp(name, "..");
+}
+
 /* ------------------------------ 
    (".", curdir)
    (name, dir) with curdir:name == dir, from afp_enumerate
@@ -1343,8 +1347,7 @@ int getdirparams(const struct vol *vol,
         case DIRPBIT_ATTR :
             if ( isad ) {
                 ad_getattr(&ad, &ashort);
-            } else if (*dir->d_u_name == '.' && strcmp(dir->d_u_name, ".") 
-                        && strcmp(dir->d_u_name, "..")) {
+            } else if (invisible_dots(vol, dir->d_u_name)) {
                 ashort = htons(ATTRBIT_INVISIBLE);
             } else
                 ashort = 0;
@@ -1387,12 +1390,10 @@ int getdirparams(const struct vol *vol,
                 ashort = htons(FINDERINFO_CLOSEDVIEW);
                 memcpy(data + FINDERINFO_FRVIEWOFF, &ashort, sizeof(ashort));
 
-                /* dot files are by default invisible */
-                if (*dir->d_u_name  == '.' && strcmp(dir->d_u_name , ".") &&
-                        strcmp(dir->d_u_name , "..")) {
+                /* dot files are by default visible */
+                if (invisible_dots(vol, dir->d_u_name)) {
                     ashort = htons(FINDERINFO_INVISIBLE);
-                    memcpy(data + FINDERINFO_FRFLAGOFF,
-                           &ashort, sizeof(ashort));
+                    memcpy(data + FINDERINFO_FRFLAGOFF, &ashort, sizeof(ashort));
                 }
             }
             data += 32;
@@ -1542,9 +1543,9 @@ int path_error(struct path *path, int error)
 
 /* ----------------------------- */
 int afp_setdirparams(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
-char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+AFPObj  *obj;
+char	*ibuf, *rbuf _U_;
+int	ibuflen _U_, *rbuflen;
 {
     struct vol	*vol;
     struct dir	*dir;
@@ -1610,8 +1611,9 @@ struct path Cur_Path = {
     0,
     "",  /* mac name */
     ".", /* unix name */
+    NULL,
     0,  /* stat is not set */
-    0,  /* */
+    0  /* errno */
 };
 
 /* ------------------ */
@@ -1639,7 +1641,7 @@ int setdirparams(const struct vol *vol,
 
     char                *upath;
     struct dir          *dir;
-    int			bit, aint, isad = 1;
+    int			bit, isad = 1;
     int                 cdate, bdate;
     int                 owner, group;
     u_int16_t		ashort, bshort;
@@ -1650,7 +1652,7 @@ int setdirparams(const struct vol *vol,
     u_int16_t           bitmap = d_bitmap;
     u_char              finder_buf[32];
     u_int32_t		upriv;
-    mode_t              mpriv;          /* uninitialized, OK 310105 */
+    mode_t              mpriv = 0;        
     u_int16_t           upriv_bit = 0;
 
     bit = 0;
@@ -1704,7 +1706,7 @@ int setdirparams(const struct vol *vol,
             ma.ma_world = *buf++;
             ma.ma_group = *buf++;
             ma.ma_owner = *buf++;
-            mpriv = mtoumode( &ma );
+            mpriv = mtoumode( &ma ) | vol->v_perm;
             if (dir_rx_set(mpriv) && setdirmode( vol, upath, mpriv) < 0 ) {
                 err = set_dir_errors(path, "setdirmode", errno);
                 bitmap = 0;
@@ -1724,20 +1726,21 @@ int setdirparams(const struct vol *vol,
             break;
 	case DIRPBIT_UNIXPR :
 	    if (vol_unix_priv(vol)) {
-	        /* Skip UID and GID for now, there seems to be no way to set them from an OSX client anyway */
-                buf += sizeof( aint );
-                buf += sizeof( aint );
+                memcpy( &owner, buf, sizeof(owner)); /* FIXME need to change owner too? */
+                buf += sizeof( owner );
+                memcpy( &group, buf, sizeof( group ));
+                buf += sizeof( group );
 
                 change_mdate = 1;
                 change_parent_mdate = 1;
                 memcpy( &upriv, buf, sizeof( upriv ));
                 buf += sizeof( upriv );
-                upriv = ntohl (upriv);
+                upriv = ntohl (upriv) | vol->v_perm;
                 if (dir_rx_set(upriv)) {
                     /* maybe we are trying to set perms back */
                     if ( setdirunixmode(vol, upath, upriv) < 0 ) {
                         bitmap = 0;
-                        err = set_dir_errors(path, "setdirmode", errno);
+                        err = set_dir_errors(path, "setdirunixmode", errno);
                     }
                 }
                 else {
@@ -1855,27 +1858,14 @@ int setdirparams(const struct vol *vol,
                 goto setdirparam_done;
             }
             break;
-
         case DIRPBIT_GID :
             if (dir->d_did == DIRDID_ROOT)
                 setdeskowner( -1, ntohl(group) ); 
-
-#if 0       /* don't error if we can't set the desktop owner. */
-                err = set_dir_errors(path, "setdeskowner", errno);
-                if (isad && err == AFPERR_PARAM) {
-                    err = AFP_OK; /* ???*/
-                }
-                else {
-                    goto setdirparam_done;
-                }
-#endif /* 0 */
-
             if ( setdirowner(vol, upath, -1, ntohl(group) ) < 0 ) {
                 err = set_dir_errors(path, "setdirowner", errno);
                 goto setdirparam_done;
             }
             break;
-
         case DIRPBIT_ACCESS :
             if (dir->d_did == DIRDID_ROOT) {
                 setdeskmode(mpriv);
@@ -1900,21 +1890,29 @@ int setdirparams(const struct vol *vol,
 	case DIRPBIT_UNIXPR :
 	    if (vol_unix_priv(vol)) {
                 if (dir->d_did == DIRDID_ROOT) {
-                    setdeskmode( upriv );
                     if (!dir_rx_set(upriv)) {
                         /* we can't remove read and search for owner on volume root */
                         err = AFPERR_ACCESS;
                         goto setdirparam_done;
                     }
+                    setdeskowner( -1, ntohl(group) ); 
+                    setdeskmode( upriv );
+                }
+                if ( setdirowner(vol, upath, -1, ntohl(group) ) < 0 ) {
+                    err = set_dir_errors(path, "setdirowner", errno);
+                    goto setdirparam_done;
                 }
 
                 if ( upriv_bit && setdirunixmode(vol, upath, upriv) < 0 ) {
-                    err = set_dir_errors(path, "setdirmode", errno);
+                    err = set_dir_errors(path, "setdirunixmode", errno);
                     goto setdirparam_done;
                 }
-                break;
             }
-            /* fall through */
+            else {
+                err = AFPERR_BITMAP;
+                goto setdirparam_done;
+            }
+            break;
         default :
             err = AFPERR_BITMAP;
             goto setdirparam_done;
@@ -1963,9 +1961,9 @@ setdirparam_done:
 }
 
 int afp_createdir(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
+AFPObj  *obj;
 char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+int	ibuflen _U_, *rbuflen;
 {
     struct adouble	ad;
     struct vol		*vol;
@@ -2148,10 +2146,9 @@ struct dir	*dir, *newparent;
 
 #define DOT_APPLEDOUBLE_LEN 13
 /* delete an empty directory */
-int deletecurdir( vol, path, pathlen )
+int deletecurdir( vol, path )
 const struct vol	*vol;
 char *path;
-int pathlen;
 {
     struct dirent *de;
     struct stat st;
@@ -2257,9 +2254,9 @@ delete_done:
 }
 
 int afp_mapid(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
+AFPObj  *obj;
 char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+int	ibuflen _U_, *rbuflen;
 {
     struct passwd	*pw;
     struct group	*gr;
@@ -2330,9 +2327,9 @@ int		ibuflen, *rbuflen;
 }
 
 int afp_mapname(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
+AFPObj  *obj _U_;
 char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+int	ibuflen _U_, *rbuflen;
 {
     struct passwd	*pw;
     struct group	*gr;
@@ -2394,9 +2391,9 @@ int		ibuflen, *rbuflen;
   variable DID support 
 */
 int afp_closedir(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
-char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+AFPObj  *obj _U_;
+char	*ibuf _U_, *rbuf _U_;
+int	ibuflen _U_, *rbuflen;
 {
 #if 0
     struct vol   *vol;
@@ -2433,9 +2430,9 @@ int		ibuflen, *rbuflen;
  * there's a pb again with case but move it to cname
 */
 int afp_opendir(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
+AFPObj  *obj _U_;
 char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+int	ibuflen  _U_, *rbuflen;
 {
     struct vol		*vol;
     struct dir		*parentdir;

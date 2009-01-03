@@ -48,7 +48,7 @@ struct charset_functions charset_iso8859_adapted =
  * from unicode to iso8859_adapted code page
 */
 
-static size_t iso8859_adapted_push( void *cd, char **inbuf, size_t *inbytesleft,
+static size_t iso8859_adapted_push( void *cd _U_, char **inbuf, size_t *inbytesleft,
                          char **outbuf, size_t *outbytesleft)
 {
     int len = 0;
@@ -102,7 +102,7 @@ static size_t iso8859_adapted_push( void *cd, char **inbuf, size_t *inbytesleft,
 }
 
 /* ------------------------ */
-static size_t iso8859_adapted_pull ( void *cd, char **inbuf, size_t *inbytesleft,
+static size_t iso8859_adapted_pull ( void *cd _U_, char **inbuf, size_t *inbytesleft,
                          char **outbuf, size_t *outbytesleft)
 {
     unsigned char  *inptr;

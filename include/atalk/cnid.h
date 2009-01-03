@@ -1,5 +1,5 @@
 /* 
- * $Id: cnid.h,v 1.9.6.6.2.1 2005/01/30 20:56:21 didg Exp $
+ * $Id: cnid.h,v 1.9.6.6.2.2 2005/09/27 10:40:41 didg Exp $
  *
  * Copyright (c) 2003 the Netatalk Team
  * Copyright (c) 2003 Rafal Lewczuk <rlewczuk@pronet.pl>
@@ -51,18 +51,17 @@ struct _cnid_db {
 	void *_private;              /* back-end speficic data */
 
 	cnid_t (*cnid_add)(struct _cnid_db *cdb, const struct stat *st, const cnid_t did, 
-			char *name, const int len, cnid_t hint);
+			char *name, const size_t, cnid_t hint);
 	int (*cnid_delete)(struct _cnid_db *cdb, cnid_t id);
-	cnid_t (*cnid_get)(struct _cnid_db *cdb, const cnid_t did, char *name,
-			const int len);
+	cnid_t (*cnid_get)(struct _cnid_db *cdb, const cnid_t did, char *name, const  size_t);
 	cnid_t (*cnid_lookup)(struct _cnid_db *cdb, const struct stat *st, const cnid_t did,
-			char *name, const int len);
+			char *name, const size_t);
 	cnid_t (*cnid_nextid)(struct _cnid_db *cdb);
-	char *(*cnid_resolve)(struct _cnid_db *cdb, cnid_t *id, void *buffer, u_int32_t len);
+	char *(*cnid_resolve)(struct _cnid_db *cdb, cnid_t *id, void *buffer, size_t len);
 	int (*cnid_update)(struct _cnid_db *cdb, const cnid_t id, const struct stat *st, 
-			const cnid_t did, char *name, const int len);	
+			const cnid_t did, char *name, const size_t len);	
 	void (*cnid_close)(struct _cnid_db *cdb);
-	int  (*cnid_getstamp)(struct _cnid_db *cdb, void *buffer, const int len);
+	int  (*cnid_getstamp)(struct _cnid_db *cdb, void *buffer, const size_t len);
 };
 typedef struct _cnid_db cnid_db;
 
@@ -88,62 +87,28 @@ void cnid_register(struct _cnid_module *module);
 struct _cnid_db *cnid_open(const char *volpath, mode_t mask, char *type, int flags);
 
 cnid_t cnid_add(struct _cnid_db *cdb, const struct stat *st, const cnid_t did, 
-			char *name, const int len, cnid_t hint);
+			char *name, const size_t len, cnid_t hint);
 
 int    cnid_delete(struct _cnid_db *cdb, cnid_t id);
 
-cnid_t cnid_get   (struct _cnid_db *cdb, const cnid_t did, char *name,const int len);
+cnid_t cnid_get   (struct _cnid_db *cdb, const cnid_t did, char *name,const size_t len);
 
-int    cnid_getstamp(struct _cnid_db *cdb, void *buffer, const int len);
+int    cnid_getstamp(struct _cnid_db *cdb, void *buffer, const size_t len);
 
 cnid_t cnid_lookup(struct _cnid_db *cdb, const struct stat *st, const cnid_t did,
-			char *name, const int len);
+			char *name, const size_t len);
 
-char *cnid_resolve(struct _cnid_db *cdb, cnid_t *id, void *buffer, u_int32_t len);
+char *cnid_resolve(struct _cnid_db *cdb, cnid_t *id, void *buffer, size_t len);
 
 int cnid_update   (struct _cnid_db *cdb, const cnid_t id, const struct stat *st, 
-			const cnid_t did, char *name, const int len);	
+			const cnid_t did, char *name, const size_t len);
+
+cnid_t cnid_rebuild_add(struct _cnid_db *cdb, const struct stat *st, const cnid_t did,
+                        char *name, const size_t len, cnid_t hint);
+
 
 /* This function closes a CNID database and frees all resources assigned to it. */ 
 void cnid_close(struct _cnid_db *db);
 
 #endif
-
-/*
- * $Log: cnid.h,v $
- * Revision 1.9.6.6.2.1  2005/01/30 20:56:21  didg
- *
- * Olaf Hering at suse.de warning fixes.
- *
- * Revision 1.9.6.6  2004/02/22 18:36:37  didg
- *
- * small clean up
- *
- * Revision 1.9.6.5  2004/01/14 23:15:19  lenneis
- * Check if we can get a DB stamp sucessfully in afs_openvol and fail
- * the open if not.
- *
- * Revision 1.9.6.4  2004/01/10 07:19:31  bfernhomberg
- * add cnid_init prototype
- *
- * Revision 1.9.6.3  2004/01/03 22:42:55  didg
- *
- * better errors handling in afpd for dbd cnid.
- *
- * Revision 1.9.6.2  2004/01/03 22:21:09  didg
- *
- * add nodev volume option (always use 0 for device number).
- *
- * Revision 1.9.6.1  2003/09/09 16:42:20  didg
- *
- * big merge for db frontend and unicode.
- *
- * Revision 1.9.4.2  2003/06/11 15:29:11  rlewczuk
- * Removed obsolete parameter from cnid_add. Spotted by Didier.
- *
- * Revision 1.9.4.1  2003/05/29 07:53:19  rlewczuk
- * Selectable CNIDs. Some refactoring. Propably needs more of refactoring, mainly
- * a well designed API (current API is just an old cnid_* API enclosed in VMT).
- *
- */
 

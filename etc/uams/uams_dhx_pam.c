@@ -1,5 +1,5 @@
 /*
- * $Id: uams_dhx_pam.c,v 1.24.6.5 2004/06/24 01:20:12 bfernhomberg Exp $
+ * $Id: uams_dhx_pam.c,v 1.24.6.5.2.4 2008/12/03 19:28:23 didg Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * Copyright (c) 1999 Adrian Sun (asun@u.washington.edu) 
@@ -34,13 +34,12 @@
 #include <openssl/bn.h>
 #include <openssl/dh.h>
 #include <openssl/cast.h>
-#ifdef sun
-#include <openssl/rand.h>
-#endif
+#include <openssl/err.h>
 #else /* OPENSSL_DHX */
 #include <bn.h>
 #include <dh.h>
 #include <cast.h>
+#include <err.h>
 #endif /* OPENSSL_DHX */
 
 #include <atalk/afp.h>
@@ -83,7 +82,7 @@ static char *PAM_password;
 static int PAM_conv (int num_msg,
                      const struct pam_message **msg,
                      struct pam_response **resp,
-                     void *appdata_ptr) {
+                     void *appdata_ptr _U_) {
   int count = 0;
   struct pam_response *reply;
   
@@ -185,19 +184,13 @@ static struct pam_conv PAM_conversation = {
 };
 
 
-static int dhx_setup(void *obj, char *ibuf, int ibuflen, 
+static int dhx_setup(void *obj, char *ibuf, int ibuflen _U_, 
 		     char *rbuf, int *rbuflen)
 {
     u_int16_t sessid;
     int i;
     BIGNUM *bn, *gbn, *pbn;
     DH *dh;
-
-    /* TODO: seed dhx_setup properly... this is a hack */
-#ifdef sun
-    	/* *SEVERE* hack... fix */
-	RAND_load_file("/var/adm/messages", KEYSIZE);
-#endif /* sun */
 
     /* get the client's public key */
     if (!(bn = BN_bin2bn(ibuf, KEYSIZE, NULL))) {
@@ -243,12 +236,22 @@ static int dhx_setup(void *obj, char *ibuf, int ibuflen,
     /* generate key and make sure that we have enough space */
     dh->p = pbn;
     dh->g = gbn;
-    if (!DH_generate_key(dh) || (BN_num_bytes(dh->pub_key) > KEYSIZE)) {
-    /* Log Entry */
-           LOG(log_info, logtype_uams, "uams_dhx_pam.c :PAM: Err Generating Key -- Not enough Space? -- %s",
-		  strerror(errno));
-    /* Log Entry */
-    goto pam_fail;
+    if (DH_generate_key(dh) == 0) {
+	unsigned long dherror;
+	char errbuf[256];
+
+	ERR_load_crypto_strings();
+	dherror = ERR_get_error();
+	ERR_error_string_n(dherror, errbuf, 256);
+
+	LOG(log_info, logtype_uams, "uams_dhx_pam.c :PAM: Err Generating Key (OpenSSL error code: %u, %s)", dherror, errbuf);
+
+	ERR_free_strings();
+	goto pam_fail;
+    }
+    if (BN_num_bytes(dh->pub_key) > KEYSIZE) {
+	LOG(log_info, logtype_uams, "uams_dhx_pam.c :PAM: Err Generating Key -- Not enough Space? -- %s", strerror(errno));
+	goto pam_fail;
     }
 
     /* figure out the key. store the key in rbuf for now. */
@@ -316,7 +319,7 @@ pam_fail:
 }
 
 /* -------------------------------- */
-static int login(void *obj, char *username, int ulen,  struct passwd **uam_pwd,
+static int login(void *obj, char *username, int ulen,  struct passwd **uam_pwd _U_,
 		     char *ibuf, int ibuflen,
 		     char *rbuf, int *rbuflen)
 {
@@ -404,7 +407,7 @@ static int pam_login_ext(void *obj, char *uname, struct passwd **uam_pwd,
 /* -------------------------------- */
 
 static int pam_logincont(void *obj, struct passwd **uam_pwd,
-			 char *ibuf, int ibuflen, 
+			 char *ibuf, int ibuflen _U_, 
 			 char *rbuf, int *rbuflen)
 {
     char *hostname;
@@ -561,7 +564,7 @@ static void pam_logout() {
 /* change pw for dhx needs a couple passes to get everything all
  * right. basically, it's like the login/logincont sequence */
 static int pam_changepw(void *obj, char *username,
-			struct passwd *pwd, char *ibuf, int ibuflen,
+			struct passwd *pwd _U_, char *ibuf, int ibuflen,
 			char *rbuf, int *rbuflen)
 {
     BIGNUM *bn1, *bn2, *bn3;

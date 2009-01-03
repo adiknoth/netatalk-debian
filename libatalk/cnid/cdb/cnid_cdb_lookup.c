@@ -1,5 +1,5 @@
 /*
- * $Id: cnid_cdb_lookup.c,v 1.1.4.5.2.1 2005/01/30 20:56:22 didg Exp $
+ * $Id: cnid_cdb_lookup.c,v 1.1.4.5.2.2 2005/09/27 10:40:41 didg Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -15,9 +15,9 @@
 /* This returns the CNID corresponding to a particular file.  It will
  * also fix up the various databases if there's a problem. */
 cnid_t cnid_cdb_lookup(struct _cnid_db *cdb, const struct stat *st, const cnid_t did,
-                   char *name, const int len)
+                   char *name, const size_t len)
 {
-    char *buf;
+    unsigned char *buf;
     CNID_private *db;
     DBT key, devdata, diddata;
     char dev[CNID_DEV_LEN];

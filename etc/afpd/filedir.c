@@ -1,5 +1,5 @@
 /*
- * $Id: filedir.c,v 1.45.2.2.2.14.2.2 2005/02/10 01:23:14 didg Exp $
+ * $Id: filedir.c,v 1.45.2.2.2.14.2.5 2008/11/25 15:16:33 didg Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -130,9 +130,9 @@ more information */
 #endif
 
 int afp_getfildirparams(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
+AFPObj  *obj _U_;
 char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+int	ibuflen _U_, *rbuflen;
 {
     struct stat		*st;
     struct vol		*vol;
@@ -225,9 +225,9 @@ int		ibuflen, *rbuflen;
 }
 
 int afp_setfildirparams(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
-char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+AFPObj  *obj;
+char	*ibuf, *rbuf _U_;
+int	ibuflen _U_, *rbuflen;
 {
     struct stat	*st;
     struct vol	*vol;
@@ -440,9 +440,9 @@ int         isdir;
 
 /* -------------------------------------------- */
 int afp_rename(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
-char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+AFPObj  *obj;
+char	*ibuf, *rbuf _U_;
+int	ibuflen _U_, *rbuflen;
 {
     struct vol	*vol;
     struct dir	*sdir;
@@ -526,9 +526,9 @@ int		ibuflen, *rbuflen;
 
 /* ------------------------------- */
 int afp_delete(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
-char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+AFPObj  *obj;
+char	*ibuf, *rbuf _U_;
+int	ibuflen _U_, *rbuflen;
 {
     struct vol		*vol;
     struct dir		*dir;
@@ -569,7 +569,7 @@ int		ibuflen, *rbuflen;
     	    rc = AFPERR_ACCESS;
     	}
     	else {
-            rc = deletecurdir( vol, obj->oldtmp, AFPOBJ_TMPSIZ);
+            rc = deletecurdir( vol, obj->oldtmp);
         }
     } else if (of_findname(s_path)) {
         rc = AFPERR_BUSY;
@@ -643,9 +643,9 @@ char	*name;
 
 /* ------------------------- */
 int afp_moveandrename(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj;
-char	*ibuf, *rbuf;
-int		ibuflen, *rbuflen;
+AFPObj  *obj;
+char	*ibuf, *rbuf _U_;
+int	ibuflen  _U_, *rbuflen;
 {
     struct vol	*vol;
     struct dir	*sdir, *ddir;
@@ -748,7 +748,7 @@ int		ibuflen, *rbuflen;
 #endif /* DROPKLUDGE */
             /* if unix priv don't try to match perm with dest folder */
             if (!isdir && !vol_unix_priv(vol)) {
-                int  admode = ad_mode("", 0777);
+                int  admode = ad_mode("", 0777) | vol->v_perm;
 
                 setfilmode(upath, admode, NULL);
                 setfilmode(vol->ad_path( upath, ADFLAGS_HF ), ad_hf_mode(admode), NULL);

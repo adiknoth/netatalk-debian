@@ -1,5 +1,5 @@
 /*
- * $Id: uams_krb4.c,v 1.6.10.1 2003/09/11 23:49:30 bfernhomberg Exp $
+ * $Id: uams_krb4.c,v 1.6.10.1.2.2 2008/11/25 15:16:33 didg Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -86,7 +86,7 @@ struct ClearToken {
 
 #ifdef KRB
 
-static __inline__ void lcase( p )
+static void lcase( p )
     char	*p;
 {
     for (; *p; p++ ) {
@@ -97,7 +97,7 @@ static __inline__ void lcase( p )
     return;
 }
 
-static __inline__ void ucase( p )
+static void ucase( p )
     char	*p;
 {
     for (; *p; p++ ) {
@@ -233,7 +233,7 @@ static int krb4_login(void *obj, struct passwd **uam_pwd,
 #ifdef AFS
     if ( setpag() < 0 ) {
 	*rbuflen = 0;
-	LOG(log_error, logtype_default, "krb_login: setpag: %m" );
+	LOG(log_error, logtype_default, "krb_login: setpag: %s", strerror(errno) );
 	return( AFPERR_BADUAM );
     }
 #endif /*AFS*/
@@ -326,7 +326,7 @@ static int krb4_logincont(void *obj, struct passwd **uam_pwd,
 	    vi.out_size = sizeof( buf );
 
 	    if ( pioctl( 0, VIOCSETTOK, &vi, 0 ) < 0 ) {
-		LOG(log_error, logtype_default, "krb4_logincont: pioctl: %m" );
+		LOG(log_error, logtype_default, "krb4_logincont: pioctl: %s", strerror(errno) );
 		*rbuflen = 0;
 		return( AFPERR_BADUAM );
 	    }
@@ -444,7 +444,7 @@ static int krb4_logincont(void *obj, struct passwd **uam_pwd,
 		    vi.out = buf;
 		    vi.out_size = sizeof( buf );
 		    if ( pioctl( 0, VIOCSETTOK, &vi, 0 ) < 0 ) {
-			LOG(log_error, logtype_default, "krb4_logincont: pioctl: %m" );
+			LOG(log_error, logtype_default, "krb4_logincont: pioctl: %s", strerror(errno) );
 			return( AFPERR_BADUAM );
 		    }
 		    /* FALL THROUGH */
@@ -609,7 +609,7 @@ static int afskrb_login(void *obj, struct passwd *uam_pwd,
     p = rbuf;
     if ( validseskey == 0 ) {
 	if ( setpag() < 0 ) {
-	    LOG(log_error, logtype_default, "krb_login: setpag: %m" );
+	    LOG(log_error, logtype_default, "krb_login: setpag: %s", strerror(errno) );
 	    return AFPERR_BADUAM;
 	}
 	krb_set_tkt_string(( tktfile = mktemp( _PATH_AFPTKT )));
@@ -626,7 +626,7 @@ static int afskrb_login(void *obj, struct passwd *uam_pwd,
 	}
 
 	if ( unlink( tktfile ) < 0 ) {
-	    LOG(log_error, logtype_default, "krb_login: unlink %s: %m", tktfile );
+	    LOG(log_error, logtype_default, "krb_login: unlink %s: %s", tktfile, strerror(errno) );
 	    return ( AFPERR_BADUAM );
 	}
 
@@ -737,12 +737,12 @@ static int afskrb_logincont(void *obj, struct passwd *uam_pwd,
     vi.out = buf;
     vi.out_size = sizeof( buf );
     if ( pioctl( 0, VIOCSETTOK, &vi, 0 ) < 0 ) {
-	LOG(log_error, logtype_default, "krb_logincont: pioctl: %m" );
+	LOG(log_error, logtype_default, "krb_logincont: pioctl: %s", strerror(errno) );
 	return ( AFPERR_BADUAM );
     }
 
     if ( unlink( tktfile ) < 0 ) {
-	LOG(log_error, logtype_default, "krb_logincont: %s: %m", tktfile );
+	LOG(log_error, logtype_default, "krb_logincont: %s: %s", tktfile, strerror(errno) );
 	return ( AFPERR_BADUAM );
     }
 

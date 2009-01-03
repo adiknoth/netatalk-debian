@@ -1,5 +1,5 @@
 /*
- * $Id: uams_pam.c,v 1.15.2.1.2.5 2004/02/14 02:47:15 didg Exp $
+ * $Id: uams_pam.c,v 1.15.2.1.2.5.2.1 2005/09/27 10:40:41 didg Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * Copyright (c) 1999 Adrian Sun (asun@u.washington.edu) 
@@ -69,7 +69,7 @@ extern void append(void *, const char *, int);
 static int PAM_conv (int num_msg,
                      const struct pam_message **msg,
                      struct pam_response **resp,
-                     void *appdata_ptr) 
+                     void *appdata_ptr _U_) 
 {
   struct pam_response *reply;
   int count;
@@ -139,8 +139,8 @@ static struct pam_conv PAM_conversation = {
 };
 
 static int login(void *obj, char *username, int ulen,  struct passwd **uam_pwd,
-		     char *ibuf, int ibuflen,
-		     char *rbuf, int *rbuflen)
+		     char *ibuf, int ibuflen _U_,
+		     char *rbuf _U_, int *rbuflen _U_)
 {
     struct passwd *pwd;
     int err, PAM_error;
@@ -282,9 +282,9 @@ static void pam_logout() {
 }
 
 /* change passwd */
-static int pam_changepw(void *obj, char *username,
-			struct passwd *pwd, char *ibuf, int ibuflen,
-			char *rbuf, int *rbuflen)
+static int pam_changepw(void *obj _U_, char *username,
+			struct passwd *pwd _U_, char *ibuf, int ibuflen _U_,
+			char *rbuf _U_, int *rbuflen _U_)
 {
     char pw[PASSWDLEN + 1];
     pam_handle_t *lpamh;

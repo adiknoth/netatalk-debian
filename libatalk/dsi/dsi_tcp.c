@@ -1,5 +1,5 @@
 /*
- * $Id: dsi_tcp.c,v 1.9.10.7.2.1 2005/01/11 23:00:42 didg Exp $
+ * $Id: dsi_tcp.c,v 1.9.10.7.2.3 2007/03/17 14:44:36 didg Exp $
  *
  * Copyright (c) 1997, 1998 Adrian Sun (asun@zoology.washington.edu)
  * All rights reserved. See COPYRIGHT.
@@ -297,7 +297,7 @@ int dsi_tcp_init(DSI *dsi, const char *hostname, const char *address,
       }
   }
   else {
-      if (((struct in_addr *) host->h_addr)->s_addr != 0x100007F) { /* FIXME ugly check */
+      if (( ((struct in_addr *) host->h_addr)->s_addr & htonl(0x7F000000) ) !=  htonl(0x7F000000)) { /* FIXME ugly check */
           dsi->server.sin_addr.s_addr = ((struct in_addr *) host->h_addr)->s_addr;
           return 1;
       }

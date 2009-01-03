@@ -1,5 +1,5 @@
 /*
- * $Id: dbif.c,v 1.1.4.15.2.1 2004/12/21 13:36:12 didg Exp $
+ * $Id: dbif.c,v 1.1.4.15.2.4 2008/08/07 07:05:31 didg Exp $
  *
  * Copyright (C) Joerg Lenneis 2003
  * All Rights Reserved.  See COPYING.
@@ -163,7 +163,6 @@ int dbif_env_init(struct db_param *dbp)
     if (db_errlog != NULL)
         db_env->set_errfile(db_env, db_errlog); 
     db_env->set_verbose(db_env, DB_VERB_RECOVERY, 1);
-    db_env->set_verbose(db_env, DB_VERB_CHKPOINT, 1);
     if ((ret = db_env->open(db_env, ".", DBOPTIONS | DB_PRIVATE | DB_RECOVER, 0))) {
         LOG(log_error, logtype_cnid, "error opening DB environment: %s", 
             db_strerror(ret));
@@ -233,7 +232,7 @@ int dbif_env_init(struct db_param *dbp)
 }
 
 /* --------------- */
-int dbif_open(struct db_param *dbp, int do_truncate)
+int dbif_open(struct db_param *dbp _U_, int do_truncate)
 {
     int ret;
     int i;
@@ -514,7 +513,11 @@ int dbif_count(const int dbi, u_int32_t *count)
     DB_BTREE_STAT *sp;
     DB *db = db_table[dbi].db;
 
+#if DB_VERSION_MAJOR > 4 || (DB_VERSION_MAJOR == 4 && DB_VERSION_MINOR >= 3)
+    ret = db->stat(db, db_txn, &sp, 0);
+#else
     ret = db->stat(db, &sp, 0);
+#endif
 
     if (ret) {
         LOG(log_error, logtype_cnid, "error getting stat infotmation on database: %s", db_strerror(errno));

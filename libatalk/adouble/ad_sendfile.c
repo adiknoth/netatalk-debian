@@ -1,5 +1,5 @@
 /*
- * $Id: ad_sendfile.c,v 1.6.6.2 2004/02/20 19:57:15 didg Exp $
+ * $Id: ad_sendfile.c,v 1.6.6.2.2.1 2008/11/25 15:16:34 didg Exp $
  *
  * Copyright (c) 1999 Adrian Sun (asun@zoology.washington.edu)
  * All rights reserved. See COPYRIGHT.
@@ -140,7 +140,7 @@ ssize_t sys_sendfile(int out_fd, int in_fd, off_t *_offset, size_t count)
 #endif
 
 /* ------------------------------- */
-static __inline__ int ad_sendfile_init(const struct adouble *ad, 
+static int ad_sendfile_init(const struct adouble *ad, 
 				       const int eid, off_t *off,
 				       const int end)
 {

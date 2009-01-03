@@ -1,5 +1,5 @@
 /*
- * $Id: uam.c,v 1.9.6.4 2004/02/14 00:30:51 didg Exp $
+ * $Id: uam.c,v 1.9.6.4.2.1 2005/09/27 10:40:41 didg Exp $
  *
  * Copyright (c) 1999 Adrian Sun (asun@zoology.washington.edu)
  * All Rights Reserved.  See COPYRIGHT.
@@ -183,15 +183,15 @@ void uam_unregister(const int type, const char *name)
 }
 
 /* Crap to support uams which call this afpd function */
-int uam_afpserver_option(void *private, const int what, void *option,
-                         int *len)
+int uam_afpserver_option(void *private _U_, const int what _U_, void *option _U_,
+                         int *len _U_)
 {
 	return(0);
 }
 
 /* --- helper functions for plugin uams --- */
 
-struct passwd *uam_getname(void *dummy, char *name, const int len)
+struct passwd *uam_getname(void *dummy _U_, char *name, const int len)
 {
   struct passwd *pwent;
   char *user;
