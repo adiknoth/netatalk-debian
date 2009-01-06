@@ -1,6 +1,6 @@
---- netatalk/man/man5/Makefile.in.old
-+++ netatalk/man/man5/Makefile.in
-@@ -433,6 +433,8 @@
+--- a/man/man5/Makefile.in
++++ b/man/man5/Makefile.in
+@@ -515,6 +515,8 @@
  	    -e s@:BINDIR:@${bindir}@ \
  	    -e s@:ETCDIR:@${pkgconfdir}@ \
  	    -e s@:LIBDIR:@${libdir}@ \

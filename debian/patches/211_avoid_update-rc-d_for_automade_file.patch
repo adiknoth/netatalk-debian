@@ -1,7 +1,7 @@
---- netatalk/distrib/initscripts/Makefile.in.old
-+++ netatalk/distrib/initscripts/Makefile.in
-@@ -584,11 +584,11 @@
- @USE_DEBIAN_TRUE@	chmod a+x atalk
+--- a/distrib/initscripts/Makefile.in
++++ b/distrib/initscripts/Makefile.in
+@@ -663,11 +663,11 @@
+ @USE_DEBIAN_TRUE@	chmod a+x netatalk
  
  @USE_DEBIAN_TRUE@install-data-hook:
 -@USE_DEBIAN_TRUE@	update-rc.d netatalk defaults 90 10

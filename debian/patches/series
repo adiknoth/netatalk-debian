@@ -14,13 +14,13 @@
 201_etc2ps_paths.diff
 202_psf_8_paths.diff
 204_uniconv_namespace_conflict.diff
-#204a_uniconv_namespace_conflict_autobuilt.diff			# obsoleted by running autotools
+204a_uniconv_namespace_conflict_autobuilt.diff
 205_applevolumes_default_homedir.diff
 206_fix_cnid_maint_paths.diff
 207_afile_namespace_conflict.diff
-#207a_afile_namespace_conflict_autobuilt.diff			# obsoleted by running autotools
-#208_fix_manpage_sed_replacements_for_automade_file.patch	# obsoleted by running autotools
-#209_rename_initscript_for_automade_file.patch			# obsoleted by running autotools
+207a_afile_namespace_conflict_autobuilt.diff
+208_fix_manpage_sed_replacements_for_automade_file.patch
+209_rename_initscript_for_automade_file.patch
 210_avoid_update-rc-d.patch
-#211_avoid_update-rc-d_for_automade_file.patch			# obsoleted by running autotools
+211_avoid_update-rc-d_for_automade_file.patch
 212_disable_cnid_metad_by_default.patch
