@@ -141,5 +141,5 @@ endif
 # Needed for our packaging routines
 CDBS_BUILD_DEPENDS := $(CDBS_BUILD_DEPENDS), d-shlibs (>> 0.19)
 
-# Fix double cdbs build-dependencies
-CDBS_BUILD_DEPENDS := $(shell echo '$(CDBS_BUILD_DEPENDS)' | sed -e '/\bcdbs (>= 0.4.39)/ s/ *,* *\bcdbs (>= \(0.4.23-1.1\|0.4.27\)) *,* */, /g' -e 's/^ *, *//' -e 's/ *, *$$//')
+# Resolve, cleanup and apply CDBS-declared dependencies
+include debian/cdbs/1/rules/package-relations.mk
