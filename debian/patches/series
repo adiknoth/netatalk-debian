@@ -1,5 +1,3 @@
-000_cvs_20071213.patch
-001_LFS_cross_compile_detection.patch
 101_fix_manpage_sed_replacements.patch
 102_rename_initscript.patch
 103_initscript_background_off_by_default.patch
@@ -8,7 +6,6 @@
 106_papd_needs_atalk_and_fix_bashism.patch
 107_afpd-zeroconf.patch
 109_xfs_option.patch
-110_db.patch
 111_db_macro.patch
 112_fix_zeroconf_assertion.patch
 113_LSB_sysv_dep_info.patch
