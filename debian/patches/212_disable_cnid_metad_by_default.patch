@@ -13,7 +13,7 @@ diff -ruN netatalk-2.0.3.orig/config/netatalk.conf netatalk-2.0.3/config/netatal
 diff -ruN netatalk-2.0.3.orig/distrib/initscripts/rc.atalk.debian.tmpl netatalk-2.0.3/distrib/initscripts/rc.atalk.debian.tmpl
 --- netatalk-2.0.3.orig/distrib/initscripts/rc.atalk.debian.tmpl	2007-08-12 23:53:44.000000000 +0200
 +++ netatalk-2.0.3/distrib/initscripts/rc.atalk.debian.tmpl	2007-08-12 23:54:33.000000000 +0200
-@@ -23,7 +23,7 @@
+@@ -30,7 +30,7 @@
  ATALK_ZONE=
  ATALK_NAME=`/bin/hostname --short`
  ATALK_BGROUND=no

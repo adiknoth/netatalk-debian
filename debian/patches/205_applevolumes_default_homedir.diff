@@ -8,7 +8,7 @@
  # volume format:
  # :DEFAULT: [all of the default options except volume name]
  # path [name] [casefold:x] [options:z,l,j] \
-@@ -97,7 +93,5 @@
+@@ -102,7 +98,5 @@
  # cnidscheme:scheme   -> set the cnid scheme for the volume, default is [:DEFAULT_CNID_SCHEME:]
  #                        available schemes: [:COMPILED_BACKENDS:]
  #

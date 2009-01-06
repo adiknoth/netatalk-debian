@@ -1,6 +1,6 @@
 --- netatalk-2.0.3.orig/configure.in
 +++ netatalk-2.0.3/configure.in
-@@ -710,11 +710,16 @@
+@@ -697,11 +697,16 @@
  
          # For quotas on Linux XFS filesystems
          
