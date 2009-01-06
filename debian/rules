@@ -1,11 +1,11 @@
 #!/usr/bin/make -f
 
 # NB! Local CDBS tweaks in use. More info in README.cdbs-tweaks
-DEB_AUTO_UPDATE_ACLOCAL = 1.10
-DEB_AUTO_UPDATE_AUTOMAKE = 1.10
-DEB_AUTO_UPDATE_AUTOHEADER = 2.50
-DEB_AUTO_UPDATE_AUTOCONF = 2.50
-DEB_AUTO_UPDATE_LIBTOOL = post
+#DEB_AUTO_UPDATE_ACLOCAL = 1.10
+#DEB_AUTO_UPDATE_AUTOMAKE = 1.10
+#DEB_AUTO_UPDATE_AUTOHEADER = 2.50
+#DEB_AUTO_UPDATE_AUTOCONF = 2.50
+#DEB_AUTO_UPDATE_LIBTOOL = post
 include debian/cdbs/1/rules/upstream-tarball.mk
 include /usr/share/cdbs/1/rules/debhelper.mk
 include /usr/share/cdbs/1/class/autotools.mk
