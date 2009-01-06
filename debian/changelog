@@ -1,3 +1,16 @@
+netatalk (2.0.4~beta2-1) unstable; urgency=high
+
+  * New upstream prerelease:
+    + Quote chars in papd popen variables expansion (and other fixes to
+      papd). Fixes remote execution security hole CVE-2008-5718. Closes:
+      bug#510585.
+  * Mangle upstream tarball beta version.
+  * Drop patches 000 and 001 contained upstream now.
+  * Unfuzz patches 107, 109, 205 and 212.
+  * Set urgency=high due to security fix.
+
+ -- Jonas Smedegaard <dr@jones.dk>  Tue, 06 Jan 2009 19:20:15 +0100
+
 netatalk (2.0.3-11) unstable; urgency=medium
 
   * Add patch 001 from upstream CVS to fix LFS test for cross
