@@ -1,4 +1,7 @@
-*No copyright* UNKNOWN []: CONTRIBUTORS
+Format-Specification: http://wiki.debian.org/Proposals/CopyrightFormat?action=recall&rev=XXX
+Upstream-Name: Untrusted draft - double-check copyrights yourself!
+
+Files: CONTRIBUTORS
 	NEWS
 	README
 	TODO
@@ -33,15 +36,11 @@
 	config.h.in
 	config/AppleVolumes.default.tmpl
 	config/AppleVolumes.system
-	config/AppleVolumes.system.cobalt
 	config/Makefile.am
 	config/afpd.conf.tmpl
 	config/atalkd.conf
-	config/atalkd.conf.cobalt
 	config/netatalk.conf
-	config/netatalk.conf.cobalt
 	config/netatalk.pamd
-	config/netatalk.pamd.shadow
 	config/papd.conf
 	configure.in
 	contrib/ICDumpSuffixMap
@@ -52,45 +51,66 @@
 	contrib/macusers/macusers.in
 	contrib/nu/Makefile.am
 	contrib/nu/nu.in
-	contrib/patches/README
-	contrib/patches/patch.mangled_trash_with_ip
-	contrib/patches/patch.samba.3.0.5pre2-SVN
-	contrib/patches/patch.samba.3.0a20
-	contrib/patches/patch.vfs
 	contrib/printing/Makefile.am
 	contrib/printing/timeout.c
 	contrib/shell_utils/Makefile.am
+	contrib/shell_utils/apple_cp
 	contrib/shell_utils/apple_cp.in
+	contrib/shell_utils/apple_mv
 	contrib/shell_utils/apple_mv.in
+	contrib/shell_utils/apple_rm
 	contrib/shell_utils/apple_rm.in
+	contrib/shell_utils/asip-status.pl
 	contrib/shell_utils/asip-status.pl.in
 	contrib/shell_utils/lp2pap.sh.tmpl
 	contrib/timelord/VERSION
+	debian/NEWS
+	debian/README.Debian
+	debian/README.cdbs-tweaks
+	debian/TODO.Debian
+	debian/compat
+	debian/control
+	debian/control.in
+	debian/examples/netatalk_update.sh
+	debian/netatalk.dirs
+	debian/netatalk.docs
+	debian/netatalk.ignore
+	debian/netatalk.logcheck.ignore.server
+	debian/netatalk.logcheck.violations.ignore
+	debian/netatalk.pam
+	debian/netatalk.pam-ssl
+	debian/patches/101_fix_manpage_sed_replacements.patch
+	debian/patches/102_rename_initscript.patch
+	debian/patches/103_initscript_background_off_by_default.patch
+	debian/patches/104_initscript_load_module_only_if_intended.patch
+	debian/patches/105_initscript_config_in_etc-default.patch
+	debian/patches/106_papd_needs_atalk_and_fix_bashism.patch
+	debian/patches/109_xfs_option.patch
+	debian/patches/111_db_macro.patch
+	debian/patches/112_fix_zeroconf_assertion.patch
+	debian/patches/113_LSB_sysv_dep_info.patch
+	debian/patches/114_fix_macusers_ps_parsing.patch
+	debian/patches/200_netatalk_conf_defaults.diff
+	debian/patches/201_etc2ps_paths.diff
+	debian/patches/202_psf_8_paths.diff
+	debian/patches/204_uniconv_namespace_conflict.diff
+	debian/patches/204a_uniconv_namespace_conflict_autobuilt.diff
+	debian/patches/205_applevolumes_default_homedir.diff
+	debian/patches/206_fix_cnid_maint_paths.diff
+	debian/patches/207_afile_namespace_conflict.diff
+	debian/patches/207a_afile_namespace_conflict_autobuilt.diff
+	debian/patches/208_fix_manpage_sed_replacements_for_automade_file.patch
+	debian/patches/209_rename_initscript_for_automade_file.patch
+	debian/patches/210_avoid_update-rc-d.patch
+	debian/patches/211_avoid_update-rc-d_for_automade_file.patch
+	debian/patches/212_disable_cnid_metad_by_default.patch
+	debian/patches/README
+	debian/patches/series
+	debian/rules
+	debian/watch
 	distrib/Makefile.am
 	distrib/config/Makefile.am
 	distrib/config/netatalk-config.in
-	distrib/debian/README.Debian
-	distrib/debian/changelog
-	distrib/debian/control
-	distrib/debian/cvs2deb.sh
-	distrib/debian/logcheck/ignore.d.server
-	distrib/debian/logcheck/violations.ignore.d
-	distrib/debian/netatalk-dev.docs
-	distrib/debian/netatalk-dev.files
-	distrib/debian/netatalk.dirs
-	distrib/debian/netatalk.docs
-	distrib/debian/netatalk.examples
-	distrib/debian/netatalk.files
-	distrib/debian/netatalk.init
-	distrib/debian/netatalk.links
-	distrib/debian/netatalk.undocumented
-	distrib/debian/patches/add_printer.patch
-	distrib/debian/patches/etc2ps.sh.patch
-	distrib/debian/patches/filterdir.patch
-	distrib/debian/patches/netatalk.conf.patch
-	distrib/debian/patches/netatalk.pamd.patch
-	distrib/debian/patches/psf.8.patch
-	distrib/debian/rules
 	distrib/initscripts/Makefile.am
 	distrib/initscripts/rc.afpd.netbsd.tmpl
 	distrib/initscripts/rc.atalk.bsd.tmpl
@@ -106,61 +126,11 @@
 	distrib/initscripts/rc.timelord.netbsd.tmpl
 	distrib/m4/Makefile.am
 	distrib/m4/netatalk.m4
-	distrib/rpm/buildrpm
-	distrib/rpm/netatalk-rpmbuild.patch
 	doc/DEVELOPER
 	doc/FAQ
 	doc/Makefile.am
-	doc/Netatalk-Manual.pdf
-	doc/Netatalk-Manual.txt
 	doc/README.hidden-items
-	doc/README.ids
-	doc/README.logger
 	doc/README.platforms
-	doc/htmldocs/AppleVolumes.default.5.html
-	doc/htmldocs/Netatalk-Manual.html
-	doc/htmldocs/achfile.1.html
-	doc/htmldocs/acleandir.1.html
-	doc/htmldocs/aecho.1.html
-	doc/htmldocs/afile.1.html
-	doc/htmldocs/afpd.8.html
-	doc/htmldocs/afpd.conf.5.html
-	doc/htmldocs/afppasswd.1.html
-	doc/htmldocs/apple_cp.1.html
-	doc/htmldocs/apple_mv.1.html
-	doc/htmldocs/apple_rm.1.html
-	doc/htmldocs/asip-status.pl.1.html
-	doc/htmldocs/atalk.4.html
-	doc/htmldocs/atalk_aton.3.html
-	doc/htmldocs/atalkd.8.html
-	doc/htmldocs/atalkd.conf.5.html
-	doc/htmldocs/cnid_dbd.8.html
-	doc/htmldocs/cnid_index.1.html
-	doc/htmldocs/cnid_metad.8.html
-	doc/htmldocs/configuration.html
-	doc/htmldocs/getzones.1.html
-	doc/htmldocs/index.html
-	doc/htmldocs/installation.html
-	doc/htmldocs/intro.html
-	doc/htmldocs/man-pages.html
-	doc/htmldocs/manual-index.html
-	doc/htmldocs/megatron.1.html
-	doc/htmldocs/nbp.1.html
-	doc/htmldocs/nbp_name.3.html
-	doc/htmldocs/netatalk.conf.5.html
-	doc/htmldocs/netatalk.css
-	doc/htmldocs/pap.1.html
-	doc/htmldocs/papd.8.html
-	doc/htmldocs/papd.conf.5.html
-	doc/htmldocs/papstatus.8.html
-	doc/htmldocs/pr01.html
-	doc/htmldocs/printer.css
-	doc/htmldocs/psf.8.html
-	doc/htmldocs/psorder.1.html
-	doc/htmldocs/timelord.8.html
-	doc/htmldocs/timeout.1.html
-	doc/htmldocs/uniconv.1.html
-	doc/htmldocs/upgrade.html
 	etc/Makefile.am
 	etc/afpd/Makefile.am
 	etc/afpd/afp_config.h
@@ -280,8 +250,6 @@
 	libatalk/util/module.c
 	libatalk/util/server_ipc.c
 	libatalk/util/strdicasecmp.c
-	libatalk/util/test/build.sh
-	libatalk/util/test/logger_test.c
 	macros/Makefile.am
 	macros/afs-check.m4
 	macros/cnid-backend.m4
@@ -292,6 +260,7 @@
 	macros/gssapi-check.m4
 	macros/iconv.m4
 	macros/largefile-check.m4
+	macros/libgcrypt.m4
 	macros/pam-check.m4
 	macros/perl-check.m4
 	macros/ps-check.m4
@@ -351,16 +320,23 @@
 	man/man8/papstatus.8.tmpl
 	man/man8/psf.8.tmpl
 	man/man8/timelord.8
-	mkinstalldirs
 	services.atalk
 	sys/Makefile.am
 	sys/generic/Makefile.am
 	sys/generic/sys/Makefile.am
 	sys/generic/sys/cdefs.h
+	sys/netatalk/CVS/Entries
+	sys/netatalk/CVS/Repository
+	sys/netatalk/CVS/Root
+	sys/netatalk/CVS/Tag
 	sys/netatalk/Makefile.am
 	sys/netbsd/Makefile.am
 	sys/netbsd/netatalk/Makefile.am
 	sys/netbsd/netatalk/endian.h
+	sys/solaris/CVS/Entries
+	sys/solaris/CVS/Repository
+	sys/solaris/CVS/Root
+	sys/solaris/CVS/Tag
 	sys/solaris/Makefile.in
 	sys/solaris/aarp.c
 	sys/solaris/ddp.c
@@ -383,7 +359,10 @@
 	sys/ultrix/Makefile.kernel
 	sys/ultrix/kpatch-4.1
 	sys/ultrix/kpatch-4.2
-GENERATED FILE [1994-2003]: Makefile.in
+Copyright: *No copyright*
+License: UNKNOWN
+
+Files: Makefile.in
 	bin/Makefile.in
 	bin/adv1tov2/Makefile.in
 	bin/aecho/Makefile.in
@@ -454,7 +433,10 @@ GENERATED FILE [1994-2003]: Makefile.in
 	sys/netbsd/netatalk/Makefile.in
 	sys/sunos/Makefile.in
 	sys/ultrix/Makefile.in
-UNKNOWN [1990-1991 Regents of The University of Michigan]: bin/aecho/aecho.c
+Copyright: 1994-2002
+License: UNKNOWN (GENERATED FILE)
+
+Files: bin/aecho/aecho.c
 	bin/nbp/nbplkup.c
 	bin/nbp/nbpunrgstr.c
 	bin/pap/papstatus.c
@@ -506,7 +488,10 @@ UNKNOWN [1990-1991 Regents of The University of Michigan]: bin/aecho/aecho.c
 	sys/netatalk/ddp_output.c
 	sys/netatalk/endian.h
 	sys/ultrix/at_ultrix.c
-UNKNOWN [1990,1993 Regents of The University of Michigan]: bin/nbp/nbprgstr.c
+Copyright: 1990-1991, Regents of The University of Michigan
+License: UNKNOWN
+
+Files: bin/nbp/nbprgstr.c
 	etc/afpd/afs.c
 	etc/afpd/appl.c
 	etc/afpd/auth.c
@@ -537,7 +522,10 @@ UNKNOWN [1990,1993 Regents of The University of Michigan]: bin/nbp/nbprgstr.c
 	etc/papd/auth.c
 	etc/uams/uams_krb4/uams_krb4.c
 	libatalk/nbp/nbp_rgstr.c
-UNKNOWN [Joerg Lenneis 2003]: bin/cnid/cnid2_create.in
+Copyright: 1990,1993, Regents of The University of Michigan
+License: UNKNOWN
+
+Files: bin/cnid/cnid2_create.in
 	etc/cnid_dbd/cnid_metad.c
 	etc/cnid_dbd/comm.c
 	etc/cnid_dbd/comm.h
@@ -561,7 +549,10 @@ UNKNOWN [Joerg Lenneis 2003]: bin/cnid/cnid2_create.in
 	etc/cnid_dbd/usockfd.h
 	libatalk/cnid/dbd/cnid_dbd.c
 	libatalk/cnid/dbd/cnid_dbd.h
-UNKNOWN [1997 Adrian Sun (asun@zoology.washington.edu)]: etc/afpd/afp_config.c
+Copyright: Joerg Lenneis 2003
+License: UNKNOWN
+
+Files: etc/afpd/afp_config.c
 	etc/afpd/messages.c
 	include/atalk/dsi.h
 	include/atalk/server_child.h
@@ -579,7 +570,10 @@ UNKNOWN [1997 Adrian Sun (asun@zoology.washington.edu)]: etc/afpd/afp_config.c
 	libatalk/dsi/dsi_tickle.c
 	libatalk/dsi/dsi_write.c
 	libatalk/util/server_child.c
-UNKNOWN [1999. Adrian Sun (asun@zoology.washington.edu)]: libatalk/cnid/cdb/cnid_cdb_add.c
+Copyright: 1997, Adrian Sun (asun@zoology.washington.edu)
+License: UNKNOWN
+
+Files: libatalk/cnid/cdb/cnid_cdb_add.c
 	libatalk/cnid/cdb/cnid_cdb_delete.c
 	libatalk/cnid/cdb/cnid_cdb_meta.c
 	libatalk/cnid/cdb/cnid_cdb_open.c
@@ -595,7 +589,10 @@ UNKNOWN [1999. Adrian Sun (asun@zoology.washington.edu)]: libatalk/cnid/cdb/cnid
 	libatalk/cnid/tdb/cnid_tdb_add.c
 	libatalk/cnid/tdb/cnid_tdb_delete.c
 	libatalk/cnid/tdb/cnid_tdb_open.c
-UNKNOWN [1990,1994 Regents of The University of Michigan]: bin/pap/pap.c
+Copyright: 1999. Adrian Sun (asun@zoology.washington.edu)
+License: UNKNOWN
+
+Files: bin/pap/pap.c
 	etc/afpd/gettok.c
 	etc/afpd/icon.h
 	etc/afpd/volume.h
@@ -609,7 +606,10 @@ UNKNOWN [1990,1994 Regents of The University of Michigan]: bin/pap/pap.c
 	sys/netatalk/ddp_input.c
 	sys/netatalk/ddp_usrreq.c
 	sys/netatalk/ddp_var.h
-GPL-2+ [Andrew Tridgell 2001 / Jelmer Vernooij 2002-2003]: libatalk/unicode/charsets/generic_mb.c
+Copyright: 1990,1994, Regents of The University of Michigan
+License: UNKNOWN
+
+Files: libatalk/unicode/charsets/generic_mb.c
 	libatalk/unicode/charsets/mac_centraleurope.c
 	libatalk/unicode/charsets/mac_cyrillic.c
 	libatalk/unicode/charsets/mac_hebrew.c
@@ -617,120 +617,401 @@ GPL-2+ [Andrew Tridgell 2001 / Jelmer Vernooij 2002-2003]: libatalk/unicode/char
 	libatalk/unicode/charsets/mac_turkish.c
 	libatalk/unicode/iconv.c
 	libatalk/unicode/utf8.c
-UNKNOWN [1990,1993 Regents of The University of Michigan / 1999 Adrian Sun (asun@u.washington.edu)]: etc/uams/uams_dhx_pam.c
+Copyright: Andrew Tridgell 2001,
+	Jelmer Vernooij 2002-2003
+License: GPL-2+
+
+Files: etc/uams/uams_dhx2_pam.c
+	etc/uams/uams_dhx2_passwd.c
+	etc/uams/uams_dhx_pam.c
 	etc/uams/uams_dhx_passwd.c
 	etc/uams/uams_pam.c
 	etc/uams/uams_passwd.c
 	etc/uams/uams_pgp.c
 	etc/uams/uams_randnum.c
-UNKNOWN [1990,1997 Regents of The University of Michigan]: etc/atalkd/multicast.h
+Copyright: 1990,1993, Regents of The University of Michigan
+	1999, Adrian Sun (asun@u.washington.edu)
+License: UNKNOWN
+
+Files: etc/atalkd/multicast.h
 	libatalk/atp/atp_close.c
 	libatalk/atp/atp_rsel.c
 	libatalk/nbp/nbp_lkup.c
 	libatalk/nbp/nbp_unrgstr.c
 	libatalk/nbp/nbp_util.c
-UNKNOWN [1999 Adrian Sun (asun@zoology.washington.edu)]: etc/afpd/uam.c
+Copyright: 1990,1997, Regents of The University of Michigan
+License: UNKNOWN
+
+Files: etc/afpd/uam.c
 	etc/afpd/uam_auth.h
 	etc/papd/uam.c
 	etc/papd/uam_auth.h
 	include/atalk/netddp.h
 	include/atalk/uam.h
-UNKNOWN [1990,1995 Regents of The University of Michigan]: etc/papd/main.c
+Copyright: 1999, Adrian Sun (asun@zoology.washington.edu)
+License: UNKNOWN
+
+Files: libatalk/unicode/charsets/mac_centraleurope.h
+	libatalk/unicode/charsets/mac_cyrillic.h
+	libatalk/unicode/charsets/mac_greek.h
+	libatalk/unicode/charsets/mac_hebrew.h
+	libatalk/unicode/charsets/mac_turkish.h
+Copyright: 1999-2001, Free Software Foundation, Inc
+License: LGPL-2+
+
+Files: etc/papd/main.c
 	etc/papd/printer.h
 	etc/psf/psa.c
 	etc/psf/psf.c
 	libatalk/adouble/ad_write.c
-BSD-3 [2001 Sebastian Rittau]: bin/afile/achfile.c
+Copyright: 1990,1995, Regents of The University of Michigan
+License: UNKNOWN
+
+Files: bin/afile/achfile.c
 	bin/afile/afile.c
 	bin/afile/common.c
 	bin/afile/common.h
-GPL-2+ [Andrew Tridgell 1992-1998]: etc/afpd/afprun.c
+Copyright: 2001, Sebastian Rittau
+License: BSD (3 clause)
+
+Files: etc/afpd/afprun.c
 	libatalk/unicode/byteorder.h
 	libatalk/util/fault.c
 	libatalk/util/strlcpy.c
-LGPL-2+ [1999-2001 Free Software Foundation, Inc]: libatalk/unicode/charsets/mac_centraleurope.h
-	libatalk/unicode/charsets/mac_cyrillic.h
-	libatalk/unicode/charsets/mac_hebrew.h
-	libatalk/unicode/charsets/mac_turkish.h
-UNKNOWN [1990,1992 Regents of The University of Michigan]: etc/atalkd/atserv.h
+Copyright: Andrew Tridgell 1992-1998
+License: GPL-2+
+
+Files: etc/atalkd/atserv.h
 	etc/atalkd/interface.h
 	etc/atalkd/list.h
-UNKNOWN [1990,1993 Regents of The University of Michigan / 1997 Adrian Sun (asun@zoology.washington.edu)]: etc/afpd/afp_asp.c
+Copyright: 1990,1992, Regents of The University of Michigan
+License: UNKNOWN
+
+Files: etc/afpd/afp_asp.c
 	etc/afpd/afp_options.c
 	libatalk/util/server_lock.c
-UNKNOWN [1995 Regents of The University of Michigan]: etc/papd/ppd.c
+Copyright: 1990,1993, Regents of The University of Michigan
+	1997, Adrian Sun (asun@zoology.washington.edu)
+License: UNKNOWN
+
+Files: etc/papd/ppd.c
 	etc/papd/ppd.h
 	etc/papd/showppd.c
-UNKNOWN [1996 Regents of The University of Michigan]: etc/afpd/ofork.c
+Copyright: 1995, Regents of The University of Michigan
+License: UNKNOWN
+
+Files: etc/afpd/ofork.c
 	include/atalk/compat.h
 	libatalk/asp/asp_shutdown.c
-UNKNOWN [1999 Adrian Sun (asun@zoology.washington.edu) / 1990-1991 Regents of The University of Michigan]: libatalk/netddp/netddp_open.c
+Copyright: 1996, Regents of The University of Michigan
+License: UNKNOWN
+
+Files: libatalk/netddp/netddp_open.c
 	libatalk/netddp/netddp_recvfrom.c
 	libatalk/netddp/netddp_sendto.c
-UNKNOWN [2003 Rafal Lewczuk <rlewczuk@pronet.pl> / 2003 the Netatalk Team / holders]: include/atalk/cnid.h
+Copyright: 1999, Adrian Sun (asun@zoology.washington.edu)
+	1990-1991, Regents of The University of Michigan
+License: UNKNOWN
+
+Files: include/atalk/cnid.h
 	libatalk/cnid/cnid.c
 	libatalk/cnid/cnid_init.c
-UNKNOWN [BSD]: distrib/rpm/netatalk-asun.spec.old
-	distrib/rpm/netatalk-mandrake.spec
-	distrib/rpm/netatalk-redhat.spec
-BSD-4 [1983 Regents of the University of California / 1990,1994 Regents of The University of Michigan]: etc/papd/lp.c
+Copyright: 2003, Rafal Lewczuk <rlewczuk@pronet.pl>
+	2003, the Netatalk Team
+	holders
+License: UNKNOWN
+
+Files: etc/papd/lp.c
 	etc/papd/printcap.c
-GPL GENERATED FILE [1999-2000 Free Software Foundation, Inc]: compile
+Copyright: 1983, Regents of the University of California
+	1990,1994, Regents of The University of Michigan
+License: BSD (4 clause)
+
+Files: compile
 	depcomp
-UNKNOWN [1987 Regents of the University of California]: libatalk/compat/mktemp.c
+Copyright: 1999-2000, 2003-2005, Free Software Foundation, Inc
+License: GPL (GENERATED FILE)
+
+Files: contrib/shell_utils/cleanappledouble.pl
+	contrib/shell_utils/cleanappledouble.pl.in
+Copyright: 2001, Heath Kehoe <hakehoe@avalon.net>
+License: GPL-2+
+
+Files: contrib/shell_utils/afpd-mtab.pl
+	contrib/shell_utils/afpd-mtab.pl.in
+Copyright: *No copyright*
+License: UNKNOWN (GENERATED FILE)
+
+Files: libatalk/compat/mktemp.c
 	libatalk/compat/strcasecmp.c
-UNKNOWN [1990, The University of Melbourne / 1990,1992 Regents of The University of Michigan / 1990, The University of]: contrib/a2boot/a2boot.c
+Copyright: 1987, Regents of the University of California
+License: UNKNOWN
+
+Files: contrib/a2boot/a2boot.c
 	contrib/timelord/timelord.c
-UNKNOWN [1990,1994 Regents of The University of Michigan / 1990, The University of Melbourne / 1990, The University of]: contrib/a2boot/COPYRIGHT
+Copyright: 1990, The University of Melbourne
+	1990,1992, Regents of The University of Michigan
+	1990, The University of
+License: UNKNOWN
+
+Files: contrib/a2boot/COPYRIGHT
 	contrib/timelord/COPYRIGHT
-UNKNOWN [1990,1996 Regents of The University of Michigan]: etc/atalkd/route.c
+Copyright: 1990,1994, Regents of The University of Michigan
+	1990, The University of Melbourne
+	1990, The University of
+License: UNKNOWN
+
+Files: etc/atalkd/route.c
 	libatalk/asp/asp_getsess.c
-UNKNOWN [1997-2000 Adrian Sun (asun@cobalt.com) / 1996 by Sun Microsystems Computer Co / 1990,1996 Regents of The University of Michigan]: COPYRIGHT
-	distrib/debian/copyright
-*No copyright* GENERATED FILE []: contrib/shell_utils/afpd-mtab.pl.in
-*No copyright* GPL-2+ []: libatalk/unicode/charsets/mac_roman.h
-BSD-4 [1990 The Regents of the University of California]: libatalk/compat/strstr.c
-GENERATED FILE [1992-1996, 1998-2002]: configure
-GPL GENERATED FILE [1996-1997, 1999-2000, 2002 Free Software Foundation, Inc]: missing
-GPL [1996-2003 / 1996-2002]: aclocal.m4
-GPL-2+ GENERATED FILE [1996-2001]: ltmain.sh
-GPL-2+ [1999 Adrian Sun (asun@zoology.washington.edu) / Jeremy Allison 2002]: libatalk/adouble/ad_sendfile.c
-GPL-2+ [1999-2003 by Michael R Sweet / 2004 Bjoern Fernhomberg]: etc/papd/print_cups.c
-GPL-2+ [2001 Heath Kehoe <hakehoe@avalon.net>]: contrib/shell_utils/cleanappledouble.pl.in
-GPL-2+ [2004 Didier Gautheron]: contrib/patches/patch.afp_vfs
-GPL-2+ [Andrew Tridgell 1999]: include/atalk/tdb.h
-GPL-2+ [Anton Blanchard 2001]: libatalk/tdb/spinlock.c
-GPL-2+ [Bjoern Fernhomberg 2002-2003]: bin/uniconv/iso8859_1_adapted.c
-GPL-2+ [Bjoern Fernhomberg 2004]: bin/uniconv/uniconv.c
-GPL-2+ [Bjoern Fernhomberg, 2004]: libatalk/util/volinfo.c
-GPL-2+ [Luke Kenneth Casson Leighton 2000 / Jeremy Allison 2000-2003 / Paul `Rusty' Russell 2000 / Andrew Tridgell 1999-2000]: libatalk/tdb/tdb.c
-GPL-2+ [Martin Pool 2003 / Andrew Tridgell 2001 / Igor Vergeichik <iverg@mail.ru> 2001 / Simo Sorce 2001]: libatalk/unicode/charcnv.c
-LGPL-2+ [1994, 1996-1997 Free Software Foundation, Inc]: libatalk/util/strcasestr.c
-MIT/X11 (BSD like) [1994 X Consortium]: install-sh
-UNKNOWN [1980, 1990 Regents of the University of California. All]: libatalk/compat/rquota_xdr.c
-UNKNOWN [1980, 1990, 1993]: etc/afpd/nfsquota.c
-UNKNOWN [1985 Regents of the University of California]: libatalk/compat/getusershell.c
-UNKNOWN [1988 Regents of the University of California / 1990-1991 Regents of The University of Michigan]: sys/netatalk/phase2.h
-UNKNOWN [1989, 1991 Free Software Foundation, Inc / the software, and]: COPYING
-UNKNOWN [1990, 1993 Regents of The University of Michigan]: etc/afpd/catsearch.c
-UNKNOWN [1990,1993 Regents of The University of Michigan / 1999 Adrian Sun (asun@zoology.washington.edu)]: etc/afpd/afp_dsi.c
-UNKNOWN [1990,1993 Regents of The University of Michigan / 1999-2000 Adrian Sun]: libatalk/util/getiface.c
-UNKNOWN [1990,1994 Regents of The University of Michigan / 1987-1988 by the Massachusetts Institute of Technology]: etc/uams/uams_krb4/send_to_kdc.c
-UNKNOWN [1996-2001 SuSE GmbH Nuernberg, Germany. All rights reserved]: distrib/initscripts/rc.atalk.suse.tmpl
-UNKNOWN [1997-1998 Adrian Sun (asun@zoology.washington.edu)]: libatalk/dsi/dsi_tcp.c
-UNKNOWN [1998 Adrian Sun (asun@zoology.washington.edu)]: libatalk/dsi/dsi_stream.c
-UNKNOWN [1998 Owen Taylor</p><p>Permission to use, copy, modify, and distribute this software and]: doc/htmldocs/netatalkconfig.1.html
-UNKNOWN [1999 Adrian Sun (asun@u.washington.edu) / 1990-1991 Regents of The University of Michigan]: libatalk/adouble/ad_open.c
-UNKNOWN [1999 Adrian Sun (asun@u.washington.edu)]: bin/afppasswd/afppasswd.c
-UNKNOWN [2001 (see COPYING)]: etc/uams/uams_guest.c
-UNKNOWN [2002 netatalk / 1990,1993 Regents of The University of Michigan / 1999 Adrian Sun (asun@zoology.washington.edu)]: etc/afpd/afp_util.c
-UNKNOWN [2002. Joe Marcus Clarke (marcus@marcuscom.com)]: etc/afpd/mangle.c
-UNKNOWN [2003 The Reed Institute / 1990,1993 Regents of The University of Michigan / 1999 Adrian Sun (asun@u.washington.edu) / 2004 Bjoern Fernhomberg]: etc/uams/uams_gss.c
-UNKNOWN [COPYING NEWS\]: Makefile.am
-UNKNOWN [README VERSION]: contrib/timelord/Makefile.am
-UNKNOWN [VERSION]: contrib/a2boot/Makefile.am
-UNKNOWN [\(co 1998 Owen Taylor]: man/man1/netatalk-config.1
-UNKNOWN [for more information / 1998-1999 Adrian Sun (asun@zoology.washington.edu)]: libatalk/adouble/ad_lock.c
-UNKNOWN [in the documentation and source code as well as the / 1994-2000 Patrick Powell, San Diego, CA <papowell@astart.com>]: libatalk/compat/snprintf.c
-UNKNOWN [is *not* the same as netatalk's]: contrib/timelord/README
-UNKNOWN [{]: bin/getzones/getzones.c
+Copyright: 1990,1996, Regents of The University of Michigan
+License: UNKNOWN
+
+Files: macros/ltsugar.m4
+	macros/lt~obsolete.m4
+Copyright: 2004-2005, 2007, Free Software Foundation, Inc
+License: UNKNOWN
+
+Files: contrib/a2boot/Makefile.am
+	debian/patches/107_afpd-zeroconf.patch
+Copyright: VERSION
+License: UNKNOWN
+
+Files: libatalk/compat/strstr.c
+Copyright: 1990, The Regents of the University of California
+License: BSD (4 clause)
+
+Files: missing
+Copyright: 1996-1997, 1999-2000, 2002-2005
+License: GPL (GENERATED FILE)
+
+Files: debian/cdbs/1/rules/buildinfo.mk
+Copyright: 2004-2007, Jonas Smedegaard <dr@jones.dk>
+License: GPL
+
+Files: debian/cdbs/1/rules/upstream-tarball.mk
+Copyright: 2007-2008, Jonas Smedegaard <dr@jones.dk>
+License: GPL
+
+Files: debian/cdbs/1/rules/package-relations.mk
+Copyright: 2008, Jonas Smedegaard <dr@jones.dk>
+License: GPL
+
+Files: debian/cdbs/1/rules/copyright-check.mk
+Copyright: \s*(\S.*?)\s*\
+License: GPL
+
+Files: config.guess
+Copyright: 1992-1999,
+	1992-2001
+License: GPL-2+ (GENERATED FILE)
+
+Files: config.sub
+Copyright: 1992-1999
+License: GPL-2+ (GENERATED FILE)
+
+Files: libatalk/unicode/charsets/mac_roman.h
+Copyright: *No copyright*
+License: GPL-2+
+
+Files: macros/libtool.m4
+Copyright: 1996-2001, 2003-2005
+License: GPL-2+
+
+Files: ltmain.sh
+Copyright: 1996-2001, 2003-2007, 2008 Free Software Foundation, Inc
+License: GPL-2+
+
+Files: libatalk/adouble/ad_sendfile.c
+Copyright: 1999, Adrian Sun (asun@zoology.washington.edu)
+	Jeremy Allison 2002
+License: GPL-2+
+
+Files: etc/papd/print_cups.c
+Copyright: 1999-2003, by Michael R Sweet
+	2004, Bjoern Fernhomberg
+License: GPL-2+
+
+Files: include/atalk/tdb.h
+Copyright: Andrew Tridgell 1999
+License: GPL-2+
+
+Files: libatalk/tdb/spinlock.c
+Copyright: Anton Blanchard 2001
+License: GPL-2+
+
+Files: bin/uniconv/iso8859_1_adapted.c
+Copyright: Bjoern Fernhomberg 2002-2003
+License: GPL-2+
+
+Files: bin/uniconv/uniconv.c
+Copyright: Bjoern Fernhomberg 2004
+License: GPL-2+
+
+Files: libatalk/util/volinfo.c
+Copyright: Bjoern Fernhomberg, 2004
+License: GPL-2+
+
+Files: libatalk/tdb/tdb.c
+Copyright: Luke Kenneth Casson Leighton 2000,
+	Jeremy Allison 2000-2003,
+	Paul `Rusty' Russell 2000,
+	Andrew Tridgell 1999-2000
+License: GPL-2+
+
+Files: libatalk/unicode/charcnv.c
+Copyright: Martin Pool 2003,
+	Andrew Tridgell 2001,
+	Igor Vergeichik <iverg@mail.ru> 2001,
+	Simo Sorce 2001
+License: GPL-2+
+
+Files: libatalk/unicode/charsets/mac_greek.c
+Copyright: Panos Christeas 2006,
+	Andrew Tridgell 2001,
+	Jelmer Vernooij 2002-2003
+License: GPL-2+
+
+Files: libatalk/util/strcasestr.c
+Copyright: 1994, 1996-1997, Free Software Foundation, Inc
+License: LGPL-2+
+
+Files: install-sh
+Copyright: 1994, X Consortium
+License: MIT/X11 (BSD like)
+
+Files: configure
+Copyright: 1992-1996, 1998-2001
+License: UNKNOWN (GENERATED FILE)
+
+Files: etc/afpd/nfsquota.c
+Copyright: 1980, 1990, 1993
+License: UNKNOWN
+
+Files: libatalk/compat/rquota_xdr.c
+Copyright: 1980, 1990, Regents of the University of California. All
+License: UNKNOWN
+
+Files: libatalk/compat/getusershell.c
+Copyright: 1985, Regents of the University of California
+License: UNKNOWN
+
+Files: sys/netatalk/phase2.h
+Copyright: 1988, Regents of the University of California
+	1990-1991, Regents of The University of Michigan
+License: UNKNOWN
+
+Files: COPYING
+Copyright: 1989, 1991, Free Software Foundation, Inc
+	the software, and
+License: UNKNOWN
+
+Files: etc/afpd/catsearch.c
+Copyright: 1990, 1993, Regents of The University of Michigan
+License: UNKNOWN
+
+Files: etc/afpd/afp_dsi.c
+Copyright: 1990,1993, Regents of The University of Michigan
+	1999, Adrian Sun (asun@zoology.washington.edu)
+License: UNKNOWN
+
+Files: libatalk/util/getiface.c
+Copyright: 1990,1993, Regents of The University of Michigan
+	1999-2000, Adrian Sun
+License: UNKNOWN
+
+Files: etc/uams/uams_krb4/send_to_kdc.c
+Copyright: 1990,1994, Regents of The University of Michigan
+	1987-1988, by the Massachusetts Institute of Technology
+License: UNKNOWN
+
+Files: distrib/initscripts/rc.atalk.suse.tmpl
+Copyright: 1996-2001, SuSE GmbH Nuernberg, Germany. All rights reserved
+License: UNKNOWN
+
+Files: libatalk/dsi/dsi_tcp.c
+Copyright: 1997-1998, Adrian Sun (asun@zoology.washington.edu)
+License: UNKNOWN
+
+Files: COPYRIGHT
+Copyright: 1997-2000, Adrian Sun (asun@cobalt.com)
+	1996, by Sun Microsystems Computer Co
+	1990,1996, Regents of The University of Michigan
+License: UNKNOWN
+
+Files: libatalk/dsi/dsi_stream.c
+Copyright: 1998, Adrian Sun (asun@zoology.washington.edu)
+License: UNKNOWN
+
+Files: libatalk/adouble/ad_open.c
+Copyright: 1999, Adrian Sun (asun@u.washington.edu)
+	1990-1991, Regents of The University of Michigan
+License: UNKNOWN
+
+Files: bin/afppasswd/afppasswd.c
+Copyright: 1999, Adrian Sun (asun@u.washington.edu)
+License: UNKNOWN
+
+Files: aclocal.m4
+Copyright: 1999-2008, Free Software Foundation, Inc
+	1996-2004
+License: UNKNOWN
+
+Files: etc/uams/uams_guest.c
+Copyright: 2001, (see COPYING)
+License: UNKNOWN
+
+Files: etc/afpd/afp_util.c
+Copyright: 2002, netatalk
+	1990,1993, Regents of The University of Michigan
+	1999, Adrian Sun (asun@zoology.washington.edu)
+License: UNKNOWN
+
+Files: etc/afpd/mangle.c
+Copyright: 2002. Joe Marcus Clarke (marcus@marcuscom.com)
+License: UNKNOWN
+
+Files: etc/uams/uams_gss.c
+Copyright: 2003, The Reed Institute
+	1990,1993, Regents of The University of Michigan
+	1999, Adrian Sun (asun@u.washington.edu)
+	2004, Bjoern Fernhomberg
+License: UNKNOWN
+
+Files: macros/ltversion.m4
+Copyright: 2004, Free Software Foundation, Inc
+License: UNKNOWN
+
+Files: macros/ltoptions.m4
+Copyright: 2004-2005, 2007-2008, Free Software Foundation, Inc
+License: UNKNOWN
+
+Files: Makefile.am
+Copyright: COPYING NEWS\
+License: UNKNOWN
+
+Files: contrib/timelord/Makefile.am
+Copyright: README VERSION
+License: UNKNOWN
+
+Files: man/man1/netatalk-config.1
+Copyright: \(co 1998, Owen Taylor
+License: UNKNOWN
+
+Files: libatalk/adouble/ad_lock.c
+Copyright: for more information
+	1998-1999, Adrian Sun (asun@zoology.washington.edu)
+License: UNKNOWN
+
+Files: libatalk/compat/snprintf.c
+Copyright: in the documentation and source code as well as the
+	1994-2000, Patrick Powell, San Diego, CA <papowell@astart.com>
+License: UNKNOWN
+
+Files: contrib/timelord/README
+Copyright: is *not* the same as netatalk's
+License: UNKNOWN
+
+Files: bin/getzones/getzones.c
+Copyright: {
+License: UNKNOWN
+
