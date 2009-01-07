@@ -7,27 +7,6 @@ was later maintained by late Joel 'espy' Klecker and David Huggins-Daines
 <srittau@debian.org>.
 
 
-Notes about OpenSSL
-===================
-
-OpenSSL support is currently disabled, because of licensing issues: The Free
-Software Foundation and Debian consider the GNU General Public License (GPL)
-under which Netatalk is licensed to be incompatible with the OpenSSL license.
-
-Until a final solution is found you can get the source and recompile using the
-following commands (replace XXX with the actual version of the package):
-
-	apt-get source netatalk
-	cd netatalk-XXX
-	DEB_BUILD_OPTIONS=ssl DEB_AUTO_UPDATE_DEBIAN_CONTROL=yes debuild
-	cd ..
-	aptitude install netatalk-XXX.deb
-
-Alternatively you can use an unofficial(!) precompiled binary package:
-
-deb http://debian.jones.dk/ $DIST netatalk
-
-
 MacOS X Specific Notes
 ======================
 

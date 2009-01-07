@@ -1,3 +1,18 @@
+netatalk (2.0.4~beta2-1) unstable; urgency=low
+
+  * Netatalk now supports encrypted authentication using new DHX2 AUM.
+
+    Encrypted authentication is strongly recommended for all connections
+    and required by recent releases of MacOS X. Until now encryption was
+    possible only using randnum (which stored passwords in cleartext on
+    the server) or using the older DHX UAM (which was non-distributable
+    by Debian due to being considered incompatible with the GPL).
+
+    To use new DHX2 AUM, make sure it is included in -uamlist option of
+    afpd.conf if that option is used (it is enabled by default).
+
+ -- Jonas Smedegaard <dr@jones.dk>  Wed, 07 Jan 2009 14:02:21 +0100
+
 netatalk (1.6.3-5) unstable; urgency=low
 
   * This version of Netatalk switches to Berkeley DB 4.2. During the

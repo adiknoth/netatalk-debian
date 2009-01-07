@@ -42,7 +42,7 @@ DEB_CONFIGURE_EXTRA_FLAGS += --without-xfs
 
 DEB_INSTALL_EXAMPLES_netatalk = debian/examples/*
 
-ssl_build_depends = libssl-dev, cracklib-dev
+openssl_build_depends = libssl-dev, cracklib-dev
 
 # Zeroconf is cool, but not yet stable, so disabled by default
 # Always disable SLP, as it was never really used by Apple
@@ -52,18 +52,22 @@ else
 DEB_CONFIGURE_EXTRA_FLAGS += --disable-slp --disable-zeroconf
 endif
 
-# Conditionally avoid or include ssl-related options
-ifneq (,$(findstring ssl,$(DEB_BUILD_OPTIONS)))
-DEB_CONFIGURE_EXTRA_FLAGS += --with-ssl-dir			\
+# libgcrypt is GPL-compatible, but openssl supports randnum auth
+ifneq (,$(findstring openssl,$(DEB_BUILD_OPTIONS)))
+DEB_CONFIGURE_EXTRA_FLAGS += --without-libgcrypt-dir		\
+	--with-openssl-dir					\
 	--with-cracklib=/var/cache/cracklib/cracklib_dict	\
 	--enable-pgp-uam
 DEB_DH_GENCONTROL_ARGS := -- -Vssl:Recommends=", cracklib-runtime, libpam-cracklib"
 uamlist = uams_dhx.so,uams_clrtxt.so,uams_randnum.so
 pamfile = netatalk.pam-ssl
 else
-DEB_CONFIGURE_EXTRA_FLAGS += --without-ssl-dir
-uamlist = uams_clrtxt.so,uams_randnum.so
-pamfile = netatalk.pam
+DEB_CONFIGURE_EXTRA_FLAGS += --with-libgcrypt-dir		\
+	--without-openssl-dir					\
+	--with-cracklib=/var/cache/cracklib/cracklib_dict	\
+DEB_DH_GENCONTROL_ARGS := -- -Vssl:Recommends=", cracklib-runtime, libpam-cracklib"
+uamlist = uams_dhx2.so,uams_clrtxt.so
+pamfile = netatalk.pam-ssl
 endif
 
 # Cheat autotools (as CDBS lack support for autotools options)
@@ -74,9 +78,9 @@ clean::
 	rm -f AUTHORS ChangeLog INSTALL
 	rm -rf m4
 
-# Refuse non-ssl build with ssl build-dependencies included
+# Refuse GPL build with openssl build-dependencies included
 post-patches::
-	$(if $(findstring ssl,$(DEB_BUILD_OPTIONS)),,$(if $(shell egrep -i '^Build-Depends.*$(ssl_build_depends)' debian/control),$(error ssl-related build-dependencies found in non-ssl build!)))
+	$(if $(findstring openssl,$(DEB_BUILD_OPTIONS)),,$(if $(shell egrep -i '^Build-Depends.*$(openssl_build_depends)' debian/control),$(error OpenSSL build-dependencies found in GPL build!)))
 
 # Re-install initscript with debhelper to add pre- and postinst routines
 install/netatalk::
@@ -132,8 +136,9 @@ get-orig-vcs: get-orig-source
 
 # Needed for by upstream build process
 CDBS_BUILD_DEPENDS := $(CDBS_BUILD_DEPENDS), libdb-dev, libwrap0-dev, libpam0g-dev, libavahi-client-dev (>= 0.6), libcupsys2-dev, libkrb5-dev, libltdl3-dev
-ifneq (,$(findstring ssl,$(DEB_BUILD_OPTIONS)))
-CDBS_BUILD_DEPENDS := $(CDBS_BUILD_DEPENDS), $(ssl_build_depends)
+CDBS_BUILD_DEPENDS := $(CDBS_BUILD_DEPENDS), libgcrypt11-dev | libgcrypt-dev
+ifneq (,$(findstring openssl,$(DEB_BUILD_OPTIONS)))
+CDBS_BUILD_DEPENDS := $(CDBS_BUILD_DEPENDS), $(openssl_build_depends)
 endif
 
 # Needed for our packaging routines
