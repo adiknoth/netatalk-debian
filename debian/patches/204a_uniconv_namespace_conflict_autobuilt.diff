@@ -11,14 +11,16 @@
  DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
  ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
  am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
-@@ -74,10 +74,10 @@
+@@ -73,11 +73,11 @@
+ CONFIG_HEADER = $(top_builddir)/config.h
  CONFIG_CLEAN_FILES =
  am__installdirs = "$(DESTDIR)$(bindir)"
- binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
+-binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 -PROGRAMS = $(bin_PROGRAMS)
 -am_uniconv_OBJECTS = uniconv.$(OBJEXT) iso8859_1_adapted.$(OBJEXT)
 -uniconv_OBJECTS = $(am_uniconv_OBJECTS)
 -uniconv_DEPENDENCIES = $(top_builddir)/libatalk/cnid/libcnid.la \
++sbinPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 +PROGRAMS = $(sbin_PROGRAMS)
 +am_netatalk_uniconv_OBJECTS = uniconv.$(OBJEXT) iso8859_1_adapted.$(OBJEXT)
 +netatalk_uniconv_OBJECTS = $(am_netatalk_uniconv_OBJECTS)
