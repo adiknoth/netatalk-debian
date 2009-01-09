@@ -42,7 +42,7 @@ DEB_CONFIGURE_EXTRA_FLAGS += --without-xfs
 
 DEB_INSTALL_EXAMPLES_netatalk = debian/examples/*
 
-openssl_build_depends = libssl-dev, cracklib-dev
+openssl_build_depends = libssl-dev
 
 # Zeroconf is cool, but not yet stable, so disabled by default
 # Always disable SLP, as it was never really used by Apple
@@ -136,7 +136,7 @@ get-orig-vcs: get-orig-source
 
 # Needed for by upstream build process
 CDBS_BUILD_DEPENDS := $(CDBS_BUILD_DEPENDS), libdb-dev, libwrap0-dev, libpam0g-dev, libavahi-client-dev (>= 0.6), libcupsys2-dev, libkrb5-dev, libltdl3-dev
-CDBS_BUILD_DEPENDS := $(CDBS_BUILD_DEPENDS), libgcrypt11-dev | libgcrypt-dev
+CDBS_BUILD_DEPENDS := $(CDBS_BUILD_DEPENDS), libgcrypt11-dev | libgcrypt-dev, cracklib-dev
 ifneq (,$(findstring openssl,$(DEB_BUILD_OPTIONS)))
 CDBS_BUILD_DEPENDS := $(CDBS_BUILD_DEPENDS), $(openssl_build_depends)
 endif
