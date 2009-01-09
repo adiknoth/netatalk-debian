@@ -7,10 +7,34 @@ netatalk (2.0.4~beta2-1) unstable; urgency=high
   * Mangle upstream tarball beta version.
   * Drop patches 000 and 001 contained upstream now.
   * Unfuzz patches 107, 109, 205 and 212.
+  * Unfuzz and enable patches 204a, 207a, 208, 209 and 211.
+  * Build new DHX2 UAM:
+    + Build-depend on libgcrypt11-dev
+    + Configure with --with-libgcrypt
+    + Drop SSL note from README.Debian
+    + Add NEWS entry regarding new and recommended DHX2 UAM
+  * Disable CDBS autotools reconfiguration.
+  * Update cdbs snippets:
+    + Move dependency cleanup to new local snippet package-relations.mk.
+    + Update copyright-check output to more closely match proposed new
+      copyright file format.
+    + Several minor improvements to upstream-tarball.mk.
+    + Compact simple licenses (those without ' or later') in
+      copyright-check.mk
+    + Fix use underscore (not dash) in internal variable
+    + Ignore only debian changelog and copyright-related files by
+      default in copyright-check.mk
+    + Correct and update copyright hints of the snippets themselves
+    + Update README.cdbs-tweaks.
+  * Add DEB_MAINTAINER_MODE in debian/rules (thanks to Romain Beauxis).
   * Stop installing README.ids no longer provided upstream.
+  * Rewrite debian/copyright using new new format specification, and
+    update copyright hints.
+  * Semi-auto-update debian/control to update dependencies:
+      DEB_MAINTAINER_MODE=1 fakeroot debian/rules clean
   * Set urgency=high due to security fix.
 
- -- Jonas Smedegaard <dr@jones.dk>  Tue, 06 Jan 2009 19:20:15 +0100
+ -- Jonas Smedegaard <dr@jones.dk>  Fri, 09 Jan 2009 05:52:18 +0100
 
 netatalk (2.0.3-11) unstable; urgency=medium
 
