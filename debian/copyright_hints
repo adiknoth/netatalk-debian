@@ -67,7 +67,6 @@ Files: CONTRIBUTORS
 	debian/NEWS
 	debian/README.Debian
 	debian/README.cdbs-tweaks
-	debian/TODO.Debian
 	debian/compat
 	debian/control
 	debian/control.in
@@ -78,7 +77,9 @@ Files: CONTRIBUTORS
 	debian/netatalk.logcheck.ignore.server
 	debian/netatalk.logcheck.violations.ignore
 	debian/netatalk.pam
-	debian/netatalk.pam-ssl
+	debian/patches/001_make_dist_was_missing_files.patch
+	debian/patches/002_avoid_bdb_if_unneeded.patch
+	debian/patches/005_add_CJK_encoding.patch
 	debian/patches/101_fix_manpage_sed_replacements.patch
 	debian/patches/102_rename_initscript.patch
 	debian/patches/103_initscript_background_off_by_default.patch
@@ -444,6 +445,7 @@ Files: bin/aecho/aecho.c
 	bin/psorder/pa.h
 	bin/psorder/psorder.c
 	bin/psorder/psorder.h
+	debian/patches/004_fix_solaris10_compilation.patch
 	etc/afpd/desktop.h
 	etc/afpd/directory.h
 	etc/afpd/file.h
@@ -492,6 +494,7 @@ Copyright: 1990-1991, Regents of The University of Michigan
 License: UNKNOWN
 
 Files: bin/nbp/nbprgstr.c
+	debian/patches/003_fix_afp3_dir_error.patch
 	etc/afpd/afs.c
 	etc/afpd/appl.c
 	etc/afpd/auth.c
@@ -922,6 +925,11 @@ License: UNKNOWN
 Files: etc/uams/uams_krb4/send_to_kdc.c
 Copyright: 1990,1994, Regents of The University of Michigan
 	1987-1988, by the Massachusetts Institute of Technology
+License: UNKNOWN
+
+Files: debian/patches/006_CVS_sync_20090121.patch
+Copyright: 1990,1994, Regents of The University of Michigan
+	1990,1993, Regents of The University of Michigan
 License: UNKNOWN
 
 Files: distrib/initscripts/rc.atalk.suse.tmpl
