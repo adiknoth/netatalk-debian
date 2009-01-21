@@ -36,6 +36,11 @@ deb http://debian.jones.dk/ $DIST netatalk
 MacOS X Specific Notes
 ======================
 
+MacOS X 10.5.x handles group access differently than earlier releases.
+It might work to add "perm:0770 option:upriv" to each share line in
+/etc/netatalk/AppleVolumes.default (note the use of "option" without
+trailing "s").
+
 There were problems reported with MacOS X clients and DDP connection.
 The symptom of is the lack of the server name in the chooser of MacOS X
 clients. To work around this problem, you have to insert the server's

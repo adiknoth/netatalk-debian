@@ -13,6 +13,8 @@ netatalk (2.0.4~beta2-2) unstable; urgency=high
     + Fix dhx2 logincont packet size
   * Update copyright hints (no new owners or licenses).
   * Explicitly build-depend on libdb4.2-dev (not libdb-dev).
+  * Mention MacOS X 10.5.x group ACL workaround in README.Debian.
+    Closes: bug#458174, thanks to Tim Miller Dyck.
   * Set urgency=high due to possible security implications in above, and
     due to accidentally linking against BerkeleyDB 4.6 in prior release.
 
