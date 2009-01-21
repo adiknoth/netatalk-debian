@@ -1,3 +1,21 @@
+netatalk (2.0.4~beta2-2) unstable; urgency=high
+
+  * Always use gcrypt. Simplify optional openssl support.
+  * Readd and update OpenSSL section to README.Debian, and improve NEWS
+    entry to clarify that Randnum UAM is no longer provided by default.
+  * Add patches 001-005 (but avoid applying some of them) to sync with
+    upstream development, fixing the following issues:
+    + remove bogus default ppd _PATH_PAPDPPDFILE
+    + remove signed/unsigned gcc warning
+    + better handling of bogus ppd files
+    + Remove ucb includes from Netatalk (i.e. drop SunOS 4.x support)
+    + Fix off-by-one error in PPD file processing
+    + Fix dhx2 logincont packet size
+  * Update copyright hints (no new owners or licenses).
+  * Set urgency=high due to possible security implications in above.
+
+ -- Jonas Smedegaard <dr@jones.dk>  Wed, 21 Jan 2009 11:50:30 +0100
+
 netatalk (2.0.4~beta2-1) unstable; urgency=high
 
   * New upstream prerelease:
