@@ -12,7 +12,9 @@ netatalk (2.0.4~beta2-2) unstable; urgency=high
     + Fix off-by-one error in PPD file processing
     + Fix dhx2 logincont packet size
   * Update copyright hints (no new owners or licenses).
-  * Set urgency=high due to possible security implications in above.
+  * Explicitly build-depend on libdb4.2-dev (not libdb-dev).
+  * Set urgency=high due to possible security implications in above, and
+    due to accidentally linking against BerkeleyDB 4.6 in prior release.
 
  -- Jonas Smedegaard <dr@jones.dk>  Wed, 21 Jan 2009 11:50:30 +0100
 
