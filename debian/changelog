@@ -1,3 +1,9 @@
+netatalk (2.0.4~beta2-4) unstable; urgency=high
+
+  * Rebuild for unstable branch.
+
+ -- Jonas Smedegaard <dr@jones.dk>  Wed, 21 Jan 2009 18:20:47 +0100
+
 netatalk (2.0.4~beta2-3) UNRELEASED; urgency=high
 
   * Update debian/copyrights:
