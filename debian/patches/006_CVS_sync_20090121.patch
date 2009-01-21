@@ -1,0 +1,271 @@
+diff --git a/etc/atalkd/main.c b/etc/atalkd/main.c
+index 863df5d..58f3388 100644
+--- a/etc/atalkd/main.c
++++ b/etc/atalkd/main.c
+@@ -1,5 +1,5 @@
+ /*
+- * $Id: main.c,v 1.17.8.6.2.2 2005/09/27 10:40:41 didg Exp $
++ * $Id: main.c,v 1.17.8.6.2.3 2009/01/19 02:25:57 didg Exp $
+  *
+  * Copyright (c) 1990,1993 Regents of The University of Michigan.
+  * All Rights Reserved. See COPYRIGHT.
+@@ -11,11 +11,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/socket.h>
+-#if defined( sun ) && defined( __svr4__ )
+-#include </usr/ucbinclude/sys/file.h>
+-#else /* sun __svr4__ */
+ #include <sys/file.h>
+-#endif /* sun __svr4__ */
+ #include <sys/time.h>
+ #include <sys/resource.h>
+ #include <sys/ioctl.h>
+diff --git a/etc/papd/lp.c b/etc/papd/lp.c
+index 1ac71a0..95f3f6c 100644
+--- a/etc/papd/lp.c
++++ b/etc/papd/lp.c
+@@ -1,5 +1,5 @@
+ /*
+- * $Id: lp.c,v 1.14.8.4.2.4 2008/11/25 15:16:33 didg Exp $
++ * $Id: lp.c,v 1.14.8.4.2.6 2009/01/21 02:33:55 didg Exp $
+  *
+  * Copyright (c) 1990,1994 Regents of The University of Michigan.
+  * All Rights Reserved.  See COPYRIGHT.
+@@ -54,11 +54,7 @@
+ #include <unistd.h>
+ #endif /* HAVE_UNISTD_H */
+ 
+-#if defined( sun ) && defined( __svr4__ )
+-#include </usr/ucbinclude/sys/file.h>
+-#else /* sun && __svr4__ */
+ #include <sys/file.h>
+-#endif /* sun && __svr4__ */
+ #include <sys/un.h>
+ #include <netinet/in.h>
+ #undef s_net
+@@ -1007,7 +1003,9 @@ int lp_queue( out )
+     char			buf[ 1024 ], *start, *stop, *p, *q;
+     int				linelength, crlflength;
+     static struct papfile	pf;
+-    int				n, len, s;
++    int				s;
++    size_t			len;
++    ssize_t			n;
+ 	
+     if (( s = lp_conn_unix()) < 0 ) {
+ 	LOG(log_error, logtype_papd, "lp_queue: %s", strerror(errno) );
+diff --git a/etc/papd/main.c b/etc/papd/main.c
+index 40ea9e3..f473c78 100644
+--- a/etc/papd/main.c
++++ b/etc/papd/main.c
+@@ -1,5 +1,5 @@
+ /*
+- * $Id: main.c,v 1.18.6.2.2.4 2008/11/14 10:04:52 didg Exp $
++ * $Id: main.c,v 1.18.6.2.2.6 2009/01/21 04:07:05 didg Exp $
+  *
+  * Copyright (c) 1990,1995 Regents of The University of Michigan.
+  * All Rights Reserved.  See COPYRIGHT.
+@@ -14,11 +14,7 @@
+ #include <sys/param.h>
+ #include <sys/time.h>
+ #include <sys/uio.h>
+-#if defined( sun ) && defined( __svr4__ )
+-#include </usr/ucbinclude/sys/file.h>
+-#else /* sun && __svr4__ */
+ #include <sys/file.h>
+-#endif /* sun && __svr4__ */
+ #include <sys/socket.h>
+ #include <atalk/logger.h>
+ 
+@@ -76,7 +72,6 @@ char *strchr (), *strrchr ();
+ #include "uam_auth.h"
+ #include "print_cups.h"
+ 
+-#define _PATH_PAPDPPDFILE	".ppd"
+ 
+ #define PIPED_STATUS	"status: print spooler processing job"
+ 
+@@ -205,7 +200,6 @@ int main( ac, av )
+     defprinter.p_type = "LaserWriter";
+     defprinter.p_zone = "*";
+     memset(&defprinter.p_addr, 0, sizeof(defprinter.p_addr));
+-    defprinter.p_ppdfile = _PATH_PAPDPPDFILE;
+ #ifdef __svr4__
+     defprinter.p_flags = P_PIPED;
+     defprinter.p_printer = "/usr/bin/lp -T PS";
+@@ -685,9 +679,7 @@ static void getprinters( cf )
+ 	/*
+ 	 * Get PPD file.
+ 	 */
+-	if (( p = pgetstr( "pd", &a )) == NULL ) {
+-	    pr->p_ppdfile = defprinter.p_ppdfile;
+-	} else {
++	if (( p = pgetstr( "pd", &a ) )) {
+ 	    if (( pr->p_ppdfile = (char *)malloc( strlen( p ) + 1 )) == NULL ) {
+ 		perror( "malloc" );
+ 		exit( 1 );
+@@ -826,7 +818,7 @@ int rprintcap( pr )
+      * Check for ppd file, moved here because of cups_autoadd we cannot check at the usual location
+      */
+ 
+-    if ( pr->p_ppdfile == defprinter.p_ppdfile ) {
++    if ( pr->p_ppdfile == NULL ) {
+ 	if ( (p = (char *) cups_get_printer_ppd ( pr->p_printer )) != NULL ) {
+ 	    if (( pr->p_ppdfile = (char *)malloc( strlen( p ) + 1 )) == NULL ) {
+ 	    	LOG(log_error, logtype_papd, "malloc: %s", strerror(errno) );
+@@ -834,7 +826,7 @@ int rprintcap( pr )
+ 	    }
+ 	    strcpy( pr->p_ppdfile, p );
+ 	    pr->p_flags |= P_CUPS_PPD;
+-	    /*LOG(log_info, logtype_papd, "PPD File for %s set to %s", pr->p_printer, pr->p_ppdfile );*/
++	    LOG(log_info, logtype_papd, "PPD File for %s set to %s", pr->p_printer, pr->p_ppdfile );
+ 	}
+     }
+ 
+diff --git a/etc/papd/ppd.c b/etc/papd/ppd.c
+index dd9f700..1cf167a 100644
+--- a/etc/papd/ppd.c
++++ b/etc/papd/ppd.c
+@@ -1,5 +1,5 @@
+ /*
+- * $Id: ppd.c,v 1.9.8.1.2.3 2008/11/14 10:04:52 didg Exp $
++ * $Id: ppd.c,v 1.9.8.1.2.6 2009/01/21 04:07:05 didg Exp $
+  *
+  * Copyright (c) 1995 Regents of The University of Michigan.
+  * All Rights Reserved.  See COPYRIGHT.
+@@ -51,16 +51,17 @@ struct ppdent {
+ };
+ 
+ #ifndef SHOWPPD
+-int ppd_inited = 0;
++static int ppd_inited;
+ 
+-int ppd_init()
++static void ppd_init()
+ {
+-    if ( ppd_inited ) {
+-	return( -1 );
+-    }
++    if (ppd_inited)
++        return;
++
+     ppd_inited++;
+ 
+-    return read_ppd( printer->p_ppdfile, 0 );
++    if (printer->p_ppdfile)
++        read_ppd( printer->p_ppdfile, 0 );
+ }
+ #endif /* SHOWPPD */
+ 
+@@ -75,7 +76,7 @@ static char* my_fgets(buf, bufsize, stream)
+     int p;           /* uninitialized, OK 310105 */
+     size_t count = 0;
+  
+-    while (count < bufsize && EOF != (p=fgetc(stream))) {
++    while (count < (bufsize - 1) && EOF != (p=fgetc(stream))) {
+         buf[count] = p;
+         count++;
+         if ( p == '\r' || p == '\n')
+@@ -93,7 +94,7 @@ static char* my_fgets(buf, bufsize, stream)
+     return buf;
+ }
+ 
+-struct ppdent *getppdent( stream )
++static struct ppdent *getppdent( stream )
+     FILE	*stream;
+ {
+     static char			buf[ 1024 ];
+@@ -107,7 +108,7 @@ struct ppdent *getppdent( stream )
+ 	if ( *p != '*' ) {	/* main key word */
+ 	    continue;
+ 	}
+-	if ( p[ strlen( p ) - 1 ] != '\n' && p[ strlen( p ) - 1 ] != '\r') {
++	if ( p[ strlen( p ) - 1 ] != '\n') {
+ 	    LOG(log_error, logtype_papd, "getppdent: line too long" );
+ 	    continue;
+ 	}
+@@ -205,7 +206,7 @@ int read_ppd( file, fcnt )
+ 	}
+ 
+ 	/* *Font */
+-	if ( strcmp( pe->pe_main, "*Font" ) == 0 ) {
++	if ( strcmp( pe->pe_main, "*Font" ) == 0 && pe->pe_option ) {
+ 	    for ( pfo = ppd_fonts; pfo; pfo = pfo->pd_next ) {
+ 		if ( strcmp( pfo->pd_font, pe->pe_option ) == 0 ) {
+ 		    break;
+@@ -238,7 +239,7 @@ int read_ppd( file, fcnt )
+ 		break;
+ 	    }
+ 	}
+-	if ( pfe->pd_name ) { /*&& (pfe->pd_value == NULL) ) { */
++	if ( pfe->pd_name && pe->pe_value ) { 
+ 	    if (( pfe->pd_value =
+ 		    (char *)malloc( strlen( pe->pe_value ) + 1 )) == NULL ) {
+ 		LOG(log_error, logtype_papd, "malloc: %s", strerror(errno) );
+diff --git a/etc/papd/ppd.h b/etc/papd/ppd.h
+index 03da219..77ffbd9 100644
+--- a/etc/papd/ppd.h
++++ b/etc/papd/ppd.h
+@@ -1,5 +1,5 @@
+ /*
+- * $Id: ppd.h,v 1.4 2001/06/25 20:13:45 rufustfirefly Exp $
++ * $Id: ppd.h,v 1.4.16.1 2009/01/21 04:07:05 didg Exp $
+  *
+  * Copyright (c) 1995 Regents of The University of Michigan.
+  * All Rights Reserved.  See COPYRIGHT.
+@@ -23,6 +23,5 @@ struct ppd_feature {
+ struct ppd_feature	*ppd_feature __P((const char *, int));
+ struct ppd_font		*ppd_font __P((char *));
+ int read_ppd __P((char *, int));
+-int ppd_init __P(( void ));
+ 
+ #endif /* PAPD_PPD_H */
+diff --git a/etc/uams/uams_dhx2_pam.c b/etc/uams/uams_dhx2_pam.c
+index 0c94a73..72bfa4e 100644
+--- a/etc/uams/uams_dhx2_pam.c
++++ b/etc/uams/uams_dhx2_pam.c
+@@ -1,5 +1,5 @@
+ /*
+- * $Id: uams_dhx2_pam.c,v 1.5.2.2 2008/12/02 03:11:59 didg Exp $
++ * $Id: uams_dhx2_pam.c,v 1.5.2.3 2009/01/15 03:58:05 didg Exp $
+  *
+  * Copyright (c) 1990,1993 Regents of The University of Michigan.
+  * Copyright (c) 1999 Adrian Sun (asun@u.washington.edu)
+@@ -573,9 +573,9 @@ static int logincont2(void *obj, struct passwd **uam_pwd,
+ 
+     *rbuflen = 0;
+ 
+-    /* Packet size should be: Session ID + ServerNonce + Passwd buffer */
+-    if (ibuflen != 2 + 16 + 256) {
+-        LOG(log_error, logtype_uams, "DHX2: Paket length not correct");
++    /* Packet size should be: Session ID + ServerNonce + Passwd buffer (evantually +10 extra bytes, see Apples Docs) */
++    if ((ibuflen != 2 + 16 + 256) && (ibuflen != 2 + 16 + 256 + 10)) {
++        LOG(log_error, logtype_uams, "DHX2: Paket length not correct: %d. Should be 274 or 284.", ibuflen);
+         ret = AFPERR_PARAM;
+         goto error_noctx;
+     }
+diff --git a/etc/uams/uams_dhx2_passwd.c b/etc/uams/uams_dhx2_passwd.c
+index 2aebbb4..079a4cb 100644
+--- a/etc/uams/uams_dhx2_passwd.c
++++ b/etc/uams/uams_dhx2_passwd.c
+@@ -1,5 +1,5 @@
+ /*
+- * $Id: uams_dhx2_passwd.c,v 1.4.2.2 2008/12/02 03:11:59 didg Exp $
++ * $Id: uams_dhx2_passwd.c,v 1.4.2.3 2009/01/15 03:58:05 didg Exp $
+  *
+  * Copyright (c) 1990,1993 Regents of The University of Michigan.
+  * Copyright (c) 1999 Adrian Sun (asun@u.washington.edu)
+@@ -501,9 +501,9 @@ static int logincont2(void *obj _U_, struct passwd **uam_pwd,
+     gcry_error_t ctxerror;
+ 
+     *rbuflen = 0;
+-    /* Packet size should be: Session ID + ServerNonce + Passwd buffer */
+-    if (ibuflen != 2 + 16 + 256) {
+-        LOG(log_error, logtype_uams, "DHX2: Paket length not correct");
++    /* Packet size should be: Session ID + ServerNonce + Passwd buffer (evantually +10 extra bytes, see Apples Docs)*/
++    if ((ibuflen != 2 + 16 + 256) && (ibuflen != 2 + 16 + 256 + 10)) {
++        LOG(log_error, logtype_uams, "DHX2: Paket length not correct: %d. Should be 274 or 284.", ibuflen);
+         ret = AFPERR_PARAM;
+         goto error_noctx;
+     }

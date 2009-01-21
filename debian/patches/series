@@ -1,3 +1,9 @@
+#001_make_dist_was_missing_files.patch
+#002_avoid_bdb_if_unneeded.patch
+003_fix_afp3_dir_error.patch
+#004_fix_solaris10_compilation.patch
+#005_add_CJK_encoding.patch
+006_CVS_sync_20090121.patch
 101_fix_manpage_sed_replacements.patch
 102_rename_initscript.patch
 103_initscript_background_off_by_default.patch

@@ -1,0 +1,24 @@
+diff --git a/etc/afpd/file.c b/etc/afpd/file.c
+index abbaf82..a0e0b12 100644
+--- a/etc/afpd/file.c
++++ b/etc/afpd/file.c
+@@ -1,5 +1,5 @@
+ /*
+- * $Id: file.c,v 1.92.2.2.2.31.2.22 2008/11/25 15:16:33 didg Exp $
++ * $Id: file.c,v 1.92.2.2.2.31.2.23 2008/12/23 09:39:02 didg Exp $
+  *
+  * Copyright (c) 1990,1993 Regents of The University of Michigan.
+  * All Rights Reserved.  See COPYRIGHT.
+@@ -1878,8 +1878,10 @@ retry:
+     }
+ 
+     /* directories are bad */
+-    if (S_ISDIR(path.st.st_mode))
+-        return AFPERR_BADTYPE;
++    if (S_ISDIR(path.st.st_mode)) {
++        /* OS9 and OSX don't return the same error code  */
++        return (afp_version >=30)?AFPERR_NOID:AFPERR_BADTYPE;
++    }
+ 
+     memcpy(&bitmap, ibuf, sizeof(bitmap));
+     bitmap = ntohs( bitmap );

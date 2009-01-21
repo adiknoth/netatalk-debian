@@ -1,0 +1,3197 @@
+diff --git a/NEWS b/NEWS
+index b9e4731..ee0730d 100644
+--- a/NEWS
++++ b/NEWS
+@@ -2,15 +2,19 @@ Changes in 2.0.4
+ ================
+ 
+ * NEW: afpd: DHX2 uams using GNU libgcrypt.
+-* NEW: afpd: volume options 'perm' and 'invisibledots'
++* NEW: afpd: volume options 'illegalseq', 'perm' and 'invisibledots'
++       'ilegalseq'  encode illegal sequence in filename asis, ex "\217-", which is not 
++       a valid SHIFT-JIS char, is encoded  as U\217 -.
+        'perm' value OR with the client requested permissions. (help with OSX 10.5
+        strange permissions).
+        Make dot files visible by default with 'usedots', use 'invisibledots' 
+        for keeping the old behavior, ie for OS9 (OSX hide dot files on its
+        own).
+ * NEW: afpd: Mac greek encoding.
++* NEW: afpd: CJK encoding.
+ * FIX: afpd: return the right error in createfile and copyfile if the disk
+        is full.
++* FIX: afpd: resolveid return the same error code than OSX if it's a directory
+ * FIX: afpd: server name check, test for the whole loopback subnet 
+        not only 127.0.0.1.
+ * UPD: afpd: limit comments size to 128 bytes, (workaround for Adobe CS2 bug).
+@@ -20,7 +24,7 @@ Changes in 2.0.4
+ * FIX: cnid: dbd detach the daemon from the control terminal.
+ * UPD: cnid: never ending Berkeley API changes...
+ * UPD: cnid: dbd add a timeout when reading data from afpd client.
+-* UPD: Don't wait five second after the first error when speaking to the dbd
++* UPD: cnid: Don't wait five second after the first error when speaking to the dbd
+        backend.
+ * FIX: papd: vars use % not $
+ * FIX: papd: quote chars in popen variables expansion. security fix.
+diff --git a/bin/uniconv/iso8859_1_adapted.c b/bin/uniconv/iso8859_1_adapted.c
+index 1ec5735..c1277e8 100644
+--- a/bin/uniconv/iso8859_1_adapted.c
++++ b/bin/uniconv/iso8859_1_adapted.c
+@@ -40,7 +40,7 @@ struct charset_functions charset_iso8859_adapted =
+ 	iso8859_adapted_pull,
+ 	iso8859_adapted_push,
+ 	CHARSET_MULTIBYTE | CHARSET_PRECOMPOSED,
+-	NULL, NULL
++	NULL, NULL, NULL
+ };
+ 
+ 
+diff --git a/config/AppleVolumes.default.tmpl b/config/AppleVolumes.default.tmpl
+index 823a1a4..111f1a7 100644
+--- a/config/AppleVolumes.default.tmpl
++++ b/config/AppleVolumes.default.tmpl
+@@ -95,6 +95,8 @@
+ #                        volume being mounted.
+ # nostat              -> don't stat volume path when enumerating volumes list
+ # upriv               -> use unix privilege.  
++# illegalseq          -> encode illegal sequence in filename asis, ex "\217-", which is not 
++#                        a valid SHIFT-JIS char, is encoded  as U\217 -
+ #
+ #
+ # dbpath:path         -> store the database stuff in the following path.
+diff --git a/etc/afpd/desktop.c b/etc/afpd/desktop.c
+index 94e1436..246b64f 100644
+--- a/etc/afpd/desktop.c
++++ b/etc/afpd/desktop.c
+@@ -1,5 +1,5 @@
+ /*
+- * $Id: desktop.c,v 1.26.2.4.2.18.2.7 2006/09/19 00:08:00 didg Exp $
++ * $Id: desktop.c,v 1.26.2.4.2.18.2.8 2009/01/13 01:05:53 didg Exp $
+  *
+  * See COPYRIGHT.
+  *
+@@ -638,11 +638,15 @@ char *mtoupath(const struct vol *vol, char *mpath, cnid_t did, int utf8)
+     if (!(vol->v_flags & AFPVOL_USEDOTS))
+         flags |= CONV_ESCAPEDOTS;
+ 
+-    if ((vol->v_casefold & AFPVOL_MTOUUPPER))
++    if (vol->v_casefold & AFPVOL_MTOUUPPER)
+         flags |= CONV_TOUPPER;
+-    else if ((vol->v_casefold & AFPVOL_MTOULOWER))
++    else if (vol->v_casefold & AFPVOL_MTOULOWER)
+         flags |= CONV_TOLOWER;
+ 
++    if (vol->v_flags & AFPVOL_EILSEQ) {
++        flags |= CONV__EILSEQ;
++    }
++
+     m = demangle(vol, mpath, did);
+     if (m != mpath) {
+         return m;
+@@ -677,11 +681,15 @@ char *utompath(const struct vol *vol, char *upath, cnid_t id, int utf8)
+     m = mpath;
+     outlen = strlen(upath);
+ 
+-    if (vol->v_casefold & AFPVOL_UTOMUPPER)
++    if ((vol->v_casefold & AFPVOL_UTOMUPPER))
+         flags |= CONV_TOUPPER;
+-    else if (vol->v_casefold & AFPVOL_UTOMLOWER)
++    else if ((vol->v_casefold & AFPVOL_UTOMLOWER))
+         flags |= CONV_TOLOWER;
+ 
++    if (vol->v_flags & AFPVOL_EILSEQ) {
++        flags |= CONV__EILSEQ;
++    }
++
+     u = upath;
+ 
+     /* convert charsets */
+diff --git a/etc/afpd/mangle.c b/etc/afpd/mangle.c
+index 8edf00c..e22d7b8 100644
+--- a/etc/afpd/mangle.c
++++ b/etc/afpd/mangle.c
+@@ -1,5 +1,5 @@
+ /* 
+- * $Id: mangle.c,v 1.16.2.1.2.12.2.6 2006/09/19 00:08:01 didg Exp $ 
++ * $Id: mangle.c,v 1.16.2.1.2.12.2.7 2009/01/13 01:05:53 didg Exp $ 
+  *
+  * Copyright (c) 2002. Joe Marcus Clarke (marcus@marcuscom.com)
+  * All Rights Reserved.  See COPYRIGHT.
+@@ -22,25 +22,45 @@
+ #define hextoint( c )   ( isdigit( c ) ? c - '0' : c + 10 - 'A' )
+ #define isuxdigit(x)    (isdigit(x) || (isupper(x) && isxdigit(x)))
+ 
++static size_t mangle_extension(const struct vol *vol, const char* uname,
++			       char* extension, charset_t charset)
++{
++  char *p = strrchr(uname, '.');
++
++  if (p && p != uname) {
++    u_int16_t flags = CONV_FORCE | CONV_UNESCAPEHEX;
++    size_t len = convert_charset(vol->v_volcharset, charset,
++				 vol->v_maccharset, p, strlen(p),
++				 extension, MAX_EXT_LENGTH, &flags);
++
++    if (len != (size_t)-1) return len;
++  }
++  return 0;
++}
++
+ static char *demangle_checks ( const struct vol *vol, char* uname, char * mfilename, size_t prefix, char * ext)
+ {
+     u_int16_t flags;
+     static char buffer[MAXPATHLEN +2];  /* for convert_charset dest_len parameter +2 */
+     size_t len;
+     size_t mfilenamelen;
+-    char *u;
+ 
+     /* We need to check, whether we really need to demangle the filename 	*/
+     /* i.e. it's not just a file with a valid #HEX in the name ...		*/
+     /* but we don't want to miss valid demangle as well.			*/
+ 
+     /* check whether file extensions match */
+-    if ( NULL != (u = strchr(uname, '.')) ) {
+-	if (strcmp(ext,u))
+-		return mfilename;
++    {
++      char buf[MAX_EXT_LENGTH + 2];  /* for convert_charset dest_len parameter +2 */
++      size_t ext_len = mangle_extension(vol, uname, buf, CH_UTF8_MAC);
++
++      if (ext_len) {
++	buf[ext_len] = '\0';
++	if (strcmp(ext, buf)) return mfilename;
++      } else {
++	if (*ext) return mfilename;
++      }
+     }
+-    else if ( *ext == '.' )
+-	return mfilename;
+ 
+     /* First we convert the unix name to our volume maccharset     	*/
+     /* This assumes, OSX will not send us a mangled name for *any* 	*/
+@@ -68,7 +88,7 @@ static char *demangle_checks ( const struct vol *vol, char* uname, char * mfilen
+     /* if we only checked if "prefix" number of characters match */
+     /* we get a false postive in above case			     */
+ 
+-    if ( flags & CONV_REQMANGLE ) {
++    if ( (flags & CONV_REQMANGLE) ) {
+         if (len) { 
+             /* convert the buffer to UTF8_MAC ... */
+             if ((size_t) -1 == (len = convert_charset(vol->v_maccharset, CH_UTF8_MAC, 0, 
+@@ -203,27 +223,6 @@ demangle_osx(const struct vol *vol, char *mfilename, cnid_t did, cnid_t *fileid)
+ }
+ 
+ 
+-/* -------------------------------------------------------
+- * find the start of a utf8 character
+- */
+-static char *
+-utf8_mangle_validate(char *path, size_t len)
+-{
+-    unsigned char *p = (unsigned char *)path + len;
+-    int           dec = 0;
+-
+-    /* char matches with 10xxxxxx ? */
+-    while ( len && *p && ((*p & 0xc0) == 0x80)) {
+-	dec = 1;
+-        len--;
+-        p--;
+-    }
+-    if (dec)
+-        *p = 0;
+-
+-    return path;
+-}
+-
+ /* -----------------------
+    with utf8 filename not always round trip
+    filename   mac filename too long or first chars if unmatchable chars.
+@@ -232,12 +231,12 @@ utf8_mangle_validate(char *path, size_t len)
+    
+ */
+ char *
+-mangle(const struct vol *vol _U_, char *filename, size_t filenamelen, char *uname, cnid_t id, int flags) {
+-    char *ext = NULL;
++mangle(const struct vol *vol, char *filename, size_t filenamelen, char *uname, cnid_t id, int flags) {
+     char *m = NULL;
+-    static char mfilename[MAXPATHLEN + 1];
++    static char mfilename[MAXPATHLEN]; /* way > maxlen */
+     char mangle_suffix[MANGLE_LENGTH + 1];
+-    size_t ext_len = 0;
++    char ext[MAX_EXT_LENGTH +2];  /* for convert_charset dest_len parameter +2 */
++    size_t ext_len;
+     size_t maxlen;
+     int k;
+     
+@@ -252,24 +251,25 @@ mangle(const struct vol *vol _U_, char *filename, size_t filenamelen, char *unam
+         return NULL;
+     }
+     /* First, attempt to locate a file extension. */
+-    if (NULL != (ext = strrchr(uname, '.')) ) {
+-	ext_len = strlen(ext);
+-	if (ext_len > MAX_EXT_LENGTH) {
+-	    /* Do some bounds checking to prevent an extension overflow. */
+-	    ext_len = MAX_EXT_LENGTH;
+-	}
+-    }
++    ext_len = mangle_extension(vol, uname, ext, (flags & 2) ? CH_UTF8_MAC : vol->v_maccharset);
+     m = mfilename;
+     k = sprintf(mangle_suffix, "%c%X", MANGLE_CHAR, ntohl(id));
+ 
+-    strlcpy(m, filename, maxlen  - k - ext_len +1);
+-    if (flags & 2)
+-        m = utf8_mangle_validate(m, maxlen - k - ext_len +1);
++    if (filenamelen + k + ext_len > maxlen) {
++      u_int16_t opt = CONV_FORCE | CONV_UNESCAPEHEX;
++      size_t n = convert_charset(vol->v_volcharset,
++				 (flags & 2) ? CH_UTF8_MAC : vol->v_maccharset,
++				 vol->v_maccharset, uname, strlen(uname),
++				 m, maxlen - k - ext_len, &opt);
++      m[n != (size_t)-1 ? n : 0] = 0;
++    } else {
++      strlcpy(m, filename, filenamelen + 1);
++    }
+     if (*m == 0) {
+         strcat(m, "???");
+     }
+     strcat(m, mangle_suffix);
+-    if (ext) {
++    if (ext_len) {
+ 	strncat(m, ext, ext_len);
+     }
+ 
+diff --git a/etc/afpd/volume.c b/etc/afpd/volume.c
+index 8542662..f3144cb 100644
+--- a/etc/afpd/volume.c
++++ b/etc/afpd/volume.c
+@@ -1,5 +1,5 @@
+ /*
+- * $Id: volume.c,v 1.51.2.7.2.33.2.15 2008/11/25 15:16:33 didg Exp $
++ * $Id: volume.c,v 1.51.2.7.2.33.2.16 2009/01/13 01:05:53 didg Exp $
+  *
+  * Copyright (c) 1990,1993 Regents of The University of Michigan.
+  * All Rights Reserved.  See COPYRIGHT.
+@@ -171,6 +171,7 @@ static const _vol_opt_name vol_opt_names[] = {
+                                          * maybe because it will be mounted later in preexec */
+     {AFPVOL_UNIX_PRIV,  "UNIXPRIV"},    /* support unix privileges */
+     {AFPVOL_NODEV,      "NODEV"},       /* always use 0 for device number in cnid calls */
++    {AFPVOL_EILSEQ,     "ILLEGALSEQ"},  /* encode illegal sequence */
+     {AFPVOL_CACHE,      "CACHEID"},     /* Use adouble v2 CNID caching, default don't use it */
+     {0, NULL}
+ };
+@@ -473,6 +474,8 @@ static void volset(struct vol_option *options, struct vol_option *save,
+                 options[VOLOPT_FLAGS].i_value |= AFPVOL_UNIX_PRIV;
+             else if (strcasecmp(p, "nodev") == 0)
+                 options[VOLOPT_FLAGS].i_value |= AFPVOL_NODEV;
++            else if (strcasecmp(p, "illegalseq") == 0)
++                options[VOLOPT_FLAGS].i_value |= AFPVOL_EILSEQ;
+             else if (strcasecmp(p, "cachecnid") == 0)
+                 options[VOLOPT_FLAGS].i_value |= AFPVOL_CACHE;
+ 
+diff --git a/etc/afpd/volume.h b/etc/afpd/volume.h
+index 24afecd..a68b5d7 100644
+--- a/etc/afpd/volume.h
++++ b/etc/afpd/volume.h
+@@ -1,5 +1,5 @@
+ /*
+- * $Id: volume.h,v 1.19.2.5.2.7.2.3 2006/09/19 02:24:06 didg Exp $
++ * $Id: volume.h,v 1.19.2.5.2.7.2.4 2009/01/13 01:05:53 didg Exp $
+  *
+  * Copyright (c) 1990,1994 Regents of The University of Michigan.
+  * All Rights Reserved.  See COPYRIGHT.
+@@ -116,8 +116,12 @@ this is going away. */
+                                      * help if device number is notconsistent across reboot 
+                                      * NOTE symlink to a different device will return an ACCESS error
+                                      */
+-#define AFPVOL_CACHE      (1 << 19)  /* Use adouble v2 CNID caching, default don't use it */
+-#define AFPVOL_INV_DOTS   (1 << 20)  /* dots files are invisible */
++#define AFPVOL_RESERVED  (1 << 19)  /* was AFPVOL_CASEINSEN, volume is case insensitive */
++#define AFPVOL_EILSEQ    (1 << 20)  /* encode illegal sequence 'asis' UCS2, ex "\217-", which is not 
++                                       a valid SHIFT-JIS char, is encoded  as U\217 -*/
++
++#define AFPVOL_CACHE     (1 << 21)   /* Use adouble v2 CNID caching, default don't use it */
++#define AFPVOL_INV_DOTS  (1 << 22)   /* dots files are invisible */
+ 
+ /* FPGetSrvrParms options */
+ #define AFPSRVR_CONFIGINFO     (1 << 0)
+diff --git a/include/atalk/unicode.h b/include/atalk/unicode.h
+index c00e6e8..e927b5e 100644
+--- a/include/atalk/unicode.h
++++ b/include/atalk/unicode.h
+@@ -46,7 +46,7 @@ typedef struct {
+ #define IGNORE_CHAR	'_'
+ 
+ /* conversion flags */
+-#define CONV_IGNORE		(1<<0) /* ignore EILSEQ, replace with IGNORE_CHAR */
++#define CONV_IGNORE		(1<<0) /* return the first convertable characters. */
+ #define CONV_ESCAPEHEX		(1<<1) /* escape unconvertable chars with :[UCS2HEX] */
+ #define CONV_ESCAPEDOTS		(1<<2) /* escape leading dots with :2600 */
+ #define CONV_UNESCAPEHEX 	(1<<3) 
+@@ -54,6 +54,8 @@ typedef struct {
+ #define CONV_TOLOWER		(1<<5) /* convert to lowercase */
+ #define CONV_PRECOMPOSE		(1<<6) /* precompose */
+ #define CONV_DECOMPOSE		(1<<7) /* precompose */
++#define CONV_FORCE		(1<<8) /* force convertion */
++#define CONV__EILSEQ		(1<<9) /* ignore EILSEQ, replace with IGNORE_CHAR (try USC2) */
+ 
+ /* conversion return flags */
+ #define CONV_REQMANGLE	(1<<14) /* mangling of returned name is required */
+@@ -77,6 +79,7 @@ struct charset_functions {
+         size_t (*push)(void *, char **inbuf, size_t *inbytesleft,
+                                    char **outbuf, size_t *outbytesleft);
+ 	u_int32_t flags;
++        const char *iname;
+         struct charset_functions *prev, *next;
+ };
+ 
+diff --git a/libatalk/unicode/charcnv.c b/libatalk/unicode/charcnv.c
+index 23e624e..f560ad0 100644
+--- a/libatalk/unicode/charcnv.c
++++ b/libatalk/unicode/charcnv.c
+@@ -316,8 +316,15 @@ static size_t convert_string_internal(charset_t from, charset_t to,
+ 	char* o_save = outbuf;
+ 	atalk_iconv_t descriptor;
+ 
+-	if (srclen == (size_t)-1)
+-		srclen = strlen(src)+1;
++	/* Fixed based on Samba 3.0.6 */
++	if (srclen == (size_t)-1) {
++		if (from == CH_UCS2) {
++			srclen = (strlen_w((const ucs2_t *)src)+1) * 2;
++		} else {
++			srclen = strlen((const char *)src)+1;
++		}
++	}
++
+ 
+ 	lazy_initialize_conv();
+ 
+@@ -636,7 +643,7 @@ size_t charset_to_ucs2_allocate(charset_t ch, ucs2_t **dest, const char *src)
+ 	return convert_string_allocate(ch, CH_UCS2, src, src_len, (char**) dest);	
+ }
+ 
+-/**
++/** -----------------------------------
+  * Copy a string from a charset_t char* src to a UTF-8 destination, allocating a buffer
+  *
+  * @param dest always set at least to NULL 
+@@ -652,7 +659,7 @@ size_t charset_to_utf8_allocate(charset_t ch, char **dest, const char *src)
+ 	return convert_string_allocate(ch, CH_UTF8, src, src_len, dest);	
+ }
+ 
+-/**
++/** -----------------------------------
+  * Copy a string from a UCS2 src to a unix char * destination, allocating a buffer
+  *
+  * @param dest always set at least to NULL 
+@@ -666,7 +673,7 @@ size_t ucs2_to_charset(charset_t ch, const ucs2_t *src, char *dest, size_t destl
+ 	return convert_string(CH_UCS2, ch, src, src_len, dest, destlen);	
+ }
+ 
+-
++/* --------------------------------- */
+ size_t ucs2_to_charset_allocate(charset_t ch, char **dest, const ucs2_t *src)
+ {
+ 	size_t src_len = (strlen_w(src)) * sizeof(ucs2_t);
+@@ -674,7 +681,7 @@ size_t ucs2_to_charset_allocate(charset_t ch, char **dest, const ucs2_t *src)
+ 	return convert_string_allocate(CH_UCS2, ch, src, src_len, dest);	
+ }
+ 
+-/**
++/** ---------------------------------
+  * Copy a string from a UTF-8 src to a unix char * destination, allocating a buffer
+  *
+  * @param dest always set at least to NULL 
+@@ -779,108 +786,109 @@ char * debug_out ( char * seq, size_t len)
+  * Flags:
+  *		CONV_UNESCAPEHEX:	 ':XX' will be converted to an UCS2 character
+  *		CONV_IGNORE:	 	 return the first convertable characters.
++ *		CONV_FORCE:	 force convertion
+  * FIXME:
+  *		This will *not* work if the destination charset is not multibyte, i.e. UCS2->UCS2 will fail
+  *		The (un)escape scheme is not compatible to the old cap style escape. This is bad, we need it 
+  *		for e.g. HFS cdroms.
+  */
+ 
+-static size_t pull_charset_flags (charset_t from_set, charset_t cap_charset, char* src, size_t srclen, char* dest, size_t destlen, u_int16_t *flags)
++static size_t pull_charset_flags (charset_t from_set, charset_t cap_set, char* src, size_t srclen, char* dest, size_t destlen, u_int16_t *flags)
+ {
+-	size_t i_len, o_len, hlen;
+-	size_t retval, j = 0;
+-	const char* inbuf = (const char*)src;
+-	char* outbuf = (char*)dest;
+-	atalk_iconv_t descriptor;
+-	atalk_iconv_t descriptor_cap;
+-	char *s;
+-	char h[MAXPATHLEN];
+-	const char *h_buf;
+-
+-	if (srclen == (size_t)-1)
+-		srclen = strlen(src)+1;
+-
+-	lazy_initialize_conv();
+-
+-	descriptor = conv_handles[from_set][CH_UCS2];
+-	descriptor_cap = conv_handles[cap_charset][CH_UCS2];
++  const u_int16_t option = (flags ? *flags : 0);
++  size_t i_len, o_len;
++  size_t j = 0;
++  const char* inbuf = (const char*)src;
++  char* outbuf = dest;
++  atalk_iconv_t descriptor;
++  atalk_iconv_t descriptor_cap;
++
++  if (srclen == (size_t)-1)
++    srclen = strlen(src) + 1;
++
++  lazy_initialize_conv();
++
++  descriptor = conv_handles[from_set][CH_UCS2];
++  descriptor_cap = conv_handles[cap_set][CH_UCS2];
++
++  if (descriptor == (atalk_iconv_t)-1 || descriptor == (atalk_iconv_t)0) {
++    errno = EINVAL;
++    return (size_t)-1;
++  }
++
++  i_len=srclen;
++  o_len=destlen;
++
++  while (i_len > 0) {
++    if ((option & CONV_UNESCAPEHEX)) {
++      for (j = 0; j < i_len; ++j) {
++	if (inbuf[j] == ':') break;
++      }
++      j = i_len - j;
++      i_len -= j;
++    }
+ 
+-	if (descriptor == (atalk_iconv_t)-1 || descriptor == (atalk_iconv_t)0) {
+-		return (size_t) -1;
++    if (i_len > 0 &&
++	atalk_iconv(descriptor, &inbuf, &i_len, &outbuf, &o_len) == (size_t)-1) {
++      if (errno == EILSEQ || errno == EINVAL) {
++	errno = EILSEQ;
++        if ((option & CONV_IGNORE)) {
++	    *flags |= CONV_REQMANGLE;
++	    return destlen - o_len;
++	}
++	if ((option & CONV__EILSEQ)) {
++	    if (o_len < 2) {
++	        errno = E2BIG;
++      		goto end;
++    	    }
++    	    *((ucs2_t *)outbuf) = (ucs2_t) IGNORE_CHAR; /**inbuf */
++    	    inbuf++;
++    	    i_len--;
++    	    outbuf += 2;
++    	    o_len -= 2;
++    	    /* FIXME reset stat ? */
++    	    continue;
+ 	}
++      }
++      goto end;
++    }
+ 
+-	i_len=srclen;
+-	o_len=destlen;
+-	
+-conversion_loop:
+-	if ( flags && (*flags & CONV_UNESCAPEHEX)) {
+-		if ( NULL != (s = strchr ( inbuf, ':'))) {
+-			j = i_len - (s - inbuf);
+-			if ( 0 == (i_len = (s - inbuf)))
+-				goto unhex_char;
++    if (j) {
++      /* we're at the start on an hex encoded ucs2 char */
++      char h[MAXPATHLEN];
++      size_t hlen = 0;
++
++      i_len = j, j = 0;
++      while (i_len >= 3 && inbuf[0] == ':' &&
++	     isxdigit(inbuf[1]) && isxdigit(inbuf[2])) {
++	h[hlen++] = (hextoint(inbuf[1]) << 4) | hextoint(inbuf[2]);
++	inbuf += 3;
++	i_len -= 3;
++      }
++      if (hlen) {
++	const char *h_buf = h;
++	if (atalk_iconv(descriptor_cap, &h_buf, &hlen, &outbuf, &o_len) == (size_t)-1) {
++	  i_len += hlen * 3;
++	  inbuf -= hlen * 3;
++	  if (errno == EILSEQ && (option & CONV_IGNORE)) {
++	    *flags |= CONV_REQMANGLE;
++	    return destlen - o_len;
++	  }
++	  goto end;
+ 	}
++      } else {
++	/* We have an invalid :xx sequence */
++	errno = EILSEQ;
++	if ((option & CONV_IGNORE)) {
++	  *flags |= CONV_REQMANGLE;
++	  return destlen - o_len;
+ 	}
+-	
+-	retval = atalk_iconv(descriptor,  &inbuf, &i_len, &outbuf, &o_len);
+-	if(retval==(size_t)-1) {
+-	    if (errno == EILSEQ && flags && (*flags & CONV_IGNORE)) {
+-				*flags |= CONV_REQMANGLE;
+-				return destlen-o_len;
+-	    }
+-	    else
+-	    	return (size_t) -1;
++	goto end;
++      }
+     }
+-    
+-unhex_char:
+-	if (j && flags && (*flags & CONV_UNESCAPEHEX )) {
+-		/* we're at the start on an hex encoded ucs2 char */
+-		if (o_len < 2) {
+-			errno = E2BIG;
+-			return (size_t) -1;
+-		}
+-		if ( j >= 3 && 
+-			isxdigit( *(inbuf+1)) && isxdigit( *(inbuf+2)) ) {
+-			hlen = 0;
+-			while ( *inbuf == ':' && j >=3 && 
+-				isxdigit( *(inbuf+1)) && isxdigit( *(inbuf+2)) ) {
+-				inbuf++;
+-				h[hlen]   = hextoint( *inbuf ) << 4;
+-				inbuf++;
+-				h[hlen++] |= hextoint( *inbuf );			
+-				inbuf++;
+-				j -= 3;
+-			}
+-			h_buf = (const char*) h;
+-			if ((size_t) -1 == (retval = atalk_iconv(descriptor_cap, &h_buf, &hlen, &outbuf, &o_len)) ) {
+-				if (errno == EILSEQ && CHECK_FLAGS(flags, CONV_IGNORE)) {
+-					*flags |= CONV_REQMANGLE;
+-					return destlen-o_len;
+-				}
+-				else {
+-					return retval;
+-				}
+-			}
+-		}
+-		else {
+-			/* We have an invalid :xx sequence */
+-			if (CHECK_FLAGS(flags, CONV_IGNORE)) {
+-				*flags |= CONV_REQMANGLE;
+-				return destlen-o_len;
+-			}
+-			else {
+-				errno=EILSEQ;
+-				return (size_t) -1;
+-			}
+-		}
+-		i_len = j;
+-		j = 0;
+-		if (i_len > 0)
+-			goto conversion_loop;
+-	}
+-
+-
+-
+-	return destlen-o_len;
++  }
++ end:
++  return (i_len + j == 0 || (option & CONV_FORCE)) ? destlen - o_len : (size_t)-1;
+ }
+ 
+ /* 
+@@ -888,7 +896,9 @@ unhex_char:
+  * Flags:
+  * 		CONV_ESCAPEDOTS: escape leading dots
+  *		CONV_ESCAPEHEX:	 unconvertable characters and '/' will be escaped to :XX
+- *		CONV_IGNORE:	 unconvertable characters will be replaced with '_'
++ *		CONV_IGNORE:	 return the first convertable characters.
++ *		CONV__EILSEQ:	 unconvertable characters will be replaced with '_'
++ *		CONV_FORCE:	 force convertion
+  * FIXME:
+  *		CONV_IGNORE and CONV_ESCAPEHEX can't work together. Should we check this ?
+  *		This will *not* work if the destination charset is not multibyte, i.e. UCS2->UCS2 will fail
+@@ -899,113 +909,122 @@ unhex_char:
+ 
+ static size_t push_charset_flags (charset_t to_set, charset_t cap_set, char* src, size_t srclen, char* dest, size_t destlen, u_int16_t *flags)
+ {
+-    size_t i_len, o_len, i;
+-    size_t retval, j = 0;
+-    const char* inbuf = (const char*)src;
+-    char* outbuf = (char*)dest;
+-    atalk_iconv_t descriptor;
+-    char *o_save;
+-    char *buf, *buf_save;
+-    size_t buflen;
+-    
+-    lazy_initialize_conv();
+-    
+-    descriptor = conv_handles[CH_UCS2][to_set];
+-    
+-    if (descriptor == (atalk_iconv_t)-1 || descriptor == (atalk_iconv_t)0) {
+-        return (size_t) -1;
++  const u_int16_t option = (flags ? *flags : 0);
++  size_t i_len, o_len, i;
++  size_t j = 0;
++  const char* inbuf = (const char*)src;
++  char* outbuf = (char*)dest;
++  atalk_iconv_t descriptor;
++  atalk_iconv_t descriptor_cap;
++
++  lazy_initialize_conv();
++
++  descriptor = conv_handles[CH_UCS2][to_set];
++  descriptor_cap = conv_handles[CH_UCS2][cap_set];
++
++  if (descriptor == (atalk_iconv_t)-1 || descriptor == (atalk_iconv_t)0) {
++    errno = EINVAL;
++    return (size_t) -1;
++  }
++
++  i_len=srclen;
++  o_len=destlen;
++
++  if ((option & CONV_ESCAPEDOTS) &&
++      i_len >= 2 && SVAL(inbuf, 0) == 0x002e) { /* 0x002e = . */
++    if (o_len < 3) {
++      errno = E2BIG;
++      goto end;
+     }
+-    
+-    i_len=srclen;
+-    o_len=destlen;
+-    o_save=outbuf;
+-    
+-    if ( SVAL(inbuf,0) == 0x002e && flags && (*flags & CONV_ESCAPEDOTS)) { /* 0x002e = . */
+-        if (o_len < 3) {
+-            errno = E2BIG;
+-            return (size_t) -1;
+-        }
+-        o_save[0] = ':';
+-        o_save[1] = '2';
+-        o_save[2] = 'e';
+-        o_len -= 3;
+-        inbuf += 2;
+-        i_len -= 2;
+-        outbuf = o_save + 3;
+-        if (flags) *flags |= CONV_REQESCAPE;
+-    }
+-	
+-conversion_loop:
+-    if ( flags && (*flags & CONV_ESCAPEHEX)) {
+-        for ( i = 0; i < i_len; i+=2) {
+-            if ( SVAL((inbuf+i),0) == 0x002f) { /* 0x002f = / */
+-                j = i_len - i;
+-                if ( 0 == ( i_len = i))
+-                    goto escape_slash;
+-                break;
+-            } else if ( SVAL(inbuf+i,0) == 0x003a) { /* 0x003a = : */
+-		errno = EILSEQ;
+-		return (size_t) -1;
+-	    }
+-        }
++    *outbuf++ = ':';
++    *outbuf++ = '2';
++    *outbuf++ = 'e';
++    o_len -= 3;
++    inbuf += 2;
++    i_len -= 2;
++    *flags |= CONV_REQESCAPE;
++  }
++
++  while (i_len >= 2) {
++    if ((option & CONV_ESCAPEHEX)) {
++      for (i = 0; i < i_len; i += 2) {
++	ucs2_t c = SVAL(inbuf, i);
++	if (c == 0x002f) { /* 0x002f = / */
++	  j = i_len - i;
++	  i_len = i;
++	  break;
++	} else if (c == 0x003a) { /* 0x003a = : */
++	  errno = EILSEQ;
++	  goto end;
++	}
++      }
+     }
+-    
+-    retval = atalk_iconv(descriptor,  &inbuf, &i_len, &outbuf, &o_len);
+-    if (retval==(size_t)-1) {
+-        if (errno == EILSEQ && CHECK_FLAGS(flags, CONV_IGNORE)) {
+-            *flags |= CONV_REQMANGLE;
+-    	    return destlen -o_len;
+-        }
+-        else if ( errno == EILSEQ && flags && (*flags & CONV_ESCAPEHEX)) {
+-            if (o_len < 3) {
+-                errno = E2BIG;
+-                return (size_t) -1;
++    while (i_len > 0 &&
++	   atalk_iconv(descriptor, &inbuf, &i_len, &outbuf, &o_len) == (size_t)-1) {
++      if (errno == EILSEQ) {
++	if ((option & CONV_IGNORE)) {
++	  *flags |= CONV_REQMANGLE;
++	  return destlen - o_len;
++	}
++	if ((option & CONV_ESCAPEHEX)) {
++	  const size_t bufsiz = o_len / 3 + 1;
++	  char *buf = malloc(bufsiz);
++	  size_t buflen;
++
++	  if (!buf) 
++	      goto end;
++	  i = i_len;
++	  for (buflen = 1; buflen <= bufsiz; ++buflen) {
++	    char *b = buf;
++	    size_t o = buflen;
++	    if (atalk_iconv(descriptor_cap, &inbuf, &i, &b, &o) != (size_t)-1) {
++	      buflen -= o;
++	      break;
++	    } else if (errno != E2BIG) {
++	      SAFE_FREE(buf);
++	      goto end;
++            } else if (o < buflen) {
++              buflen -= o;
++              break;
+             }
+-   	    if ((size_t) -1 == (buflen = convert_string_allocate_internal(CH_UCS2, cap_set, inbuf, 2, &buf)) ) 
+-		return buflen;
+-	    buf_save = buf;
+-    	    while (buflen > 0) {
+-		if ( o_len < 3) {
+-			errno = E2BIG;
+-			return (size_t) -1;
+-		}
+-		*outbuf++ = ':';
+-		*outbuf++ = hexdig[ ( *buf & 0xf0 ) >> 4 ];
+-       		*outbuf++ = hexdig[ *buf & 0x0f ];
+-       		buf++;
+-		buflen--;
+-		o_len -= 3;
+-	    }
+-   	    SAFE_FREE(buf_save);
+-	    buflen = 0;
+-	    i_len -= 2;
+-	    inbuf += 2;
+-            if (flags) *flags |= CONV_REQESCAPE;
+-	    if ( i_len > 0)
+-            	goto conversion_loop;
++	  }
++	  if (o_len < buflen * 3) {
++	    SAFE_FREE(buf);
++	    errno = E2BIG;
++	    goto end;
++	  }
++	  o_len -= buflen * 3;
++	  i_len = i;
++	  for (i = 0; i < buflen; ++i) {
++	    *outbuf++ = ':';
++	    *outbuf++ = hexdig[(buf[i] >> 4) & 0x0f];
++	    *outbuf++ = hexdig[buf[i] & 0x0f];
++	  }
++	  SAFE_FREE(buf);
++	  *flags |= CONV_REQESCAPE;
++	  continue;
+ 	}
+-        else
+-           return (size_t)(-1);	
++      }
++      goto end;
+     }
+-	
+-escape_slash:
+-    if (j && flags && (*flags & CONV_ESCAPEHEX)) {
+-        if (o_len < 3) {
+-            errno = E2BIG;
+-            return (size_t) -1;
+-        }
+-        o_save[destlen -o_len]   = ':';
+-        o_save[destlen -o_len+1] = '2';
+-        o_save[destlen -o_len+2] = 'f';
+-        inbuf  += 2;
+-        i_len   = j-2;
+-        o_len  -= 3;
+-        outbuf += 3;
+-        j = 0;
+-	if ( i_len > 0)
+-        	goto conversion_loop;
++
++    if (j) {
++      i_len = j, j = 0;
++      if (o_len < 3) {
++	errno = E2BIG;
++	goto end;
++      }
++      *outbuf++ = ':';
++      *outbuf++ = '2';
++      *outbuf++ = 'f';
++      o_len -= 3;
++      inbuf += 2;
++      i_len -= 2;
+     }
+-    return destlen -o_len;
++  }
++  if (i_len > 0) errno = EINVAL;
++ end:
++  return (i_len + j == 0 || (option & CONV_FORCE)) ? destlen - o_len : (size_t)-1;
+ }
+ 
+ /*
+diff --git a/libatalk/unicode/charsets/Makefile.am b/libatalk/unicode/charsets/Makefile.am
+index a1f6051..6114720 100644
+--- a/libatalk/unicode/charsets/Makefile.am
++++ b/libatalk/unicode/charsets/Makefile.am
+@@ -2,7 +2,7 @@
+ 
+ noinst_LTLIBRARIES = libcharsets.la
+ 
+-CFLAGS = -I$(top_srcdir)/sys @CFLAGS@
++AM_CFLAGS = -I$(top_srcdir)/sys @CFLAGS@ @ICONV_CFLAGS@
+ LIBS = 
+ 
+ libcharsets_la_SOURCES = \
+@@ -12,6 +12,11 @@ libcharsets_la_SOURCES = \
+ 	mac_centraleurope.c	\
+ 	mac_turkish.c \
+ 	mac_cyrillic.c \
++	mac_japanese.c \
++	mac_chinese_trad.c \
++	mac_chinese_simp.c \
++	mac_korean.c \
++	generic_cjk.c \
+ 	generic_mb.c
+ 
+ noinst_HEADERS = \
+@@ -21,4 +26,9 @@ noinst_HEADERS = \
+ 	mac_hebrew.h \
+ 	mac_turkish.h \
+ 	mac_cyrillic.h \
++	mac_japanese.h \
++	mac_chinese_trad.h \
++	mac_chinese_simp.h \
++	mac_korean.h \
++	generic_cjk.h \
+ 	generic_mb.h
+diff --git a/libatalk/unicode/charsets/generic_cjk.c b/libatalk/unicode/charsets/generic_cjk.c
+new file mode 100644
+index 0000000..29358a8
+--- /dev/null
++++ b/libatalk/unicode/charsets/generic_cjk.c
+@@ -0,0 +1,215 @@
++/*
++ * generic_cjk
++ * Copyright (C) TSUBAKIMOTO Hiroya <zorac@4000do.co.jp> 2004
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
++ */
++
++#ifdef HAVE_CONFIG_H
++#include "config.h"
++#endif /* HAVE_CONFIG_H */
++
++#if HAVE_USABLE_ICONV
++
++#include "generic_cjk.h"
++#include <string.h>
++
++static size_t cjk_iconv(void *cd, char **inbuf, char *end,
++			char **outbuf, size_t *outbytesleft)
++{
++  size_t n = end - *inbuf;
++  if (iconv(cd, (ICONV_CONST char**)inbuf, &n, outbuf, outbytesleft) == (size_t)-1) {
++    iconv(cd, NULL, NULL, NULL, NULL);
++  }
++  return n;
++}
++
++size_t cjk_generic_push(size_t (*char_func)(u_int8_t*, const ucs2_t*, size_t*),
++			void *cd, char **inbuf, size_t *inbytesleft,
++			char **outbuf, size_t *outbytesleft)
++{
++  char *in = *inbuf;
++
++  while (*inbytesleft >= sizeof(ucs2_t) && *outbytesleft > 0) {
++    u_int8_t buf[CJK_PUSH_BUFFER];
++    size_t size = *inbytesleft / sizeof(ucs2_t);
++    size_t n = (char_func)(buf, (const ucs2_t*)in, &size);
++    if (n == 0) {
++      in += size * sizeof(ucs2_t);
++      *inbytesleft -= size * sizeof(ucs2_t);
++      continue;
++    }
++    if (in != *inbuf) {
++      int err = errno;
++
++      *inbytesleft += cjk_iconv(cd, inbuf, in, outbuf, outbytesleft);
++      if (in != *inbuf) return -1;
++      errno = err;
++    }
++    if (n == (size_t)-1) return -1;
++    if (*outbytesleft < n) break;
++    memcpy(*outbuf, buf, n);
++    *outbuf += n;
++    *outbytesleft -= n;
++    in += size * sizeof(ucs2_t);
++    *inbytesleft -= size * sizeof(ucs2_t);
++    *inbuf = in;
++  }
++  if (in != *inbuf) {
++    *inbytesleft += cjk_iconv(cd, inbuf, in, outbuf, outbytesleft);
++    if (in != *inbuf) return -1;
++  }
++  if (*inbytesleft > 0) {
++    errno = (*inbytesleft < sizeof(ucs2_t) ? EINVAL : E2BIG);
++    return -1;
++  }
++  return 0;
++}
++
++size_t cjk_generic_pull(size_t (*char_func)(ucs2_t*, const u_int8_t*, size_t*),
++			void *cd, char **inbuf, size_t *inbytesleft,
++			char **outbuf, size_t *outbytesleft)
++{
++  char *in = *inbuf;
++
++  while (*inbytesleft > 0 && *outbytesleft >= sizeof(ucs2_t)) {
++    ucs2_t buf[CJK_PULL_BUFFER];
++    size_t size = *inbytesleft;
++    size_t n = (char_func)(buf, (const u_int8_t*)in, &size);
++    if (n == 0) {
++      in += size;
++      *inbytesleft -= size;
++      continue;
++    }
++    if (in != *inbuf) {
++      int err = errno;
++
++      *inbytesleft += cjk_iconv(cd, inbuf, in, outbuf, outbytesleft);
++      if (in != *inbuf) return -1;
++      errno = err;
++    }
++    if (n == (size_t)-1) return -1;
++    if (*outbytesleft < n * sizeof(ucs2_t)) break;
++    memcpy(*outbuf, buf, n * sizeof(ucs2_t));
++    *outbuf += n * sizeof(ucs2_t);
++    *outbytesleft -= n * sizeof(ucs2_t);
++    in += size;
++    *inbytesleft -= size;
++    *inbuf = in;
++  }
++  if (in != *inbuf) {
++    *inbytesleft += cjk_iconv(cd, inbuf, in, outbuf, outbytesleft);
++    if (in != *inbuf) return -1;
++  }
++  if (*inbytesleft > 0) {
++    errno = E2BIG;
++    return -1;
++  }
++  return 0;
++}
++
++size_t cjk_char_push(u_int16_t c, u_int8_t *out)
++{
++  if (!c) return 0;
++  if (c == (u_int16_t)-1) {
++    errno = EILSEQ;
++    return (size_t)-1;
++  }
++  if (c <= 0xff) {
++    out[0] = (u_int8_t)c;
++    return 1;
++  }
++  out[0] = (u_int8_t)(c >> 8);
++  out[1] = (u_int8_t)c;
++  return 2;
++}
++
++size_t cjk_char_pull(ucs2_t wc, ucs2_t* out, const u_int32_t* compose)
++{
++  if (!wc) return 0;
++  if ((wc & 0xf000) == 0xe000) {
++    ucs2_t buf[CJK_PULL_BUFFER];
++    size_t i = sizeof(buf) / sizeof(*buf) - 1;
++    do {
++      u_int32_t v = compose[wc & 0xfff];
++      buf[i] = (ucs2_t)v;
++      wc = (ucs2_t)(v >> 16);
++    } while (--i && (wc & 0xf000) == 0xe000);
++    buf[i] = wc;
++    memcpy(out, buf + i, sizeof(buf) - sizeof(*buf) * i);
++    return sizeof(buf) / sizeof(*buf) - i;
++  }
++  *out = wc;
++  return 1;
++}
++
++u_int16_t cjk_lookup(u_int16_t c, const cjk_index_t *index, const u_int16_t *charset)
++{
++  while (index->summary && c >= index->range[0]) {
++    if (c <= index->range[1]) {
++      const u_int16_t* summary = index->summary[(c - index->range[0]) >> 4];
++      u_int16_t used = 1 << (c & 15);
++
++      if (summary[0] & used) {
++	used = summary[0] & (used - 1);
++	charset += summary[1];
++	while (used) used &= used - 1, ++charset;
++	return *charset;
++      }
++      return 0;
++    }
++    ++index;
++  }
++  return 0;
++}
++
++ucs2_t cjk_compose(ucs2_t base, ucs2_t comb, const u_int32_t* table, size_t size)
++{
++  u_int32_t v = ((u_int32_t)base << 16) | comb;
++  size_t low = 0;
++  while (size > low) {
++    size_t n = (low + size) / 2;
++    if (table[n] == v) return 0xe000 + n;
++    if (table[n] < v) {
++      low = n + 1;
++    } else {
++      size = n;
++    }
++  }
++  return 0;
++}
++
++ucs2_t cjk_compose_seq(const ucs2_t* in, size_t* len, const u_int32_t* table, size_t size)
++{
++  static u_int8_t sz[] = { 3, 4, 5, 5, 5, 5, 5, 3 };
++  ucs2_t wc = in[0];
++  size_t n = sz[wc & 7];
++  size_t i = 0;
++
++  if (n > *len) {
++    errno = EINVAL;
++    return 0;
++  }
++  while (++i < n) {
++    wc = cjk_compose(wc, in[i], table, size);
++    if (!wc) {
++      errno = EILSEQ;
++      return 0;
++    }
++  }
++  *len = n;
++  return wc;
++}
++#endif
+diff --git a/libatalk/unicode/charsets/generic_cjk.h b/libatalk/unicode/charsets/generic_cjk.h
+new file mode 100644
+index 0000000..1f9e208
+--- /dev/null
++++ b/libatalk/unicode/charsets/generic_cjk.h
+@@ -0,0 +1,42 @@
++/*
++ * generic_cjk
++ * Copyright (C) TSUBAKIMOTO Hiroya <zorac@4000do.co.jp> 2004
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
++ */
++
++#include <atalk/unicode.h>
++#include <iconv.h>
++#include "../byteorder.h"
++
++#define CJK_PUSH_BUFFER 4
++#define CJK_PULL_BUFFER 8
++
++typedef struct {
++  u_int16_t range[2];
++  const u_int16_t (*summary)[2];
++} cjk_index_t;
++
++extern size_t cjk_generic_push __P((size_t (*)(u_int8_t*, const ucs2_t*, size_t*),
++				   void*, char**, size_t*, char**, size_t*));
++extern size_t cjk_generic_pull __P((size_t (*)(ucs2_t*, const u_int8_t*, size_t*),
++				   void*, char**, size_t*, char**, size_t*));
++
++extern size_t cjk_char_push __P((u_int16_t, u_int8_t*));
++extern size_t cjk_char_pull __P((ucs2_t, ucs2_t*, const u_int32_t*));
++
++extern u_int16_t cjk_lookup __P((u_int16_t, const cjk_index_t*, const u_int16_t*));
++extern ucs2_t cjk_compose __P((ucs2_t, ucs2_t, const u_int32_t*, size_t));
++extern ucs2_t cjk_compose_seq __P((const ucs2_t*, size_t*, const u_int32_t*, size_t));
+diff --git a/libatalk/unicode/charsets/mac_centraleurope.c b/libatalk/unicode/charsets/mac_centraleurope.c
+index f47e9f1..dda862c 100644
+--- a/libatalk/unicode/charsets/mac_centraleurope.c
++++ b/libatalk/unicode/charsets/mac_centraleurope.c
+@@ -44,7 +44,7 @@ struct charset_functions charset_mac_centraleurope =
+ 	mac_centraleurope_pull,
+ 	mac_centraleurope_push,
+ 	CHARSET_CLIENT | CHARSET_MULTIBYTE,
+-	NULL, NULL
++	NULL, NULL, NULL
+ };
+ 
+ 
+diff --git a/libatalk/unicode/charsets/mac_chinese_simp.c b/libatalk/unicode/charsets/mac_chinese_simp.c
+new file mode 100644
+index 0000000..f0ad464
+--- /dev/null
++++ b/libatalk/unicode/charsets/mac_chinese_simp.c
+@@ -0,0 +1,117 @@
++/*
++ * MacChineseSimp
++ * Copyright (C) TSUBAKIMOTO Hiroya <zorac@4000do.co.jp> 2004
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
++ *
++ * Reference
++ * http://www.unicode.org/Public/MAPPINGS/VENDORS/APPLE/
++ */
++
++#ifdef HAVE_CONFIG_H
++#include "config.h"
++#endif /* HAVE_CONFIG_H */
++#include <stdlib.h>
++
++#if HAVE_USABLE_ICONV
++
++#include "generic_cjk.h"
++#include "mac_chinese_simp.h"
++
++static size_t mac_chinese_simp_pull(void *,char **, size_t *, char **, size_t *);
++static size_t mac_chinese_simp_push(void *,char **, size_t *, char **, size_t *);
++
++struct charset_functions charset_mac_chinese_simp = {
++  "MAC_CHINESE_SIMP",
++  25,
++  mac_chinese_simp_pull,
++  mac_chinese_simp_push,
++  CHARSET_ICONV | CHARSET_MULTIBYTE | CHARSET_PRECOMPOSED | CHARSET_CLIENT,
++  "EUC-CN",
++  NULL, NULL
++};
++
++static size_t mac_chinese_simp_char_push(u_int8_t* out, const ucs2_t* in, size_t* size)
++{
++  ucs2_t wc = in[0];
++
++  if (wc <= 0x7f) {
++    *size = 1;
++    out[0] = (u_int8_t)wc;
++    return 1;
++  } else if ((wc & 0xf000) == 0xe000) {
++    *size = 1;
++    return 0;
++  } else if (*size >= 2 && (in[1] & ~15) == 0xf870) {
++    ucs2_t comp = cjk_compose(wc, in[1], mac_chinese_simp_compose,
++			      sizeof(mac_chinese_simp_compose) / sizeof(u_int32_t));
++    if (comp) {
++      wc = comp;
++      *size = 2;
++    } else {
++      *size = 1;
++    }
++  } else {
++    *size = 1;
++  }
++  return cjk_char_push(cjk_lookup(wc, mac_chinese_simp_uni2_index,
++				  mac_chinese_simp_uni2_charset), out);
++}
++
++static size_t mac_chinese_simp_push(void *cd, char **inbuf, size_t *inbytesleft,
++				    char **outbuf, size_t *outbytesleft)
++{
++  return cjk_generic_push(mac_chinese_simp_char_push,
++			  cd, inbuf, inbytesleft, outbuf, outbytesleft);
++}
++
++static size_t mac_chinese_simp_char_pull(ucs2_t* out, const u_int8_t* in, size_t* size)
++{
++  u_int16_t c = in[0];
++
++  if (c <= 0x7f) {
++    *size = 1;
++    *out = c;
++    return 1;
++  } else if (c >= 0xa1 && c <= 0xfc) {
++    if (*size >= 2) {
++      u_int8_t c2 = in[1];
++
++      if (c2 >= 0xa1 && c2 <= 0xfe) {
++	*size = 2;
++	c = (c << 8) + c2;
++      } else {
++	errno = EILSEQ;
++	return (size_t)-1;
++      }
++    } else {
++      errno = EINVAL;
++      return (size_t)-1;
++    }
++  } else {
++    *size = 1;
++  }
++  return cjk_char_pull(cjk_lookup(c, mac_chinese_simp_2uni_index,
++				  mac_chinese_simp_2uni_charset),
++		       out, mac_chinese_simp_compose);
++}
++
++static size_t mac_chinese_simp_pull(void *cd, char **inbuf, size_t *inbytesleft,
++				    char **outbuf, size_t *outbytesleft)
++{
++  return cjk_generic_pull(mac_chinese_simp_char_pull,
++			  cd, inbuf, inbytesleft, outbuf, outbytesleft);
++}
++#endif
+diff --git a/libatalk/unicode/charsets/mac_chinese_simp.h b/libatalk/unicode/charsets/mac_chinese_simp.h
+new file mode 100644
+index 0000000..105f150
+--- /dev/null
++++ b/libatalk/unicode/charsets/mac_chinese_simp.h
+@@ -0,0 +1,146 @@
++/*
++ * MacChineseSimp
++ * Copyright (C) TSUBAKIMOTO Hiroya <zorac@4000do.co.jp> 2004
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
++ *
++ * Reference
++ * http://www.unicode.org/Public/MAPPINGS/VENDORS/APPLE/
++ */
++
++static const u_int16_t mac_chinese_simp_uni2_page00[][2] = {
++  /* 0x00a */ { 0x022d,    0 }, { 0x0080,    5 },
++  /* 0x00c */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x010 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x014 */ { 0x0110,    6 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x018 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x01c */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0200,    8 },
++  /* 0x020 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x024 */ { 0x0000,    0 }, { 0x0002,    9 }, { 0x0002,   10 },
++};
++
++static const u_int16_t mac_chinese_simp_uni2_page1e[][2] = {
++  /* 0x1e3 */ { 0x8000,   11 },
++};
++
++static const u_int16_t mac_chinese_simp_uni2_page20[][2] = {
++  /* 0x201 */ { 0x0070,   12 }, { 0x0040,   15 }, { 0x4000,   16 },
++};
++
++static const u_int16_t mac_chinese_simp_uni2_page21[][2] = {
++  /* 0x212 */ { 0x0004,   17 },
++};
++
++static const u_int16_t mac_chinese_simp_uni2_page22[][2] = {
++  /* 0x22e */ { 0x8000,   18 },
++};
++
++static const u_int16_t mac_chinese_simp_uni2_page30[][2] = {
++  /* 0x301 */ { 0x1000,   19 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x304 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x308 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x30c */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0800,   20 },
++};
++
++static const u_int16_t mac_chinese_simp_uni2_pagee0[][2] = {
++  /* 0xe00 */ { 0x07ff,   21 },
++};
++
++static const u_int16_t mac_chinese_simp_uni2_pagef8[][2] = {
++  /* 0xf88 */ { 0x0003,   32 },
++};
++
++static const u_int16_t mac_chinese_simp_uni2_pagefe[][2] = {
++  /* 0xfe3 */ { 0xfffa,   34 }, { 0x001f,   48 },
++};
++
++static const u_int16_t mac_chinese_simp_uni2_pageff[][2] = {
++  /* 0xff5 */ { 0x4000,   53 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xff8 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xffc */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x002b,   54 },
++};
++
++static const cjk_index_t mac_chinese_simp_uni2_index[] = {
++  { { 0x00a0, 0x026f }, mac_chinese_simp_uni2_page00 },
++  { { 0x1e30, 0x1e3f }, mac_chinese_simp_uni2_page1e },
++  { { 0x2010, 0x203f }, mac_chinese_simp_uni2_page20 },
++  { { 0x2120, 0x212f }, mac_chinese_simp_uni2_page21 },
++  { { 0x22e0, 0x22ef }, mac_chinese_simp_uni2_page22 },
++  { { 0x3010, 0x30ff }, mac_chinese_simp_uni2_page30 },
++  { { 0xe000, 0xe00f }, mac_chinese_simp_uni2_pagee0 },
++  { { 0xf880, 0xf88f }, mac_chinese_simp_uni2_pagef8 },
++  { { 0xfe30, 0xfe4f }, mac_chinese_simp_uni2_pagefe },
++  { { 0xff50, 0xffef }, mac_chinese_simp_uni2_pageff },
++  { { 0, 0 }, 0 }
++};
++
++static const u_int16_t mac_chinese_simp_uni2_charset[] = {
++  0x00a0, 0xa1e9, 0xa1ea, 0xa3a4, 0x00fd, 0xa1a4, 0xa8bd, 0xa8be,
++  0xa8bf, 0xa8bb, 0xa8c0, 0xa8bc, 0xa1aa, 0xffff, 0xa1ac, 0x00ff,
++  0xa3fe, 0x00fe, 0xa1ad, 0xa1ab, 0xffff, 0x0080, 0xa6f3, 0xa6db,
++  0xa6da, 0xa6ec, 0xa6ed, 0xa6de, 0xa6d9, 0xa6dc, 0xa6dd, 0xa6df,
++  0x0081, 0x0082, 0xa6f2, 0xa6f4, 0xa6f5, 0xa6e0, 0xa6e1, 0xa6f0,
++  0xa6f1, 0xa6e2, 0xa6e3, 0xa6ee, 0xa6ef, 0xa6e6, 0xa6e7, 0xa6e4,
++  0xa6e5, 0xa6e8, 0xa6e9, 0xa6ea, 0xa6eb, 0xffff, 0xffff, 0xffff,
++  0xffff, 0xffff,
++};
++
++static const u_int16_t mac_chinese_simp_2uni_page00[][2] = {
++  /* 0x008 */ { 0x0007,    0 }, { 0x0000,    0 }, { 0x0001,    3 }, { 0x0000,    0 },
++  /* 0x00c */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0xe000,    4 },
++};
++
++static const u_int16_t mac_chinese_simp_2uni_pagea1[][2] = {
++  /* 0xa1a */ { 0x3c10,    7 }, { 0x0000,    0 },
++  /* 0xa1c */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0600,   12 },
++};
++
++static const u_int16_t mac_chinese_simp_2uni_pagea3[][2] = {
++  /* 0xa3a */ { 0x0010,   14 }, { 0x0000,    0 },
++  /* 0xa3c */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x4000,   15 },
++};
++
++static const u_int16_t mac_chinese_simp_2uni_pagea6[][2] = {
++  /* 0xa6d */ { 0xfe00,   16 }, { 0xffff,   23 }, { 0x003f,   39 },
++};
++
++static const u_int16_t mac_chinese_simp_2uni_pagea8[][2] = {
++  /* 0xa8b */ { 0xf800,   45 }, { 0x0001,   50 },
++};
++
++static const cjk_index_t mac_chinese_simp_2uni_index[] = {
++  { { 0x0080, 0x00ff }, mac_chinese_simp_2uni_page00 },
++  { { 0xa1a0, 0xa1ef }, mac_chinese_simp_2uni_pagea1 },
++  { { 0xa3a0, 0xa3ff }, mac_chinese_simp_2uni_pagea3 },
++  { { 0xa6d0, 0xa6ff }, mac_chinese_simp_2uni_pagea6 },
++  { { 0xa8b0, 0xa8cf }, mac_chinese_simp_2uni_pagea8 },
++  { { 0, 0 }, 0 }
++};
++
++static const u_int16_t mac_chinese_simp_2uni_charset[] = {
++  0xe000, 0xf880, 0xf881, 0x00a0, 0x00a9, 0x2122, 0x2026, 0x00b7,
++  0x2014, 0x301c, 0x2016, 0x22ef, 0x00a2, 0x00a3, 0x00a5, 0x203e,
++  0xe007, 0xe003, 0xe002, 0xe008, 0xe009, 0xe006, 0xe00a, 0xfe35,
++  0xfe36, 0xfe39, 0xfe3a, 0xfe3f, 0xfe40, 0xfe3d, 0xfe3e, 0xfe41,
++  0xfe42, 0xfe43, 0xfe44, 0xe004, 0xe005, 0xfe3b, 0xfe3c, 0xfe37,
++  0xfe38, 0xfe31, 0xe001, 0xfe33, 0xfe34, 0x0251, 0x1e3f, 0x0144,
++  0x0148, 0x01f9, 0x0261,
++};
++
++static const u_int32_t mac_chinese_simp_compose[] = {
++  0x00fcf87f, 0x22eff87e, 0x3001f87e, 0x3002f87e,
++  0x3016f87e, 0x3017f87e, 0xff01f87e, 0xff0cf87e,
++  0xff1af87e, 0xff1bf87e, 0xff1ff87e,
++};
+diff --git a/libatalk/unicode/charsets/mac_chinese_trad.c b/libatalk/unicode/charsets/mac_chinese_trad.c
+new file mode 100644
+index 0000000..7412bee
+--- /dev/null
++++ b/libatalk/unicode/charsets/mac_chinese_trad.c
+@@ -0,0 +1,122 @@
++/*
++ * MacChineseTrad
++ * Copyright (C) TSUBAKIMOTO Hiroya <zorac@4000do.co.jp> 2004
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
++ *
++ * Reference
++ * http://www.unicode.org/Public/MAPPINGS/VENDORS/APPLE/
++ */
++
++#ifdef HAVE_CONFIG_H
++#include "config.h"
++#endif /* HAVE_CONFIG_H */
++#include <stdlib.h>
++
++#if HAVE_USABLE_ICONV
++
++#include "generic_cjk.h"
++#include "mac_chinese_trad.h"
++
++static size_t mac_chinese_trad_pull(void *,char **, size_t *, char **, size_t *);
++static size_t mac_chinese_trad_push(void *,char **, size_t *, char **, size_t *);
++
++struct charset_functions charset_mac_chinese_trad = {
++  "MAC_CHINESE_TRAD",
++  2,
++  mac_chinese_trad_pull,
++  mac_chinese_trad_push,
++  CHARSET_ICONV | CHARSET_MULTIBYTE | CHARSET_PRECOMPOSED | CHARSET_CLIENT,
++  "BIG-5",
++  NULL, NULL
++};
++
++static size_t mac_chinese_trad_char_push(u_int8_t* out, const ucs2_t* in, size_t* size)
++{
++  ucs2_t wc = in[0];
++
++  if (wc <= 0x7f) {
++    if (wc == 0x5c && *size >= 2 && in[1] == 0xf87f) {
++      *size = 2;
++      out[0] = 0x80;
++    } else {
++      *size = 1;
++      out[0] = (u_int8_t)wc;
++    }
++    return 1;
++  } else if ((wc & 0xf000) == 0xe000) {
++    *size = 1;
++    return 0;
++  } else if (*size >= 2 && (in[1] & ~15) == 0xf870) {
++    ucs2_t comp = cjk_compose(wc, in[1], mac_chinese_trad_compose,
++			      sizeof(mac_chinese_trad_compose) / sizeof(u_int32_t));
++    if (comp) {
++      wc = comp;
++      *size = 2;
++    } else {
++      *size = 1;
++    }
++  } else {
++    *size = 1;
++  }
++  return cjk_char_push(cjk_lookup(wc, mac_chinese_trad_uni2_index,
++				  mac_chinese_trad_uni2_charset), out);
++}
++
++static size_t mac_chinese_trad_push(void *cd, char **inbuf, size_t *inbytesleft,
++				    char **outbuf, size_t *outbytesleft)
++{
++  return cjk_generic_push(mac_chinese_trad_char_push,
++			  cd, inbuf, inbytesleft, outbuf, outbytesleft);
++}
++
++static size_t mac_chinese_trad_char_pull(ucs2_t* out, const u_int8_t* in, size_t* size)
++{
++  u_int16_t c = in[0];
++
++  if (c <= 0x7f) {
++    *size = 1;
++    *out = c;
++    return 1;
++  } else if (c >= 0xa1 && c <= 0xfc) {
++    if (*size >= 2) {
++      u_int8_t c2 = in[1];
++
++      if ((c2 >= 0x40 && c2 <= 0x7e) || (c2 >= 0xa1 && c2 <= 0xfe)) {
++	*size = 2;
++	c = (c << 8) + c2;
++      } else {
++	errno = EILSEQ;
++	return (size_t)-1;
++      }
++    } else {
++      errno = EINVAL;
++      return (size_t)-1;
++    }
++  } else {
++    *size = 1;
++  }
++  return cjk_char_pull(cjk_lookup(c, mac_chinese_trad_2uni_index,
++				  mac_chinese_trad_2uni_charset),
++		       out, mac_chinese_trad_compose);
++}
++
++static size_t mac_chinese_trad_pull(void *cd, char **inbuf, size_t *inbytesleft,
++				    char **outbuf, size_t *outbytesleft)
++{
++  return cjk_generic_pull(mac_chinese_trad_char_pull,
++			  cd, inbuf, inbytesleft, outbuf, outbytesleft);
++}
++#endif
+diff --git a/libatalk/unicode/charsets/mac_chinese_trad.h b/libatalk/unicode/charsets/mac_chinese_trad.h
+new file mode 100644
+index 0000000..2747f35
+--- /dev/null
++++ b/libatalk/unicode/charsets/mac_chinese_trad.h
+@@ -0,0 +1,124 @@
++/*
++ * MacChineseTrad
++ * Copyright (C) TSUBAKIMOTO Hiroya <zorac@4000do.co.jp> 2004
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
++ *
++ * Reference
++ * http://www.unicode.org/Public/MAPPINGS/VENDORS/APPLE/
++ */
++
++static const u_int16_t mac_chinese_trad_uni2_page00[][2] = {
++  /* 0x00a */ { 0x0201,    0 }, { 0x0080,    2 },
++};
++
++static const u_int16_t mac_chinese_trad_uni2_page20[][2] = {
++  /* 0x202 */ { 0x0044,    3 },
++};
++
++static const u_int16_t mac_chinese_trad_uni2_page21[][2] = {
++  /* 0x212 */ { 0x0004,    5 },
++};
++
++static const u_int16_t mac_chinese_trad_uni2_page22[][2] = {
++  /* 0x229 */ { 0x0020,    6 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x22c */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x8000,    7 },
++};
++
++static const u_int16_t mac_chinese_trad_uni2_page25[][2] = {
++  /* 0x259 */ { 0x0020,    8 },
++};
++
++static const u_int16_t mac_chinese_trad_uni2_page26[][2] = {
++  /* 0x264 */ { 0x0002,    9 },
++};
++
++static const u_int16_t mac_chinese_trad_uni2_pagee0[][2] = {
++  /* 0xe00 */ { 0xffff,   10 }, { 0x00ff,   26 },
++};
++
++static const u_int16_t mac_chinese_trad_uni2_pagef8[][2] = {
++  /* 0xf88 */ { 0x0003,   34 },
++};
++
++static const u_int16_t mac_chinese_trad_uni2_pagefe[][2] = {
++  /* 0xfe4 */ { 0x1000,   36 }, { 0x7ef5,   37 },
++};
++
++static const u_int16_t mac_chinese_trad_uni2_pageff[][2] = {
++  /* 0xff6 */ { 0x0010,   49 },
++};
++
++static const cjk_index_t mac_chinese_trad_uni2_index[] = {
++  { { 0x00a0, 0x00bf }, mac_chinese_trad_uni2_page00 },
++  { { 0x2020, 0x202f }, mac_chinese_trad_uni2_page20 },
++  { { 0x2120, 0x212f }, mac_chinese_trad_uni2_page21 },
++  { { 0x2290, 0x22ef }, mac_chinese_trad_uni2_page22 },
++  { { 0x2590, 0x259f }, mac_chinese_trad_uni2_page25 },
++  { { 0x2640, 0x264f }, mac_chinese_trad_uni2_page26 },
++  { { 0xe000, 0xe01f }, mac_chinese_trad_uni2_pagee0 },
++  { { 0xf880, 0xf88f }, mac_chinese_trad_uni2_pagef8 },
++  { { 0xfe40, 0xfe5f }, mac_chinese_trad_uni2_pagefe },
++  { { 0xff60, 0xff6f }, mac_chinese_trad_uni2_pageff },
++  { { 0, 0 }, 0 }
++};
++
++static const u_int16_t mac_chinese_trad_uni2_charset[] = {
++  0x00a0, 0x00fd, 0xa145, 0xffff, 0x00ff, 0x00fe, 0xa1f2, 0xa14b,
++  0xffff, 0xffff, 0x0080, 0xa1c3, 0xa279, 0xa14e, 0xa1a3, 0xa1a4,
++  0xa2cc, 0xa2ce, 0xa1cb, 0xa154, 0xa17d, 0xa17e, 0xa14d, 0xa14f,
++  0xa150, 0xa1fe, 0xa152, 0xa151, 0xa153, 0xa240, 0xa1c5, 0xa15a,
++  0xa1a1, 0xa1a2, 0x0081, 0x0082, 0xffff, 0xffff, 0xffff, 0xffff,
++  0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
++  0xffff, 0xffff,
++};
++
++static const u_int16_t mac_chinese_trad_2uni_page00[][2] = {
++  /* 0x008 */ { 0x0007,    0 }, { 0x0000,    0 }, { 0x0001,    3 }, { 0x0000,    0 },
++  /* 0x00c */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0xe000,    4 },
++};
++
++static const u_int16_t mac_chinese_trad_2uni_pagea1[][2] = {
++  /* 0xa14 */ { 0xe820,    7 }, { 0x041f,   12 }, { 0x0000,    0 }, { 0x6000,   18 },
++  /* 0xa18 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x001e,   20 }, { 0x0000,    0 },
++  /* 0xa1c */ { 0x0828,   24 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x4004,   27 },
++  /* 0xa20 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xa24 */ { 0x0001,   29 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0200,   30 },
++  /* 0xa28 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xa2c */ { 0x5000,   31 },
++};
++
++static const cjk_index_t mac_chinese_trad_2uni_index[] = {
++  { { 0x0080, 0x00ff }, mac_chinese_trad_2uni_page00 },
++  { { 0xa140, 0xa2cf }, mac_chinese_trad_2uni_pagea1 },
++  { { 0, 0 }, 0 }
++};
++
++static const u_int16_t mac_chinese_trad_2uni_charset[] = {
++  0xe000, 0xf880, 0xf881, 0x00a0, 0x00a9, 0x2122, 0x2026, 0x00b7,
++  0x22ef, 0xe00c, 0xe003, 0xe00d, 0xe00e, 0xe011, 0xe010, 0xe012,
++  0xe009, 0xe015, 0xe00a, 0xe00b, 0xe016, 0xe017, 0xe004, 0xe005,
++  0xe001, 0xe014, 0xe008, 0x2295, 0xe00f, 0xe013, 0xe002, 0xe006,
++  0xe007,
++};
++
++static const u_int32_t mac_chinese_trad_compose[] = {
++  0x005cf87f, 0x203ef87c, 0x2502f87f, 0x3001f87d,
++  0x3014f87f, 0x3015f87f, 0x5341f87f, 0x5345f87f,
++  0xfe4bf87c, 0xff01f87d, 0xff08f87f, 0xff09f87f,
++  0xff0cf87d, 0xff0ef87d, 0xff0ef87e, 0xff0ff87f,
++  0xff1af87d, 0xff1bf87d, 0xff1ff87d, 0xff3cf87f,
++  0xff3ff87c, 0xff3ff87f, 0xff5bf87f, 0xff5df87f,
++};
+diff --git a/libatalk/unicode/charsets/mac_cyrillic.c b/libatalk/unicode/charsets/mac_cyrillic.c
+index 9d3e0c1..bf3d9e7 100644
+--- a/libatalk/unicode/charsets/mac_cyrillic.c
++++ b/libatalk/unicode/charsets/mac_cyrillic.c
+@@ -45,7 +45,7 @@ struct charset_functions charset_mac_cyrillic =
+ 	mac_cyrillic_pull,
+ 	mac_cyrillic_push,
+ 	CHARSET_CLIENT | CHARSET_MULTIBYTE,
+-	NULL, NULL
++	NULL, NULL, NULL
+ };
+ 
+ 
+diff --git a/libatalk/unicode/charsets/mac_greek.c b/libatalk/unicode/charsets/mac_greek.c
+index f41846d..5fb3af9 100644
+--- a/libatalk/unicode/charsets/mac_greek.c
++++ b/libatalk/unicode/charsets/mac_greek.c
+@@ -46,7 +46,7 @@ struct charset_functions charset_mac_greek =
+ 	mac_greek_pull,
+ 	mac_greek_push,
+ 	CHARSET_CLIENT | CHARSET_MULTIBYTE,
+-	NULL, NULL
++	NULL, NULL, NULL
+ };
+ 
+ /* ------------------------ */
+diff --git a/libatalk/unicode/charsets/mac_hebrew.c b/libatalk/unicode/charsets/mac_hebrew.c
+index 2830458..017104b 100644
+--- a/libatalk/unicode/charsets/mac_hebrew.c
++++ b/libatalk/unicode/charsets/mac_hebrew.c
+@@ -48,7 +48,7 @@ struct charset_functions charset_mac_hebrew =
+ 	mac_hebrew_pull,
+ 	mac_hebrew_push,
+ 	CHARSET_CLIENT | CHARSET_MULTIBYTE,
+-	NULL, NULL
++	NULL, NULL, NULL
+ };
+ 
+ 
+diff --git a/libatalk/unicode/charsets/mac_japanese.c b/libatalk/unicode/charsets/mac_japanese.c
+new file mode 100644
+index 0000000..b78ce01
+--- /dev/null
++++ b/libatalk/unicode/charsets/mac_japanese.c
+@@ -0,0 +1,130 @@
++/*
++ * MacJapanese
++ * Copyright (C) TSUBAKIMOTO Hiroya <zorac@4000do.co.jp> 2004
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
++ *
++ * Reference
++ * http://www.unicode.org/Public/MAPPINGS/VENDORS/APPLE/
++ */
++
++#ifdef HAVE_CONFIG_H
++#include "config.h"
++#endif /* HAVE_CONFIG_H */
++#include <stdlib.h>
++
++#if HAVE_USABLE_ICONV
++
++#include "generic_cjk.h"
++#include "mac_japanese.h"
++
++static size_t mac_japanese_pull(void *,char **, size_t *, char **, size_t *);
++static size_t mac_japanese_push(void *,char **, size_t *, char **, size_t *);
++
++struct charset_functions charset_mac_japanese = {
++  "MAC_JAPANESE",
++  1,
++  mac_japanese_pull,
++  mac_japanese_push,
++  CHARSET_ICONV | CHARSET_MULTIBYTE | CHARSET_PRECOMPOSED | CHARSET_CLIENT,
++  "SHIFT_JIS",
++  NULL, NULL
++};
++
++static size_t mac_japanese_char_push(u_int8_t* out, const ucs2_t* in, size_t* size)
++{
++  ucs2_t wc = in[0];
++
++  if (wc <= 0x7f) {
++    *size = 1;
++    out[0] = (u_int8_t)(wc == 0x5c ? 0x80 : wc);
++    return 1;
++  } else if ((wc & 0xf000) == 0xe000) { /* user defined */
++    *size = 1;
++    if (wc > 0xe98b) return 0;
++    wc -= 0xe000;
++    out[0] = (u_int8_t)(wc / 188 + 0xf0);
++    out[1] = (u_int8_t)(wc % 188 + 0x40);
++    if (out[1] >= 0x7f) ++out[1];
++    return 2;
++  } else if ((wc & ~7) == 0xf860) {
++    wc = cjk_compose_seq(in, size, mac_japanese_compose,
++			 sizeof(mac_japanese_compose) / sizeof(u_int32_t));
++    if (!wc) return (size_t)-1;
++  } else if (*size >= 2 && ((in[1] & ~15) == 0xf870 || in[1] == 0x20dd)) {
++    ucs2_t comp = cjk_compose(wc, in[1], mac_japanese_compose,
++			      sizeof(mac_japanese_compose) / sizeof(u_int32_t));
++    if (comp) {
++      wc = comp;
++      *size = 2;
++    } else {
++      *size = 1;
++    }
++  } else {
++    *size = 1;
++  }
++  return cjk_char_push(cjk_lookup(wc, mac_japanese_uni2_index,
++				  mac_japanese_uni2_charset), out);
++}
++
++static size_t mac_japanese_push(void *cd, char **inbuf, size_t *inbytesleft,
++				char **outbuf, size_t *outbytesleft)
++{
++  return cjk_generic_push(mac_japanese_char_push,
++			  cd, inbuf, inbytesleft, outbuf, outbytesleft);
++}
++
++static size_t mac_japanese_char_pull(ucs2_t* out, const u_int8_t* in, size_t* size)
++{
++  u_int16_t c = in[0];
++
++  if (c <= 0x7f) {
++    *size = 1;
++    *out = (c == 0x5c ? 0xa5 : c);
++    return 1;
++  } else if ((c >= 0x81 && c <= 0x9f) || (c >= 0xe0 && c <= 0xfc)) {
++    if (*size >= 2) {
++      u_int8_t c2 = in[1];
++
++      if ((c2 >= 0x40 && c2 <= 0x7e) || (c2 >= 0x80 && c2 <= 0xfc)) {
++	*size = 2;
++	if (c >= 0xf0) { /* user defined */
++	  *out = 0xe000 + (c - 0xf0) * 188 + c2 - (c2 < 0x80 ? 0x40 : 0x41);
++	  return 1;
++	}
++	c = (c << 8) + c2;
++      } else {
++	errno = EILSEQ;
++	return (size_t)-1;
++      }
++    } else {
++      errno = EINVAL;
++      return (size_t)-1;
++    }
++  } else {
++    *size = 1;
++  }
++  return cjk_char_pull(cjk_lookup(c, mac_japanese_2uni_index,
++				  mac_japanese_2uni_charset),
++		       out, mac_japanese_compose);
++}
++
++static size_t mac_japanese_pull(void *cd, char **inbuf, size_t *inbytesleft,
++				char **outbuf, size_t *outbytesleft)
++{
++  return cjk_generic_pull(mac_japanese_char_pull,
++			  cd, inbuf, inbytesleft, outbuf, outbytesleft);
++}
++#endif
+diff --git a/libatalk/unicode/charsets/mac_japanese.h b/libatalk/unicode/charsets/mac_japanese.h
+new file mode 100644
+index 0000000..d032a83
+--- /dev/null
++++ b/libatalk/unicode/charsets/mac_japanese.h
+@@ -0,0 +1,252 @@
++/*
++ * MacJapanese
++ * Copyright (C) TSUBAKIMOTO Hiroya <zorac@4000do.co.jp> 2004
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
++ *
++ * Reference
++ * http://www.unicode.org/Public/MAPPINGS/VENDORS/APPLE/
++ */
++
++static const u_int16_t mac_japanese_uni2_page00[][2] = {
++  /* 0x00a */ { 0x0201,    1 },
++};
++
++static const u_int16_t mac_japanese_uni2_page20[][2] = {
++  /* 0x201 */ { 0x0030,    3 }, { 0x0000,    0 }, { 0x4000,    5 },
++  /* 0x204 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x208 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x20c */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x210 */ { 0x0200,    6 }, { 0x0048,    7 }, { 0x0006,    9 }, { 0x0000,    0 },
++  /* 0x214 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0fff,   11 }, { 0x0fff,   23 },
++  /* 0x218 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x21c */ { 0x0070,   35 }, { 0x0000,    0 }, { 0x03c0,   38 }, { 0x0000,    0 },
++  /* 0x220 */ { 0x0000,    0 }, { 0x8000,   42 }, { 0x4000,   43 }, { 0x0000,    0 },
++  /* 0x224 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x228 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x8000,   44 },
++};
++
++static const u_int16_t mac_japanese_uni2_page24[][2] = {
++  /* 0x246 */ { 0xffff,   45 }, { 0xffff,   61 },
++  /* 0x248 */ { 0xffff,   77 }, { 0xf001,   93 }, { 0xffff,   98 }, { 0x003f,  114 },
++};
++
++static const u_int16_t mac_japanese_uni2_page26[][2] = {
++  /* 0x260 */ { 0x4000,  120 }, { 0xf000,  121 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x264 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x00ff,  125 }, { 0x0000,    0 },
++  /* 0x268 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x26c */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x270 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x274 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x7fc0,  133 },
++};
++
++static const u_int16_t mac_japanese_uni2_page30[][2] = {
++  /* 0x300 */ { 0x0010,  142 }, { 0xa000,  143 }, { 0x0001,  145 }, { 0x0000,    0 },
++  /* 0x304 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x308 */ { 0x0000,    0 }, { 0x0010,  146 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x30c */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0780,  147 },
++};
++
++static const u_int16_t mac_japanese_uni2_page32[][2] = {
++  /* 0x322 */ { 0xfc00,  151 }, { 0xffff,  157 },
++  /* 0x324 */ { 0x000d,  173 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x328 */ { 0x0000,    0 }, { 0x6340,  176 }, { 0x03f0,  181 }, { 0x0000,    0 },
++  /* 0x32c */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x330 */ { 0x2029,  187 }, { 0x4170,  191 }, { 0x0ccc,  196 }, { 0x0a4a,  202 },
++  /* 0x334 */ { 0x6684,  207 }, { 0x0082,  213 }, { 0x0000,    0 }, { 0xf800,  215 },
++  /* 0x338 */ { 0xc0e0,  220 }, { 0xf1c1,  225 }, { 0x0037,  233 }, { 0x000f,  238 },
++  /* 0x33c */ { 0x2810,  242 }, { 0x0010,  245 },
++};
++
++static const u_int16_t mac_japanese_uni2_pagee0[][2] = {
++  /* 0xe00 */ { 0xffff,  246 }, { 0xffff,  262 }, { 0x0fff,  278 }, { 0x001f,  290 },
++  /* 0xe04 */ { 0x7f00,  295 },
++};
++
++static const u_int16_t mac_japanese_uni2_pagefe[][2] = {
++  /* 0xfe3 */ { 0xffeb,  302 },
++  /* 0xfe4 */ { 0x001f,  316 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xfe8 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xfec */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xff0 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x1000,  321 },
++};
++
++static const cjk_index_t mac_japanese_uni2_index[] = {
++  { { 0x00a0, 0x00af }, mac_japanese_uni2_page00 },
++  { { 0x2010, 0x22bf }, mac_japanese_uni2_page20 },
++  { { 0x2460, 0x24bf }, mac_japanese_uni2_page24 },
++  { { 0x2600, 0x277f }, mac_japanese_uni2_page26 },
++  { { 0x3000, 0x30ff }, mac_japanese_uni2_page30 },
++  { { 0x3220, 0x33df }, mac_japanese_uni2_page32 },
++  { { 0xe000, 0xe04f }, mac_japanese_uni2_pagee0 },
++  { { 0xfe30, 0xff3f }, mac_japanese_uni2_pagefe },
++  { { 0, 0 }, 0 }
++};
++
++static const u_int16_t mac_japanese_uni2_charset[] = {
++  0x0080, 0x00a0, 0x00fd, 0x815c, 0xffff, 0xffff, 0x8656, 0x8650,
++  0x869b, 0x869d, 0x00fe, 0x859f, 0x85a0, 0x85a1, 0x85a2, 0x85a3,
++  0x85a4, 0x85a5, 0x85a6, 0x85a7, 0x85a8, 0x85a9, 0x85aa, 0x85b3,
++  0x85b4, 0x85b5, 0x85b6, 0x85b7, 0x85b8, 0x85b9, 0x85ba, 0x85bb,
++  0x85bc, 0x85bd, 0x85be, 0x86cc, 0x86cd, 0x86cb, 0x86d0, 0x86d1,
++  0x86cf, 0x86d2, 0x8841, 0x8840, 0x8842, 0x8540, 0x8541, 0x8542,
++  0x8543, 0x8544, 0x8545, 0x8546, 0x8547, 0x8548, 0x8549, 0x854a,
++  0x854b, 0x854c, 0x854d, 0x854e, 0x854f, 0x8550, 0x8551, 0x8552,
++  0x8553, 0x855e, 0x855f, 0x8560, 0x8561, 0x8562, 0x8563, 0x8564,
++  0x8565, 0x8566, 0x8567, 0x8568, 0x8569, 0x856a, 0x856b, 0x856c,
++  0x856d, 0x856e, 0x856f, 0x8570, 0x8571, 0x8592, 0x8593, 0x8594,
++  0x8595, 0x8596, 0x8597, 0x8598, 0x8599, 0x859a, 0x85db, 0x85dc,
++  0x85dd, 0x85de, 0x85df, 0x85e0, 0x85e1, 0x85e2, 0x85e3, 0x85e4,
++  0x85e5, 0x85e6, 0x85e7, 0x85e8, 0x85e9, 0x85ea, 0x85eb, 0x85ec,
++  0x85ed, 0x85ee, 0x85ef, 0x85f0, 0x85f1, 0x85f2, 0x85f3, 0x85f4,
++  0x86b4, 0x86c8, 0x86c9, 0x86c7, 0x86ca, 0x86a3, 0x86a1, 0x86a2,
++  0x86a4, 0x869f, 0x86a5, 0x86a6, 0x86a0, 0x857c, 0x857d, 0x857e,
++  0x8580, 0x8581, 0x8582, 0x8583, 0x8584, 0x8585, 0x86b5, 0x8854,
++  0x8855, 0x86b3, 0x8868, 0x886a, 0x886b, 0x886c, 0x886d, 0x8741,
++  0x8742, 0x8743, 0x8744, 0x8745, 0x8746, 0x8740, 0x874d, 0x8750,
++  0x8753, 0x874f, 0x8754, 0x8752, 0x8748, 0x8758, 0x874b, 0x874c,
++  0x8751, 0x8755, 0x8756, 0x874e, 0x8757, 0x8747, 0x8749, 0x874a,
++  0x8799, 0x879b, 0x879e, 0x879a, 0x879c, 0x8793, 0x8794, 0x8795,
++  0x8796, 0x8797, 0x8798, 0x87bd, 0x87a7, 0x87a4, 0x87b0, 0x87a2,
++  0x87aa, 0x87a3, 0x87a9, 0x87be, 0x87a0, 0x87b2, 0x87b3, 0x87ab,
++  0x87bf, 0x87b5, 0x87c0, 0x87a5, 0x87a8, 0x87ae, 0x87b4, 0x87b1,
++  0x87c1, 0x879f, 0x87ad, 0x87a1, 0x87a6, 0x87ac, 0x87af, 0x87e8,
++  0x87e7, 0x87e6, 0x87e5, 0x87fa, 0x865a, 0x865b, 0x865c, 0x864a,
++  0x864c, 0x8659, 0x864e, 0x864f, 0x8651, 0x8640, 0x8642, 0x8648,
++  0x8641, 0x8643, 0x8646, 0x8649, 0x8644, 0x8647, 0x8655, 0x8654,
++  0x8653, 0x8652, 0x864d, 0x8658, 0x869c, 0x8657, 0xeb5d, 0xeb61,
++  0xeb63, 0x00ff, 0x86d4, 0x86d5, 0x86d3, 0x86d6, 0xeb41, 0xeb42,
++  0xeb60, 0xec9f, 0xeca1, 0xeca3, 0xeca5, 0xeca7, 0xecc1, 0xece1,
++  0xece3, 0xece5, 0xecec, 0xed40, 0xed42, 0xed44, 0xed46, 0xed48,
++  0xed62, 0xed83, 0xed85, 0xed87, 0xed8e, 0xed95, 0xed96, 0xeb5b,
++  0x8791, 0x8792, 0x879d, 0x85ab, 0x85bf, 0x87fb, 0x87fc, 0x869e,
++  0x85ac, 0x85c0, 0x8591, 0x865d, 0x85ad, 0x85c1, 0x86ce, 0xeb81,
++  0xeb6d, 0xeb6e, 0x864b, 0x8645, 0xeb62, 0xeb50, 0xeb64, 0xeb5c,
++  0xeb51, 0xeb69, 0xeb6a, 0xeb6f, 0xeb70, 0xeb6b, 0xeb6c, 0xeb79,
++  0xeb7a, 0xeb73, 0xeb74, 0xeb71, 0xeb72, 0xeb75, 0xeb76, 0xeb77,
++  0xeb78, 0x815f,
++};
++
++static const u_int16_t mac_japanese_2uni_page00[][2] = {
++  /* 0x008 */ { 0x0001,    0 }, { 0x0000,    0 }, { 0x0001,    1 }, { 0x0000,    0 },
++  /* 0x00c */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0xe000,    2 },
++};
++
++static const u_int16_t mac_japanese_2uni_page81[][2] = {
++  /* 0x815 */ { 0x9000,    5 },
++};
++
++static const u_int16_t mac_japanese_2uni_page85[][2] = {
++  /* 0x854 */ { 0xffff,    7 }, { 0xc00f,   23 }, { 0xffff,   29 }, { 0x7003,   45 },
++  /* 0x858 */ { 0x003f,   50 }, { 0x87fe,   56 }, { 0x3fff,   67 }, { 0xfff8,   81 },
++  /* 0x85c */ { 0x0003,   94 }, { 0xf800,   96 }, { 0xffff,  101 }, { 0x001f,  117 },
++  /* 0x860 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x864 */ { 0xffff,  122 }, { 0x3fff,  138 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x868 */ { 0x0000,    0 }, { 0xf800,  152 }, { 0x007f,  157 }, { 0x0038,  164 },
++  /* 0x86c */ { 0xff80,  167 }, { 0x007f,  176 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x870 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x874 */ { 0xffff,  183 }, { 0x01ff,  199 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x878 */ { 0x0000,    0 }, { 0xfffe,  208 }, { 0xffff,  223 }, { 0xe03f,  239 },
++  /* 0x87c */ { 0x0003,  248 }, { 0x0000,    0 }, { 0x01e0,  250 }, { 0x1c00,  254 },
++  /* 0x880 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x884 */ { 0x0007,  257 }, { 0x0030,  260 }, { 0x3d00,  262 },
++};
++
++static const u_int16_t mac_japanese_2uni_pageeb[][2] = {
++  /* 0xeb4 */ { 0x0006,  267 }, { 0x3803,  269 }, { 0xfe1f,  274 }, { 0x07ff,  286 },
++  /* 0xeb8 */ { 0x0002,  297 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xebc */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xec0 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xec4 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xec8 */ { 0x0000,    0 }, { 0x8000,  298 }, { 0x00aa,  299 }, { 0x0000,    0 },
++  /* 0xecc */ { 0x0002,  303 }, { 0x0000,    0 }, { 0x102a,  304 }, { 0x0000,    0 },
++  /* 0xed0 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xed4 */ { 0x0155,  308 }, { 0x0000,    0 }, { 0x0004,  313 }, { 0x0000,    0 },
++  /* 0xed8 */ { 0x40a8,  314 }, { 0x0060,  318 },
++};
++
++static const cjk_index_t mac_japanese_2uni_index[] = {
++  { { 0x0080, 0x00ff }, mac_japanese_2uni_page00 },
++  { { 0x8150, 0x815f }, mac_japanese_2uni_page81 },
++  { { 0x8540, 0x886f }, mac_japanese_2uni_page85 },
++  { { 0xeb40, 0xed9f }, mac_japanese_2uni_pageeb },
++  { { 0, 0 }, 0 }
++};
++
++static const u_int16_t mac_japanese_2uni_charset[] = {
++  0x005c, 0x00a0, 0x00a9, 0x2122, 0xe003, 0x2014, 0xff3c, 0x2460,
++  0x2461, 0x2462, 0x2463, 0x2464, 0x2465, 0x2466, 0x2467, 0x2468,
++  0x2469, 0x246a, 0x246b, 0x246c, 0x246d, 0x246e, 0x246f, 0x2470,
++  0x2471, 0x2472, 0x2473, 0x2474, 0x2475, 0x2476, 0x2477, 0x2478,
++  0x2479, 0x247a, 0x247b, 0x247c, 0x247d, 0x247e, 0x247f, 0x2480,
++  0x2481, 0x2482, 0x2483, 0x2484, 0x2485, 0x2486, 0x2487, 0x2776,
++  0x2777, 0x2778, 0x2779, 0x277a, 0x277b, 0x277c, 0x277d, 0x277e,
++  0xe030, 0x2488, 0x2489, 0x248a, 0x248b, 0x248c, 0x248d, 0x248e,
++  0x248f, 0x2490, 0x2160, 0x2161, 0x2162, 0x2163, 0x2164, 0x2165,
++  0x2166, 0x2167, 0x2168, 0x2169, 0x216a, 0x216b, 0xe025, 0xe02a,
++  0xe032, 0x2170, 0x2171, 0x2172, 0x2173, 0x2174, 0x2175, 0x2176,
++  0x2177, 0x2178, 0x2179, 0x217a, 0x217b, 0xe026, 0xe02b, 0xe033,
++  0x249c, 0x249d, 0x249e, 0x249f, 0x24a0, 0x24a1, 0x24a2, 0x24a3,
++  0x24a4, 0x24a5, 0x24a6, 0x24a7, 0x24a8, 0x24a9, 0x24aa, 0x24ab,
++  0x24ac, 0x24ad, 0x24ae, 0x24af, 0x24b0, 0x24b1, 0x24b2, 0x24b3,
++  0x24b4, 0x24b5, 0x339c, 0x339f, 0x339d, 0x33a0, 0x33a4, 0xe04c,
++  0x33a1, 0x33a5, 0x339e, 0x33a2, 0x338e, 0xe04b, 0x338f, 0x33c4,
++  0x3396, 0x3397, 0x2113, 0x3398, 0x33b3, 0x33b2, 0x33b1, 0x33b0,
++  0x2109, 0x33d4, 0x33cb, 0x3390, 0x3385, 0x3386, 0x3387, 0xe031,
++  0x2116, 0x33cd, 0x2121, 0xe029, 0x2664, 0x2667, 0x2661, 0x2662,
++  0x2660, 0x2663, 0x2665, 0x2666, 0x3020, 0x260e, 0x3004, 0x261e,
++  0x261c, 0x261d, 0x261f, 0x21c6, 0x21c4, 0x21c5, 0xe034, 0x21e8,
++  0x21e6, 0x21e7, 0x21e9, 0xe006, 0xe004, 0xe005, 0xe007, 0x3230,
++  0x322a, 0x322b, 0x322c, 0x322d, 0x322e, 0x322f, 0x3240, 0x3237,
++  0x3242, 0x3243, 0x3239, 0x323a, 0x3231, 0x323e, 0x3234, 0x3232,
++  0x323b, 0x3236, 0x3233, 0x3235, 0x323c, 0x323d, 0x323f, 0x3238,
++  0xe022, 0xe023, 0x32a4, 0x32a5, 0x32a6, 0x32a7, 0x32a8, 0x32a9,
++  0x3296, 0x329d, 0x3298, 0x329e, 0xe024, 0x3299, 0x3349, 0x3322,
++  0x334d, 0x3314, 0x3316, 0x3305, 0x3333, 0x334e, 0x3303, 0x3336,
++  0x3318, 0x3315, 0x3327, 0x3351, 0x334a, 0x3339, 0x3357, 0x330d,
++  0x3342, 0x3323, 0x3326, 0x333b, 0x332b, 0x3300, 0x331e, 0x332a,
++  0x3331, 0x3347, 0x337e, 0x337d, 0x337c, 0x337b, 0x337f, 0xe027,
++  0xe028, 0x222e, 0x221f, 0x22bf, 0x301d, 0x301f, 0x3094, 0x30f7,
++  0x30f8, 0x30f9, 0x30fa, 0xe008, 0xe009, 0xe04e, 0xfe33, 0xe021,
++  0xfe31, 0xe000, 0xe00a, 0xe001, 0xe04d, 0xe002, 0xfe30, 0xfe35,
++  0xfe36, 0xfe39, 0xfe3a, 0xe049, 0xe04a, 0xfe37, 0xfe38, 0xfe3f,
++  0xfe40, 0xfe3d, 0xfe3e, 0xfe41, 0xfe42, 0xfe43, 0xfe44, 0xfe3b,
++  0xfe3c, 0xe048, 0xe00b, 0xe00c, 0xe00d, 0xe00e, 0xe00f, 0xe010,
++  0xe011, 0xe012, 0xe013, 0xe014, 0xe015, 0xe016, 0xe017, 0xe018,
++  0xe019, 0xe01a, 0xe01b, 0xe01c, 0xe01d, 0xe01e, 0xe01f, 0xe020,
++};
++
++static const u_int32_t mac_japanese_compose[] = {
++  0x2010f87e, 0x2016f87e, 0x2026f87e, 0x2026f87f,
++  0x21e6f87a, 0x21e7f87a, 0x21e8f87a, 0x21e9f87a,
++  0x3001f87e, 0x3002f87e, 0x301cf87e, 0x3041f87e,
++  0x3043f87e, 0x3045f87e, 0x3047f87e, 0x3049f87e,
++  0x3063f87e, 0x3083f87e, 0x3085f87e, 0x3087f87e,
++  0x308ef87e, 0x30a1f87e, 0x30a3f87e, 0x30a5f87e,
++  0x30a7f87e, 0x30a9f87e, 0x30c3f87e, 0x30e3f87e,
++  0x30e5f87e, 0x30e7f87e, 0x30eef87e, 0x30f5f87e,
++  0x30f6f87e, 0x30fcf87e, 0x592720dd, 0x5c0f20dd,
++  0x63a720dd, 0xe02c0049, 0xe02d0069, 0xe02e793e,
++  0xe02f4eba, 0xe0350058, 0xe0360056, 0xe0370076,
++  0xe0380049, 0xe0390069, 0xe03a4f1a, 0xe03b6cd5,
++  0xe03c002e, 0xe03d0042, 0xe03e0056, 0xe03f0076,
++  0xe0402191, 0xe0410041, 0xe0420049, 0xe0430069,
++  0xe0440049, 0xe0450069, 0xe0469650, 0xe04756e3,
++  0xf8600030, 0xf8600054, 0xf8600058, 0xf8600078,
++  0xf8602193, 0xf8610046, 0xf8610058, 0xf8610078,
++  0xf8620058, 0xf8620078, 0xf8626709, 0xf8628ca1,
++  0xff1df87e, 0xff3bf87e, 0xff3df87e, 0xff47f87f,
++  0xff4df87f, 0xff5cf87e, 0xffe3f87e,
++};
+diff --git a/libatalk/unicode/charsets/mac_korean.c b/libatalk/unicode/charsets/mac_korean.c
+new file mode 100644
+index 0000000..a16f4a0
+--- /dev/null
++++ b/libatalk/unicode/charsets/mac_korean.c
+@@ -0,0 +1,126 @@
++/*
++ * MacKorean
++ * Copyright (C) TSUBAKIMOTO Hiroya <zorac@4000do.co.jp> 2004
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
++ *
++ * Reference
++ * http://www.unicode.org/Public/MAPPINGS/VENDORS/APPLE/
++ */
++
++#ifdef HAVE_CONFIG_H
++#include "config.h"
++#endif /* HAVE_CONFIG_H */
++#include <stdlib.h>
++
++#if HAVE_USABLE_ICONV
++
++#include "generic_cjk.h"
++#include "mac_korean.h"
++
++static size_t mac_korean_pull(void *,char **, size_t *, char **, size_t *);
++static size_t mac_korean_push(void *,char **, size_t *, char **, size_t *);
++
++struct charset_functions charset_mac_korean = {
++  "MAC_KOREAN",
++  3,
++  mac_korean_pull,
++  mac_korean_push,
++  CHARSET_ICONV | CHARSET_MULTIBYTE | CHARSET_PRECOMPOSED | CHARSET_CLIENT,
++  "EUC-KR",
++  NULL, NULL
++};
++
++static size_t mac_korean_char_push(u_int8_t* out, const ucs2_t* in, size_t* size)
++{
++  ucs2_t wc = in[0];
++
++  if ((wc & ~7) == 0xf860) {
++    wc = cjk_compose_seq(in, size, mac_korean_compose,
++			 sizeof(mac_korean_compose) / sizeof(u_int32_t));
++    if (!wc) return (size_t)-1;
++  } else if ((wc & 0xf000) == 0xe000) {
++    *size = 1;
++    return 0;
++  } else if (*size >= 2) {
++    ucs2_t comb = in[1];
++    size_t n = 1;
++
++    while ((comb & ~15) == 0xf870 ||
++	   (comb >= 0x0300 && comb <= 0x036f) ||
++	   (comb >= 0x20d0 && comb <= 0x20ea)) {
++      ucs2_t comp = cjk_compose(wc, comb, mac_korean_compose,
++				sizeof(mac_korean_compose) / sizeof(u_int32_t));
++      if (!comp) break;
++      wc = comp;
++      if (++n == *size) break;
++      comb = in[n];
++    }
++    *size = n;
++  } else {
++    *size = 1;
++  }
++  if (wc <= 0x7f) {
++    out[0] = (u_int8_t)wc;
++    return 1;
++  }
++  return cjk_char_push(cjk_lookup(wc, mac_korean_uni2_index,
++				  mac_korean_uni2_charset), out);
++}
++
++static size_t mac_korean_push(void *cd, char **inbuf, size_t *inbytesleft,
++				    char **outbuf, size_t *outbytesleft)
++{
++  return cjk_generic_push(mac_korean_char_push,
++			  cd, inbuf, inbytesleft, outbuf, outbytesleft);
++}
++
++static size_t mac_korean_char_pull(ucs2_t* out, const u_int8_t* in, size_t* size)
++{
++  u_int16_t c = in[0];
++
++  if (c <= 0x7f) {
++    *size = 1;
++    *out = c;
++    return 1;
++  } else if (c >= 0xa1 && c <= 0xfe) {
++    if (*size >= 2) {
++      u_int8_t c2 = in[1];
++      if ((c2 >= 0x41 && c2 <= 0x7d) || (c2 >= 0x81 && c2 <= 0xfe)) {
++	*size = 2;
++	c = (c << 8) + c2;
++      } else {
++	errno = EILSEQ;
++	return (size_t)-1;
++      }
++    } else {
++      errno = EINVAL;
++      return (size_t)-1;
++    }
++  } else {
++    *size = 1;
++  }
++  return cjk_char_pull(cjk_lookup(c, mac_korean_2uni_index,
++				  mac_korean_2uni_charset),
++		       out, mac_korean_compose);
++}
++
++static size_t mac_korean_pull(void *cd, char **inbuf, size_t *inbytesleft,
++				    char **outbuf, size_t *outbytesleft)
++{
++  return cjk_generic_pull(mac_korean_char_pull,
++			  cd, inbuf, inbytesleft, outbuf, outbytesleft);
++}
++#endif
+diff --git a/libatalk/unicode/charsets/mac_korean.h b/libatalk/unicode/charsets/mac_korean.h
+new file mode 100644
+index 0000000..578ac51
+--- /dev/null
++++ b/libatalk/unicode/charsets/mac_korean.h
+@@ -0,0 +1,771 @@
++/*
++ * MacKorean
++ * Copyright (C) TSUBAKIMOTO Hiroya <zorac@4000do.co.jp> 2004
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
++ *
++ * Reference
++ * http://www.unicode.org/Public/MAPPINGS/VENDORS/APPLE/
++ */
++
++static const u_int16_t mac_korean_uni2_page00[][2] = {
++  /* 0x00a */ { 0x7a2d,    0 }, { 0x0880,    9 },
++};
++
++static const u_int16_t mac_korean_uni2_page02[][2] = {
++  /* 0x02b */ { 0x1000,   11 },
++  /* 0x02c */ { 0x0000,    0 }, { 0x1001,   12 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x030 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x034 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x038 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x03c */ { 0x0000,    0 }, { 0x0020,   14 },
++};
++
++static const u_int16_t mac_korean_uni2_page20[][2] = {
++  /* 0x201 */ { 0x8878,   15 }, { 0x0004,   21 }, { 0x5670,   22 },
++  /* 0x204 */ { 0x7284,   29 }, { 0x0002,   35 }, { 0x0000,    0 }, { 0x7c00,   36 },
++  /* 0x208 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x1200,   41 }, { 0x0000,    0 },
++  /* 0x20c */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x210 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x214 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x218 */ { 0x0000,    0 }, { 0x3000,   43 }, { 0x0000,    0 }, { 0x10df,   45 },
++  /* 0x21c */ { 0xa031,   53 }, { 0x0001,   58 }, { 0x03cf,   59 }, { 0x0001,   67 },
++  /* 0x220 */ { 0x1240,   68 }, { 0x8008,   71 }, { 0x0064,   73 }, { 0x1080,   76 },
++  /* 0x224 */ { 0x0128,   78 }, { 0x040b,   81 }, { 0xccc4,   85 }, { 0x0ecf,   92 },
++  /* 0x228 */ { 0x0033,  101 }, { 0x02e0,  105 }, { 0x0018,  109 }, { 0x1800,  111 },
++  /* 0x22c */ { 0xc000,  113 }, { 0x0c00,  115 }, { 0x4000,  117 }, { 0x0000,    0 },
++  /* 0x230 */ { 0x0040,  118 }, { 0x0010,  119 },
++};
++
++static const u_int16_t mac_korean_uni2_page24[][2] = {
++  /* 0x246 */ { 0x8000,  120 }, { 0x000f,  121 },
++  /* 0x248 */ { 0x00f8,  125 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0xffc0,  130 },
++  /* 0x24c */ { 0xffff,  140 }, { 0x0000,    0 }, { 0xf800,  156 }, { 0x001f,  161 },
++  /* 0x250 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x254 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x258 */ { 0x0100,  166 }, { 0x0000,    0 }, { 0x2004,  167 }, { 0x8222,  169 },
++  /* 0x25c */ { 0x3608,  173 }, { 0x0000,    0 }, { 0x8040,  178 }, { 0x1800,  180 },
++  /* 0x260 */ { 0x0000,    0 }, { 0xa001,  182 }, { 0x8000,  185 }, { 0x0000,    0 },
++  /* 0x264 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x8040,  186 }, { 0x0000,    0 },
++  /* 0x268 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x26c */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x270 */ { 0x0000,    0 }, { 0x0440,  188 }, { 0x0009,  190 }, { 0xa002,  192 },
++  /* 0x274 */ { 0x2083,  195 }, { 0x0040,  199 }, { 0x0000,    0 }, { 0xffc0,  200 },
++  /* 0x278 */ { 0xfc00,  210 }, { 0x581f,  216 }, { 0x0012,  224 }, { 0x0024,  226 },
++};
++
++static const u_int16_t mac_korean_uni2_page29[][2] = {
++  /* 0x293 */ { 0x02f0,  228 },
++  /* 0x294 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x003c,  233 }, { 0x0000,    0 },
++  /* 0x298 */ { 0x0062,  237 }, { 0x0180,  240 }, { 0x0008,  242 }, { 0xc000,  243 },
++  /* 0x29c */ { 0x0100,  245 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x2a0 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0040,  246 }, { 0x0100,  247 },
++  /* 0x2a4 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0004,  248 },
++  /* 0x2a8 */ { 0x1800,  249 }, { 0x0006,  251 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x2ac */ { 0x1860,  253 }, { 0x0000,    0 }, { 0x0100,  257 },
++};
++
++static const u_int16_t mac_korean_uni2_page30[][2] = {
++  /* 0x301 */ { 0xd3c4,  258 }, { 0x0001,  266 }, { 0x0040,  267 },
++};
++
++static const u_int16_t mac_korean_uni2_page32[][2] = {
++  /* 0x323 */ { 0x0202,  268 },
++  /* 0x324 */ { 0x0000,    0 }, { 0x07fe,  270 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x328 */ { 0xfc00,  280 }, { 0x4011,  286 }, { 0x0020,  289 },
++};
++
++static const u_int16_t mac_korean_uni2_page33[][2] = {
++  /* 0x33c */ { 0x0800,  290 },
++};
++
++static const u_int16_t mac_korean_uni2_pagee0[][2] = {
++  /* 0xe00 */ { 0xffff,  291 }, { 0xffff,  307 }, { 0xffff,  323 }, { 0xffff,  339 },
++  /* 0xe04 */ { 0xffff,  355 }, { 0xffff,  371 }, { 0xffff,  387 }, { 0xffff,  403 },
++  /* 0xe08 */ { 0xffff,  419 }, { 0xffff,  435 }, { 0xffff,  451 }, { 0xffff,  467 },
++  /* 0xe0c */ { 0xffff,  483 }, { 0xffff,  499 }, { 0xffff,  515 }, { 0xffff,  531 },
++  /* 0xe10 */ { 0xffff,  547 }, { 0xffff,  563 }, { 0xffff,  579 }, { 0xffff,  595 },
++  /* 0xe14 */ { 0xffff,  611 }, { 0xffff,  627 }, { 0xffff,  643 }, { 0xffff,  659 },
++  /* 0xe18 */ { 0xffff,  675 }, { 0xffff,  691 }, { 0xffde,  707 }, { 0xfff7,  721 },
++  /* 0xe1c */ { 0xdfff,  736 }, { 0xffbf,  751 }, { 0xffe7,  766 }, { 0xff9f,  780 },
++  /* 0xe20 */ { 0xffff,  794 }, { 0xffff,  810 }, { 0xffff,  826 }, { 0xffff,  842 },
++  /* 0xe24 */ { 0xffff,  858 }, { 0xffff,  874 }, { 0xffff,  890 }, { 0xffff,  906 },
++  /* 0xe28 */ { 0xffff,  922 }, { 0xffff,  938 }, { 0xffff,  954 }, { 0xffff,  970 },
++  /* 0xe2c */ { 0xffff,  986 }, { 0x07ff, 1002 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xe30 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0xfffc, 1013 },
++  /* 0xe34 */ { 0xffff, 1027 }, { 0xffff, 1043 }, { 0xffff, 1059 }, { 0xffff, 1075 },
++  /* 0xe38 */ { 0xffff, 1091 }, { 0x1fff, 1107 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xe3c */ { 0xfc00, 1120 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xe40 */ { 0x0000,    0 }, { 0x1ffc, 1126 },
++};
++
++static const u_int16_t mac_korean_uni2_pagef8[][2] = {
++  /* 0xf80 */ { 0x1fe0, 1137 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x2000, 1145 },
++  /* 0xf84 */ { 0xffff, 1146 },
++};
++
++static const u_int16_t mac_korean_uni2_pagefe[][2] = {
++  /* 0xfe5 */ { 0x0600, 1162 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xfe8 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xfec */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xff0 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xff4 */ { 0x0000,    0 }, { 0x4000, 1164 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xff8 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xffc */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x002f, 1165 },
++};
++
++static const cjk_index_t mac_korean_uni2_index[] = {
++  { { 0x00a0, 0x00bf }, mac_korean_uni2_page00 },
++  { { 0x02b0, 0x03df }, mac_korean_uni2_page02 },
++  { { 0x2010, 0x231f }, mac_korean_uni2_page20 },
++  { { 0x2460, 0x27bf }, mac_korean_uni2_page24 },
++  { { 0x2930, 0x2aef }, mac_korean_uni2_page29 },
++  { { 0x3010, 0x303f }, mac_korean_uni2_page30 },
++  { { 0x3230, 0x32af }, mac_korean_uni2_page32 },
++  { { 0x33c0, 0x33cf }, mac_korean_uni2_page33 },
++  { { 0xe000, 0xe41f }, mac_korean_uni2_pagee0 },
++  { { 0xf800, 0xf84f }, mac_korean_uni2_pagef8 },
++  { { 0xfe50, 0xffef }, mac_korean_uni2_pagefe },
++  { { 0, 0 }, 0 }
++};
++
++static const u_int16_t mac_korean_uni2_charset[] = {
++  0x0080, 0xa1cb, 0xa1cc, 0xa1cd, 0x0083, 0xa65c, 0xa1fe, 0xffff,
++  0xffff, 0xa1a4, 0xa65d, 0xa198, 0xa2b0, 0xa2a6, 0xa76a, 0xa1a9,
++  0xa1aa, 0xffff, 0xa1ab, 0xa170, 0xa16f, 0xa655, 0xa5de, 0xadad,
++  0xadab, 0xa65a, 0xa65b, 0xa784, 0xa3fe, 0xa64d, 0xa787, 0xa785,
++  0xa196, 0xa197, 0xa64e, 0xa16d, 0xa171, 0xa172, 0xa17a, 0xa17c,
++  0xa17d, 0x0081, 0xffff, 0xac53, 0xac52, 0xa882, 0xa87c, 0xa87b,
++  0xa883, 0xa881, 0xac50, 0xac51, 0xa892, 0xa893, 0xa89e, 0xa89f,
++  0xa84b, 0xa84a, 0xa849, 0xac6a, 0xac6c, 0xac6b, 0xac6d, 0xac72,
++  0xac74, 0xac73, 0xac75, 0xac41, 0xa751, 0xa773, 0xa774, 0xa75c,
++  0xa753, 0xa768, 0xa755, 0xa756, 0xa2fe, 0xffff, 0xa49a, 0xa499,
++  0xa49b, 0xa769, 0xa759, 0xa758, 0xa777, 0xa764, 0xa75a, 0xa75b,
++  0xa1ec, 0xa1ed, 0xa76f, 0xa770, 0xa487, 0xa488, 0xa489, 0xa48a,
++  0xa48f, 0xa490, 0xa491, 0xa481, 0xa482, 0xa485, 0xa486, 0xa772,
++  0xa771, 0xa75d, 0xa75e, 0xa75f, 0xffff, 0xa76c, 0xa49d, 0xa775,
++  0xa776, 0xa483, 0xa484, 0xa492, 0xa493, 0xa2fd, 0xa778, 0xa761,
++  0xa7f0, 0xa7f1, 0xa7f2, 0xa7f3, 0xa7f4, 0xaaf4, 0xaaf5, 0xaaf6,
++  0xaaf7, 0xaaf8, 0xa386, 0xa387, 0xa388, 0xa389, 0xa38a, 0xa38b,
++  0xa38c, 0xa38d, 0xa38e, 0xa38f, 0xa390, 0xa391, 0xa392, 0xa393,
++  0xa394, 0xa395, 0xa396, 0xa397, 0xa398, 0xa399, 0xa39a, 0xa39b,
++  0xa39c, 0xa39d, 0xa39e, 0xa39f, 0xa6ef, 0xa6f0, 0xa6f1, 0xa6f2,
++  0xa6f3, 0xa6f4, 0xa6f5, 0xa6f6, 0xa6f7, 0xa6f8, 0xa78f, 0xa678,
++  0xa74a, 0xa766, 0xa795, 0xa796, 0xa794, 0xa797, 0xa2c1, 0xa79c,
++  0xa675, 0xa684, 0xa790, 0xa66f, 0xa746, 0xa79a, 0xa677, 0xac8d,
++  0xac8e, 0xa693, 0xa798, 0xa648, 0xa66d, 0xa66c, 0xa688, 0xa672,
++  0xa653, 0xa652, 0xa67c, 0xa699, 0xa68d, 0xa654, 0xa683, 0xa673,
++  0xa6e5, 0xa6e6, 0xa6e7, 0xa6e8, 0xa6e9, 0xa6ea, 0xa6eb, 0xa6ec,
++  0xa6ed, 0xa6ee, 0xa355, 0xa356, 0xa357, 0xa358, 0xa359, 0xa35a,
++  0xa35b, 0xa35c, 0xa35d, 0xa35e, 0xac5e, 0xa86a, 0xa860, 0xa878,
++  0xa874, 0xac48, 0xa85c, 0xac43, 0xa88d, 0xa889, 0xa886, 0xa88b,
++  0xa88c, 0xa86f, 0xa871, 0xa870, 0xa872, 0xa799, 0xa159, 0xa15a,
++  0xa199, 0xa19a, 0xa49c, 0xa668, 0xa66e, 0xa664, 0xa47d, 0xa760,
++  0xa77b, 0xa494, 0xa495, 0xa496, 0xa497, 0xa48b, 0xa48d, 0xa48c,
++  0xa48e, 0xa76b, 0xa742, 0xa15d, 0xa15e, 0xa15f, 0xa160, 0xa1ad,
++  0xada9, 0xadaa, 0xa69e, 0xa743, 0xa79d, 0xa79e, 0xa7f5, 0xa7f6,
++  0xa7f7, 0xa7f8, 0xa7f9, 0xa7fa, 0xa7fb, 0xa7fc, 0xa7fd, 0xa7fe,
++  0xad71, 0xad72, 0xad73, 0xad74, 0xad75, 0xad76, 0xad70, 0xab5c,
++  0xa782, 0xab6c, 0xa79f, 0xa18a, 0xadb0, 0xa157, 0xa24b, 0xa158,
++  0xa24c, 0xa16c, 0xa767, 0xa541, 0xa542, 0xa543, 0xa544, 0xa545,
++  0xa546, 0xa547, 0xa548, 0xa549, 0xa54a, 0xa179, 0xa765, 0xa762,
++  0xa178, 0xa183, 0xa161, 0xa163, 0xa184, 0xa162, 0xa164, 0xa181,
++  0xa182, 0xa647, 0xa176, 0xa2fa, 0xa173, 0x0082, 0xa2fb, 0xa2fc,
++  0xa16b, 0xa169, 0xa643, 0xa167, 0xa16a, 0xa168, 0x00ff, 0xadae,
++  0xa5dc, 0xadac, 0xa5dd, 0xa786, 0xa651, 0xa64f, 0xa64b, 0xa1a0,
++  0xa19d, 0xa690, 0xac89, 0xa869, 0xa86b, 0xac5d, 0xac66, 0xa863,
++  0xac62, 0xa853, 0xac55, 0xa842, 0xa84e, 0xa85f, 0xac8b, 0xa86d,
++  0xac60, 0xac68, 0xa865, 0xac64, 0xa855, 0xac57, 0xa843, 0xa84f,
++  0xa861, 0xac8a, 0xa86c, 0xac67, 0xa864, 0xac63, 0xa854, 0xac56,
++  0xa841, 0xa84d, 0xac8c, 0xa86e, 0xac61, 0xac69, 0xa866, 0xac65,
++  0xa856, 0xac58, 0xa844, 0xa850, 0xa862, 0xa851, 0xa852, 0xa845,
++  0xa846, 0xa847, 0xa848, 0xac7a, 0xac85, 0xa88a, 0xac77, 0xac82,
++  0xa887, 0xac78, 0xa87d, 0xac83, 0xa888, 0xa899, 0xac4d, 0xa898,
++  0xac4c, 0xa89b, 0xa89a, 0xa895, 0xa84c, 0xa85b, 0xa857, 0xac47,
++  0xa897, 0xac6e, 0xada6, 0xa88e, 0xa873, 0xa877, 0xac59, 0xac4f,
++  0xa85d, 0xa859, 0xac70, 0xada7, 0xa890, 0xa875, 0xa879, 0xac5b,
++  0xadaf, 0xa858, 0xac46, 0xa896, 0xac6f, 0xada5, 0xa88f, 0xac5a,
++  0xac4e, 0xa85e, 0xa85a, 0xac71, 0xada8, 0xa891, 0xa876, 0xa87a,
++  0xac5c, 0xa752, 0xa188, 0xa189, 0xa177, 0xa174, 0xa498, 0xa49e,
++  0xa185, 0xa757, 0xa186, 0xa754, 0xa779, 0xa175, 0xa17b, 0xa76e,
++  0xa763, 0xa187, 0xa76d, 0xa77a, 0xa748, 0xa54c, 0xa54d, 0xa54e,
++  0xa54f, 0xa550, 0xa551, 0xa552, 0xa553, 0xa554, 0xa54b, 0xa473,
++  0xa35f, 0xa474, 0xa360, 0xa475, 0xa361, 0xa476, 0xa362, 0xa477,
++  0xa363, 0xa478, 0xa364, 0xa479, 0xa365, 0xa47a, 0xa366, 0xa47b,
++  0xa367, 0xa47c, 0xa368, 0xa656, 0xa659, 0xa78d, 0xa78e, 0xa78c,
++  0xa68a, 0xa749, 0xa66b, 0xa66a, 0xa745, 0xa79b, 0xa665, 0xa78b,
++  0xa662, 0xa657, 0xa789, 0xa78a, 0xa788, 0xa74e, 0xa689, 0xa682,
++  0xa791, 0xa792, 0xa744, 0xa669, 0xa793, 0xa670, 0xa671, 0xa676,
++  0xa65e, 0xac8f, 0xa65f, 0xac90, 0xa698, 0xa697, 0xa741, 0xa687,
++  0xa679, 0xa67b, 0xa69b, 0xa67a, 0xa68e, 0xa469, 0xa46a, 0xa46b,
++  0xa46c, 0xa46d, 0xa46e, 0xa46f, 0xa470, 0xa471, 0xa472, 0xa685,
++  0xac7d, 0xac88, 0xa885, 0xac79, 0xac84, 0xac76, 0xac81, 0xac7b,
++  0xac86, 0xac7c, 0xac87, 0xa884, 0xac45, 0xac44, 0xa243, 0xa241,
++  0xa153, 0xa165, 0xa155, 0xa151, 0xa244, 0xa242, 0xa154, 0xa166,
++  0xa156, 0xa152, 0xa667, 0xa49f, 0xa5db, 0xa18b, 0xa14b, 0xa14c,
++  0xa149, 0xa14a, 0xada1, 0xa143, 0xa145, 0xa141, 0xada2, 0xa144,
++  0xa146, 0xa142, 0xada3, 0xa147, 0xada4, 0xa148, 0xa249, 0xa15b,
++  0xa24a, 0xa15c, 0xa67d, 0xa247, 0xa248, 0xa6f9, 0xa6fa, 0xa6fb,
++  0xa6fc, 0xa6fd, 0xa6fe, 0xa5f9, 0xa5fa, 0xa5fb, 0xa5fc, 0xa783,
++  0xad55, 0xa18c, 0xad5b, 0xa192, 0xad57, 0xa18e, 0xad5d, 0xa194,
++  0xad56, 0xa18d, 0xad59, 0xa190, 0xab6d, 0xaa6e, 0xab5a, 0xaa5a,
++  0xaa66, 0xad5c, 0xa193, 0xad5a, 0xa191, 0xaa9f, 0xaa58, 0xa750,
++  0xa74f, 0xab60, 0xaa69, 0xab5e, 0xaa62, 0xab63, 0xaa6c, 0xab5b,
++  0xaa5c, 0xad5e, 0xa195, 0xa692, 0xab44, 0xaa54, 0xab65, 0xab5d,
++  0xaa5f, 0xaa5d, 0xad58, 0xa18f, 0xab6b, 0xad6f, 0xaa68, 0xaa63,
++  0xab69, 0xaa70, 0xaa65, 0xab58, 0xaa57, 0xab59, 0xaa6d, 0xab62,
++  0xaa6b, 0xab67, 0xad69, 0xad6a, 0xad6d, 0xab46, 0xab66, 0xaa61,
++  0xad6c, 0xab64, 0xaa6f, 0xaa67, 0xad6b, 0xab68, 0xaa5e, 0xaa59,
++  0xaa6a, 0xab5f, 0xab45, 0xaa60, 0xa77c, 0xaa55, 0xaa64, 0xad6e,
++  0xab6a, 0xab61, 0xaa5b, 0xab75, 0xab55, 0xab43, 0xaa50, 0xab56,
++  0xab47, 0xaa96, 0xaa9e, 0xab42, 0xab76, 0xaa8c, 0xaa8b, 0xab77,
++  0xac91, 0xab48, 0xaa42, 0xaa8e, 0xaa45, 0xaa94, 0xaa4b, 0xaa53,
++  0xaa81, 0xaa82, 0xaa8d, 0xaa44, 0xaa83, 0xaa97, 0xaa4d, 0xab49,
++  0xaa9a, 0xaa90, 0xaa47, 0xaa95, 0xaa4c, 0xab6e, 0xaa84, 0xab4a,
++  0xab4b, 0xac93, 0xaa98, 0xaa93, 0xaa4a, 0xaa9c, 0xab6f, 0xab4c,
++  0xab57, 0xaa85, 0xaa9b, 0xaa51, 0xab4d, 0xab4e, 0xaa56, 0xab53,
++  0xaa41, 0xab4f, 0xaa9d, 0xab71, 0xab72, 0xac96, 0xaa99, 0xaa52,
++  0xac95, 0xab70, 0xaa86, 0xaa4e, 0xab50, 0xaa91, 0xaa48, 0xaa92,
++  0xaa49, 0xab41, 0xaa71, 0xaa7d, 0xaa43, 0xab51, 0xac94, 0xab73,
++  0xaa87, 0xac92, 0xaa88, 0xab52, 0xaa89, 0xaa4f, 0xaa8a, 0xab74,
++  0xab78, 0xaa8f, 0xaa46, 0xab54, 0xac97, 0xacc2, 0xa455, 0xa341,
++  0xa2e6, 0xa441, 0xacc3, 0xa456, 0xa342, 0xa2e7, 0xa442, 0xacc4,
++  0xa457, 0xa343, 0xa2e8, 0xa443, 0xacc5, 0xa458, 0xa344, 0xa2e9,
++  0xa444, 0xacc6, 0xa459, 0xa345, 0xa2ea, 0xa445, 0xacc7, 0xa45a,
++  0xa346, 0xa2eb, 0xa446, 0xacc8, 0xa45b, 0xa347, 0xa2ec, 0xa447,
++  0xacc9, 0xa45c, 0xa348, 0xa2ed, 0xa448, 0xacca, 0xa45d, 0xa349,
++  0xa2ee, 0xa449, 0xa661, 0xad41, 0xad47, 0xad43, 0xad49, 0xad42,
++  0xad45, 0xad48, 0xad46, 0xad4a, 0xad44, 0xad7d, 0xad77, 0xad78,
++  0xad7b, 0xad7a, 0xad79, 0xaa76, 0xad7c, 0xab9b, 0xaa77, 0xab9c,
++  0xab99, 0xab98, 0xab97, 0xab9d, 0xab8a, 0xab87, 0xaa73, 0xaa75,
++  0xab9e, 0xab79, 0xaa72, 0xab7a, 0xab9a, 0xab89, 0xab86, 0xab88,
++  0xab7b, 0xab8b, 0xab8c, 0xab7c, 0xab8d, 0xaa78, 0xab8e, 0xaa7c,
++  0xab9f, 0xab8f, 0xab90, 0xaa79, 0xab91, 0xab7d, 0xaa7a, 0xab92,
++  0xab93, 0xaa74, 0xab94, 0xab81, 0xab82, 0xab83, 0xab84, 0xab95,
++  0xab85, 0xab96, 0xaa7b, 0xaaf9, 0xaafa, 0xaafb, 0xaafc, 0xaafd,
++  0xaafe, 0xabf7, 0xabf8, 0xabf9, 0xabfa, 0xa44a, 0xa44b, 0xa44c,
++  0xa44d, 0xa44e, 0xa44f, 0xa450, 0xa451, 0xa452, 0xa453, 0xa454,
++  0xad68, 0xad5f, 0xad65, 0xad61, 0xad67, 0xad60, 0xad63, 0xad66,
++  0xad64, 0xad62, 0xa77d, 0xa2ef, 0xa2f0, 0xa2f1, 0xa2f2, 0xa2f3,
++  0xa2f4, 0xa2f5, 0xa2f6, 0xa2f7, 0xa2f8, 0xa2f9, 0xad54, 0xad4b,
++  0xad51, 0xad4d, 0xad53, 0xad4c, 0xad4f, 0xad52, 0xad50, 0xad4e,
++  0xa781, 0xa34a, 0xa34b, 0xa34c, 0xa34d, 0xa34e, 0xa34f, 0xa350,
++  0xa351, 0xa352, 0xa353, 0xa354, 0xa45e, 0xa45f, 0xa460, 0xa461,
++  0xa462, 0xa463, 0xa464, 0xa465, 0xa466, 0xa467, 0xa468, 0xaccb,
++  0xaccc, 0xaccd, 0xacce, 0xaccf, 0xacd0, 0xacf2, 0xacf3, 0xacf4,
++  0xacf5, 0xacf6, 0xa369, 0xa36a, 0xa36b, 0xa36c, 0xa36d, 0xa36e,
++  0xa36f, 0xa370, 0xa371, 0xa372, 0xa373, 0xa374, 0xa375, 0xa376,
++  0xa377, 0xa378, 0xa379, 0xa37a, 0xa37b, 0xa37c, 0xa37d, 0xa381,
++  0xa382, 0xa383, 0xa384, 0xa385, 0xa646, 0xa64c, 0xa555, 0xa941,
++  0xa556, 0xa942, 0xa557, 0xa943, 0xa558, 0xa944, 0xa559, 0xa945,
++  0xa55a, 0xa946, 0xa55b, 0xa947, 0xa55c, 0xa948, 0xa55d, 0xa949,
++  0xa55e, 0xa94a, 0xa55f, 0xa94b, 0xa560, 0xa94c, 0xa561, 0xa94d,
++  0xa562, 0xa94e, 0xa563, 0xa94f, 0xa564, 0xa950, 0xa565, 0xa951,
++  0xa566, 0xa952, 0xa567, 0xa953, 0xa568, 0xa954, 0xa569, 0xa955,
++  0xa56a, 0xa956, 0xa56b, 0xa957, 0xa56c, 0xa958, 0xa56d, 0xa959,
++  0xa56e, 0xa95a, 0xa56f, 0xa95b, 0xa570, 0xa95c, 0xa571, 0xa95d,
++  0xa572, 0xa95e, 0xa573, 0xa95f, 0xa574, 0xa960, 0xa575, 0xa961,
++  0xa576, 0xa962, 0xa577, 0xa963, 0xa578, 0xa964, 0xa579, 0xa965,
++  0xa57a, 0xa966, 0xa57b, 0xa967, 0xa57c, 0xa968, 0xa57d, 0xa969,
++  0xa581, 0xa96a, 0xa582, 0xa96b, 0xa583, 0xa96c, 0xa584, 0xa96d,
++  0xa585, 0xa96e, 0xa586, 0xa96f, 0xa587, 0xa970, 0xa588, 0xa971,
++  0xa589, 0xa972, 0xa58a, 0xa973, 0xa58b, 0xa974, 0xa644, 0xa645,
++  0xa650, 0xa666, 0xa660, 0xa691, 0xa686, 0xa641, 0xa245, 0xa14f,
++  0xa246, 0xa150, 0xa5da, 0xa19f, 0xa64a, 0xa19c, 0xa19e, 0xa649,
++  0x0084, 0xa658, 0xa663, 0xa69f, 0xa68f, 0xa681, 0xa674, 0xa696,
++  0xa69a, 0xa642, 0xa16e, 0xa894, 0xac54, 0xac42, 0xac49, 0xac5f,
++  0xa867, 0xa868, 0xa89d, 0xa89c, 0xac4b, 0xac4a, 0xa747, 0xa74b,
++  0xa74c, 0xa74d, 0xa14d, 0xa14e, 0xffff, 0xffff, 0xffff, 0xffff,
++  0xffff, 0xffff,
++};
++
++static const u_int16_t mac_korean_2uni_page00[][2] = {
++  /* 0x008 */ { 0x001f,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0x00c */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x8000,    5 },
++};
++
++static const u_int16_t mac_korean_2uni_pagea1[][2] = {
++  /* 0xa14 */ { 0xfffe,    6 }, { 0xffff,   21 }, { 0xffff,   37 }, { 0x3fff,   53 },
++  /* 0xa18 */ { 0xfffe,   67 }, { 0xf7ff,   82 }, { 0x2e11,   97 }, { 0x0000,    0 },
++  /* 0xa1c */ { 0x3800,  103 }, { 0x0000,    0 }, { 0x3000,  106 }, { 0x4000,  108 },
++  /* 0xa20 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xa24 */ { 0x1ffe,  109 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xa28 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0040,  121 }, { 0x0001,  122 },
++  /* 0xa2c */ { 0x0002,  123 }, { 0x0000,    0 }, { 0xffc0,  124 }, { 0x7fff,  134 },
++  /* 0xa30 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xa34 */ { 0xfffe,  149 }, { 0xffff,  164 }, { 0xffff,  180 }, { 0x3fff,  196 },
++  /* 0xa38 */ { 0xfffe,  210 }, { 0xffff,  225 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xa3c */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x4000,  241 },
++  /* 0xa40 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xa44 */ { 0xfffe,  242 }, { 0xffff,  257 }, { 0xffff,  273 }, { 0x3fff,  289 },
++  /* 0xa48 */ { 0xfffe,  303 }, { 0xffff,  318 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xa4c */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xa50 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xa54 */ { 0xfffe,  334 }, { 0xffff,  349 }, { 0xffff,  365 }, { 0x3fff,  381 },
++  /* 0xa58 */ { 0x0ffe,  395 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xa5c */ { 0x0000,    0 }, { 0x7c00,  406 }, { 0x0000,    0 }, { 0x1e00,  411 },
++  /* 0xa60 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xa64 */ { 0xfffe,  415 }, { 0xffff,  430 }, { 0xffff,  446 }, { 0x3fff,  462 },
++  /* 0xa68 */ { 0xe7fe,  476 }, { 0xcfcf,  489 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xa6c */ { 0x0000,    0 }, { 0x0000,    0 }, { 0xffe0,  501 }, { 0x7fff,  512 },
++  /* 0xa70 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xa74 */ { 0xfffe,  527 }, { 0xffff,  542 }, { 0xffff,  558 }, { 0x3fff,  574 },
++  /* 0xa78 */ { 0xfffe,  588 }, { 0xffff,  603 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xa7c */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x7fff,  619 },
++  /* 0xa80 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xa84 */ { 0xfffe,  634 }, { 0xffff,  649 }, { 0xffff,  665 }, { 0x3fff,  681 },
++  /* 0xa88 */ { 0xfffe,  695 }, { 0xffff,  710 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xa8c */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xa90 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xa94 */ { 0xfffe,  726 }, { 0xffff,  741 }, { 0xffff,  757 }, { 0x001f,  773 },
++  /* 0xa98 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xa9c */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xaa0 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xaa4 */ { 0xfffe,  778 }, { 0xffff,  793 }, { 0xffff,  809 }, { 0x3fff,  825 },
++  /* 0xaa8 */ { 0xfffe,  839 }, { 0xffff,  854 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xaac */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x7ff0,  870 },
++  /* 0xab0 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xab4 */ { 0xfffe,  881 }, { 0xffff,  896 }, { 0xffff,  912 }, { 0x3fff,  928 },
++  /* 0xab8 */ { 0xfffe,  942 }, { 0xffff,  957 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xabc */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0780,  973 },
++  /* 0xac0 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xac4 */ { 0xfffe,  977 }, { 0xffff,  992 }, { 0xffff, 1008 }, { 0x3fff, 1024 },
++  /* 0xac8 */ { 0xfffe, 1038 }, { 0x00ff, 1053 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xacc */ { 0xfffc, 1061 }, { 0x0001, 1075 }, { 0x0000,    0 }, { 0x007c, 1076 },
++  /* 0xad0 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 }, { 0x0000,    0 },
++  /* 0xad4 */ { 0xfffe, 1081 }, { 0xffff, 1096 }, { 0xffff, 1112 }, { 0x3fff, 1128 },
++  /* 0xad8 */ { 0x0000,    0 }, { 0x0000,    0 }, { 0xfffe, 1142 }, { 0x0001, 1157 },
++};
++
++static const cjk_index_t mac_korean_2uni_index[] = {
++  { { 0x0080, 0x00ff }, mac_korean_2uni_page00 },
++  { { 0xa140, 0xadbf }, mac_korean_2uni_pagea1 },
++  { { 0, 0 }, 0 }
++};
++
++static const u_int16_t mac_korean_2uni_charset[] = {
++  0x00a0, 0x20a9, 0xe022, 0x00a9, 0xe41c, 0xe02b, 0xe12a, 0xe12e,
++  0xe128, 0xe12c, 0xe129, 0xe12d, 0xe130, 0xe132, 0xe125, 0xe126,
++  0xe123, 0xe124, 0xfe59, 0xfe5a, 0xe413, 0xe415, 0xe118, 0xe11e,
++  0xe115, 0xe11b, 0xe117, 0xe11d, 0xe002, 0xe004, 0x2985, 0x2986,
++  0xe134, 0xe136, 0x3016, 0x3017, 0x3018, 0x3019, 0xe017, 0xe01a,
++  0xe018, 0xe01b, 0xe116, 0xe11c, 0xe028, 0xe02a, 0xe026, 0xe029,
++  0xe025, 0xe006, 0x2051, 0xf840, 0x201f, 0x201b, 0x207a, 0x207b,
++  0xe021, 0xe0a2, 0xe0aa, 0xe01f, 0xe0a1, 0xe015, 0xe012, 0x207c,
++  0xe0ab, 0x207d, 0x207e, 0xe01c, 0xe01d, 0xe016, 0xe019, 0xe0a5,
++  0xe0a7, 0xe0ae, 0xe09f, 0xe0a0, 0xe000, 0xe122, 0xe146, 0xe14e,
++  0xe14a, 0xe170, 0xe150, 0xe159, 0xe148, 0xe157, 0xe14c, 0xe167,
++  0x204c, 0x204d, 0x02bc, 0x2997, 0x2998, 0xe419, 0xe035, 0xe41a,
++  0xe417, 0xe034, 0x00b7, 0x2013, 0x2014, 0x2016, 0x301c, 0x00a2,
++  0x00a3, 0x00a5, 0x226a, 0x226b, 0x00ac, 0xe114, 0xe11a, 0xe113,
++  0xe119, 0xe412, 0xe414, 0xe138, 0xe139, 0xe133, 0xe135, 0xe003,
++  0xe005, 0x02dc, 0x02d0, 0x25c9, 0xe1fe, 0xe203, 0xe208, 0xe20d,
++  0xe212, 0xe217, 0xe21c, 0xe221, 0xe226, 0xe289, 0xe28a, 0xe28b,
++  0xe28c, 0xe28d, 0xe28e, 0xe28f, 0xe290, 0xe291, 0xe292, 0xe293,
++  0xe020, 0xe023, 0xe024, 0x22ee, 0x2237, 0xe1fd, 0xe202, 0xe207,
++  0xe20c, 0xe211, 0xe216, 0xe21b, 0xe220, 0xe225, 0xe29f, 0xe2a0,
++  0xe2a1, 0xe2a2, 0xe2a3, 0xe2a4, 0xe2a5, 0xe2a6, 0xe2a7, 0xe2a8,
++  0xe2a9, 0x278a, 0x278b, 0x278c, 0x278d, 0x278e, 0x278f, 0x2790,
++  0x2791, 0x2792, 0x2793, 0xe0bd, 0xe0bf, 0xe0c1, 0xe0c3, 0xe0c5,
++  0xe0c7, 0xe0c9, 0xe0cb, 0xe0cd, 0xe0cf, 0xe2c0, 0xe2c1, 0xe2c2,
++  0xe2c3, 0xe2c4, 0xe2c5, 0xe2c6, 0xe2c7, 0xe2c8, 0xe2c9, 0xe2ca,
++  0xe2cb, 0xe2cc, 0xe2cd, 0xe2ce, 0xe2cf, 0xe2d0, 0xe2d1, 0xe2d2,
++  0xe2d3, 0xe2d4, 0xe2d5, 0xe2d6, 0xe2d7, 0xe2d8, 0xe2d9, 0x24b6,
++  0x24b7, 0x24b8, 0x24b9, 0x24ba, 0x24bb, 0x24bc, 0x24bd, 0x24be,
++  0x24bf, 0x24c0, 0x24c1, 0x24c2, 0x24c3, 0x24c4, 0x24c5, 0x24c6,
++  0x24c7, 0x24c8, 0x24c9, 0x24ca, 0x24cb, 0x24cc, 0x24cd, 0x24ce,
++  0x24cf, 0x203e, 0xe1ff, 0xe204, 0xe209, 0xe20e, 0xe213, 0xe218,
++  0xe21d, 0xe222, 0xe227, 0xe273, 0xe274, 0xe275, 0xe276, 0xe277,
++  0xe278, 0xe279, 0xe27a, 0xe27b, 0xe27c, 0xe27d, 0xe1fc, 0xe201,
++  0xe206, 0xe20b, 0xe210, 0xe215, 0xe21a, 0xe21f, 0xe224, 0xe2aa,
++  0xe2ab, 0xe2ac, 0xe2ad, 0xe2ae, 0xe2af, 0xe2b0, 0xe2b1, 0xe2b2,
++  0xe2b3, 0xe2b4, 0xe0fa, 0xe0fb, 0xe0fc, 0xe0fd, 0xe0fe, 0xe0ff,
++  0xe100, 0xe101, 0xe102, 0xe103, 0xe0bc, 0xe0be, 0xe0c0, 0xe0c2,
++  0xe0c4, 0xe0c6, 0xe0c8, 0xe0ca, 0xe0cc, 0xe0ce, 0x2a26, 0x227a,
++  0x227b, 0x22ce, 0x22cf, 0x2280, 0x2281, 0x2270, 0x2271, 0x2272,
++  0x2273, 0x2ac5, 0x2acb, 0x2ac6, 0x2acc, 0x2276, 0x2277, 0x2279,
++  0x22da, 0x22db, 0x2a8b, 0x2a8c, 0x2a91, 0x2a92, 0xe0a3, 0x2245,
++  0x2243, 0x2248, 0x29a3, 0x22a4, 0xe0a4, 0xe120, 0xe008, 0xe009,
++  0xe00a, 0xe00b, 0xe00c, 0xe00d, 0xe00e, 0xe00f, 0xe010, 0xe011,
++  0xe0bb, 0xe0b2, 0xe0b3, 0xe0b4, 0xe0b5, 0xe0b6, 0xe0b7, 0xe0b8,
++  0xe0b9, 0xe0ba, 0xe333, 0xe335, 0xe337, 0xe339, 0xe33b, 0xe33d,
++  0xe33f, 0xe341, 0xe343, 0xe345, 0xe347, 0xe349, 0xe34b, 0xe34d,
++  0xe34f, 0xe351, 0xe353, 0xe355, 0xe357, 0xe359, 0xe35b, 0xe35d,
++  0xe35f, 0xe361, 0xe363, 0xe365, 0xe367, 0xe369, 0xe36b, 0xe36d,
++  0xe36f, 0xe371, 0xe373, 0xe375, 0xe377, 0xe379, 0xe37b, 0xe37d,
++  0xe37f, 0xe381, 0xe383, 0xe385, 0xe387, 0xe389, 0xe38b, 0xe38d,
++  0xe38f, 0xe391, 0xe393, 0xe395, 0xe397, 0xe399, 0xe416, 0xe121,
++  0xe02d, 0xe02f, 0x2034, 0xe140, 0xe141, 0xe142, 0xe143, 0xe3cf,
++  0xf83d, 0xe027, 0xe39b, 0xe39c, 0xe2da, 0xe01e, 0x266f, 0xe41b,
++  0xe418, 0xe033, 0xe332, 0x2042, 0x204e, 0xe032, 0xe3ca, 0xe031,
++  0x273d, 0x2731, 0x2747, 0x2022, 0xe0d0, 0xe0de, 0xf805, 0xe0d1,
++  0x2039, 0x203a, 0x00ab, 0x00bb, 0xe0ed, 0xe0ef, 0xe3cc, 0xe228,
++  0xe0dd, 0xf806, 0x29c8, 0xe0db, 0xe3cb, 0xe11f, 0x29be, 0xe0e8,
++  0xe0d8, 0xe0d7, 0x271a, 0x2716, 0x29bf, 0x25ef, 0xe0ea, 0xe0eb,
++  0x2723, 0x2756, 0xf80a, 0x25cc, 0xe0ec, 0x2610, 0x25a2, 0xe0f5,
++  0xe0f8, 0xe0f6, 0x273f, 0xe137, 0xf809, 0xe0e4, 0x274d, 0x25cd,
++  0xe104, 0xe3ce, 0xe0f4, 0x2720, 0xe0e3, 0xe0d5, 0x2741, 0xe0f9,
++  0xf808, 0xe036, 0xe3cd, 0xe168, 0x262f, 0xf80b, 0xe0f2, 0xe0f1,
++  0x2740, 0xf80c, 0xe0f7, 0x3020, 0xf807, 0x2776, 0x2777, 0x2778,
++  0x2779, 0x277a, 0x277b, 0x277c, 0x277d, 0x277e, 0x277f, 0x24eb,
++  0x24ec, 0x24ed, 0x24ee, 0x24ef, 0x24f0, 0x24f1, 0x24f2, 0x24f3,
++  0x24f4, 0xe13a, 0xe13b, 0xe13c, 0xe13d, 0xe13e, 0xe13f, 0xe0f3,
++  0x3012, 0x3036, 0xe0e7, 0xe0d9, 0x25fb, 0xf84c, 0xe0b1, 0xe0d6,
++  0x25ad, 0xf84d, 0xf84e, 0xf84f, 0xe0e2, 0xe15d, 0xe15c, 0x2206,
++  0xe09e, 0x221f, 0xe0a8, 0x2225, 0x2226, 0xe0a6, 0x2253, 0x2251,
++  0x2266, 0x2267, 0x2213, 0x2295, 0x2296, 0x2297, 0x2a38, 0x2314,
++  0xe014, 0xe0ad, 0x2262, 0xe013, 0x25b1, 0xe007, 0x2222, 0x2250,
++  0x03d5, 0x2ae8, 0x22a3, 0xe0af, 0xe0ac, 0x226e, 0x226f, 0x2285,
++  0x2284, 0x2209, 0x220c, 0x22bb, 0x22bc, 0x225a, 0x2306, 0xe0a9,
++  0xe0b0, 0x2a72, 0xe191, 0xe288, 0xe29e, 0x329e, 0xe144, 0x203c,
++  0x2049, 0xe030, 0x2047, 0xe0e1, 0xe0df, 0xe0e0, 0xe0dc, 0xe0d4,
++  0xe0d2, 0xe0d3, 0x2588, 0x25e6, 0xe0e5, 0xe0e6, 0xe0e9, 0x25bf,
++  0x25b5, 0x25b9, 0x25c3, 0x2666, 0x2981, 0x25fc, 0xe0da, 0x25ca,
++  0x3231, 0x3239, 0x33cb, 0x246f, 0x2470, 0x2471, 0x2472, 0x2473,
++  0x3251, 0x3252, 0x3253, 0x3254, 0x3255, 0x3256, 0x3257, 0x3258,
++  0x3259, 0x325a, 0xe055, 0xe040, 0xe04b, 0xe05f, 0xe064, 0xe065,
++  0xe066, 0xe067, 0x21d0, 0x21cf, 0x21cd, 0xe079, 0xe056, 0xe041,
++  0xe04c, 0xe060, 0xe062, 0xe063, 0xe03e, 0xe053, 0xe049, 0xe05d,
++  0xe07b, 0xe08e, 0xe086, 0xe097, 0xe07a, 0x27b2, 0xe085, 0xe096,
++  0xe042, 0x279c, 0xe04d, 0xe061, 0xe03c, 0xe051, 0xe047, 0xe05b,
++  0xf846, 0xf847, 0xe038, 0x279b, 0xe039, 0xe04f, 0xe044, 0xe058,
++  0x2962, 0x2964, 0x2963, 0x2965, 0xe081, 0x27a1, 0xe08a, 0xe09b,
++  0xe082, 0x279e, 0xe08b, 0xe09c, 0x21b2, 0x21b1, 0xe06f, 0x21b4,
++  0x21b0, 0x21b3, 0xe110, 0xe107, 0x2936, 0xe06d, 0xe071, 0x2935,
++  0xe06a, 0x2937, 0x2939, 0x2934, 0xe080, 0xe093, 0xe089, 0xe09a,
++  0x21bc, 0x21c0, 0xf841, 0xe078, 0xe090, 0xe07d, 0xe074, 0xe072,
++  0xe077, 0xe076, 0xf849, 0xf848, 0x21c4, 0x21c5, 0xe334, 0xe336,
++  0xe338, 0xe33a, 0xe33c, 0xe33e, 0xe340, 0xe342, 0xe344, 0xe346,
++  0xe348, 0xe34a, 0xe34c, 0xe34e, 0xe350, 0xe352, 0xe354, 0xe356,
++  0xe358, 0xe35a, 0xe35c, 0xe35e, 0xe360, 0xe362, 0xe364, 0xe366,
++  0xe368, 0xe36a, 0xe36c, 0xe36e, 0xe370, 0xe372, 0xe374, 0xe376,
++  0xe378, 0xe37a, 0xe37c, 0xe37e, 0xe380, 0xe382, 0xe384, 0xe386,
++  0xe388, 0xe38a, 0xe38c, 0xe38e, 0xe390, 0xe392, 0xe394, 0xe396,
++  0xe398, 0xe39a, 0xe1d1, 0xe1a9, 0xe1e8, 0xe1b2, 0xe1ab, 0xe1f8,
++  0xe1ba, 0xe1e0, 0xe1e2, 0xe1c4, 0xe1ad, 0xe1bc, 0xe1b6, 0xe1dd,
++  0xe1f1, 0xe19b, 0xe1cb, 0xe1d9, 0xe1ae, 0xe16a, 0xe192, 0xe1cf,
++  0xe179, 0xe15b, 0xe18c, 0xe154, 0xe197, 0xe165, 0xe16e, 0xe18b,
++  0xe16d, 0xe190, 0xe184, 0xe161, 0xe174, 0xe193, 0xe177, 0xe155,
++  0xe188, 0xe173, 0xe15f, 0xe18d, 0xe17d, 0xe163, 0xe17b, 0xe152,
++  0xe187, 0xe176, 0xe1e6, 0xe248, 0xe244, 0xe25f, 0xe245, 0xe239,
++  0xe23c, 0xe253, 0xe259, 0xe25c, 0xe268, 0xe255, 0xe1e7, 0xe1af,
++  0xe1b0, 0xe1b4, 0xe1be, 0xe1c9, 0xe1dc, 0xe1ec, 0xe1ee, 0xe1f0,
++  0xe1f2, 0xe1a4, 0xe1a3, 0xe1b1, 0xe1aa, 0xe1f7, 0xe1b9, 0xe1df,
++  0xe1e1, 0xe1c3, 0xe1ac, 0xe1bb, 0xe19e, 0xe1b5, 0xe1c2, 0xe1d8,
++  0xe1b8, 0xe1ca, 0xe1c5, 0xe1d3, 0xe19f, 0xe15a, 0x2483, 0x2484,
++  0x2485, 0x2486, 0x2487, 0xe269, 0xe26a, 0xe26b, 0xe26c, 0xe26d,
++  0xe26e, 0xe1e5, 0xe1a1, 0xe19a, 0xe169, 0xe18f, 0xe182, 0xe19d,
++  0xe1a8, 0xe1b7, 0xe1bf, 0xe1c0, 0xe1c7, 0xe1cc, 0xe1ce, 0xe1d2,
++  0xe1de, 0xe1e9, 0xe1ef, 0xe1d0, 0xe1f9, 0xe199, 0xe19c, 0xe1c8,
++  0xe178, 0xe17a, 0xe153, 0xe164, 0x3294, 0xe16c, 0xe160, 0xe18e,
++  0xe15e, 0xe196, 0xe17c, 0xe162, 0xe186, 0xe16b, 0xe183, 0xe17e,
++  0xe18a, 0xe175, 0xe195, 0xe171, 0x32a5, 0xe151, 0xe1bd, 0xe1c6,
++  0xe1db, 0xe1d4, 0xe1d5, 0xe1eb, 0xe1f3, 0xe198, 0xe1a2, 0xe1a6,
++  0xe1f4, 0xe247, 0xe249, 0xe24e, 0xe251, 0xe25b, 0xe261, 0xe262,
++  0xe263, 0xe264, 0xe266, 0xe24c, 0xe243, 0xe24d, 0xe24b, 0xe242,
++  0xe24f, 0xe250, 0xe252, 0xe254, 0xe257, 0xe258, 0xe25a, 0xe25d,
++  0xe25e, 0xe260, 0xe265, 0xe267, 0xe240, 0xe23f, 0xe23e, 0xe24a,
++  0xe23b, 0xe23d, 0xe241, 0xe246, 0xe256, 0xe26f, 0xe270, 0xe271,
++  0xe272, 0x21f0, 0xf843, 0x27b5, 0xe112, 0xe111, 0xe08f, 0xe07c,
++  0x27a4, 0xf844, 0xf84b, 0xf84a, 0xe075, 0xe073, 0xe095, 0xe084,
++  0x21b6, 0x21b7, 0x219d, 0x219c, 0xf842, 0xe03f, 0xe054, 0xe04a,
++  0xe05e, 0xe083, 0xe094, 0xe08c, 0xe09d, 0xe03a, 0x2794, 0xf845,
++  0xe045, 0xe059, 0xe03d, 0xe052, 0xe048, 0xe05c, 0xe03b, 0xe050,
++  0xe046, 0xe05a, 0x21e0, 0x21e2, 0x21e1, 0x21e3, 0xe07e, 0xe091,
++  0xe087, 0xe098, 0x21e6, 0x21e8, 0x21e7, 0x21e9, 0xe10a, 0xe06b,
++  0xe06e, 0xe108, 0xe068, 0xe10c, 0xe10e, 0xe105, 0xe10b, 0xe06c,
++  0xe070, 0xe109, 0xe069, 0xe10d, 0xe10f, 0xe106, 0xe037, 0xe04e,
++  0xe043, 0xe057, 0x261d, 0x261f, 0xe0ee, 0xe0f0, 0xe1a7, 0xe1ed,
++  0xe1c1, 0xe1ea, 0xe1da, 0xe1d7, 0xe1fa, 0xe1fb, 0xe200, 0xe205,
++  0xe20a, 0xe20f, 0xe214, 0xe219, 0xe21e, 0xe223, 0xe2b5, 0xe2b6,
++  0xe2b7, 0xe2b8, 0xe2b9, 0xe2ba, 0xe2bb, 0xe2bc, 0xe2bd, 0xe2be,
++  0xe2bf, 0xe229, 0xe22d, 0xe22b, 0xe232, 0xe22e, 0xe230, 0xe22a,
++  0xe22f, 0xe22c, 0xe231, 0xe295, 0xe299, 0xe297, 0xe29d, 0xe29a,
++  0xe29c, 0xe296, 0xe29b, 0xe298, 0xe294, 0xe145, 0xe14d, 0xe149,
++  0xe16f, 0xe14f, 0xe158, 0xe147, 0xe156, 0xe14b, 0xe166, 0xe27f,
++  0xe283, 0xe281, 0xe287, 0xe284, 0xe286, 0xe280, 0xe285, 0xe282,
++  0xe27e, 0xe17f, 0xe180, 0xe189, 0xe185, 0xe181, 0xe194, 0xe172,
++  0x3290, 0x328a, 0x328b, 0x328c, 0x328d, 0x328e, 0x328f, 0xe234,
++  0xe235, 0xe238, 0xe237, 0xe236, 0xe23a, 0xe233, 0xe127, 0xe12b,
++  0xe12f, 0xe131, 0xe092, 0xe07f, 0xe088, 0xe099, 0x301e, 0x301f,
++  0x2036, 0xe02e, 0x2035, 0xe02c, 0xe08d, 0xe001,
++};
++
++static const u_int32_t mac_korean_compose[] = {
++  0x0021f877, 0x0021f87f, 0x0028f87c, 0x0028f87f,
++  0x0029f87c, 0x0029f87f, 0x002af877, 0x002d0308,
++  0x003020de, 0x003120de, 0x003220de, 0x003320de,
++  0x003420de, 0x003520de, 0x003620de, 0x003720de,
++  0x003820de, 0x003920de, 0x003cf877, 0x003d20d2,
++  0x003d20e5, 0x003ef877, 0x005bf877, 0x005bf87b,
++  0x005bf87c, 0x005df877, 0x005df87b, 0x005df87c,
++  0x007bf877, 0x007df877, 0x00a7f87c, 0x00b1f877,
++  0x00b6f87f, 0x00d7f877, 0x2013f87f, 0x2016f87b,
++  0x2016f87c, 0x2020f877, 0x2020f87b, 0x2020f87c,
++  0x2020f87f, 0x2021f87c, 0x2021f87f, 0x2026f87f,
++  0x2032f873, 0x2032f87f, 0x2033f873, 0x2033f87f,
++  0x203cf87f, 0x2042f879, 0x2051f871, 0x2051f874,
++  0x2051f879, 0x2051f87c, 0x20a9f87f, 0x2190f870,
++  0x2190f871, 0x2190f872, 0x2190f873, 0x2190f874,
++  0x2190f875, 0x2190f878, 0x2190f879, 0x2190f87a,
++  0x2190f87b, 0x2190f87c, 0x2190f87f, 0x2191f870,
++  0x2191f872, 0x2191f873, 0x2191f874, 0x2191f875,
++  0x2191f878, 0x2191f879, 0x2191f87a, 0x2191f87b,
++  0x2191f87c, 0x2191f87f, 0x2192f870, 0x2192f872,
++  0x2192f874, 0x2192f875, 0x2192f878, 0x2192f879,
++  0x2192f87a, 0x2192f87b, 0x2192f87c, 0x2193f870,
++  0x2193f872, 0x2193f873, 0x2193f874, 0x2193f875,
++  0x2193f878, 0x2193f879, 0x2193f87a, 0x2193f87b,
++  0x2193f87c, 0x2193f87f, 0x2194f87c, 0x2195f87c,
++  0x2196f87b, 0x2197f87b, 0x2198f87b, 0x2199f87b,
++  0x21b0f87a, 0x21b0f87c, 0x21b0f87f, 0x21b1f87a,
++  0x21b1f87c, 0x21b1f87f, 0x21bbf87a, 0x21bbf87b,
++  0x21bbf87c, 0x21bbf87f, 0x21bcf879, 0x21bcf87f,
++  0x21c0f879, 0x21c0f87f, 0x21d0f87c, 0x21d2f87c,
++  0x21d4f879, 0x21d4f87f, 0x21e620dd, 0x21e620de,
++  0x21e6f870, 0x21e6f874, 0x21e6f875, 0x21e6f878,
++  0x21e6f879, 0x21e6f87a, 0x21e6f87b, 0x21e6f87c,
++  0x21e6f87f, 0x21e720dd, 0x21e720de, 0x21e7f875,
++  0x21e7f878, 0x21e7f879, 0x21e7f87a, 0x21e7f87b,
++  0x21e7f87c, 0x21e7f87f, 0x21e820de, 0x21e8f870,
++  0x21e8f874, 0x21e8f875, 0x21e8f878, 0x21e8f879,
++  0x21e8f87c, 0x21e8f87f, 0x21e920dd, 0x21e920de,
++  0x21e9f875, 0x21e9f878, 0x21e9f879, 0x21e9f87a,
++  0x21e9f87b, 0x21e9f87c, 0x2206f87f, 0x2208f877,
++  0x2211f877, 0x2213f877, 0x221ef877, 0x2222f87f,
++  0x22250347, 0x2229f877, 0x2229f87f, 0x222af877,
++  0x222af87f, 0x223d0336, 0x223df877, 0x2260f877,
++  0x226120d2, 0x226120e5, 0x2282f877, 0x22a50338,
++  0x2314f87f, 0x2394f876, 0x2460f87f, 0x2461f87f,
++  0x2462f87f, 0x2463f87f, 0x2464f87f, 0x2465f87f,
++  0x2466f87f, 0x2467f87f, 0x2468f87f, 0x24eaf87f,
++  0x24ebf878, 0x24ebf87f, 0x24ecf878, 0x24ecf87f,
++  0x24edf878, 0x24edf87f, 0x24eef878, 0x24eef87f,
++  0x24eff878, 0x24eff87f, 0x24f0f878, 0x24f0f87f,
++  0x24f1f878, 0x24f1f87f, 0x24f2f878, 0x24f2f87f,
++  0x24f3f878, 0x24f3f87f, 0x24f4f878, 0x24f4f87f,
++  0x25a020df, 0x25a120df, 0x25a1f879, 0x25a1f87b,
++  0x25a1f87c, 0x25a8f87f, 0x25adf878, 0x25b220dd,
++  0x25b320dd, 0x25b3f87f, 0x25b420e4, 0x25c620de,
++  0x25c6f879, 0x25c720de, 0x25c720df, 0x25c7f879,
++  0x25c7f87b, 0x25c7f87c, 0x25c7f87f, 0x25c8f87f,
++  0x25c920dd, 0x25cbf879, 0x25cbf87b, 0x25cbf87f,
++  0x25ce20dd, 0x25cff879, 0x25eff87c, 0x2610f87c,
++  0x2610f87f, 0x261cf87f, 0x261df87f, 0x261ef87f,
++  0x261ff87f, 0x262ff876, 0x262ff87a, 0x2642f87f,
++  0x2720f87a, 0x2723f87a, 0x273ff87a, 0x274820d8,
++  0x2756f87a, 0x2756f87f, 0x278af87f, 0x278bf87f,
++  0x278cf87f, 0x278df87f, 0x278ef87f, 0x278ff87f,
++  0x2790f87f, 0x2791f87f, 0x2792f87f, 0x2793f87f,
++  0x27e120dd, 0x2934f87a, 0x2934f87c, 0x2934f87f,
++  0x2935f87a, 0x2935f87c, 0x2936f87a, 0x2936f87c,
++  0x2937f87a, 0x2937f87c, 0x2939f87a, 0x2939f87c,
++  0x2939f87f, 0x2962f87f, 0x2964f87f, 0x2985f873,
++  0x2985f878, 0x2985f879, 0x2985f87b, 0x2985f87c,
++  0x2985f87f, 0x2986f873, 0x2986f878, 0x2986f879,
++  0x2986f87b, 0x2986f87c, 0x2986f87f, 0x29c820de,
++  0x2afd0347, 0x3002f87d, 0x3007f876, 0x3008f878,
++  0x3009f878, 0x300af878, 0x300bf878, 0x300cf879,
++  0x300cf87b, 0x300cf87c, 0x300cf87f, 0x300df879,
++  0x300df87b, 0x300df87c, 0x300df87f, 0x300ef879,
++  0x300ef87c, 0x300ff879, 0x300ff87c, 0x3010f878,
++  0x3010f87f, 0x3011f878, 0x3011f87f, 0x3013f87c,
++  0x3016f878, 0x3017f878, 0x3251f87a, 0x3252f87a,
++  0x3253f87a, 0x3254f87a, 0x3255f87a, 0x3256f87a,
++  0x3257f87a, 0x3258f87a, 0x3259f87a, 0x325af87a,
++  0x329ef87f, 0x4e0020de, 0x4e00f876, 0x4e0320de,
++  0x4e03f876, 0x4e0920de, 0x4e09f876, 0x4e5d20de,
++  0x4e5df876, 0x4e8c20de, 0x4e8cf876, 0x4e9420de,
++  0x4e94f876, 0x4ed620dd, 0x4ed620de, 0x4ee320dd,
++  0x4ee320de, 0x4f8b20de, 0x516b20de, 0x516bf876,
++  0x516d20de, 0x516df876, 0x51a020dd, 0x51a020de,
++  0x51f8f87f, 0x51f9f87f, 0x524d20dd, 0x524d20de,
++  0x526f20dd, 0x526f20de, 0x52a920dd, 0x52a920de,
++  0x52d520dd, 0x52d520de, 0x534120de, 0x5341f876,
++  0x534df87f, 0x537020dd, 0x537020de, 0x53c320dd,
++  0x53cd20dd, 0x53cd20de, 0x540d20de, 0x56db20de,
++  0x56dbf876, 0x570b20dd, 0x571f20de, 0x5b5020de,
++  0x5e8f20de, 0x5f6220dd, 0x5f6220de, 0x5f7120de,
++  0x611f20dd, 0x611f20de, 0x616320dd, 0x630720de,
++  0x63a520dd, 0x63a520de, 0x65b020dd, 0x65e520de,
++  0x670820de, 0x672820de, 0x672b20dd, 0x672c20dd,
++  0x672c20de, 0x6c3420de, 0x6ce820dd, 0x6d3e20de,
++  0x6e9020de, 0x706b20de, 0x73fe20dd, 0x76ee20de,
++  0x7b5420de, 0x7bc020de, 0x81ea20dd, 0x886320dd,
++  0x88dc20de, 0x88dc20e4, 0x8a3b20de, 0x902320de,
++  0x91d120de, 0x959320dd, 0x96fb20dd, 0x982d20de,
++  0xac0020dd, 0xac0420dd, 0xac1020dd, 0xac1020de,
++  0xac1920dd, 0xac7020dd, 0xac8c20dd, 0xad0020dd,
++  0xad5020de, 0xad6d20dd, 0xb09820dd, 0xb0ae20dd,
++  0xb19220dd, 0xb29020dd, 0xb2e420dd, 0xb2e820dd,
++  0xb2f520dd, 0xb2f520de, 0xb30020dd, 0xb30020de,
++  0xb3d920dd, 0xb3d920de, 0xb73b20de, 0xb77c20dd,
++  0xb9c820dd, 0xba8520dd, 0xba8520de, 0xbb3820de,
++  0xbc1420dd, 0xbc1820dd, 0xbc1820de, 0xbcc020dd,
++  0xbcf820dd, 0xbd8020dd, 0xbd8020de, 0xbe4420dd,
++  0xbe4420de, 0xbe6020dd, 0xc0ac20dd, 0xc0c120dd,
++  0xc13c20dd, 0xc18c20dd, 0xc18d20dd, 0xc21820dd,
++  0xc21820de, 0xc21920dd, 0xc2dc20dd, 0xc2e020dd,
++  0xc2e420dd, 0xc54420dd, 0xc57d20dd, 0xc57d20de,
++  0xc5ec20dd, 0xc5ed20de, 0xc60820dd, 0xc60820de,
++  0xc67820dd, 0xc6b420de, 0xc6d020dd, 0xc72020dd,
++  0xc73c20dd, 0xc74c20dd, 0xc74c20de, 0xc77420dd,
++  0xc77820dd, 0xc77820de, 0xc77c20dd, 0xc78520dd,
++  0xc79020dd, 0xc79020de, 0xc79120dd, 0xc80420dd,
++  0xc80420de, 0xc81120dd, 0xc81120de, 0xc81520de,
++  0xc81c20dd, 0xc87020dd, 0xc87020de, 0xc87420dd,
++  0xc8fc20de, 0xc90020dd, 0xc91120dd, 0xc9c120dd,
++  0xcc2820dd, 0xcc3820dd, 0xce7420dd, 0xd0b920dd,
++  0xd0c020dd, 0xd0c020de, 0xd30c20dd, 0xd45c20dd,
++  0xd55820dd, 0xd57420dd, 0xd57420de, 0xd61520dd,
++  0xd61520de, 0xd65c20dd, 0xd73420dd, 0xe009f875,
++  0xe009f87a, 0xe009f87b, 0xe009f87c, 0xe009f87f,
++  0xe00af875, 0xe00af87a, 0xe00af87b, 0xe00af87c,
++  0xe00af87f, 0xe00bf875, 0xe00bf87a, 0xe00bf87b,
++  0xe00bf87c, 0xe00bf87f, 0xe00cf875, 0xe00cf87a,
++  0xe00cf87b, 0xe00cf87c, 0xe00cf87f, 0xe00df875,
++  0xe00df87a, 0xe00df87b, 0xe00df87c, 0xe00df87f,
++  0xe00ef875, 0xe00ef87a, 0xe00ef87b, 0xe00ef87c,
++  0xe00ef87f, 0xe00ff875, 0xe00ff87a, 0xe00ff87b,
++  0xe00ff87c, 0xe00ff87f, 0xe010f875, 0xe010f87a,
++  0xe010f87b, 0xe010f87c, 0xe010f87f, 0xe011f875,
++  0xe011f87a, 0xe011f87b, 0xe011f87c, 0xe011f87f,
++  0xe0de20df, 0xe145f87a, 0xe147f87a, 0xe149f87a,
++  0xe14bf87a, 0xe14df87a, 0xe14ff87a, 0xe156f87a,
++  0xe158f87a, 0xe166f87a, 0xe16ff87a, 0xe172f87c,
++  0xe17ff87c, 0xe180f87c, 0xe181f87c, 0xe185f87c,
++  0xe189f87c, 0xe192f87a, 0xe194f87c, 0xe198f87a,
++  0xe1a0f87a, 0xe1a2f87a, 0xe1a3f87a, 0xe1a4f87a,
++  0xe1a5f87a, 0xe1a6f87a, 0xe1a7f87a, 0xe1a8f87a,
++  0xe1a9f87a, 0xe1aef87a, 0xe1aff87a, 0xe1b0f87a,
++  0xe1b3f87a, 0xe1b4f87a, 0xe1b5f87a, 0xe1b8f87a,
++  0xe1bbf87a, 0xe1bdf87a, 0xe1bef87a, 0xe1c0f87a,
++  0xe1c6f87a, 0xe1c9f87a, 0xe1ccf87a, 0xe1cdf87a,
++  0xe1cef87a, 0xe1cff87a, 0xe1d0f87a, 0xe1d4f87a,
++  0xe1d5f87a, 0xe1d6f87a, 0xe1dbf87a, 0xe1dcf87a,
++  0xe1e3f87a, 0xe1e4f87a, 0xe1e7f87a, 0xe1e8f87a,
++  0xe1e9f87a, 0xe1ecf87a, 0xe1eef87a, 0xe1f0f87a,
++  0xe1f2f87a, 0xe1f3f87a, 0xe1f4f87a, 0xe1f5f87a,
++  0xe1f6f87a, 0xe2db0029, 0xe2dc0029, 0xe2dd0029,
++  0xe2de0029, 0xe2df0029, 0xe2e00029, 0xe2e10029,
++  0xe2e20029, 0xe2e30029, 0xe2e40029, 0xe2e5005d,
++  0xe2e6005d, 0xe2e7005d, 0xe2e8005d, 0xe2e9005d,
++  0xe2ea005d, 0xe2eb005d, 0xe2ec005d, 0xe2ed005d,
++  0xe2ee005d, 0xe2ef005d, 0xe2f0005d, 0xe2f1005d,
++  0xe2f2005d, 0xe2f3005d, 0xe2f4005d, 0xe2f5005d,
++  0xe2f6005d, 0xe2f7005d, 0xe2f8005d, 0xe2f9005d,
++  0xe2fac0ac, 0xe2fb005d, 0xe2fc005d, 0xe2fd005d,
++  0xe2fe005d, 0xe2ff005d, 0xe300005d, 0xe301005d,
++  0xe302005d, 0xe303005d, 0xe304005d, 0xe305005d,
++  0xe306005d, 0xe307005d, 0xe308005d, 0xe309005d,
++  0xe30a005d, 0xe30b005d, 0xe30c005d, 0xe30d005d,
++  0xe30e005d, 0xe30f005d, 0xe310c0ac, 0xe311005d,
++  0xe312005d, 0xe313005d, 0xe314005d, 0xe315005d,
++  0xe316005d, 0xe317005d, 0xe318005d, 0xe319005d,
++  0xe31a005d, 0xe31b005d, 0xe31c005d, 0xe31d005d,
++  0xe31e005d, 0xe31f005d, 0xe320005d, 0xe321005d,
++  0xe322005d, 0xe323005d, 0xe324005d, 0xe325005d,
++  0xe326005d, 0xe327005d, 0xe328005d, 0xe329005d,
++  0xe32a005d, 0xe32b005d, 0xe32c005d, 0xe32d005d,
++  0xe32e005d, 0xe32f005d, 0xe330005d, 0xe331005d,
++  0xe39d0029, 0xe39e0029, 0xe39f0029, 0xe3a00029,
++  0xe3a10029, 0xe3a20029, 0xe3a30029, 0xe3a40029,
++  0xe3a50029, 0xe3a60029, 0xe3a70029, 0xe3a80029,
++  0xe3a90029, 0xe3aa0029, 0xe3ab0029, 0xe3ac0029,
++  0xe3ad0029, 0xe3ae0029, 0xe3af0029, 0xe3b00029,
++  0xe3b10029, 0xe3b20029, 0xe3b30029, 0xe3b40029,
++  0xe3b50029, 0xe3b60029, 0xe3b72020, 0xe3b80031,
++  0xe3b80032, 0xe3b80033, 0xe3b80034, 0xe3b80035,
++  0xe3b80036, 0xe3b80037, 0xe3b80038, 0xe3b80039,
++  0xe3b90030, 0xe3ba0030, 0xe3ba0031, 0xe3ba0032,
++  0xe3ba0033, 0xe3ba0034, 0xe3ba0035, 0xe3ba0036,
++  0xe3ba0037, 0xe3ba0038, 0xe3ba0039, 0xe3bb0030,
++  0xe3bc5341, 0xe3bd4e00, 0xe3bd4e03, 0xe3bd4e09,
++  0xe3bd4e5d, 0xe3bd4e8c, 0xe3bd4e94, 0xe3bd516b,
++  0xe3bd516d, 0xe3bd56db, 0xe3bed68c, 0xe3bf0030,
++  0xe3bf0031, 0xe3bf0032, 0xe3bf0033, 0xe3bf0034,
++  0xe3bf0035, 0xe3bf0036, 0xe3bf0037, 0xe3bf0038,
++  0xe3bf0039, 0xe3c00030, 0xe3c15341, 0xe3c24e00,
++  0xe3c24e03, 0xe3c24e09, 0xe3c24e5d, 0xe3c24e8c,
++  0xe3c24e94, 0xe3c2516b, 0xe3c2516d, 0xe3c256db,
++  0xe3c3d68c, 0xe3c40030, 0xe3c40031, 0xe3c40032,
++  0xe3c40033, 0xe3c40034, 0xe3c40035, 0xe3c40036,
++  0xe3c40037, 0xe3c40038, 0xe3c40039, 0xe3c50030,
++  0xe3c60030, 0xe3c60031, 0xe3c60032, 0xe3c60033,
++  0xe3c60034, 0xe3c60035, 0xe3c60036, 0xe3c60037,
++  0xe3c60038, 0xe3c60039, 0xe3c70030, 0xe3c80030,
++  0xe3c80031, 0xe3c80032, 0xe3c80033, 0xe3c80034,
++  0xe3c80035, 0xe3c80036, 0xe3c80037, 0xe3c80038,
++  0xe3c80039, 0xe3c90030, 0xe3d0002a, 0xe3d10029,
++  0xe3d1002e, 0xe3d20029, 0xe3d2002e, 0xe3d30029,
++  0xe3d3002e, 0xe3d40029, 0xe3d4002e, 0xe3d50029,
++  0xe3d5002e, 0xe3d60029, 0xe3d6002e, 0xe3d70029,
++  0xe3d7002e, 0xe3d80029, 0xe3d8002e, 0xe3d90029,
++  0xe3d9002e, 0xe3da0029, 0xe3da002e, 0xe3db0029,
++  0xe3db002e, 0xe3dc0029, 0xe3dc002e, 0xe3dd0029,
++  0xe3dd002e, 0xe3de0029, 0xe3de002e, 0xe3df0029,
++  0xe3df002e, 0xe3e00029, 0xe3e0002e, 0xe3e10029,
++  0xe3e1002e, 0xe3e20029, 0xe3e2002e, 0xe3e30029,
++  0xe3e3002e, 0xe3e40029, 0xe3e4002e, 0xe3e50029,
++  0xe3e5002e, 0xe3e60029, 0xe3e6002e, 0xe3e70029,
++  0xe3e7002e, 0xe3e80029, 0xe3e8002e, 0xe3e90029,
++  0xe3e9002e, 0xe3ea0029, 0xe3ea002e, 0xe3eb0029,
++  0xe3eb002e, 0xe3ec0029, 0xe3ec002e, 0xe3ed0029,
++  0xe3ed002e, 0xe3ee0029, 0xe3ee002e, 0xe3ef0029,
++  0xe3ef002e, 0xe3f00029, 0xe3f0002e, 0xe3f10029,
++  0xe3f1002e, 0xe3f20029, 0xe3f2002e, 0xe3f30029,
++  0xe3f3002e, 0xe3f40029, 0xe3f4002e, 0xe3f50029,
++  0xe3f5002e, 0xe3f60029, 0xe3f6002e, 0xe3f70029,
++  0xe3f7002e, 0xe3f80029, 0xe3f8002e, 0xe3f90029,
++  0xe3f9002e, 0xe3fa0029, 0xe3fa002e, 0xe3fb0029,
++  0xe3fb002e, 0xe3fc0029, 0xe3fc002e, 0xe3fd0029,
++  0xe3fd002e, 0xe3fe0029, 0xe3fe002e, 0xe3ff0029,
++  0xe3ff002e, 0xe4000029, 0xe400002e, 0xe4010029,
++  0xe401002e, 0xe4020029, 0xe402002e, 0xe4030029,
++  0xe403002e, 0xe4040029, 0xe404002e, 0xe4052020,
++  0xe4062021, 0xe4070041, 0xe4070042, 0xe4070043,
++  0xe4070044, 0xe4070045, 0xe4070046, 0xe4070047,
++  0xe4070048, 0xe4070049, 0xe407004a, 0xe407004b,
++  0xe407004c, 0xe407004d, 0xe407004e, 0xe407004f,
++  0xe4070050, 0xe4070051, 0xe4070052, 0xe4070053,
++  0xe4070054, 0xe4070055, 0xe4070056, 0xe4070057,
++  0xe4070058, 0xe4070059, 0xe407005a, 0xe4082020,
++  0xe4090032, 0xe4090033, 0xe40a0031, 0xe40a0032,
++  0xe40a4e8c, 0xe40a5341, 0xe40bc2dd, 0xe40c0031,
++  0xe40c0032, 0xe40c4e8c, 0xe40c5341, 0xe40dc2dd,
++  0xe40e0031, 0xe40e0032, 0xe40f0031, 0xe40f0032,
++  0xe4100031, 0xe4100032, 0xe411002a, 0xf80520de,
++  0xf80620df, 0xf809f87a, 0xf80bf87f, 0xf83df87f,
++  0xf860002a, 0xf8600041, 0xf8600042, 0xf8600043,
++  0xf8600044, 0xf8600045, 0xf8600046, 0xf8600047,
++  0xf8600048, 0xf8600049, 0xf860004a, 0xf860004b,
++  0xf860004c, 0xf860004d, 0xf860004e, 0xf860004f,
++  0xf8600050, 0xf8600051, 0xf8600052, 0xf8600053,
++  0xf8600054, 0xf8600055, 0xf8600056, 0xf8600057,
++  0xf8600058, 0xf8600059, 0xf860005a, 0xf8600061,
++  0xf8600062, 0xf8600063, 0xf8600064, 0xf8600065,
++  0xf8600066, 0xf8600067, 0xf8600068, 0xf8600069,
++  0xf860006a, 0xf860006b, 0xf860006c, 0xf860006d,
++  0xf860006e, 0xf860006f, 0xf8600070, 0xf8600071,
++  0xf8600072, 0xf8600073, 0xf8600074, 0xf8600075,
++  0xf8600076, 0xf8600077, 0xf8600078, 0xf8600079,
++  0xf860007a, 0xf8602020, 0xf8602021, 0xf8610028,
++  0xf8612020, 0xf8620028, 0xf862005b, 0xf862c8fc,
++  0xf863005b, 0xf863c8fc, 0xf864005b, 0xf865005b,
++  0xf866005b, 0xf867002a, 0xfe59f87c, 0xfe59f87f,
++  0xfe5af87c, 0xfe5af87f, 0xff01f874, 0xff0af871,
++  0xff0af873, 0xff0af874, 0xff0af875, 0xff0af87f,
++  0xff3ff87f,
++};
+diff --git a/libatalk/unicode/charsets/mac_roman.c b/libatalk/unicode/charsets/mac_roman.c
+index caf9a65..bfb84c8 100644
+--- a/libatalk/unicode/charsets/mac_roman.c
++++ b/libatalk/unicode/charsets/mac_roman.c
+@@ -45,7 +45,7 @@ struct charset_functions charset_mac_roman =
+ 	mac_roman_pull,
+ 	mac_roman_push,
+ 	CHARSET_CLIENT | CHARSET_MULTIBYTE | CHARSET_PRECOMPOSED,
+-	NULL, NULL
++	NULL, NULL, NULL
+ };
+ 
+ /* ------------------------ */
+diff --git a/libatalk/unicode/charsets/mac_turkish.c b/libatalk/unicode/charsets/mac_turkish.c
+index 33431d4..5f906ea 100644
+--- a/libatalk/unicode/charsets/mac_turkish.c
++++ b/libatalk/unicode/charsets/mac_turkish.c
+@@ -44,7 +44,7 @@ struct charset_functions charset_mac_turkish =
+ 	mac_turkish_pull,
+ 	mac_turkish_push,
+ 	CHARSET_CLIENT | CHARSET_MULTIBYTE,
+-	NULL, NULL
++	NULL, NULL, NULL
+ };
+ 
+ static size_t mac_turkish_push( void *cd, char **inbuf, size_t *inbytesleft,
+diff --git a/libatalk/unicode/iconv.c b/libatalk/unicode/iconv.c
+index 336af7d..2ca2ec0 100644
+--- a/libatalk/unicode/iconv.c
++++ b/libatalk/unicode/iconv.c
+@@ -96,13 +96,19 @@ extern  struct charset_functions charset_mac_greek;
+ extern  struct charset_functions charset_mac_turkish;
+ extern  struct charset_functions charset_utf8;
+ extern  struct charset_functions charset_utf8_mac;
++#ifdef HAVE_USABLE_ICONV
++extern  struct charset_functions charset_mac_japanese;
++extern  struct charset_functions charset_mac_chinese_trad;
++extern  struct charset_functions charset_mac_korean;
++extern  struct charset_functions charset_mac_chinese_simp;
++#endif
+ 
+ 
+ static struct charset_functions builtin_functions[] = {
+-	{"UCS-2",   0, iconv_copy, iconv_copy, CHARSET_WIDECHAR | CHARSET_PRECOMPOSED, NULL, NULL},
+-	{"ASCII",     0, ascii_pull, ascii_push, CHARSET_MULTIBYTE | CHARSET_PRECOMPOSED, NULL, NULL},
+-	{"SHIFT_JIS", 1568, NULL, NULL, CHARSET_ICONV | CHARSET_PRECOMPOSED | CHARSET_CLIENT, NULL, NULL},
+-	{NULL, 0, NULL, NULL, 0, NULL, NULL}
++	{"UCS-2",   0, iconv_copy, iconv_copy, CHARSET_WIDECHAR | CHARSET_PRECOMPOSED, NULL, NULL, NULL},
++	{"ASCII",     0, ascii_pull, ascii_push, CHARSET_MULTIBYTE | CHARSET_PRECOMPOSED, NULL, NULL, NULL},
++	{"SHIFT_JIS", 1568, NULL, NULL, CHARSET_ICONV | CHARSET_PRECOMPOSED | CHARSET_CLIENT, NULL, NULL, NULL},
++	{NULL, 0, NULL, NULL, 0, NULL, NULL, NULL}
+ };
+ 
+ 
+@@ -171,6 +177,12 @@ void lazy_initialize_iconv(void)
+ 		atalk_register_charset(&charset_mac_turkish);
+ 		atalk_register_charset(&charset_mac_centraleurope);
+ 		atalk_register_charset(&charset_mac_cyrillic);
++#ifdef HAVE_USABLE_ICONV
++		atalk_register_charset(&charset_mac_japanese);
++		atalk_register_charset(&charset_mac_chinese_trad);
++		atalk_register_charset(&charset_mac_korean);
++		atalk_register_charset(&charset_mac_chinese_simp);
++#endif
+ 	}
+ }
+ 
+@@ -267,23 +279,27 @@ atalk_iconv_t atalk_iconv_open(const char *tocode, const char *fromcode)
+ 
+ 	/* check if we have a builtin function for this conversion */
+ 	from = find_charset_functions(fromcode);
+-	if(from && from->pull)ret->pull = from->pull;
++	if (from) ret->pull = from->pull;
+ 	
+ 	to = find_charset_functions(tocode);
+-	if(to && to->push)ret->push = to->push;
++	if (to) ret->push = to->push;
+ 
+ 	/* check if we can use iconv for this conversion */
+ #ifdef HAVE_USABLE_ICONV
+-	if (!ret->pull) {
+-		ret->cd_pull = iconv_open(UCS2ICONV, fromcode);
+-		if (ret->cd_pull != (iconv_t)-1)
+-			ret->pull = sys_iconv;
++	if (!from || (from->flags & CHARSET_ICONV)) {
++	  ret->cd_pull = iconv_open(UCS2ICONV, from && from->iname ? from->iname : fromcode);
++	  if (ret->cd_pull != (iconv_t)-1) {
++	    if (!ret->pull) ret->pull = sys_iconv;
++	  } else ret->pull = NULL;
+ 	}
+-
+-	if (!ret->push) {
+-		ret->cd_push = iconv_open(tocode, UCS2ICONV);
+-		if (ret->cd_push != (iconv_t)-1)
+-			ret->push = sys_iconv;
++	if (ret->pull) {
++	  if (!to || (to->flags & CHARSET_ICONV)) {
++	    ret->cd_push = iconv_open(to && to->iname ? to->iname : tocode, UCS2ICONV);
++	    if (ret->cd_push != (iconv_t)-1) {
++	      if (!ret->push) ret->push = sys_iconv;
++	    } else ret->push = NULL;
++	  }
++	  if (!ret->push && ret->cd_pull) iconv_close((iconv_t)ret->cd_pull);
+ 	}
+ #endif
+ 	
+@@ -296,33 +312,16 @@ atalk_iconv_t atalk_iconv_open(const char *tocode, const char *fromcode)
+ 	}
+ 
+ 	/* check for conversion to/from ucs2 */
+-	if (strcasecmp(fromcode, "UCS-2") == 0 && to && to->push) {
+-		ret->direct = to->push;
+-		ret->push = ret->pull = NULL;
+-		return ret;
+-	}
+-
+-	if (strcasecmp(tocode, "UCS-2") == 0 && from && from->pull) {
+-		ret->direct = from->pull;
+-		ret->push = ret->pull = NULL;
+-		return ret;
+-	}
+-
+-	/* Check if we can do the conversion direct */
+-#ifdef HAVE_USABLE_ICONV
+ 	if (strcasecmp(fromcode, "UCS-2") == 0) {
+-		ret->direct = sys_iconv;
+-		ret->cd_direct = ret->cd_push;
+-		ret->cd_push = NULL;
+-		return ret;
++	  ret->direct = ret->push;
++	  ret->cd_direct = ret->cd_push;
++	  ret->cd_push = NULL;
+ 	}
+ 	if (strcasecmp(tocode, "UCS-2") == 0) {
+-		ret->direct = sys_iconv;
+-		ret->cd_direct = ret->cd_pull;
+-		ret->cd_pull = NULL;
+-		return ret;
++	  ret->direct = ret->pull;
++	  ret->cd_direct = ret->cd_pull;
++	  ret->cd_pull = NULL;
+ 	}
+-#endif
+ 
+ 	return ret;
+ }
+diff --git a/libatalk/unicode/utf8.c b/libatalk/unicode/utf8.c
+index 12aed01..f1dd6d9 100644
+--- a/libatalk/unicode/utf8.c
++++ b/libatalk/unicode/utf8.c
+@@ -47,7 +47,7 @@ struct charset_functions charset_utf8 =
+ 	utf8_pull,
+ 	utf8_push,
+ 	CHARSET_VOLUME | CHARSET_MULTIBYTE | CHARSET_PRECOMPOSED,
+-	NULL, NULL
++	NULL, NULL, NULL
+ };
+ 
+ struct charset_functions charset_utf8_mac =
+@@ -57,7 +57,7 @@ struct charset_functions charset_utf8_mac =
+ 	utf8_pull,
+ 	utf8_push,
+ 	CHARSET_VOLUME | CHARSET_CLIENT | CHARSET_MULTIBYTE | CHARSET_DECOMPOSED,
+-	NULL, NULL
++	NULL, NULL, NULL
+ };
+ 
+ /* ------------------------ */
