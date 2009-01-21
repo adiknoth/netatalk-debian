@@ -2,4 +2,10 @@
 
 @include common-auth
 @include common-account
+
+# Override common password routine (doesn't use cracklib by default)
+#@include common-password
+password   required	pam_cracklib.so
+password   required	pam_unix.so use_authtok
+
 @include common-session

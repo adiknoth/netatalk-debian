@@ -35,6 +35,8 @@ DEB_CONFIGURE_EXTRA_FLAGS := \
 	--disable-logger			\
 	--enable-krb4-uam --enable-krbV-uam	\
 	--with-cnid-dbd-txn			\
+	--with-libgcrypt-dir			\
+	--with-cracklib=/var/cache/cracklib/cracklib_dict	\
 	--enable-debian
 
 # libxfs currently broken: redefines several __swabXXX in xfs/swab.h
@@ -54,20 +56,11 @@ endif
 
 # libgcrypt is GPL-compatible, but openssl supports randnum auth
 ifneq (,$(findstring openssl,$(DEB_BUILD_OPTIONS)))
-DEB_CONFIGURE_EXTRA_FLAGS += --without-libgcrypt-dir		\
-	--with-openssl-dir					\
-	--with-cracklib=/var/cache/cracklib/cracklib_dict	\
-	--enable-pgp-uam
-DEB_DH_GENCONTROL_ARGS := -- -Vssl:Recommends=", cracklib-runtime, libpam-cracklib"
-uamlist = uams_dhx.so,uams_clrtxt.so,uams_randnum.so
-pamfile = netatalk.pam-ssl
+DEB_CONFIGURE_EXTRA_FLAGS += --with-openssl-dir --enable-pgp-uam
+uamlist = uams_dhx2.so,uams_clrtxt.so,uams_dhx.so,uams_randnum.so
 else
-DEB_CONFIGURE_EXTRA_FLAGS += --with-libgcrypt-dir		\
-	--without-openssl-dir					\
-	--with-cracklib=/var/cache/cracklib/cracklib_dict
-DEB_DH_GENCONTROL_ARGS := -- -Vssl:Recommends=", cracklib-runtime, libpam-cracklib"
+DEB_CONFIGURE_EXTRA_FLAGS += --without-openssl-dir
 uamlist = uams_dhx2.so,uams_clrtxt.so
-pamfile = netatalk.pam-ssl
 endif
 
 # Cheat autotools (as CDBS lack support for autotools options)
@@ -101,7 +94,6 @@ binary-post-install/netatalk::
 
 # Adjust PAM modules and UAMs loaded by default, depending on ssl support
 binary-post-install/netatalk::
-	install -m 644 debian/$(pamfile) debian/netatalk/etc/pam.d/netatalk
 	perl -i -pe 's/^#AFPD_UAMLIST=.*/#AFPD_UAMLIST="-U $(uamlist)"/' debian/netatalk/etc/default/netatalk
 	perl -i -pe 's/^AFPD_UAMLIST=.*/AFPD_UAMLIST="-U $(uamlist)"/' debian/netatalk/etc/init.d/netatalk
 
