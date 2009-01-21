@@ -1,3 +1,15 @@
+netatalk (2.0.4~beta2-3) UNRELEASED; urgency=high
+
+  * Update debian/copyrights:
+    + Merge entries with same owners and license (only differing years)
+    + Consistently list years before owner
+    + Sort owners
+    + Explicitly include GAP licenses (wording vary slightly)
+    + Fix GPL-2+ licensed files wrongly registered as GAP
+  * Keep urgency=high as 2.0.4~beta2-2 changes are still pending.
+
+ -- Jonas Smedegaard <dr@jones.dk>  Wed, 21 Jan 2009 18:08:44 +0100
+
 netatalk (2.0.4~beta2-2) unstable; urgency=high
 
   * Always use gcrypt. Simplify optional openssl support.
