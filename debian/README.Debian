@@ -24,7 +24,7 @@ commands (replace XXX with the actual version of the package):
 
        apt-get source netatalk
        cd netatalk-XXX
-       DEB_BUILD_OPTIONS=ssl DEB_AUTO_UPDATE_DEBIAN_CONTROL=yes debuild
+       DEB_MAINTAINER_MODE=1 DEB_BUILD_OPTIONS=openssl debuild
        cd ..
        aptitude install netatalk-XXX.deb
 
