@@ -8,8 +8,14 @@ netatalk (2.0.4~beta2-1) unstable; urgency=low
     the server) or using the older DHX UAM (which was non-distributable
     by Debian due to being considered incompatible with the GPL).
 
+    DHX2 is now built by default but Randnum is not (it now needs
+    OpenSSL).
+
     To use new DHX2 AUM, make sure it is included in -uamlist option of
     afpd.conf if that option is used (it is enabled by default).
+
+    See /usr/share/doc/netatalk/README.Debian(.gz) for info on getting
+    netatalk with DHX and Randnum UAMs using OpenSSL.
 
  -- Jonas Smedegaard <dr@jones.dk>  Wed, 07 Jan 2009 14:02:21 +0100
 
