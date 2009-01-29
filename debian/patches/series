@@ -30,3 +30,4 @@
 210_avoid_update-rc-d.patch
 211_avoid_update-rc-d_for_automade_file.patch
 212_disable_cnid_metad_by_default.patch
+213_CVE-2008-5718.patch
