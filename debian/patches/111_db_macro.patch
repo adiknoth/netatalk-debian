@@ -1,9 +1,14 @@
 --- netatalk.orig/macros/db3-check.m4	2007-12-14 01:26:42.000000000 +0100
 +++ netatalk/macros/db3-check.m4	2007-12-14 01:40:56.000000000 +0100
-@@ -120,25 +120,36 @@
+@@ -120,25 +120,41 @@
  AC_DEFUN([NETATALK_BERKELEY_LINK],
  [
  atalk_cv_lib_db=no
++NETATALK_BDB_LINK_TRY(atalk_cv_db_db_4_dot_7,[-ldb-4.7])
++NETATALK_BDB_LINK_TRY(atalk_cv_db_db47,[-ldb47])
++NETATALK_BDB_LINK_TRY(atalk_cv_db_db_47,[-ldb-47])
++NETATALK_BDB_LINK_TRY(atalk_cv_db_db_4_7,[-ldb-4-6])
++
 +NETATALK_BDB_LINK_TRY(atalk_cv_db_db_4_dot_6,[-ldb-4.6])
 +NETATALK_BDB_LINK_TRY(atalk_cv_db_db46,[-ldb46])
 +NETATALK_BDB_LINK_TRY(atalk_cv_db_db_46,[-ldb-46])
@@ -47,12 +52,12 @@
  NETATALK_BDB_LINK_TRY(atalk_cv_db_db_4,[-ldb-4])
  NETATALK_BDB_LINK_TRY(atalk_cv_db_db4,[-ldb4])
  NETATALK_BDB_LINK_TRY(atalk_cv_db_db,[-ldb])
-@@ -150,7 +161,7 @@
+@@ -150,7 +166,7 @@
  	trybdbdir=""
  	dobdbsearch=yes
  	bdb_search_dirs="/usr/local/include /usr/include"
 -	search_subdirs="/db4.2 /db42 /db4.3 /db43 /db4.4 /db44 /db4.1 /db41 /db4 /"
-+	search_subdirs="/db4.6 /db46 /db4.5 /db45 /db4.4 /db44 /db4.3 /db43 /db4.2 /db42 /db4.1 /db41 /db4 /"
++	search_subdirs="/db4.7 /db47 /db4.6 /db46 /db4.5 /db45 /db4.4 /db44 /db4.3 /db43 /db4.2 /db42 /db4.1 /db41 /db4 /"
  
  dnl required BDB version
  	DB_MAJOR_REQ=4

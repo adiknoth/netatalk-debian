@@ -55,34 +55,28 @@ this will look like this:
 Upgrading Problems
 ==================
 
-This version of Netatalk switches to Berkeley DB 4.2. During the development
-process of Debian 3.1 (sarge) earlier versions of BDB (3.0 and 4.0) were used.
-As Netatalk does not automatically update its database, you may experience
-problems like those described in bug #200373: no files showing up in your
-folders. This problem should not concern you if you are upgrading from Debian
-3.0 (woody).
+This version of Netatalk use to Berkeley DB 4.7.
 
-If you have such problems, you may try to upgrade the database manually by
-running the following commands (please set APPLE_DIR to the path to your
-shared files):
+Earlier releases used Berkeley DB 4.2.  As Netatalk does not
+automatically update its database, you may experience problems like
+those described in bug #200373: no files showing up in your folders.
 
-  For upgrading from Netatalk 1.6.2-1 or below (you need the packages
-  libdb3-util and db4.1-util installed):
+If you have such problems, you may try to upgrade the database using the
+script /usr/share/doc/netatalk/examples/netatalk_update.sh or manually
+by running the following commands (please set APPLE_DIR to the path to
+your shared files):
 
     for db in `find $APPLE_DIR -name ".AppleDB/*.db"`; do \
-      db3_dump -f $db.data $db; \
+      db4.2_dump -f $db.data $db; \
       mv $db $db.old; \
-      db4.0_load -f $db.data $db; \
+      db4.7_load -f $db.data $db; \
     done
 
-  For upgrading from Netatalk 1.6.2-2 or up (you need the packages
-  libdb4.0-util and db4.1-util installed):
+For both script and manual upgrade you need the packages libdb4.2-util
+and db4.7-util installed.
 
-    for db in `find $APPLE_DIR -name ".AppleDB/*.db"`; do \
-      db3_dump -f $db.data $db; \
-      mv $db $db.old; \
-      db4.0_load -f $db.data $db; \
-    done
+If this does not work, you can just delete the database files, but
+please note that this will destroy all stored meta information about
+these files!
 
-If this does not work, you can just delete the database files, but please note
-that this will destroy all stored meta information about these files!
+ -- Jonas Smedegaard <dr@jones.dk>  Mon, 02 Mar 2009 05:18:59 +0100

@@ -1,3 +1,12 @@
+netatalk (2.0.4~beta2-5) unstable; urgency=low
+
+  * Build-depend on libdb4.7-dev (not libdb4.2-dev). Recommend
+    db4.7-util and sugest (not recommend) db4.2-util. Update patches 111
+    and 206. Update README.Debian and add NEWS entry. Closes:
+    bug#421950.
+
+ -- Jonas Smedegaard <dr@jones.dk>  Mon, 02 Mar 2009 05:18:59 +0100
+
 netatalk (2.0.4~beta2-4.1) unstable; urgency=high
 
   * Non-maintainer upload by the Security Team.

@@ -1,3 +1,19 @@
+netatalk (2.0.4~beta2-5) unstable; urgency=low
+
+  * This version of Netatalk switches to Berkeley DB 4.7.
+
+    Earlier releases used Berkeley DB 4.2.  As Netatalk does not
+    automatically update its database, you may experience problems like
+    those described in bug #200373: no files showing up in your folders.
+
+    If you have such problems, please refer to
+    
+      /usr/share/doc/netatalk/README.Debian
+      
+    for information on how to fix them.
+
+ -- Jonas Smedegaard <dr@jones.dk>  Mon, 02 Mar 2009 05:18:59 +0100
+
 netatalk (2.0.4~beta2-1) unstable; urgency=low
 
   * Netatalk now supports encrypted authentication using new DHX2 AUM.

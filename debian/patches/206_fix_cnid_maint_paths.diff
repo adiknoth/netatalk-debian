@@ -17,9 +17,9 @@
 -$DB_STAT            = '@BDB_BIN@/db_stat';
 -$DB_RECOVER         = '@BDB_BIN@/db_recover';
 -$DB_VERIFY          = '@BDB_BIN@/db_verify';
-+$DB_STAT            = '@BDB_BIN@/db4.2_stat';
-+$DB_RECOVER         = '@BDB_BIN@/db4.2_recover';
-+$DB_VERIFY          = '@BDB_BIN@/db4.2_verify';
++$DB_STAT            = '@BDB_BIN@/db4.7_stat';
++$DB_RECOVER         = '@BDB_BIN@/db4.7_recover';
++$DB_VERIFY          = '@BDB_BIN@/db4.7_verify';
  $APPLE_VOLUMES_FILE = '@PKGCONFDIR@/AppleVolumes.default';
  ## End edit section
  
