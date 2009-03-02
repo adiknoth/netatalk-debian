@@ -71,6 +71,7 @@ Files: CONTRIBUTORS
 	debian/control
 	debian/control.in
 	debian/examples/netatalk_update.sh
+	debian/gbp.conf
 	debian/netatalk.dirs
 	debian/netatalk.docs
 	debian/netatalk.ignore
@@ -105,6 +106,7 @@ Files: CONTRIBUTORS
 	debian/patches/210_avoid_update-rc-d.patch
 	debian/patches/211_avoid_update-rc-d_for_automade_file.patch
 	debian/patches/212_disable_cnid_metad_by_default.patch
+	debian/patches/213_CVE-2008-5718.patch
 	debian/patches/README
 	debian/patches/series
 	debian/rules
