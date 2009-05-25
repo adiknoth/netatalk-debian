@@ -1,5 +1,5 @@
 /* 
- * $Id: mangle.c,v 1.16.2.1.2.12.2.6 2006/09/19 00:08:01 didg Exp $ 
+ * $Id: mangle.c,v 1.16.2.1.2.12.2.7 2009/01/13 01:05:53 didg Exp $ 
  *
  * Copyright (c) 2002. Joe Marcus Clarke (marcus@marcuscom.com)
  * All Rights Reserved.  See COPYRIGHT.
@@ -22,25 +22,45 @@
 #define hextoint( c )   ( isdigit( c ) ? c - '0' : c + 10 - 'A' )
 #define isuxdigit(x)    (isdigit(x) || (isupper(x) && isxdigit(x)))
 
+static size_t mangle_extension(const struct vol *vol, const char* uname,
+			       char* extension, charset_t charset)
+{
+  char *p = strrchr(uname, '.');
+
+  if (p && p != uname) {
+    u_int16_t flags = CONV_FORCE | CONV_UNESCAPEHEX;
+    size_t len = convert_charset(vol->v_volcharset, charset,
+				 vol->v_maccharset, p, strlen(p),
+				 extension, MAX_EXT_LENGTH, &flags);
+
+    if (len != (size_t)-1) return len;
+  }
+  return 0;
+}
+
 static char *demangle_checks ( const struct vol *vol, char* uname, char * mfilename, size_t prefix, char * ext)
 {
     u_int16_t flags;
     static char buffer[MAXPATHLEN +2];  /* for convert_charset dest_len parameter +2 */
     size_t len;
     size_t mfilenamelen;
-    char *u;
 
     /* We need to check, whether we really need to demangle the filename 	*/
     /* i.e. it's not just a file with a valid #HEX in the name ...		*/
     /* but we don't want to miss valid demangle as well.			*/
 
     /* check whether file extensions match */
-    if ( NULL != (u = strchr(uname, '.')) ) {
-	if (strcmp(ext,u))
-		return mfilename;
+    {
+      char buf[MAX_EXT_LENGTH + 2];  /* for convert_charset dest_len parameter +2 */
+      size_t ext_len = mangle_extension(vol, uname, buf, CH_UTF8_MAC);
+
+      if (ext_len) {
+	buf[ext_len] = '\0';
+	if (strcmp(ext, buf)) return mfilename;
+      } else {
+	if (*ext) return mfilename;
+      }
     }
-    else if ( *ext == '.' )
-	return mfilename;
 
     /* First we convert the unix name to our volume maccharset     	*/
     /* This assumes, OSX will not send us a mangled name for *any* 	*/
@@ -68,7 +88,7 @@ static char *demangle_checks ( const struct vol *vol, char* uname, char * mfilen
     /* if we only checked if "prefix" number of characters match */
     /* we get a false postive in above case			     */
 
-    if ( flags & CONV_REQMANGLE ) {
+    if ( (flags & CONV_REQMANGLE) ) {
         if (len) { 
             /* convert the buffer to UTF8_MAC ... */
             if ((size_t) -1 == (len = convert_charset(vol->v_maccharset, CH_UTF8_MAC, 0, 
@@ -203,27 +223,6 @@ demangle_osx(const struct vol *vol, char *mfilename, cnid_t did, cnid_t *fileid)
 }
 
 
-/* -------------------------------------------------------
- * find the start of a utf8 character
- */
-static char *
-utf8_mangle_validate(char *path, size_t len)
-{
-    unsigned char *p = (unsigned char *)path + len;
-    int           dec = 0;
-
-    /* char matches with 10xxxxxx ? */
-    while ( len && *p && ((*p & 0xc0) == 0x80)) {
-	dec = 1;
-        len--;
-        p--;
-    }
-    if (dec)
-        *p = 0;
-
-    return path;
-}
-
 /* -----------------------
    with utf8 filename not always round trip
    filename   mac filename too long or first chars if unmatchable chars.
@@ -232,12 +231,12 @@ utf8_mangle_validate(char *path, size_t len)
    
 */
 char *
-mangle(const struct vol *vol _U_, char *filename, size_t filenamelen, char *uname, cnid_t id, int flags) {
-    char *ext = NULL;
+mangle(const struct vol *vol, char *filename, size_t filenamelen, char *uname, cnid_t id, int flags) {
     char *m = NULL;
-    static char mfilename[MAXPATHLEN + 1];
+    static char mfilename[MAXPATHLEN]; /* way > maxlen */
     char mangle_suffix[MANGLE_LENGTH + 1];
-    size_t ext_len = 0;
+    char ext[MAX_EXT_LENGTH +2];  /* for convert_charset dest_len parameter +2 */
+    size_t ext_len;
     size_t maxlen;
     int k;
     
@@ -252,24 +251,25 @@ mangle(const struct vol *vol _U_, char *filename, size_t filenamelen, char *unam
         return NULL;
     }
     /* First, attempt to locate a file extension. */
-    if (NULL != (ext = strrchr(uname, '.')) ) {
-	ext_len = strlen(ext);
-	if (ext_len > MAX_EXT_LENGTH) {
-	    /* Do some bounds checking to prevent an extension overflow. */
-	    ext_len = MAX_EXT_LENGTH;
-	}
-    }
+    ext_len = mangle_extension(vol, uname, ext, (flags & 2) ? CH_UTF8_MAC : vol->v_maccharset);
     m = mfilename;
     k = sprintf(mangle_suffix, "%c%X", MANGLE_CHAR, ntohl(id));
 
-    strlcpy(m, filename, maxlen  - k - ext_len +1);
-    if (flags & 2)
-        m = utf8_mangle_validate(m, maxlen - k - ext_len +1);
+    if (filenamelen + k + ext_len > maxlen) {
+      u_int16_t opt = CONV_FORCE | CONV_UNESCAPEHEX;
+      size_t n = convert_charset(vol->v_volcharset,
+				 (flags & 2) ? CH_UTF8_MAC : vol->v_maccharset,
+				 vol->v_maccharset, uname, strlen(uname),
+				 m, maxlen - k - ext_len, &opt);
+      m[n != (size_t)-1 ? n : 0] = 0;
+    } else {
+      strlcpy(m, filename, filenamelen + 1);
+    }
     if (*m == 0) {
         strcat(m, "???");
     }
     strcat(m, mangle_suffix);
-    if (ext) {
+    if (ext_len) {
 	strncat(m, ext, ext_len);
     }
 

@@ -124,10 +124,6 @@
 /* Define to enable CUPS Support */
 #undef HAVE_CUPS
 
-/* Define to 1 if you have the declaration of `cygwin_conv_path', and to 0 if
-   you don't. */
-#undef HAVE_DECL_CYGWIN_CONV_PATH
-
 /* Define if errno declaration exists */
 #undef HAVE_DECL_ERRNO
 
@@ -233,9 +229,6 @@
 
 /* Define if you have the libdl library or equivalent. */
 #undef HAVE_LIBDL
-
-/* Define if libdlloader will be built on this platform */
-#undef HAVE_LIBDLLOADER
 
 /* Define if the DHX2 modules should be built with libgcrypt */
 #undef HAVE_LIBGCRYPT
@@ -543,10 +536,6 @@
 
 /* Path to the log file */
 #undef LOGFILEPATH
-
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
-#undef LT_OBJDIR
 
 /* Define if compiling for MacOS X Server */
 #undef MACOSX_SERVER

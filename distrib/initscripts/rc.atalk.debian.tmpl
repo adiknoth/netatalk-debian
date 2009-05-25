@@ -4,7 +4,7 @@
 #
 # Author:       Thomas Kaiser <Thomas.Kaiser@phg-online.de>
 #
-# Version:      $Id: rc.atalk.debian.tmpl,v 1.1.4.1 2004/10/27 13:31:04 tkaiser Exp $
+# Version:      $Id: rc.atalk.debian.tmpl,v 1.1.4.3 2009/05/05 07:52:27 franklahm Exp $
 
 set -e
 
@@ -17,7 +17,7 @@ SCRIPTNAME=/etc/init.d/$NAME
 test -x :SBINDIR:/atalkd || exit 0
 
 # Set defaults. Please change these options in :ETCDIR:/netatalk.conf.
-AFPD_UAMLIST="-U uams_dhx.so,uams_clrtxt.so"
+AFPD_UAMLIST="-U uams_dhx2.so"
 AFPD_GUEST=nobody
 AFPD_MAX_CLIENTS=50
 ATALK_ZONE=

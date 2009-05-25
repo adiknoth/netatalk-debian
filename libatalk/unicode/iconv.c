@@ -96,13 +96,19 @@ extern  struct charset_functions charset_mac_greek;
 extern  struct charset_functions charset_mac_turkish;
 extern  struct charset_functions charset_utf8;
 extern  struct charset_functions charset_utf8_mac;
+#ifdef HAVE_USABLE_ICONV
+extern  struct charset_functions charset_mac_japanese;
+extern  struct charset_functions charset_mac_chinese_trad;
+extern  struct charset_functions charset_mac_korean;
+extern  struct charset_functions charset_mac_chinese_simp;
+#endif
 
 
 static struct charset_functions builtin_functions[] = {
-	{"UCS-2",   0, iconv_copy, iconv_copy, CHARSET_WIDECHAR | CHARSET_PRECOMPOSED, NULL, NULL},
-	{"ASCII",     0, ascii_pull, ascii_push, CHARSET_MULTIBYTE | CHARSET_PRECOMPOSED, NULL, NULL},
-	{"SHIFT_JIS", 1568, NULL, NULL, CHARSET_ICONV | CHARSET_PRECOMPOSED | CHARSET_CLIENT, NULL, NULL},
-	{NULL, 0, NULL, NULL, 0, NULL, NULL}
+	{"UCS-2",   0, iconv_copy, iconv_copy, CHARSET_WIDECHAR | CHARSET_PRECOMPOSED, NULL, NULL, NULL},
+	{"ASCII",     0, ascii_pull, ascii_push, CHARSET_MULTIBYTE | CHARSET_PRECOMPOSED, NULL, NULL, NULL},
+	{"SHIFT_JIS", 1568, NULL, NULL, CHARSET_ICONV | CHARSET_PRECOMPOSED | CHARSET_CLIENT, NULL, NULL, NULL},
+	{NULL, 0, NULL, NULL, 0, NULL, NULL, NULL}
 };
 
 
@@ -171,6 +177,12 @@ void lazy_initialize_iconv(void)
 		atalk_register_charset(&charset_mac_turkish);
 		atalk_register_charset(&charset_mac_centraleurope);
 		atalk_register_charset(&charset_mac_cyrillic);
+#ifdef HAVE_USABLE_ICONV
+		atalk_register_charset(&charset_mac_japanese);
+		atalk_register_charset(&charset_mac_chinese_trad);
+		atalk_register_charset(&charset_mac_korean);
+		atalk_register_charset(&charset_mac_chinese_simp);
+#endif
 	}
 }
 
@@ -267,23 +279,27 @@ atalk_iconv_t atalk_iconv_open(const char *tocode, const char *fromcode)
 
 	/* check if we have a builtin function for this conversion */
 	from = find_charset_functions(fromcode);
-	if(from && from->pull)ret->pull = from->pull;
+	if (from) ret->pull = from->pull;
 	
 	to = find_charset_functions(tocode);
-	if(to && to->push)ret->push = to->push;
+	if (to) ret->push = to->push;
 
 	/* check if we can use iconv for this conversion */
 #ifdef HAVE_USABLE_ICONV
-	if (!ret->pull) {
-		ret->cd_pull = iconv_open(UCS2ICONV, fromcode);
-		if (ret->cd_pull != (iconv_t)-1)
-			ret->pull = sys_iconv;
+	if (!from || (from->flags & CHARSET_ICONV)) {
+	  ret->cd_pull = iconv_open(UCS2ICONV, from && from->iname ? from->iname : fromcode);
+	  if (ret->cd_pull != (iconv_t)-1) {
+	    if (!ret->pull) ret->pull = sys_iconv;
+	  } else ret->pull = NULL;
 	}
-
-	if (!ret->push) {
-		ret->cd_push = iconv_open(tocode, UCS2ICONV);
-		if (ret->cd_push != (iconv_t)-1)
-			ret->push = sys_iconv;
+	if (ret->pull) {
+	  if (!to || (to->flags & CHARSET_ICONV)) {
+	    ret->cd_push = iconv_open(to && to->iname ? to->iname : tocode, UCS2ICONV);
+	    if (ret->cd_push != (iconv_t)-1) {
+	      if (!ret->push) ret->push = sys_iconv;
+	    } else ret->push = NULL;
+	  }
+	  if (!ret->push && ret->cd_pull) iconv_close((iconv_t)ret->cd_pull);
 	}
 #endif
 	
@@ -296,33 +312,16 @@ atalk_iconv_t atalk_iconv_open(const char *tocode, const char *fromcode)
 	}
 
 	/* check for conversion to/from ucs2 */
-	if (strcasecmp(fromcode, "UCS-2") == 0 && to && to->push) {
-		ret->direct = to->push;
-		ret->push = ret->pull = NULL;
-		return ret;
-	}
-
-	if (strcasecmp(tocode, "UCS-2") == 0 && from && from->pull) {
-		ret->direct = from->pull;
-		ret->push = ret->pull = NULL;
-		return ret;
-	}
-
-	/* Check if we can do the conversion direct */
-#ifdef HAVE_USABLE_ICONV
 	if (strcasecmp(fromcode, "UCS-2") == 0) {
-		ret->direct = sys_iconv;
-		ret->cd_direct = ret->cd_push;
-		ret->cd_push = NULL;
-		return ret;
+	  ret->direct = ret->push;
+	  ret->cd_direct = ret->cd_push;
+	  ret->cd_push = NULL;
 	}
 	if (strcasecmp(tocode, "UCS-2") == 0) {
-		ret->direct = sys_iconv;
-		ret->cd_direct = ret->cd_pull;
-		ret->cd_pull = NULL;
-		return ret;
+	  ret->direct = ret->pull;
+	  ret->cd_direct = ret->cd_pull;
+	  ret->cd_pull = NULL;
 	}
-#endif
 
 	return ret;
 }

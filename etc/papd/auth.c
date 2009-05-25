@@ -1,5 +1,5 @@
 /*
- * $Id: auth.c,v 1.6.8.2.2.2 2005/03/11 15:36:59 didg Exp $
+ * $Id: auth.c,v 1.6.8.2.2.3 2009/02/03 08:25:00 didg Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -99,7 +99,7 @@ int auth_load(const char *path, const char *list)
   char name[MAXPATHLEN + 1], buf[MAXPATHLEN + 1], *p; 
   struct uam_mod *mod;
   struct stat st;
-  int len;
+  size_t len;
   
   if (!path || !list || (len = strlen(path)) > sizeof(name) - 2)
     return -1;

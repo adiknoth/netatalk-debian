@@ -1,5 +1,5 @@
 /*
- * $Id: ppd.c,v 1.9.8.1.2.3 2008/11/14 10:04:52 didg Exp $
+ * $Id: ppd.c,v 1.9.8.1.2.7 2009/02/03 08:25:00 didg Exp $
  *
  * Copyright (c) 1995 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -51,16 +51,17 @@ struct ppdent {
 };
 
 #ifndef SHOWPPD
-int ppd_inited = 0;
+static int ppd_inited;
 
-int ppd_init()
+static void ppd_init()
 {
-    if ( ppd_inited ) {
-	return( -1 );
-    }
+    if (ppd_inited)
+        return;
+
     ppd_inited++;
 
-    return read_ppd( printer->p_ppdfile, 0 );
+    if (printer->p_ppdfile)
+        read_ppd( printer->p_ppdfile, 0 );
 }
 #endif /* SHOWPPD */
 
@@ -75,7 +76,7 @@ static char* my_fgets(buf, bufsize, stream)
     int p;           /* uninitialized, OK 310105 */
     size_t count = 0;
  
-    while (count < bufsize && EOF != (p=fgetc(stream))) {
+    while (count < (bufsize - 1) && EOF != (p=fgetc(stream))) {
         buf[count] = p;
         count++;
         if ( p == '\r' || p == '\n')
@@ -93,7 +94,7 @@ static char* my_fgets(buf, bufsize, stream)
     return buf;
 }
 
-struct ppdent *getppdent( stream )
+static struct ppdent *getppdent( stream )
     FILE	*stream;
 {
     static char			buf[ 1024 ];
@@ -107,7 +108,7 @@ struct ppdent *getppdent( stream )
 	if ( *p != '*' ) {	/* main key word */
 	    continue;
 	}
-	if ( p[ strlen( p ) - 1 ] != '\n' && p[ strlen( p ) - 1 ] != '\r') {
+	if ( p[ strlen( p ) - 1 ] != '\n') {
 	    LOG(log_error, logtype_papd, "getppdent: line too long" );
 	    continue;
 	}
@@ -205,7 +206,7 @@ int read_ppd( file, fcnt )
 	}
 
 	/* *Font */
-	if ( strcmp( pe->pe_main, "*Font" ) == 0 ) {
+	if ( strcmp( pe->pe_main, "*Font" ) == 0 && pe->pe_option ) {
 	    for ( pfo = ppd_fonts; pfo; pfo = pfo->pd_next ) {
 		if ( strcmp( pfo->pd_font, pe->pe_option ) == 0 ) {
 		    break;
@@ -238,7 +239,7 @@ int read_ppd( file, fcnt )
 		break;
 	    }
 	}
-	if ( pfe->pd_name ) { /*&& (pfe->pd_value == NULL) ) { */
+	if ( pfe->pd_name && pe->pe_value ) { 
 	    if (( pfe->pd_value =
 		    (char *)malloc( strlen( pe->pe_value ) + 1 )) == NULL ) {
 		LOG(log_error, logtype_papd, "malloc: %s", strerror(errno) );
@@ -288,6 +289,9 @@ struct ppd_feature *ppd_feature( feature, len )
     }
 #endif /* SHOWPPD */
 
+    if (len > sizeof(ppd_feature_main) -1)
+        return( NULL );
+        
     for ( end = feature + len, p = feature, q = ppd_feature_main;
 	    (p <= end) && (*p != '\n') && (*p != '\r'); p++, q++ ) {
 	*q = *p;

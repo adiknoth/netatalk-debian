@@ -1,5 +1,5 @@
 /*
- * $Id: desktop.c,v 1.26.2.4.2.18.2.7 2006/09/19 00:08:00 didg Exp $
+ * $Id: desktop.c,v 1.26.2.4.2.18.2.8 2009/01/13 01:05:53 didg Exp $
  *
  * See COPYRIGHT.
  *
@@ -638,10 +638,14 @@ char *mtoupath(const struct vol *vol, char *mpath, cnid_t did, int utf8)
     if (!(vol->v_flags & AFPVOL_USEDOTS))
         flags |= CONV_ESCAPEDOTS;
 
-    if ((vol->v_casefold & AFPVOL_MTOUUPPER))
+    if (vol->v_casefold & AFPVOL_MTOUUPPER)
         flags |= CONV_TOUPPER;
-    else if ((vol->v_casefold & AFPVOL_MTOULOWER))
+    else if (vol->v_casefold & AFPVOL_MTOULOWER)
         flags |= CONV_TOLOWER;
+
+    if (vol->v_flags & AFPVOL_EILSEQ) {
+        flags |= CONV__EILSEQ;
+    }
 
     m = demangle(vol, mpath, did);
     if (m != mpath) {
@@ -677,10 +681,14 @@ char *utompath(const struct vol *vol, char *upath, cnid_t id, int utf8)
     m = mpath;
     outlen = strlen(upath);
 
-    if (vol->v_casefold & AFPVOL_UTOMUPPER)
+    if ((vol->v_casefold & AFPVOL_UTOMUPPER))
         flags |= CONV_TOUPPER;
-    else if (vol->v_casefold & AFPVOL_UTOMLOWER)
+    else if ((vol->v_casefold & AFPVOL_UTOMLOWER))
         flags |= CONV_TOLOWER;
+
+    if (vol->v_flags & AFPVOL_EILSEQ) {
+        flags |= CONV__EILSEQ;
+    }
 
     u = upath;
 

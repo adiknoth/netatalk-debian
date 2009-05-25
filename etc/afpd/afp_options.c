@@ -1,5 +1,5 @@
 /*
- * $Id: afp_options.c,v 1.30.2.2.2.11.2.1 2004/12/07 18:22:38 bfernhomberg Exp $
+ * $Id: afp_options.c,v 1.30.2.2.2.11.2.2 2009/04/30 09:35:06 franklahm Exp $
  *
  * Copyright (c) 1997 Adrian Sun (asun@zoology.washington.edu)
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
@@ -159,7 +159,7 @@ void afp_options_init(struct afp_options *options)
     options->systemvol.name = _PATH_AFPDSYSVOL;
     options->configfile = _PATH_AFPDCONF;
     options->uampath = _PATH_AFPDUAMPATH;
-    options->uamlist = "uams_clrtxt.so,uams_dhx.so";
+    options->uamlist = "uams_dhx.so,uams_dhx2.so";
     options->guest = "nobody";
     options->loginmesg = "";
     options->transports = AFPTRANS_ALL;

@@ -1,23 +1,58 @@
-.TH cnid_index 1 "3 Jan 2005" 2.0.3 Netatalk 
-.SH NAME
+'\" t
+.\"     Title: cnid_index
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.74.3 <http://docbook.sf.net/>
+.\"      Date: 3 Jan 2005
+.\"    Manual: Netatalk 2.0.4
+.\"    Source: Netatalk 2.0.4
+.\"  Language: English
+.\"
+.TH "CNID_INDEX" "1" "3 Jan 2005" "Netatalk 2\&.0\&.4" "Netatalk 2.0.4"
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
 cnid_index \- check and repair Netatalk CNID database indexes
-.SH SYNOPSIS
-\fBcnid_index\fR \fBdbdir\fR 
-.SH DESCRIPTION
-cnid_index is a utility to check CNID databases
-for consistency. If needed, the indexes are repaired. It works for 
-databases created by the cdb and dbd backends.
+.SH "SYNOPSIS"
+.HP \w'\fBcnid_index\fR\fB\fR\fB\fR\ 'u
+\fBcnid_index\fR\fB\fR\fB\fR \fIdbdir\fR
+.SH "DESCRIPTION"
 .PP
-Volumes usind the dbd CNID scheme can also be checked automatically, 
-for further information please see the \fBcnid_dbd\fR(8) man page.
-.RS 
+\fBcnid_index\fR
+is a utility to check CNID databases for consistency\&. If needed, the indexes are repaired\&. It works for databases created by the cdb and dbd backends\&.
+.PP
+Volumes usind the dbd CNID scheme can also be checked automatically, for further information please see the
+\fBcnid_dbd\fR(8)
+man page\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
 \fBWarning\fR
+.ps -1
+.br
 .PP
-When using cnid_index on cdb handled databases, 
-cnid_index cannot check if another process (afpd) accesses
-the CNID databases. In this case, you have to manually ensure no other process 
-accesses the database when running cnid_index.
+When using
+\fBcnid_index\fR
+on cdb handled databases,
+\fBcnid_index\fR
+cannot check if another process (afpd) accesses the CNID databases\&. In this case, you have to manually ensure no other process accesses the database when running
+\fBcnid_index\fR\&.
+.sp .5v
 .RE
 .SH "SEE ALSO"
-\fBcnid_dbd\fR(8), \fBafpd\fR(8)
-
+.PP
+\fBcnid_dbd\fR(8),
+\fBafpd\fR(8)

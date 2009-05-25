@@ -1,5 +1,5 @@
 /*
- * $Id: volume.c,v 1.51.2.7.2.33.2.15 2008/11/25 15:16:33 didg Exp $
+ * $Id: volume.c,v 1.51.2.7.2.33.2.24 2009/03/26 11:53:32 franklahm Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -114,12 +114,14 @@ m=u -> map both ways
 
 #define VOLOPT_FORCEUID  19  /* force uid for username x */
 #define VOLOPT_FORCEGID  20  /* force gid for group x */
-#define VOLOPT_UMASK     21
-#define VOLOPT_DFLTPERM  22
-#else 
-#define VOLOPT_UMASK     19
-#define VOLOPT_DFLTPERM  20
 #endif /* FORCE_UIDGID */
+
+#define VOLOPT_UMASK     21
+#define VOLOPT_ALLOWED_HOSTS 22
+#define VOLOPT_DENIED_HOSTS  23
+#define VOLOPT_DPERM     24  /* dperm default directories perms */
+#define VOLOPT_FPERM     25  /* fperm default files perms */
+#define VOLOPT_DFLTPERM  26  /* perm */
 
 #define VOLOPT_MAX       (VOLOPT_DFLTPERM +1)
 
@@ -171,6 +173,7 @@ static const _vol_opt_name vol_opt_names[] = {
                                          * maybe because it will be mounted later in preexec */
     {AFPVOL_UNIX_PRIV,  "UNIXPRIV"},    /* support unix privileges */
     {AFPVOL_NODEV,      "NODEV"},       /* always use 0 for device number in cnid calls */
+    {AFPVOL_EILSEQ,     "ILLEGALSEQ"},  /* encode illegal sequence */
     {AFPVOL_CACHE,      "CACHEID"},     /* Use adouble v2 CNID caching, default don't use it */
     {0, NULL}
 };
@@ -473,6 +476,8 @@ static void volset(struct vol_option *options, struct vol_option *save,
                 options[VOLOPT_FLAGS].i_value |= AFPVOL_UNIX_PRIV;
             else if (strcasecmp(p, "nodev") == 0)
                 options[VOLOPT_FLAGS].i_value |= AFPVOL_NODEV;
+            else if (strcasecmp(p, "illegalseq") == 0)
+                options[VOLOPT_FLAGS].i_value |= AFPVOL_EILSEQ;
             else if (strcasecmp(p, "cachecnid") == 0)
                 options[VOLOPT_FLAGS].i_value |= AFPVOL_CACHE;
 
@@ -484,6 +489,10 @@ static void volset(struct vol_option *options, struct vol_option *save,
 
     } else if (optionok(tmp, "umask:", val)) {
 	options[VOLOPT_UMASK].i_value = (int)strtol(val +1, NULL, 8);
+    } else if (optionok(tmp, "dperm:", val)) {
+        options[VOLOPT_DPERM].i_value = (int)strtol(val+1, NULL, 8);
+    } else if (optionok(tmp, "fperm:", val)) {
+        options[VOLOPT_FPERM].i_value = (int)strtol(val+1, NULL, 8);
     } else if (optionok(tmp, "perm:", val)) {
         options[VOLOPT_DFLTPERM].i_value = (int)strtol(val+1, NULL, 8);
     } else if (optionok(tmp, "mapchars:",val)) {
@@ -513,6 +522,12 @@ static void volset(struct vol_option *options, struct vol_option *save,
     } else if (optionok(tmp, "postexec:", val)) {
         setoption(options, save, VOLOPT_POSTEXEC, val);
 
+    } else if (optionok(tmp, "allowed_hosts:", val)) {
+        setoption(options, save, VOLOPT_ALLOWED_HOSTS, val);
+
+    } else if (optionok(tmp, "denied_hosts:", val)) {
+        setoption(options, save, VOLOPT_DENIED_HOSTS, val);
+
     } else {
         /* ignore unknown options */
         LOG(log_debug, logtype_afpd, "ignoring unknown volume option: %s", tmp);
@@ -535,20 +550,24 @@ static void showvol(const ucs2_t *name)
 /* ----------------- 
  * FIXME should be define elsewhere
 */
+static int netatalk_name(const char *name)
+{
+    return strcasecmp(name,".AppleDB") &&
+        strcasecmp(name,".AppleDouble") &&
+        strcasecmp(name,".AppleDesktop");
+}
+
 static int validupath_adouble(const struct vol *vol, const char *name) 
 {
     return (vol->v_flags & AFPVOL_USEDOTS) ? 
-        strcasecmp(name,".AppleDB") &&
-        strcasecmp(name,".AppleDouble") &&
-        strcasecmp(name,".AppleDesktop") &&
-        strcasecmp(name,".Parent")
-                                           : name[0] != '.';
+        netatalk_name(name) && strcasecmp(name,".Parent"): name[0] != '.';
 }                                           
 
 /* ----------------- */
 static int validupath_osx(const struct vol *vol _U_, const char *name) 
 {
-    return strncasecmp(name,".Apple", 6) && strncasecmp(name,"._", 2);
+    return strncmp(name,"._", 2) && (
+      (vol->v_flags & AFPVOL_USEDOTS) ? netatalk_name(name): name[0] != '.');
 }             
 
 /* ---------------- */
@@ -672,6 +691,12 @@ static int creatvol(AFPObj *obj, struct passwd *pwd,
 	if (options[VOLOPT_UMASK].i_value)
 	    volume->v_umask = (mode_t)options[VOLOPT_UMASK].i_value;
 
+	if (options[VOLOPT_DPERM].i_value)
+	    volume->v_dperm = (mode_t)options[VOLOPT_DPERM].i_value;
+
+	if (options[VOLOPT_FPERM].i_value)
+	    volume->v_fperm = (mode_t)options[VOLOPT_FPERM].i_value;
+
 	if (options[VOLOPT_DFLTPERM].i_value)
 	    volume->v_perm = (mode_t)options[VOLOPT_DFLTPERM].i_value;
 
@@ -708,6 +733,8 @@ static int creatvol(AFPObj *obj, struct passwd *pwd,
                 volume->v_root_postexec = volxlate(obj, NULL, MAXPATHLEN, options[VOLOPT_ROOTPOSTEXEC].c_value, pwd, path,  name);
         }
     }
+    volume->v_dperm |= volume->v_perm;
+    volume->v_fperm |= volume->v_perm;
 
     initvoladouble(volume);
     volume->v_next = Volumes;
@@ -725,8 +752,13 @@ FILE	*fp;
     int		c;
 
     p = buf;
-    while ((EOF != ( c = getc( fp )) ) && ( size > 0 )) {
+    while ((EOF != ( c = getc( fp )) ) && ( size > 1 )) {
         if ( c == '\n' || c == '\r' ) {
+            if (p != buf && *(p -1) == '\\') {
+                p--;
+                size++;
+                continue;
+            }
             *p++ = '\n';
             break;
         } else {
@@ -789,6 +821,55 @@ const char *name;
         p = strtok(NULL, ",");
     }
 
+    return 0;
+}
+
+static int hostaccessvol(type, volname, args, obj)
+int type;
+char *volname;
+const char *args;
+const AFPObj *obj;
+{
+    char buf[MAXPATHLEN + 1], *p, *b;
+    DSI *dsi = obj->handle;
+
+    if (!args)
+        return -1;
+
+    strlcpy(buf, args, sizeof(buf));
+    if ((p = strtok_r(buf, ",", &b)) == NULL) /* nothing, return okay */
+        return -1;
+
+    while (p) {
+        if (obj->proto == AFPPROTO_DSI) {
+            struct in_addr mask, net;
+            char *net_char, *mask_char;
+            int mask_int;
+
+            net_char = strtok(p, "/");
+            mask_char = strtok(NULL,"/");
+            if (mask_char == NULL) {
+                mask_int = 32;
+            } else {
+                mask_int = atoi(mask_char);
+            }
+           
+            // convert the integer netmask to a bitmask in network order
+            mask.s_addr = htonl(-1 - ((1 << (32 - mask_int)) - 1));
+            net.s_addr = inet_addr(net_char) & mask.s_addr;
+
+            if ((dsi->client.sin_addr.s_addr & mask.s_addr) == net.s_addr) {
+		    if (type == VOLOPT_DENIED_HOSTS)
+			LOG(log_info, logtype_afpd, "AFP access denied for client IP '%s' to volume '%s' by denied list",
+			    inet_ntoa(dsi->client.sin_addr), volname);
+		    return 1;
+	    }
+        }
+        p = strtok_r(NULL, ",", &b);
+    }
+    if (type == VOLOPT_ALLOWED_HOSTS)
+	LOG(log_info, logtype_afpd, "AFP access denied for client IP '%s' to volume '%s', not in allowed list",
+	    inet_ntoa(dsi->client.sin_addr), volname);
     return 0;
 }
 
@@ -1047,7 +1128,9 @@ struct passwd *pwent;
                allow -> either no list (-1), or in list (1)
                deny -> either no list (-1), or not in list (0) */
             if (accessvol(options[VOLOPT_ALLOW].c_value, obj->username) &&
-                    (accessvol(options[VOLOPT_DENY].c_value, obj->username) < 1)) {
+		(accessvol(options[VOLOPT_DENY].c_value, obj->username) < 1) &&
+		hostaccessvol(VOLOPT_ALLOWED_HOSTS, volname, options[VOLOPT_ALLOWED_HOSTS].c_value, obj) &&
+		(hostaccessvol(VOLOPT_DENIED_HOSTS, volname, options[VOLOPT_DENIED_HOSTS].c_value, obj) < 1)) {
 
                 /* handle read-only behaviour. semantics:
                  * 1) neither the rolist nor the rwlist exist -> rw
@@ -2318,13 +2401,10 @@ static int savevoloptions (const struct vol *vol)
         LOG(log_debug, logtype_afpd,"Error writing .volinfo file: buffer too small, %s", buf);
 
 
-   if (write( fd, buf, strlen(buf)) < 0) {
+   if (write( fd, buf, strlen(buf)) < 0 || ftruncate(fd, strlen(buf)) < 0 ) {
        LOG(log_debug, logtype_afpd,"Error writing .volinfo file: %s", strerror(errno));
-       goto done;
    }
-   ftruncate(fd, strlen(buf));
 
-done:
    lock.l_type = F_UNLCK;
    fcntl(fd, F_SETLK, &lock);
    close (fd);

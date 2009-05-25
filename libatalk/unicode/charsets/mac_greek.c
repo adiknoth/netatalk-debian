@@ -46,7 +46,7 @@ struct charset_functions charset_mac_greek =
 	mac_greek_pull,
 	mac_greek_push,
 	CHARSET_CLIENT | CHARSET_MULTIBYTE,
-	NULL, NULL
+	NULL, NULL, NULL
 };
 
 /* ------------------------ */

@@ -1,5 +1,5 @@
 /*
- * $Id: unix.c,v 1.43.2.1.2.10.2.4 2008/11/25 15:16:33 didg Exp $
+ * $Id: unix.c,v 1.43.2.1.2.10.2.5 2009/01/28 05:37:58 didg Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -404,7 +404,7 @@ mode_t mode;
         return -1;
     }
         
-    mode |= vol->v_perm;
+    mode |= vol->v_fperm;
 
     if (setfilmode( path->u_name, mode, &path->st) < 0)
         return -1;
@@ -443,7 +443,7 @@ mode_t           mode;
 char *adouble = vol->ad_path( name, ADFLAGS_DIR );
 
     int dropbox = (vol->v_flags & AFPVOL_DROPBOX);
-    mode |= vol->v_perm;
+    mode |= vol->v_dperm;
 
     if (dir_rx_set(mode)) {
     	/* extending right? dir first then .AppleDouble */
@@ -487,7 +487,7 @@ mode_t           mode;
     char                *adouble = vol->ad_path( name, ADFLAGS_DIR );
     char                *adouble_p = ad_dir(adouble);
     
-    mode |= vol->v_perm;
+    mode |= vol->v_dperm;
     hf_mode = ad_hf_mode(mode);
 
     if (dir_rx_set(mode)) {

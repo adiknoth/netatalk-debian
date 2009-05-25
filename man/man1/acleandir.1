@@ -1,49 +1,75 @@
-.TH acleandir 1 "26 Feb 1998" 2.0.3 Netatalk 
-.SH NAME
+'\" t
+.\"     Title: acleandir
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.74.3 <http://docbook.sf.net/>
+.\"      Date: 26 Feb 1998
+.\"    Manual: Netatalk 2.0.4
+.\"    Source: Netatalk 2.0.4
+.\"  Language: English
+.\"
+.TH "ACLEANDIR" "1" "26 Feb 1998" "Netatalk 2\&.0\&.4" "Netatalk 2.0.4"
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
 acleandir \- clean up a directory containing netatalk Apple Macintosh files
-.SH SYNOPSIS
-\fBacleandir\fR [\-rnvi] \fBdirname\fR 
-.sp 1
-.SH DESCRIPTION
-acleandir cleans up the directory \fIdirname.\fR By default it simply removes
-"orphan" AppleDouble files, i.e. those which do not have a
-corresponding data file.
-.SH OPTIONS
-.TP 
+.SH "SYNOPSIS"
+.HP \w'\fBacleandir\fR\fB\fR\ 'u
+\fBacleandir\fR\fB\fR [\-rnvi] \fIdirname\fR
+.br
+
+.SH "DESCRIPTION"
+.PP
+\fBacleandir\fR
+cleans up the directory
+\fIdirname\&.\fR
+By default it simply removes "orphan" AppleDouble files, i\&.e\&. those which do not have a corresponding data file\&.
+.SH "OPTIONS"
+.PP
 \fB\-d\fR
-Also remove the .AppleDouble directory if it contains no
-AppleDouble files after "orphan" removal. This will result
-in the finder location of \fIdirname\fR
-within its parent being lost.
-.TP 
+.RS 4
+Also remove the \&.AppleDouble directory if it contains no AppleDouble files after "orphan" removal\&. This will result in the finder location of
+\fIdirname\fR
+within its parent being lost\&.
+.RE
+.PP
 \fB\-r\fR, \fB\-R\fR
-Recursive. Clean up directories recursively.
-.TP 
+.RS 4
+Recursive\&. Clean up directories recursively\&.
+.RE
+.PP
 \fB\-n\fR
-Display the filenames of "orphans" but don't
-remove any. Display size if "orphan" appears to contain a
-resource fork.
-.TP 
+.RS 4
+Display the filenames of "orphans" but don\'t remove any\&. Display size if "orphan" appears to contain a resource fork\&.
+.RE
+.PP
 \fB\-i\fR
-Interactive. Prompt for confirmation before a removal. A y in
-answer confirms that the removal should proceed.
-.TP 
+.RS 4
+Interactive\&. Prompt for confirmation before a removal\&. A y in answer confirms that the removal should proceed\&.
+.RE
+.PP
 \fB\-v\fR
-Verbose. Display the names of all "orphans" and
-\&.AppleDouble directories removed. Reports the size if the
-"orphan" appears to contain a resource fork.
-.TP 
+.RS 4
+Verbose\&. Display the names of all "orphans" and \&.AppleDouble directories removed\&. Reports the size if the "orphan" appears to contain a resource fork\&.
+.RE
+.PP
 \fB\-a\fR
-Aggressive. Remove all AppleDouble files, not just
-"orphans". Also remove the .AppleDesktop directory if
-present. Impies \fB\-d\fR option. Use with caution as the
-Macintosh type/creator and finder location of all files will be lost
-and the content of some documents, such as Symantec Projects, will
-be destroyed.
-.SH DIAGNOSTICS
-returns exit status 0 unless bad options are provided or a directory
-is not given on the command line.
+.RS 4
+Aggressive\&. Remove all AppleDouble files, not just "orphans"\&. Also remove the \&.AppleDesktop directory if present\&. Impies
+\fB\-d\fR
+option\&. Use with caution as the Macintosh type/creator and finder location of all files will be lost and the content of some documents, such as Symantec Projects, will be destroyed\&.
+.RE
+.SH "DIAGNOSTICS"
+.PP
+returns exit status 0 unless bad options are provided or a directory is not given on the command line\&.
 .SH "SEE ALSO"
+.PP
 \fBafile\fR(1),
 \fBafpd\fR(8)
-

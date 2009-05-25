@@ -1,5 +1,5 @@
 /*
- * $Id: lp.c,v 1.14.8.4.2.4 2008/11/25 15:16:33 didg Exp $
+ * $Id: lp.c,v 1.14.8.4.2.8 2009/02/04 22:33:11 didg Exp $
  *
  * Copyright (c) 1990,1994 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -54,11 +54,7 @@
 #include <unistd.h>
 #endif /* HAVE_UNISTD_H */
 
-#if defined( sun ) && defined( __svr4__ )
-#include </usr/ucbinclude/sys/file.h>
-#else /* sun && __svr4__ */
 #include <sys/file.h>
-#endif /* sun && __svr4__ */
 #include <sys/un.h>
 #include <netinet/in.h>
 #undef s_net
@@ -300,6 +296,10 @@ static char* pipexlate(char *src)
             destlen -= len;
         }
     }
+    if (!destlen) {
+        /* reach end of buffer, maybe prematurely, give up */
+        return NULL;
+    }
     return destbuf;
 }
 
@@ -379,7 +379,7 @@ void lp_for ( lpfor )
 }
 
 
-int lp_init( out, sat )
+static int lp_init( out, sat )
     struct papfile	*out;
     struct sockaddr_at	*sat;
 {
@@ -570,25 +570,34 @@ int lp_open( out, sat )
     }
 
     if ( lp.lp_flags & LP_PIPE ) {
+        char *pipe_cmd;
 
 	/* go right to program */
 	if (lp.lp_person != NULL) {
 	    if((pwent = getpwnam(lp.lp_person)) != NULL) {
 		if(setreuid(pwent->pw_uid, pwent->pw_uid) != 0) {
-		    LOG(log_info, logtype_papd, "setreuid error: %s", strerror(errno));
+		    LOG(log_error, logtype_papd, "setreuid error: %s", strerror(errno));
+		    exit(1);
 		}
 	    } else {
-		LOG(log_info, logtype_papd, "Error getting username (%s)", lp.lp_person);
+		LOG(log_error, logtype_papd, "Error getting username (%s)", lp.lp_person);
+                exit(1);
 	    }
 	}
 
 	lp_setup_comments(CH_UNIX);
-	if (( lp.lp_stream = popen( pipexlate(printer->p_printer), "w" )) == NULL ) {
+	pipe_cmd = pipexlate(printer->p_printer);
+	if (!pipe_cmd) {
+	    LOG(log_error, logtype_papd, "lp_open: can't generate pipe cmd" );
+	    spoolerror( out, NULL );
+	    return( -1 );
+	}
+	if (( lp.lp_stream = popen(pipe_cmd, "w" )) == NULL ) {
 	    LOG(log_error, logtype_papd, "lp_open popen %s: %s", printer->p_printer, strerror(errno) );
 	    spoolerror( out, NULL );
 	    return( -1 );
 	}
-        LOG(log_debug, logtype_papd, "lp_open: opened %s",  pipexlate(printer->p_printer) );
+        LOG(log_debug, logtype_papd, "lp_open: opened %s",  pipe_cmd );
     } else {
 	sprintf( name, "df%c%03d%s", lp.lp_letter++, lp.lp_seq, hostname );
 
@@ -1007,7 +1016,9 @@ int lp_queue( out )
     char			buf[ 1024 ], *start, *stop, *p, *q;
     int				linelength, crlflength;
     static struct papfile	pf;
-    int				n, len, s;
+    int				s;
+    size_t			len;
+    ssize_t			n;
 	
     if (( s = lp_conn_unix()) < 0 ) {
 	LOG(log_error, logtype_papd, "lp_queue: %s", strerror(errno) );

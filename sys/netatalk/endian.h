@@ -1,5 +1,5 @@
 /*
- * $Id: endian.h,v 1.7.12.1 2006/02/08 01:38:42 didg Exp $
+ * $Id: endian.h,v 1.7.12.2 2009/01/10 20:14:29 didg Exp $
  *
  * Copyright (c) 1990,1991 Regents of The University of Michigan.
  * All Rights Reserved. See COPYRIGHT.
@@ -116,7 +116,7 @@ typedef unsigned long long  u_int64_t;
 
 #else /* mips && KERNEL */
 
-#if !( defined( sun ) && defined( i386 ))
+#if !( defined( sun ) && ( defined( i386 ) || defined(__x86_64) ) )
 unsigned short ntohs(), htons();
 unsigned int  ntohl(), htonl();
 #endif /* ! ( sun && i386 ) */
