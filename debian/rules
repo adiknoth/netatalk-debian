@@ -85,11 +85,22 @@ clean::
 binary-post-install/netatalk::
 	mv debian/netatalk/etc/netatalk/netatalk.conf debian/netatalk/etc/default/netatalk
 
-# Rename manpages because of namespace conflicts
+# Rename some tools + manpages to avoid namespace conflicts
+#  * uniconv → netatalk-uniconv
+#  * install netatalk-uniconv as system binary
+#  * afile → apple_afile, achfile → apple_chfile
+#  * adjust "See also" of other manpages referring to afile or achfile
+bindir=debian/netatalk/usr/bin
+man1dir=debian/netatalk/usr/share/man/man1
 binary-post-install/netatalk::
-	mv debian/netatalk/usr/share/man/man1/uniconv.1 debian/netatalk/usr/share/man/man1/netatalk-uniconv.1
-	mv debian/netatalk/usr/share/man/man1/afile.1 debian/netatalk/usr/share/man/man1/apple_file.1
-	mv debian/netatalk/usr/share/man/man1/achfile.1 debian/netatalk/usr/share/man/man1/apple_chfile.1
+	mv $(bindir)/uniconv $(bindir)/../sbin/netatalk-uniconv
+	perl -p -e 's/(?<!Title: )(uniconv)\\b/netatalk(?(1)\\-)$$2/g;s/(TH "UNICONV" )"1"/$$1"8"/' <$(man1dir)/uniconv.1 >$(man1dir)/../man8/netatalk-uniconv.8
+	mv $(bindir)/afile $(bindir)/apple_file
+	perl -p -e 's/(?<!Title: )afile\\b/apple_file/g' <$(man1dir)/afile.1 >$(man1dir)/apple_file.1
+	mv $(bindir)/achfile $(bindir)/apple_chfile
+	perl -p -e 's/(?<!Title: )achfile\\b/apple_chfile/g' <$(man1dir)/achfile.1 >$(man1dir)/apple_chfile.1
+	rm $(man1dir)/uniconv.1 $(man1dir)/afile.1 $(man1dir)/achfile.1
+	find $(man1dir) -type f -exec grep -Eq 'afile|achfile' -exec perl -i -pe 's/(\\fBa)((ch)?file\\fR)/$$1pple_$$2/g' '{}' ';'
 
 # Adjust PAM modules and UAMs loaded by default, depending on ssl support
 binary-post-install/netatalk::
