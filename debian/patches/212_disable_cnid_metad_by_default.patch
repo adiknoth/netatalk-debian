@@ -1,10 +1,10 @@
 diff -ruN netatalk-2.0.3.orig/config/netatalk.conf netatalk-2.0.3/config/netatalk.conf
 --- netatalk-2.0.3.orig/config/netatalk.conf	2007-08-12 23:53:44.000000000 +0200
 +++ netatalk-2.0.3/config/netatalk.conf	2007-08-12 23:56:14.000000000 +0200
-@@ -31,7 +31,7 @@
+@@ -32,7 +32,7 @@
  # Set which daemons to run (papd is dependent upon atalkd):
  ATALKD_RUN=yes
- PAPD_RUN=yes
+ PAPD_RUN=no
 -CNID_METAD_RUN=yes
 +CNID_METAD_RUN=no
  AFPD_RUN=yes

@@ -1,6 +1,6 @@
 --- a/distrib/initscripts/Makefile.in
 +++ b/distrib/initscripts/Makefile.in
-@@ -663,11 +663,11 @@
+@@ -604,11 +604,11 @@
  @USE_DEBIAN_TRUE@	chmod a+x netatalk
  
  @USE_DEBIAN_TRUE@install-data-hook:

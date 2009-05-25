@@ -6,7 +6,7 @@
  
 -# Set defaults. Please change these options in :ETCDIR:/netatalk.conf.
 +# Set defaults. Please change these options in /etc/default/netatalk.
- AFPD_UAMLIST="-U uams_dhx.so,uams_clrtxt.so"
+ AFPD_UAMLIST="-U uams_dhx2.so"
  AFPD_GUEST=nobody
  AFPD_MAX_CLIENTS=50
 @@ -28,8 +28,8 @@

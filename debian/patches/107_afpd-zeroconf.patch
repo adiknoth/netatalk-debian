@@ -1,25 +1,3 @@
-? etc/afpd/afp_avahi.c
-? etc/afpd/afp_avahi.c.org
-? etc/afpd/afp_avahi.h
-? etc/afpd/afp_avahi.h.org
-? etc/afpd/afp_bonjour.c
-? etc/afpd/afp_bonjour.c.org
-? etc/afpd/afp_bonjour.h
-? etc/afpd/afp_bonjour.h.org
-? etc/afpd/afp_howl.c
-? etc/afpd/afp_howl.c.org
-? etc/afpd/afp_howl.h
-? etc/afpd/afp_howl.h.org
-? etc/afpd/afp_zeroconf.c
-? etc/afpd/afp_zeroconf.c.org
-? etc/afpd/afp_zeroconf.h
-? etc/afpd/afp_zeroconf.h.org
-? macros/zeroconf.m4
-? macros/zeroconf.m4.org
-Index: configure.in
-===================================================================
-RCS file: /cvsroot/netatalk/netatalk/configure.in,v
-retrieving revision 1.203
 diff -u -r1.203 configure.in
 --- netatalk/configure.in	28 Apr 2005 20:49:17 -0000	1.203
 +++ netatalk/configure.in	5 May 2006 10:46:30 -0000
@@ -33,10 +11,6 @@ diff -u -r1.203 configure.in
  dnl Check for PAM libs
  netatalk_cv_use_pam=no
  AC_PATH_PAM([
-Index: config/afpd.conf.tmpl
-===================================================================
-RCS file: /cvsroot/netatalk/netatalk/config/afpd.conf.tmpl,v
-retrieving revision 1.16
 diff -u -r1.16 afpd.conf.tmpl
 --- netatalk/config/afpd.conf.tmpl	28 Apr 2005 20:49:20 -0000	1.16
 +++ netatalk/config/afpd.conf.tmpl	5 May 2006 10:46:31 -0000
@@ -44,15 +18,11 @@ diff -u -r1.16 afpd.conf.tmpl
  #			  empty string.
  #     -noslp              Don't register this server with the Service
  #			  Location Protocol.
-+#     -nozeroconf              Don't register this server with the Multicats
++#     -nozeroconf         Don't register this server with the Multicast
 +#			  DNS Protocol.
  #
  #
  #   Authentication Methods:
-Index: contrib/a2boot/Makefile.am
-===================================================================
-RCS file: /cvsroot/netatalk/netatalk/contrib/a2boot/Makefile.am,v
-retrieving revision 1.5
 diff -u -r1.5 Makefile.am
 --- netatalk/contrib/a2boot/Makefile.am	28 Apr 2005 20:49:21 -0000	1.5
 +++ netatalk/contrib/a2boot/Makefile.am	5 May 2006 10:46:32 -0000
@@ -65,10 +35,6 @@ diff -u -r1.5 Makefile.am
  	 -D_PATH_A_GS_BLOCKS=\"$(PKGCONFDIR)/a2boot/ProDOS16\ Boot\ Blocks\" \
  	 -D_PATH_A_2E_BLOCKS=\"$(PKGCONFDIR)/a2boot/Apple\ :2f:2fe\ Boot\ Blocks\" \
  	 -D_PATH_P16_IMAGE=\"$(PKGCONFDIR)/a2boot/ProDOS16\ Image\"
-Index: etc/afpd/Makefile.am
-===================================================================
-RCS file: /cvsroot/netatalk/netatalk/etc/afpd/Makefile.am,v
-retrieving revision 1.38
 diff -u -r1.38 Makefile.am
 --- netatalk/etc/afpd/Makefile.am	30 Apr 2005 21:33:41 -0000	1.38
 +++ netatalk/etc/afpd/Makefile.am	5 May 2006 10:46:33 -0000
@@ -98,10 +64,6 @@ diff -u -r1.38 Makefile.am
  	 -D_PATH_AFPDDEFVOL=\"$(pkgconfdir)/AppleVolumes.default\" \
  	 -D_PATH_AFPDSYSVOL=\"$(pkgconfdir)/AppleVolumes.system\" \
  	 -D_PATH_AFPDPWFILE=\"$(pkgconfdir)/afppasswd\" \
-Index: etc/afpd/afp_config.c
-===================================================================
-RCS file: /cvsroot/netatalk/netatalk/etc/afpd/afp_config.c,v
-retrieving revision 1.23
 diff -u -r1.23 afp_config.c
 --- netatalk/etc/afpd/afp_config.c	28 Apr 2005 20:49:39 -0000	1.23
 +++ netatalk/etc/afpd/afp_config.c	5 May 2006 10:46:35 -0000
@@ -202,10 +164,6 @@ diff -u -r1.23 afp_config.c
      return config;
  }
  
-Index: etc/afpd/afp_options.c
-===================================================================
-RCS file: /cvsroot/netatalk/netatalk/etc/afpd/afp_options.c,v
-retrieving revision 1.35
 diff -u -r1.35 afp_options.c
 --- netatalk/etc/afpd/afp_options.c	28 Apr 2005 20:49:39 -0000	1.35
 +++ netatalk/etc/afpd/afp_options.c	5 May 2006 10:46:39 -0000
@@ -238,10 +196,6 @@ diff -u -r1.35 afp_options.c
  	printf( "  TCP wrappers support:\t" );
  #ifdef TCPWRAP
  	puts( "Yes" );
-Index: etc/afpd/globals.h
-===================================================================
-RCS file: /cvsroot/netatalk/netatalk/etc/afpd/globals.h,v
-retrieving revision 1.21
 diff -u -r1.21 globals.h
 --- netatalk/etc/afpd/globals.h	28 Apr 2005 20:49:43 -0000	1.21
 +++ netatalk/etc/afpd/globals.h	5 May 2006 10:46:39 -0000
@@ -253,10 +207,6 @@ diff -u -r1.21 globals.h
  
  #ifdef FORCE_UIDGID
  /* set up a structure for this */
-Index: include/atalk/dsi.h
-===================================================================
-RCS file: /cvsroot/netatalk/netatalk/include/atalk/dsi.h,v
-retrieving revision 1.6
 diff -u -r1.6 dsi.h
 --- netatalk/include/atalk/dsi.h	3 May 2005 14:55:12 -0000	1.6
 +++ netatalk/include/atalk/dsi.h	5 May 2006 10:46:41 -0000
@@ -271,10 +221,6 @@ diff -u -r1.6 dsi.h
    /* buffer for OSX deadlock */
    int noblocking;
    char *buffer;
-Index: macros/summary.m4
-===================================================================
-RCS file: /cvsroot/netatalk/netatalk/macros/summary.m4,v
-retrieving revision 1.2
 diff -u -r1.2 summary.m4
 --- netatalk/macros/summary.m4	28 Apr 2005 20:50:05 -0000	1.2
 +++ netatalk/macros/summary.m4	5 May 2006 10:46:46 -0000
@@ -286,22 +232,21 @@ diff -u -r1.2 summary.m4
  	AC_MSG_RESULT([         tcp wrapper support:    $netatalk_cv_tcpwrap])
  dnl	if test x"$netatalk_cv_linux_sendfile" != x; then
  dnl		AC_MSG_RESULT([         Linux sendfile support: $netatalk_cv_linux_sendfile])
-Index: man/man5/afpd.conf.5.tmpl
-===================================================================
-RCS file: /cvsroot/netatalk/netatalk/man/man5/afpd.conf.5.tmpl,v
-retrieving revision 1.4
 diff -u -r1.4 afpd.conf.5.tmpl
 --- netatalk/man/man5/afpd.conf.5.tmpl	28 Apr 2005 20:50:06 -0000	1.4
 +++ netatalk/man/man5/afpd.conf.5.tmpl	5 May 2006 10:46:48 -0000
-@@ -210,6 +210,9 @@
- Protocol (if SLP support was compiled in). This is useful if you are
- running multiple servers and want one to be hidden, perhaps because
- it is advertised elsewhere, ie. by a SLP Directory Agent.
-+\-noslp
-+Do not register this server using the Multicast DNS
-+Protocol (if Zeroconf support was compiled in).
+@@ -269,6 +269,12 @@
+ Do not register this server using the Service Location Protocol (if SLP
+ support was compiled in)\&. This is useful if you are running multiple servers and want one to be hidden, perhaps because it is advertised elsewhere, ie\&. by a SLP Directory Agent\&.
+ .RE
++.PP
++\-nozeroconf
++.RS 4
++Do not register this server using the Multicast DNS Protocol (if Zeroconf
++support was compiled in)\&. This is useful if you are running multiple servers and want one to be hidden, perhaps because it is advertised elsewhere\&.
++.RE
  .SH "MISCELLANEOUS OPTIONS"
- .TP 
+ .PP
  \-admingroup \fI[group]\fR
 --- netatalk/etc/afpd/afp_avahi.c.org	2006-04-21 10:29:22.000000000 +0200
 +++ netatalk/etc/afpd/afp_avahi.c	2006-04-22 08:34:34.000000000 +0200

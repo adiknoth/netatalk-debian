@@ -1,6 +1,6 @@
 --- a/man/man5/Makefile.in
 +++ b/man/man5/Makefile.in
-@@ -515,6 +515,8 @@
+@@ -455,6 +455,8 @@
  	    -e s@:BINDIR:@${bindir}@ \
  	    -e s@:ETCDIR:@${pkgconfdir}@ \
  	    -e s@:LIBDIR:@${libdir}@ \

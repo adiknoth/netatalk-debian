@@ -1,15 +1,15 @@
 --- netatalk/man/man8/psf.8.tmpl.old	2005-03-15 12:50:30.080552653 +0100
 +++ netatalk/man/man8/psf.8.tmpl	2005-03-15 12:50:50.525351065 +0100
-@@ -44,9 +44,9 @@
+@@ -81,9 +81,9 @@
+ .\}
  .nf
- 
- laser|lp|LaserWriter Plus on AppleTalk:\\
--    :sd=/usr/spool/lpd/laser:\\
--    :lp=/usr/spool/lpd/laser/null:\\
--    :lf=/var/adm/lpd\-errs:pw#80:hl:\\
-+    :sd=/var/spool/lpd/laser:\\
-+    :lp=/var/spool/lpd/laser/null:\\
-+    :lf=/var/log/lpd\-errs:pw#80:hl:\\
-     :of=:LIBEXECDIR:/ofpap:\\
-     :if=:LIBEXECDIR:/ifpaprev:\\
-     :tf=:LIBEXECDIR:/tfpaprev:\\
+ laser|lp|LaserWriter Plus on AppleTalk:\e
+-    :sd=/usr/spool/lpd/laser:\e
+-    :lp=/usr/spool/lpd/laser/null:\e
+-    :lf=/var/adm/lpd\-errs:pw#80:hl:\e
++    :sd=/var/spool/lpd/laser:\e
++    :lp=/var/spool/lpd/laser/null:\e
++    :lf=/var/log/lpd\-errs:pw#80:hl:\e
+     :of=:LIBEXECDIR:/ofpap:\e
+     :if=:LIBEXECDIR:/ifpaprev:\e
+     :tf=:LIBEXECDIR:/tfpaprev:\e
