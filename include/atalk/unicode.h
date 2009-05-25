@@ -46,7 +46,7 @@ typedef struct {
 #define IGNORE_CHAR	'_'
 
 /* conversion flags */
-#define CONV_IGNORE		(1<<0) /* ignore EILSEQ, replace with IGNORE_CHAR */
+#define CONV_IGNORE		(1<<0) /* return the first convertable characters. */
 #define CONV_ESCAPEHEX		(1<<1) /* escape unconvertable chars with :[UCS2HEX] */
 #define CONV_ESCAPEDOTS		(1<<2) /* escape leading dots with :2600 */
 #define CONV_UNESCAPEHEX 	(1<<3) 
@@ -54,6 +54,8 @@ typedef struct {
 #define CONV_TOLOWER		(1<<5) /* convert to lowercase */
 #define CONV_PRECOMPOSE		(1<<6) /* precompose */
 #define CONV_DECOMPOSE		(1<<7) /* precompose */
+#define CONV_FORCE		(1<<8) /* force convertion */
+#define CONV__EILSEQ		(1<<9) /* ignore EILSEQ, replace with IGNORE_CHAR (try USC2) */
 
 /* conversion return flags */
 #define CONV_REQMANGLE	(1<<14) /* mangling of returned name is required */
@@ -77,6 +79,7 @@ struct charset_functions {
         size_t (*push)(void *, char **inbuf, size_t *inbytesleft,
                                    char **outbuf, size_t *outbytesleft);
 	u_int32_t flags;
+        const char *iname;
         struct charset_functions *prev, *next;
 };
 

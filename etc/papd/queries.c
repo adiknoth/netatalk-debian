@@ -1,5 +1,5 @@
 /*
- * $Id: queries.c,v 1.16.2.1.2.1.2.1 2005/02/06 10:16:02 didg Exp $
+ * $Id: queries.c,v 1.16.2.1.2.1.2.2 2009/02/03 08:25:00 didg Exp $
  *
  * Copyright (c) 1990,1994 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -71,6 +71,9 @@ int cq_default( in, out )
 
 	case -1 :
 	    return( CH_MORE );
+
+        case -2 :
+            return( CH_ERROR );
 	}
 
 	stop = start+linelength;
@@ -91,9 +94,11 @@ int cq_default( in, out )
 			break;
 		    }
 		}
-		p++;
-		while ( *p == ' ' ) {
+		if (p < stop) {
 		    p++;
+		    while ( *p == ' ' ) {
+		        p++;
+                    }
 		}
 
 		append( out, p, stop - p + crlflength );
@@ -130,6 +135,9 @@ int cq_k4login( in, out )
 
     case -1 :
 	return( CH_MORE );
+
+    case -2 :
+        return( CH_ERROR );
     }
 
     p = start + strlen( comment->c_begin );
@@ -139,6 +147,7 @@ int cq_k4login( in, out )
 
     bzero( &tkt, sizeof( tkt ));
     stop = start+linelength;
+    /* FIXME */
     for ( i = 0, t = tkt.dat; p < stop; p += 2, t++, i++ ) {
 	*t = ( h2b( (unsigned char)*p ) << 4 ) +
 		h2b( (unsigned char)*( p + 1 ));
@@ -180,6 +189,9 @@ int cq_uameth( in, out )
 
 	case -1 :
 	    return( CH_MORE );
+
+        case -2 :
+            return( CH_ERROR );
 	}
 
 	if ( comgetflags() == 0 ) {	/* start */
@@ -326,6 +338,9 @@ int cq_query( in, out )
 
 	case -1 :
 	    return( CH_MORE );
+
+        case -2 :
+            return( CH_ERROR );
 	}
 
 	stop = start+linelength;
@@ -339,7 +354,7 @@ int cq_query( in, out )
 		}
 	    }
 
-	    for ( p++; p < stop; p++ ) {
+	    if (p < stop) for ( p++; p < stop; p++ ) {
 		if ( *p != ' ' && *p != '\t' ) {
 		    break;
 		}
@@ -352,7 +367,7 @@ int cq_query( in, out )
 	    }
 
 	    for ( gq = genqueries; gq->gq_name; gq++ ) {
-		if (( strlen( gq->gq_name ) == q - p ) &&
+		if (( strlen( gq->gq_name ) == (size_t)(q - p) ) &&
 			( strncmp( gq->gq_name, p, q - p ) == 0 )) {
 		    break;
 		}
@@ -386,14 +401,16 @@ void cq_font_answer( start, stop, out )
 
     p = start;
     while ( p < stop ) {
+        unsigned int count = 0;
 	while (( *p == ' ' || *p == '\t' ) && p < stop ) {
 	    p++;
 	}
 
 	q = buf;
 	while ( *p != ' ' && *p != '\t' &&
-		*p != '\n' && *p != '\r' && p < stop ) {
+		*p != '\n' && *p != '\r' && p < stop && count < sizeof(buf)) {
 	    *q++ = *p++;
+	    count++;
 	}
 
 	if ( q != buf ) {
@@ -428,6 +445,9 @@ int cq_font( in, out )
 
 	case -1 :
 	    return( CH_MORE );
+
+        case -2 :
+            return( CH_ERROR );
 	}
 
 	stop = start + linelength;
@@ -440,7 +460,8 @@ int cq_font( in, out )
 		    break;
 		}
 	    }
-	    p++;
+	    if (p < stop)
+	        p++;
 
 	    cq_font_answer( p, stop, out );
 	} else {
@@ -453,7 +474,8 @@ int cq_font( in, out )
 			break;
 		    }
 		}
-		p++;
+		if (p < stop)
+		    p++;
 
 		cq_font_answer( p, stop, out );
 	    } else {
@@ -486,6 +508,9 @@ int cq_feature( in, out )
 
 	case -1 :
 	    return( CH_MORE );
+
+        case -2 :
+            return( CH_ERROR );
 	}
 
 	stop = start + linelength;
@@ -499,7 +524,8 @@ int cq_feature( in, out )
 		    break;
 		}
 	    }
-	    p++;
+	    if (p < stop)
+	        p++;
 	    while ( *p == ' ' ) {
 		p++;
 	    }
@@ -544,6 +570,9 @@ int cq_printer( in, out )
 
 	case -1 :
 	    return( CH_MORE );
+
+        case -2 :
+            return( CH_ERROR );
 	}
 
 	if ( comgetflags() == 0 ) {
@@ -620,6 +649,9 @@ int cq_rmjob( in, out )
 
     case -1 :
 	return( CH_MORE );
+
+    case -2 :
+        return( CH_ERROR );
     }
 
     stop = start + linelength;
@@ -660,6 +692,9 @@ int cq_listq( in, out )
 
     case -1 :
 	return( CH_MORE );
+
+    case -2 :
+        return( CH_ERROR );
     }
 
     if ( lp_queue( out )) {
@@ -692,7 +727,7 @@ int cq_rbilogin( in, out )
     int			linelength, crlflength;
     char        	username[UAM_USERNAMELEN + 1] = "\0";
     struct papd_comment	*comment = compeek();
-    char		uamtype[20] = "\0";
+    char		uamtype[20];
 
     for (;;) {
         switch ( markline( in, &start, &linelength, &crlflength )) {
@@ -701,6 +736,9 @@ int cq_rbilogin( in, out )
 
         case -1 :
             return( CH_MORE );
+
+        case -2 :
+            return( CH_ERROR );
         }
 
 	stop = start + linelength;
@@ -709,13 +747,16 @@ int cq_rbilogin( in, out )
 	    begin = start + strlen(comment->c_begin);
 	    p = begin;
 
-	    while (*p != ' ') {
+	    while (*p != ' ' && p < stop) {
 		p++;
 	    }
 
-	    strncat(uamtype, begin, p - begin);
+	    memset(uamtype, 0, sizeof(uamtype));
+	    if ((size_t)(p -begin) <= sizeof(uamtype) -1) {
+	        strncpy(uamtype, begin, p - begin);
+            }
 
-	    if ((papd_uam = auth_uamfind(UAM_SERVER_PRINTAUTH,
+	    if ( !*uamtype || (papd_uam = auth_uamfind(UAM_SERVER_PRINTAUTH,
 				uamtype, strlen(uamtype))) == NULL) {
 		LOG(log_info, logtype_papd, "Could not find uam: %s", uamtype);
 		append(out, rbiloginbad, strlen(rbiloginbad));

@@ -316,8 +316,15 @@ static size_t convert_string_internal(charset_t from, charset_t to,
 	char* o_save = outbuf;
 	atalk_iconv_t descriptor;
 
-	if (srclen == (size_t)-1)
-		srclen = strlen(src)+1;
+	/* Fixed based on Samba 3.0.6 */
+	if (srclen == (size_t)-1) {
+		if (from == CH_UCS2) {
+			srclen = (strlen_w((const ucs2_t *)src)+1) * 2;
+		} else {
+			srclen = strlen((const char *)src)+1;
+		}
+	}
+
 
 	lazy_initialize_conv();
 
@@ -636,7 +643,7 @@ size_t charset_to_ucs2_allocate(charset_t ch, ucs2_t **dest, const char *src)
 	return convert_string_allocate(ch, CH_UCS2, src, src_len, (char**) dest);	
 }
 
-/**
+/** -----------------------------------
  * Copy a string from a charset_t char* src to a UTF-8 destination, allocating a buffer
  *
  * @param dest always set at least to NULL 
@@ -652,7 +659,7 @@ size_t charset_to_utf8_allocate(charset_t ch, char **dest, const char *src)
 	return convert_string_allocate(ch, CH_UTF8, src, src_len, dest);	
 }
 
-/**
+/** -----------------------------------
  * Copy a string from a UCS2 src to a unix char * destination, allocating a buffer
  *
  * @param dest always set at least to NULL 
@@ -666,7 +673,7 @@ size_t ucs2_to_charset(charset_t ch, const ucs2_t *src, char *dest, size_t destl
 	return convert_string(CH_UCS2, ch, src, src_len, dest, destlen);	
 }
 
-
+/* --------------------------------- */
 size_t ucs2_to_charset_allocate(charset_t ch, char **dest, const ucs2_t *src)
 {
 	size_t src_len = (strlen_w(src)) * sizeof(ucs2_t);
@@ -674,7 +681,7 @@ size_t ucs2_to_charset_allocate(charset_t ch, char **dest, const ucs2_t *src)
 	return convert_string_allocate(CH_UCS2, ch, src, src_len, dest);	
 }
 
-/**
+/** ---------------------------------
  * Copy a string from a UTF-8 src to a unix char * destination, allocating a buffer
  *
  * @param dest always set at least to NULL 
@@ -779,108 +786,109 @@ char * debug_out ( char * seq, size_t len)
  * Flags:
  *		CONV_UNESCAPEHEX:	 ':XX' will be converted to an UCS2 character
  *		CONV_IGNORE:	 	 return the first convertable characters.
+ *		CONV_FORCE:	 force convertion
  * FIXME:
  *		This will *not* work if the destination charset is not multibyte, i.e. UCS2->UCS2 will fail
  *		The (un)escape scheme is not compatible to the old cap style escape. This is bad, we need it 
  *		for e.g. HFS cdroms.
  */
 
-static size_t pull_charset_flags (charset_t from_set, charset_t cap_charset, char* src, size_t srclen, char* dest, size_t destlen, u_int16_t *flags)
+static size_t pull_charset_flags (charset_t from_set, charset_t cap_set, char* src, size_t srclen, char* dest, size_t destlen, u_int16_t *flags)
 {
-	size_t i_len, o_len, hlen;
-	size_t retval, j = 0;
-	const char* inbuf = (const char*)src;
-	char* outbuf = (char*)dest;
-	atalk_iconv_t descriptor;
-	atalk_iconv_t descriptor_cap;
-	char *s;
-	char h[MAXPATHLEN];
-	const char *h_buf;
+  const u_int16_t option = (flags ? *flags : 0);
+  size_t i_len, o_len;
+  size_t j = 0;
+  const char* inbuf = (const char*)src;
+  char* outbuf = dest;
+  atalk_iconv_t descriptor;
+  atalk_iconv_t descriptor_cap;
 
-	if (srclen == (size_t)-1)
-		srclen = strlen(src)+1;
+  if (srclen == (size_t)-1)
+    srclen = strlen(src) + 1;
 
-	lazy_initialize_conv();
+  lazy_initialize_conv();
 
-	descriptor = conv_handles[from_set][CH_UCS2];
-	descriptor_cap = conv_handles[cap_charset][CH_UCS2];
+  descriptor = conv_handles[from_set][CH_UCS2];
+  descriptor_cap = conv_handles[cap_set][CH_UCS2];
 
-	if (descriptor == (atalk_iconv_t)-1 || descriptor == (atalk_iconv_t)0) {
-		return (size_t) -1;
-	}
+  if (descriptor == (atalk_iconv_t)-1 || descriptor == (atalk_iconv_t)0) {
+    errno = EINVAL;
+    return (size_t)-1;
+  }
 
-	i_len=srclen;
-	o_len=destlen;
-	
-conversion_loop:
-	if ( flags && (*flags & CONV_UNESCAPEHEX)) {
-		if ( NULL != (s = strchr ( inbuf, ':'))) {
-			j = i_len - (s - inbuf);
-			if ( 0 == (i_len = (s - inbuf)))
-				goto unhex_char;
-	}
-	}
-	
-	retval = atalk_iconv(descriptor,  &inbuf, &i_len, &outbuf, &o_len);
-	if(retval==(size_t)-1) {
-	    if (errno == EILSEQ && flags && (*flags & CONV_IGNORE)) {
-				*flags |= CONV_REQMANGLE;
-				return destlen-o_len;
-	    }
-	    else
-	    	return (size_t) -1;
+  i_len=srclen;
+  o_len=destlen;
+
+  while (i_len > 0) {
+    if ((option & CONV_UNESCAPEHEX)) {
+      for (j = 0; j < i_len; ++j) {
+	if (inbuf[j] == ':') break;
+      }
+      j = i_len - j;
+      i_len -= j;
     }
-    
-unhex_char:
-	if (j && flags && (*flags & CONV_UNESCAPEHEX )) {
-		/* we're at the start on an hex encoded ucs2 char */
-		if (o_len < 2) {
-			errno = E2BIG;
-			return (size_t) -1;
-		}
-		if ( j >= 3 && 
-			isxdigit( *(inbuf+1)) && isxdigit( *(inbuf+2)) ) {
-			hlen = 0;
-			while ( *inbuf == ':' && j >=3 && 
-				isxdigit( *(inbuf+1)) && isxdigit( *(inbuf+2)) ) {
-				inbuf++;
-				h[hlen]   = hextoint( *inbuf ) << 4;
-				inbuf++;
-				h[hlen++] |= hextoint( *inbuf );			
-				inbuf++;
-				j -= 3;
-			}
-			h_buf = (const char*) h;
-			if ((size_t) -1 == (retval = atalk_iconv(descriptor_cap, &h_buf, &hlen, &outbuf, &o_len)) ) {
-				if (errno == EILSEQ && CHECK_FLAGS(flags, CONV_IGNORE)) {
-					*flags |= CONV_REQMANGLE;
-					return destlen-o_len;
-				}
-				else {
-					return retval;
-				}
-			}
-		}
-		else {
-			/* We have an invalid :xx sequence */
-			if (CHECK_FLAGS(flags, CONV_IGNORE)) {
-				*flags |= CONV_REQMANGLE;
-				return destlen-o_len;
-			}
-			else {
-				errno=EILSEQ;
-				return (size_t) -1;
-			}
-		}
-		i_len = j;
-		j = 0;
-		if (i_len > 0)
-			goto conversion_loop;
+
+    if (i_len > 0 &&
+	atalk_iconv(descriptor, &inbuf, &i_len, &outbuf, &o_len) == (size_t)-1) {
+      if (errno == EILSEQ || errno == EINVAL) {
+	errno = EILSEQ;
+        if ((option & CONV_IGNORE)) {
+	    *flags |= CONV_REQMANGLE;
+	    return destlen - o_len;
 	}
+	if ((option & CONV__EILSEQ)) {
+	    if (o_len < 2) {
+	        errno = E2BIG;
+      		goto end;
+    	    }
+    	    *((ucs2_t *)outbuf) = (ucs2_t) IGNORE_CHAR; /**inbuf */
+    	    inbuf++;
+    	    i_len--;
+    	    outbuf += 2;
+    	    o_len -= 2;
+    	    /* FIXME reset stat ? */
+    	    continue;
+	}
+      }
+      goto end;
+    }
 
+    if (j) {
+      /* we're at the start on an hex encoded ucs2 char */
+      char h[MAXPATHLEN];
+      size_t hlen = 0;
 
-
-	return destlen-o_len;
+      i_len = j, j = 0;
+      while (i_len >= 3 && inbuf[0] == ':' &&
+	     isxdigit(inbuf[1]) && isxdigit(inbuf[2])) {
+	h[hlen++] = (hextoint(inbuf[1]) << 4) | hextoint(inbuf[2]);
+	inbuf += 3;
+	i_len -= 3;
+      }
+      if (hlen) {
+	const char *h_buf = h;
+	if (atalk_iconv(descriptor_cap, &h_buf, &hlen, &outbuf, &o_len) == (size_t)-1) {
+	  i_len += hlen * 3;
+	  inbuf -= hlen * 3;
+	  if (errno == EILSEQ && (option & CONV_IGNORE)) {
+	    *flags |= CONV_REQMANGLE;
+	    return destlen - o_len;
+	  }
+	  goto end;
+	}
+      } else {
+	/* We have an invalid :xx sequence */
+	errno = EILSEQ;
+	if ((option & CONV_IGNORE)) {
+	  *flags |= CONV_REQMANGLE;
+	  return destlen - o_len;
+	}
+	goto end;
+      }
+    }
+  }
+ end:
+  return (i_len + j == 0 || (option & CONV_FORCE)) ? destlen - o_len : (size_t)-1;
 }
 
 /* 
@@ -888,7 +896,9 @@ unhex_char:
  * Flags:
  * 		CONV_ESCAPEDOTS: escape leading dots
  *		CONV_ESCAPEHEX:	 unconvertable characters and '/' will be escaped to :XX
- *		CONV_IGNORE:	 unconvertable characters will be replaced with '_'
+ *		CONV_IGNORE:	 return the first convertable characters.
+ *		CONV__EILSEQ:	 unconvertable characters will be replaced with '_'
+ *		CONV_FORCE:	 force convertion
  * FIXME:
  *		CONV_IGNORE and CONV_ESCAPEHEX can't work together. Should we check this ?
  *		This will *not* work if the destination charset is not multibyte, i.e. UCS2->UCS2 will fail
@@ -899,113 +909,122 @@ unhex_char:
 
 static size_t push_charset_flags (charset_t to_set, charset_t cap_set, char* src, size_t srclen, char* dest, size_t destlen, u_int16_t *flags)
 {
-    size_t i_len, o_len, i;
-    size_t retval, j = 0;
-    const char* inbuf = (const char*)src;
-    char* outbuf = (char*)dest;
-    atalk_iconv_t descriptor;
-    char *o_save;
-    char *buf, *buf_save;
-    size_t buflen;
-    
-    lazy_initialize_conv();
-    
-    descriptor = conv_handles[CH_UCS2][to_set];
-    
-    if (descriptor == (atalk_iconv_t)-1 || descriptor == (atalk_iconv_t)0) {
-        return (size_t) -1;
+  const u_int16_t option = (flags ? *flags : 0);
+  size_t i_len, o_len, i;
+  size_t j = 0;
+  const char* inbuf = (const char*)src;
+  char* outbuf = (char*)dest;
+  atalk_iconv_t descriptor;
+  atalk_iconv_t descriptor_cap;
+
+  lazy_initialize_conv();
+
+  descriptor = conv_handles[CH_UCS2][to_set];
+  descriptor_cap = conv_handles[CH_UCS2][cap_set];
+
+  if (descriptor == (atalk_iconv_t)-1 || descriptor == (atalk_iconv_t)0) {
+    errno = EINVAL;
+    return (size_t) -1;
+  }
+
+  i_len=srclen;
+  o_len=destlen;
+
+  if ((option & CONV_ESCAPEDOTS) &&
+      i_len >= 2 && SVAL(inbuf, 0) == 0x002e) { /* 0x002e = . */
+    if (o_len < 3) {
+      errno = E2BIG;
+      goto end;
     }
-    
-    i_len=srclen;
-    o_len=destlen;
-    o_save=outbuf;
-    
-    if ( SVAL(inbuf,0) == 0x002e && flags && (*flags & CONV_ESCAPEDOTS)) { /* 0x002e = . */
-        if (o_len < 3) {
-            errno = E2BIG;
-            return (size_t) -1;
-        }
-        o_save[0] = ':';
-        o_save[1] = '2';
-        o_save[2] = 'e';
-        o_len -= 3;
-        inbuf += 2;
-        i_len -= 2;
-        outbuf = o_save + 3;
-        if (flags) *flags |= CONV_REQESCAPE;
-    }
-	
-conversion_loop:
-    if ( flags && (*flags & CONV_ESCAPEHEX)) {
-        for ( i = 0; i < i_len; i+=2) {
-            if ( SVAL((inbuf+i),0) == 0x002f) { /* 0x002f = / */
-                j = i_len - i;
-                if ( 0 == ( i_len = i))
-                    goto escape_slash;
-                break;
-            } else if ( SVAL(inbuf+i,0) == 0x003a) { /* 0x003a = : */
-		errno = EILSEQ;
-		return (size_t) -1;
-	    }
-        }
-    }
-    
-    retval = atalk_iconv(descriptor,  &inbuf, &i_len, &outbuf, &o_len);
-    if (retval==(size_t)-1) {
-        if (errno == EILSEQ && CHECK_FLAGS(flags, CONV_IGNORE)) {
-            *flags |= CONV_REQMANGLE;
-    	    return destlen -o_len;
-        }
-        else if ( errno == EILSEQ && flags && (*flags & CONV_ESCAPEHEX)) {
-            if (o_len < 3) {
-                errno = E2BIG;
-                return (size_t) -1;
-            }
-   	    if ((size_t) -1 == (buflen = convert_string_allocate_internal(CH_UCS2, cap_set, inbuf, 2, &buf)) ) 
-		return buflen;
-	    buf_save = buf;
-    	    while (buflen > 0) {
-		if ( o_len < 3) {
-			errno = E2BIG;
-			return (size_t) -1;
-		}
-		*outbuf++ = ':';
-		*outbuf++ = hexdig[ ( *buf & 0xf0 ) >> 4 ];
-       		*outbuf++ = hexdig[ *buf & 0x0f ];
-       		buf++;
-		buflen--;
-		o_len -= 3;
-	    }
-   	    SAFE_FREE(buf_save);
-	    buflen = 0;
-	    i_len -= 2;
-	    inbuf += 2;
-            if (flags) *flags |= CONV_REQESCAPE;
-	    if ( i_len > 0)
-            	goto conversion_loop;
+    *outbuf++ = ':';
+    *outbuf++ = '2';
+    *outbuf++ = 'e';
+    o_len -= 3;
+    inbuf += 2;
+    i_len -= 2;
+    *flags |= CONV_REQESCAPE;
+  }
+
+  while (i_len >= 2) {
+    if ((option & CONV_ESCAPEHEX)) {
+      for (i = 0; i < i_len; i += 2) {
+	ucs2_t c = SVAL(inbuf, i);
+	if (c == 0x002f) { /* 0x002f = / */
+	  j = i_len - i;
+	  i_len = i;
+	  break;
+	} else if (c == 0x003a) { /* 0x003a = : */
+	  errno = EILSEQ;
+	  goto end;
 	}
-        else
-           return (size_t)(-1);	
+      }
     }
-	
-escape_slash:
-    if (j && flags && (*flags & CONV_ESCAPEHEX)) {
-        if (o_len < 3) {
-            errno = E2BIG;
-            return (size_t) -1;
-        }
-        o_save[destlen -o_len]   = ':';
-        o_save[destlen -o_len+1] = '2';
-        o_save[destlen -o_len+2] = 'f';
-        inbuf  += 2;
-        i_len   = j-2;
-        o_len  -= 3;
-        outbuf += 3;
-        j = 0;
-	if ( i_len > 0)
-        	goto conversion_loop;
+    while (i_len > 0 &&
+	   atalk_iconv(descriptor, &inbuf, &i_len, &outbuf, &o_len) == (size_t)-1) {
+      if (errno == EILSEQ) {
+	if ((option & CONV_IGNORE)) {
+	  *flags |= CONV_REQMANGLE;
+	  return destlen - o_len;
+	}
+	if ((option & CONV_ESCAPEHEX)) {
+	  const size_t bufsiz = o_len / 3 + 1;
+	  char *buf = malloc(bufsiz);
+	  size_t buflen;
+
+	  if (!buf) 
+	      goto end;
+	  i = i_len;
+	  for (buflen = 1; buflen <= bufsiz; ++buflen) {
+	    char *b = buf;
+	    size_t o = buflen;
+	    if (atalk_iconv(descriptor_cap, &inbuf, &i, &b, &o) != (size_t)-1) {
+	      buflen -= o;
+	      break;
+	    } else if (errno != E2BIG) {
+	      SAFE_FREE(buf);
+	      goto end;
+            } else if (o < buflen) {
+              buflen -= o;
+              break;
+            }
+	  }
+	  if (o_len < buflen * 3) {
+	    SAFE_FREE(buf);
+	    errno = E2BIG;
+	    goto end;
+	  }
+	  o_len -= buflen * 3;
+	  i_len = i;
+	  for (i = 0; i < buflen; ++i) {
+	    *outbuf++ = ':';
+	    *outbuf++ = hexdig[(buf[i] >> 4) & 0x0f];
+	    *outbuf++ = hexdig[buf[i] & 0x0f];
+	  }
+	  SAFE_FREE(buf);
+	  *flags |= CONV_REQESCAPE;
+	  continue;
+	}
+      }
+      goto end;
     }
-    return destlen -o_len;
+
+    if (j) {
+      i_len = j, j = 0;
+      if (o_len < 3) {
+	errno = E2BIG;
+	goto end;
+      }
+      *outbuf++ = ':';
+      *outbuf++ = '2';
+      *outbuf++ = 'f';
+      o_len -= 3;
+      inbuf += 2;
+      i_len -= 2;
+    }
+  }
+  if (i_len > 0) errno = EINVAL;
+ end:
+  return (i_len + j == 0 || (option & CONV_FORCE)) ? destlen - o_len : (size_t)-1;
 }
 
 /*

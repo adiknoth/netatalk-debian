@@ -40,7 +40,7 @@ struct charset_functions charset_iso8859_adapted =
 	iso8859_adapted_pull,
 	iso8859_adapted_push,
 	CHARSET_MULTIBYTE | CHARSET_PRECOMPOSED,
-	NULL, NULL
+	NULL, NULL, NULL
 };
 
 
