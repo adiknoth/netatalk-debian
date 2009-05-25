@@ -20,7 +20,7 @@ include debian/cdbs/1/rules/copyright-check.mk
 
 DEB_UPSTREAM_URL = http://downloads.sourceforge.net/netatalk
 DEB_UPSTREAM_TARBALL_VERSION_MANGLE = s/~(alpha|beta|rc)/\1/
-DEB_UPSTREAM_TARBALL_MD5 = c1a1266a78179e758a51748f4ead1c3d
+DEB_UPSTREAM_TARBALL_MD5 = 37c7c24f22217fe848690a6d5b41d28e
 
 autotools-files = Makefile.in aclocal.m4 compile config.guess config.h.in config.sub configure depcomp install-sh ltmain.sh missing mkinstalldirs
 

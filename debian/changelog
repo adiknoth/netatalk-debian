@@ -1,3 +1,9 @@
+netatalk (2.0.4~rc2-1) UNRELEASED; urgency=low
+
+  * New upstream prerelease.
+
+ -- Jonas Smedegaard <dr@jones.dk>  Mon, 25 May 2009 02:33:16 +0200
+
 netatalk (2.0.4~beta2-5) unstable; urgency=low
 
   * Build-depend on libdb4.7-dev (not libdb4.2-dev). Recommend
