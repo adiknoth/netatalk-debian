@@ -1,6 +1,5 @@
 #!/usr/bin/make -f
 
-# NB! Local CDBS tweaks in use. More info in README.cdbs-tweaks
 ifneq (,$(DEB_MAINTAINER_MODE))
   # Enable stuff not policy compliant (eg. unsuitable for build daemons)
   DEB_COPYRIGHT_CHECK_STRICT = yes
