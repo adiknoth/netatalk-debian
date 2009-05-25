@@ -52,7 +52,6 @@ Files: CONTRIBUTORS
 	contrib/nu/Makefile.am
 	contrib/nu/nu.in
 	contrib/printing/Makefile.am
-	contrib/printing/timeout.c
 	contrib/shell_utils/Makefile.am
 	contrib/shell_utils/apple_cp
 	contrib/shell_utils/apple_cp.in
@@ -243,7 +242,6 @@ Files: CONTRIBUTORS
 	libatalk/unicode/Makefile.am
 	libatalk/unicode/charsets/Makefile.am
 	libatalk/unicode/charsets/generic_mb.h
-	libatalk/unicode/precompose.h
 	libatalk/unicode/ucs2_casetable.h
 	libatalk/unicode/util_unistr.c
 	libatalk/util/Makefile.am
@@ -294,11 +292,11 @@ Files: CONTRIBUTORS
 	man/man1/nbplkup.1
 	man/man1/nbprgstr.1
 	man/man1/nbpunrgstr.1
+	man/man1/netatalk-config.1
 	man/man1/pap.1
 	man/man1/papstatus.1
 	man/man1/psorder.1
 	man/man1/single2bin.1
-	man/man1/timeout.1
 	man/man1/unbin.1
 	man/man1/unhex.1
 	man/man1/uniconv.1.tmpl
@@ -328,18 +326,10 @@ Files: CONTRIBUTORS
 	sys/generic/Makefile.am
 	sys/generic/sys/Makefile.am
 	sys/generic/sys/cdefs.h
-	sys/netatalk/CVS/Entries
-	sys/netatalk/CVS/Repository
-	sys/netatalk/CVS/Root
-	sys/netatalk/CVS/Tag
 	sys/netatalk/Makefile.am
 	sys/netbsd/Makefile.am
 	sys/netbsd/netatalk/Makefile.am
 	sys/netbsd/netatalk/endian.h
-	sys/solaris/CVS/Entries
-	sys/solaris/CVS/Repository
-	sys/solaris/CVS/Root
-	sys/solaris/CVS/Tag
 	sys/solaris/Makefile.in
 	sys/solaris/aarp.c
 	sys/solaris/ddp.c
@@ -614,6 +604,19 @@ Files: bin/pap/pap.c
 Copyright: 1990,1994, Regents of The University of Michigan
 License: UNKNOWN
 
+Files: libatalk/unicode/charsets/generic_cjk.c
+	libatalk/unicode/charsets/generic_cjk.h
+	libatalk/unicode/charsets/mac_chinese_simp.c
+	libatalk/unicode/charsets/mac_chinese_simp.h
+	libatalk/unicode/charsets/mac_chinese_trad.c
+	libatalk/unicode/charsets/mac_chinese_trad.h
+	libatalk/unicode/charsets/mac_japanese.c
+	libatalk/unicode/charsets/mac_japanese.h
+	libatalk/unicode/charsets/mac_korean.c
+	libatalk/unicode/charsets/mac_korean.h
+Copyright: TSUBAKIMOTO Hiroya <zorac@4000do.co.jp> 2004
+License: GPL-2+
+
 Files: libatalk/unicode/charsets/generic_mb.c
 	libatalk/unicode/charsets/mac_centraleurope.c
 	libatalk/unicode/charsets/mac_cyrillic.c
@@ -686,6 +689,12 @@ Files: etc/afpd/afprun.c
 Copyright: Andrew Tridgell 1992-1998
 License: GPL-2+
 
+Files: contrib/shell_utils/afpd-mtab.pl
+	contrib/shell_utils/afpd-mtab.pl.in
+	libatalk/unicode/precompose.h
+Copyright: *No copyright*
+License: UNKNOWN (GENERATED FILE)
+
 Files: etc/atalkd/atserv.h
 	etc/atalkd/interface.h
 	etc/atalkd/list.h
@@ -732,20 +741,10 @@ Copyright: 1983, Regents of the University of California
 	1990,1994, Regents of The University of Michigan
 License: BSD (4 clause)
 
-Files: compile
-	depcomp
-Copyright: 1999-2000, 2003-2005, Free Software Foundation, Inc
-License: GPL (GENERATED FILE)
-
 Files: contrib/shell_utils/cleanappledouble.pl
 	contrib/shell_utils/cleanappledouble.pl.in
 Copyright: 2001, Heath Kehoe <hakehoe@avalon.net>
 License: GPL-2+
-
-Files: contrib/shell_utils/afpd-mtab.pl
-	contrib/shell_utils/afpd-mtab.pl.in
-Copyright: *No copyright*
-License: UNKNOWN (GENERATED FILE)
 
 Files: libatalk/compat/mktemp.c
 	libatalk/compat/strcasecmp.c
@@ -771,11 +770,6 @@ Files: etc/atalkd/route.c
 Copyright: 1990,1996, Regents of The University of Michigan
 License: UNKNOWN
 
-Files: macros/ltsugar.m4
-	macros/lt~obsolete.m4
-Copyright: 2004-2005, 2007, Free Software Foundation, Inc
-License: UNKNOWN
-
 Files: contrib/a2boot/Makefile.am
 	debian/patches/107_afpd-zeroconf.patch
 Copyright: VERSION
@@ -786,7 +780,11 @@ Copyright: 1990, The Regents of the University of California
 License: BSD (4 clause)
 
 Files: missing
-Copyright: 1996-1997, 1999-2000, 2002-2005
+Copyright: 1996-1997, 1999-2000, 2002-2006
+License: GPL (GENERATED FILE)
+
+Files: depcomp
+Copyright: 1999-2000, 2003-2006, Free Software
 License: GPL (GENERATED FILE)
 
 Files: debian/cdbs/1/rules/buildinfo.mk
@@ -807,23 +805,19 @@ License: GPL
 
 Files: config.guess
 Copyright: 1992-1999,
-	1992-2001
+	1992-2005
 License: GPL-2+ (GENERATED FILE)
 
 Files: config.sub
 Copyright: 1992-1999
 License: GPL-2+ (GENERATED FILE)
 
+Files: ltmain.sh
+Copyright: 1996-2001, 2003-2005
+License: GPL-2+ (GENERATED FILE)
+
 Files: libatalk/unicode/charsets/mac_roman.h
 Copyright: *No copyright*
-License: GPL-2+
-
-Files: macros/libtool.m4
-Copyright: 1996-2001, 2003-2005
-License: GPL-2+
-
-Files: ltmain.sh
-Copyright: 1996-2001, 2003-2007, 2008 Free Software Foundation, Inc
 License: GPL-2+
 
 Files: libatalk/adouble/ad_sendfile.c
@@ -938,6 +932,10 @@ Files: distrib/initscripts/rc.atalk.suse.tmpl
 Copyright: 1996-2001, SuSE GmbH Nuernberg, Germany. All rights reserved
 License: UNKNOWN
 
+Files: aclocal.m4
+Copyright: 1996-2004
+License: UNKNOWN
+
 Files: libatalk/dsi/dsi_tcp.c
 Copyright: 1997-1998, Adrian Sun (asun@zoology.washington.edu)
 License: UNKNOWN
@@ -961,11 +959,6 @@ Files: bin/afppasswd/afppasswd.c
 Copyright: 1999, Adrian Sun (asun@u.washington.edu)
 License: UNKNOWN
 
-Files: aclocal.m4
-Copyright: 1999-2008, Free Software Foundation, Inc
-	1996-2004
-License: UNKNOWN
-
 Files: etc/uams/uams_guest.c
 Copyright: 2001, (see COPYING)
 License: UNKNOWN
@@ -987,24 +980,12 @@ Copyright: 2003, The Reed Institute
 	2004, Bjoern Fernhomberg
 License: UNKNOWN
 
-Files: macros/ltversion.m4
-Copyright: 2004, Free Software Foundation, Inc
-License: UNKNOWN
-
-Files: macros/ltoptions.m4
-Copyright: 2004-2005, 2007-2008, Free Software Foundation, Inc
-License: UNKNOWN
-
 Files: Makefile.am
 Copyright: COPYING NEWS\
 License: UNKNOWN
 
 Files: contrib/timelord/Makefile.am
 Copyright: README VERSION
-License: UNKNOWN
-
-Files: man/man1/netatalk-config.1
-Copyright: \(co 1998, Owen Taylor
 License: UNKNOWN
 
 Files: libatalk/adouble/ad_lock.c
