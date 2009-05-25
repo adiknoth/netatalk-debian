@@ -1,4 +1,4 @@
-afpd\[[0-9]+\]: ((dhx|cleartext|randnum/rand2num) )?login: [[:alnum:]]+$
+afpd\[[0-9]+\]: ((dhx2?|cleartext|randnum/rand2num) )?login: [[:alnum:]]+$
 afpd\[[0-9]+\]: (afp_flushfork|afp_read|getforkparms): (ad_refresh|of_find): (No such file or directory|No such process|Permission denied)$
 afpd\[[0-9]+\]: dsi_stream_read\(0\): (No such file or directory|No such process|Permission denied)$
 afpd\[[0-9]+\]: (atp_rresp|afp_die: asp_shutdown): Connection timed out$
