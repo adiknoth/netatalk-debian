@@ -12,8 +12,12 @@ netatalk (2.0.4~rc2-1) unstable; urgency=low
   * Rewrite copyright to newer DEP5 draft. Add new unicode files (new
     author, same licensing).
   * Suppress DHX2 logins in logcheck file.
+  * Add README.source.  Drop custom hints about CDBS.
+  * Enable signed tags in git-buildpackage configfile.
+  * Extend local CDBS snippet package-relations.mk with support for more
+    dependencies and slightly improved cleanup.
 
- -- Jonas Smedegaard <dr@jones.dk>  Mon, 25 May 2009 12:30:09 +0200
+ -- Jonas Smedegaard <dr@jones.dk>  Mon, 25 May 2009 13:54:10 +0200
 
 netatalk (2.0.4~beta2-5) unstable; urgency=low
 

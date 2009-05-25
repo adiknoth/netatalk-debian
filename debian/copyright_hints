@@ -65,7 +65,7 @@ Files: CONTRIBUTORS
 	contrib/timelord/VERSION
 	debian/NEWS
 	debian/README.Debian
-	debian/README.cdbs-tweaks
+	debian/README.source
 	debian/compat
 	debian/control
 	debian/control.in
