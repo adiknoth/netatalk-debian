@@ -4,9 +4,9 @@
 104_initscript_load_module_only_if_intended.patch
 105_initscript_config_in_etc-default.patch
 106_papd_needs_atalk_and_fix_bashism.patch
-107_afpd-zeroconf.patch
+#107_afpd-zeroconf.patch
 109_avoid_broken_xfs.patch
-112_fix_zeroconf_assertion.patch
+#112_fix_zeroconf_assertion.patch
 113_LSB_sysv_dep_info.patch
 114_fix_macusers_ps_parsing.patch
 200_netatalk_conf_defaults.diff
