@@ -5,7 +5,7 @@
 105_initscript_config_in_etc-default.patch
 106_papd_needs_atalk_and_fix_bashism.patch
 107_afpd-zeroconf.patch
-109_xfs_option.patch
+109_avoid_broken_xfs.patch
 112_fix_zeroconf_assertion.patch
 113_LSB_sysv_dep_info.patch
 114_fix_macusers_ps_parsing.patch
@@ -22,3 +22,4 @@
 291_fix_manpage_sed_replacements_autotools.patch
 292_rename_initscript_autotools.patch
 293_avoid_update-rc-d_autotools.patch
+294_avoid_broken_xfs_autotools.patch
