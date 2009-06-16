@@ -23,10 +23,10 @@ You can get and recompile the source package locally using the following
 commands (replace XXX with the actual version of the package):
 
        apt-get source netatalk
-       cd netatalk-XXX
+       cd netatalk-*
        DEB_MAINTAINER_MODE=1 DEB_BUILD_OPTIONS=openssl debuild
        cd ..
-       aptitude install netatalk-XXX.deb
+       aptitude install netatalk-*.deb
 
 Alternatively you can use an unofficial(!) precompiled binary package:
 
