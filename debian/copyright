@@ -1,19 +1,12 @@
-Format-Specification: http://svn.debian.org/wsvn/dep/web/deps/dep5.mdwn?op=file&rev=48
+Format: http://svn.debian.org/wsvn/dep/web/deps/dep5.mdwn?op=file&rev=54
 Name: Netatalk
-Maintainer: netatalk-devel@lists.sourceforge.net
+Contact: netatalk-devel@lists.sourceforge.net
 	http://lists.sourceforge.net/lists/listinfo/netatalk-devel
 Source: http://netatalk.sourceforge.net/
 
 Copyright: 1990-1997, Regents of The University of Michigan
 	1997-2000, Adrian Sun <asun@u.washington.edu>
 License: other-Netatalk
-
-Files: Makefile.in
-Copyright: 1994-2005  Free Software Foundation, Inc.
-License: GAP
- This Makefile.in is free software; the Free Software Foundation
- gives unlimited permission to copy and/or distribute it,
- with or without modifications, as long as this notice is preserved.
 
 Files: bin/cnid/*
 	libatalk/cnid/dbd/*
@@ -190,6 +183,13 @@ License: other-Netatalk
 Files: libatalk/compat/snprintf.c
 Copyright: 1994-2000, Patrick Powell, San Diego, CA <papowell@astart.com>
 License: other-snprintf
+
+Files: Makefile.in
+Copyright: 1994-2005  Free Software Foundation, Inc.
+License: GAP
+ This Makefile.in is free software; the Free Software Foundation
+ gives unlimited permission to copy and/or distribute it,
+ with or without modifications, as long as this notice is preserved.
 
 Files: debian/*
 Copyright: 1995-1997, Klee Dienes <klee@debian.org>
