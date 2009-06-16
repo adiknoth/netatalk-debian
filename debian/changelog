@@ -1,3 +1,12 @@
+netatalk (2.0.4-1) UNRELEASED; urgency=low
+
+  * New upstream release.
+  * Enable autoconf regeneration (its master file is patched). Build-
+    depend on autoconf. Closes: bug#533141, thanks to Itai Seggev and
+    Frank Lahm.
+
+ -- Jonas Smedegaard <dr@jones.dk>  Tue, 16 Jun 2009 19:35:23 +0200
+
 netatalk (2.0.4~rc2-1) unstable; urgency=low
 
   * New upstream prerelease:
