@@ -83,7 +83,7 @@ Files: CONTRIBUTORS
 	debian/patches/104_initscript_load_module_only_if_intended.patch
 	debian/patches/105_initscript_config_in_etc-default.patch
 	debian/patches/106_papd_needs_atalk_and_fix_bashism.patch
-	debian/patches/109_xfs_option.patch
+	debian/patches/109_avoid_broken_xfs.patch
 	debian/patches/112_fix_zeroconf_assertion.patch
 	debian/patches/113_LSB_sysv_dep_info.patch
 	debian/patches/114_fix_macusers_ps_parsing.patch
@@ -92,12 +92,13 @@ Files: CONTRIBUTORS
 	debian/patches/202_psf_8_paths.diff
 	debian/patches/205_applevolumes_default_homedir.diff
 	debian/patches/206_fix_cnid_maint_paths.diff
-	debian/patches/208_fix_manpage_sed_replacements_for_automade_file.patch
-	debian/patches/209_rename_initscript_for_automade_file.patch
 	debian/patches/210_avoid_update-rc-d.patch
-	debian/patches/211_avoid_update-rc-d_for_automade_file.patch
 	debian/patches/212_disable_cnid_metad_by_default.patch
 	debian/patches/213_CVE-2008-5718.patch
+	debian/patches/291_fix_manpage_sed_replacements_autotools.patch
+	debian/patches/292_rename_initscript_autotools.patch
+	debian/patches/293_avoid_update-rc-d_autotools.patch
+	debian/patches/294_avoid_broken_xfs_autotools.patch
 	debian/patches/README
 	debian/patches/series
 	debian/watch
