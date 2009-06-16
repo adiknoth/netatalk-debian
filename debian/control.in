@@ -15,7 +15,7 @@ Section: net
 Architecture: any
 Depends: netbase, libpam-modules, ${shlibs:Depends}, ${perl:Depends}, ${misc:Depends}
 Recommends: lsof, rc, db4.7-util, procps, cracklib-runtime, libpam-cracklib
-Suggests: tetex-bin, quota, timeout, db4.2-util
+Suggests: texlive-base-bin, quota, timeout, db4.2-util
 Description: AppleTalk user binaries
  Netatalk is an implementation of the AppleTalk Protocol Suite for
  BSD-derived systems.  The current release contains support for
