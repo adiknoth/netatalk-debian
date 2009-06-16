@@ -1,5 +1,5 @@
---- configure.orig	2009-05-25 02:33:16.000000000 +0200
-+++ configure.	2009-06-16 22:47:21.000000000 +0200
+--- a/configure
++++ b/configure
 @@ -28840,433 +28840,6 @@
  #		AC_MSG_RESULT([enabling quotactl wrapper])
  #	)
