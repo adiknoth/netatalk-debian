@@ -1,5 +1,5 @@
-Format-Specification: http://wiki.debian.org/Proposals/CopyrightFormat?action=recall&rev=XXX
-Upstream-Name: Untrusted draft - double-check copyrights yourself!
+Format: http://svn.debian.org/wsvn/dep/web/deps/dep5.mdwn?op=file&rev=REVISION
+Name: Untrusted draft - double-check copyrights yourself!
 
 Files: CONTRIBUTORS
 	NEWS
@@ -100,7 +100,6 @@ Files: CONTRIBUTORS
 	debian/patches/213_CVE-2008-5718.patch
 	debian/patches/README
 	debian/patches/series
-	debian/rules
 	debian/watch
 	distrib/Makefile.am
 	distrib/config/Makefile.am
@@ -776,6 +775,11 @@ License: GPL (GENERATED FILE)
 Files: depcomp
 Copyright: 1999-2000, 2003-2006, Free Software
 License: GPL (GENERATED FILE)
+
+Files: debian/rules
+Copyright: 2003-2005, Sebastian Rittau <srittau@debian.org>
+	2004, 2006-2009, Jonas Smedegaard <dr@jones.dk>
+License: GPL
 
 Files: debian/cdbs/1/rules/buildinfo.mk
 Copyright: 2004-2007, Jonas Smedegaard <dr@jones.dk>
