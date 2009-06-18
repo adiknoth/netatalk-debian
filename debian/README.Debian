@@ -69,9 +69,11 @@ AppleVolumes files:
     for db in `find $volumedir/.AppleDB -name "*.db"`; do \
       db4.2_dump -f $db.data $db; \
       mv $db $db.old; \
-      db4.7_load -f $db.data $db; \
     done
     find $volumedir/.AppleDB -name "__db.*" -exec rm '{}' ';'
+    for db in `find $volumedir/.AppleDB -name "*.db"`; do \
+      db4.7_load -f $db.data $db; \
+    done
 
 For both script and manual upgrade you need the packages libdb4.2-util
 and db4.7-util installed.
