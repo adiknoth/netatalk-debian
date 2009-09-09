@@ -1,3 +1,18 @@
+netatalk (2.0.4-2) unstable; urgency=low
+
+  * Update copyright hints.
+  * Lower policy compliance to 3.8.0 (uncertain about sysv script
+    requirements in 3.8.1).
+  * Fix order of db upgrade commands in README.Debian. Closes:
+    bug#533344, thanks (again) to Itai Seggev.
+  * Update package-relations.mk: Cleanup unversioned+versioned
+    dependency mix. Improve whitespace cleanup. Rewrite and silence
+    applying dependencies.
+  * Fix and improve README.Debian section on recompiling with OpenSSL,
+    thanks to Gijs Hillenius and others.
+
+ -- Jonas Smedegaard <dr@jones.dk>  Wed, 09 Sep 2009 23:43:27 +0200
+
 netatalk (2.0.4-1) unstable; urgency=low
 
   * New upstream release.
