@@ -19,18 +19,22 @@ provides encrypted access for MacOS X 10.4 and newer, but older releases of
 MacOS X and MacOS Classic can only connect unencrypted as both of the UAMs DHX
 and Randnum requires OpenSSL support.
 
-You can get and recompile the source package locally using the following
-commands (replace XXX with the actual version of the package):
+You can build locally with OpenSSL using the following commands:
 
-       apt-get source netatalk
-       cd netatalk-*
-       DEB_MAINTAINER_MODE=1 DEB_BUILD_OPTIONS=openssl debuild
-       cd ..
-       aptitude install netatalk-*.deb
+  sudo aptitude install devscripts
+  sudo aptitude build-dep netatalk
+  apt-get source netatalk
+  cd netatalk-*
+  dch -l +ssl -D local --force-distribution "Local build with OpenSSL."
+  DEB_AUTO_UPDATE_DEBIAN_CONTROL=1 DEB_BUILD_OPTIONS=openssl debuild -us -uc
+  sudo debi
 
-Alternatively you can use an unofficial(!) precompiled binary package:
+You my need additional build-dependencies not resolved automatically.
 
-deb http://debian.jones.dk/ $DIST netatalk
+Alternatively you can subscribe to unofficial(!) precompiled packages by
+adding the following to your /etc/apt/sources.list:
+
+  deb http://debian.jones.dk/ $DIST netatalk
 
 
 MacOS X Specific Notes
