@@ -42,7 +42,10 @@ DEB_UPSTREAM_TARBALL_MD5 = f9ce650643f6289dc068984adeaf54b9
 
 autotools-files = Makefile.in aclocal.m4 compile config.guess config.h.in config.sub configure depcomp install-sh ltmain.sh missing mkinstalldirs
 
-DEB_UPDATE_RCD_PARAMS := defaults 50
+# Override defaults for old-style update-rc.d
+#  * Start and stop at priority 50 (FIXME: explain reasoning)
+#  * Stop only in runlevel 1 (let system kill it in runlelels 0 and 6)
+DEB_UPDATE_RCD_PARAMS = start 50 2 3 4 5 . stop 50 1 .
 
 DEB_CONFIGURE_EXTRA_FLAGS := \
 	--with-shadow --enable-fhs		\
