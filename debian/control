@@ -2,7 +2,7 @@ Source: netatalk
 Section: net
 Priority: extra
 Maintainer: Jonas Smedegaard <dr@jones.dk>
-Build-Depends: cdbs (>= 0.4.39), autotools-dev, debhelper (>= 6), quilt, patchutils (>= 0.2.25), dh-buildinfo, devscripts (>= 2.10.7), libdb4.7-dev, libwrap0-dev, libpam0g-dev, libavahi-client-dev (>= 0.6), libcups2-dev, libkrb5-dev, libltdl3-dev, libgcrypt11-dev | libgcrypt-dev, cracklib-dev, d-shlibs (>> 0.19)
+Build-Depends: cdbs (>= 0.4.39), autotools-dev, debhelper (>= 6), quilt, patchutils (>= 0.2.25), dh-buildinfo, devscripts (>= 2.10.7), libdb4.7-dev, libwrap0-dev, libpam0g-dev, libcups2-dev, libkrb5-dev, libltdl3-dev, libgcrypt11-dev | libgcrypt-dev, libcrack2-dev | cracklib-dev, d-shlibs (>> 0.19)
 Build-Conflicts: libavahi-compat-libdnssd-dev
 Vcs-Git: git://git.debian.org/git/collab-maint/netatalk.git
 Vcs-Browser: http://git.debian.org/?p=collab-maint/netatalk.git;a=summary
@@ -12,9 +12,9 @@ Homepage: http://netatalk.sourceforge.net/
 Package: netatalk
 Section: net
 Architecture: any
-Depends: netbase, libpam-modules, ${shlibs:Depends}, ${perl:Depends}, ${misc:Depends}
-Recommends: lsof, rc, db4.7-util, procps, cracklib-runtime
-Suggests: texlive-base-bin, quota, timeout, db4.2-util, libpam-cracklib
+Depends: ${shlibs:Depends}, ${perl:Depends}, ${misc:Depends}, ${cdbs:Depends}
+Recommends: ${cdbs:Recommends}
+Suggests: ${cdbs:Suggests}
 Description: AppleTalk user binaries
  Netatalk is an implementation of the AppleTalk Protocol Suite for
  BSD-derived systems.  The current release contains support for
