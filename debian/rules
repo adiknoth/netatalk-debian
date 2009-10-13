@@ -157,8 +157,11 @@ get-orig-vcs: get-orig-source
 	rm -rf "$(DEB_UPSTREAM_WORKDIR)/vcstemp"
 
 # Needed for by upstream build process
-CDBS_BUILD_DEPENDS := $(CDBS_BUILD_DEPENDS), libdb4.7-dev, libwrap0-dev, libpam0g-dev, libavahi-client-dev (>= 0.6), libcups2-dev, libkrb5-dev, libltdl3-dev
+CDBS_BUILD_DEPENDS := $(CDBS_BUILD_DEPENDS), libdb4.7-dev, libwrap0-dev, libpam0g-dev, libcups2-dev, libkrb5-dev, libltdl3-dev
 CDBS_BUILD_DEPENDS := $(CDBS_BUILD_DEPENDS), libgcrypt11-dev | libgcrypt-dev, libcrack2-dev | cracklib-dev
+ifneq (,$(findstring zeroconf,$(DEB_BUILD_OPTIONS)))
+CDBS_BUILD_DEPENDS := $(CDBS_BUILD_DEPENDS), libavahi-client-dev (>= 0.6)
+endif
 ifneq (,$(findstring openssl,$(DEB_BUILD_OPTIONS)))
 CDBS_BUILD_DEPENDS := $(CDBS_BUILD_DEPENDS), $(openssl_build_depends)
 endif
