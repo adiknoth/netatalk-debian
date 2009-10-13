@@ -166,5 +166,19 @@ endif
 # Needed for our packaging routines
 CDBS_BUILD_DEPENDS := $(CDBS_BUILD_DEPENDS), d-shlibs (>> 0.19)
 
+# Needed (always/often/seldom) at runtime
+#  db4.2-util needed only for upgrades from 2.0.4~beta2-4 or older: can be dropped after Squeeze+1
+#  * netbase needed by network-facing daemons
+#  * libpam-modules, libpam-cracklib and cracklib-runtime needed by daemons afpd and papd
+#  * lsof and procps needed by script macusers
+#  * rc needed by script acleandir.rc
+#  * db4.7_util needed by script cnid_maint
+#  * texlive-base-bin (dvips) needed by script etc2ps
+#  * quota needed by daemon afpd
+#  * db4.2_util needed by example script netatalk_update.sh
+CDBS_DEPENDS = netbase, libpam-modules
+CDBS_RECOMMENDS = lsof, rc, db4.7-util, procps, cracklib-runtime
+CDBS_SUGGESTS = texlive-base-bin, quota, timeout, db4.2-util, libpam-cracklib
+
 # Resolve, cleanup and apply CDBS-declared dependencies
 include debian/cdbs/1/rules/package-relations.mk
