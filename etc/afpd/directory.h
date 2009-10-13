@@ -1,5 +1,5 @@
 /*
- * $Id: directory.h,v 1.13.2.4.2.2.2.1 2008/11/25 15:16:32 didg Exp $
+ * $Id: directory.h,v 1.13.2.4.2.2.2.2 2009/09/07 11:35:04 franklahm Exp $
  *
  * Copyright (c) 1990,1991 Regents of The University of Michigan.
  * All Rights Reserved.
@@ -227,6 +227,7 @@ extern int	afp_setdirparams __P((AFPObj *, char *, int, char *, int *));
 extern int      afp_closedir __P((AFPObj *, char *, int, char *, int *));
 extern int	afp_mapid __P((AFPObj *, char *, int, char *, int *));
 extern int	afp_mapname __P((AFPObj *, char *, int, char *, int *));
+extern int	afp_syncdir __P((AFPObj *, char *, int, char *, int *));
 
 /* from enumerate.c */
 extern int	afp_enumerate __P((AFPObj *, char *, unsigned int, char *, unsigned int *));

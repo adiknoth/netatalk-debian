@@ -1,5 +1,5 @@
 /*
- * $Id: fork.c,v 1.51.2.2.2.10.2.6 2008/11/25 15:16:33 didg Exp $
+ * $Id: fork.c,v 1.51.2.2.2.10.2.7 2009/09/07 11:35:04 franklahm Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -1097,6 +1097,39 @@ int	ibuflen _U_, *rbuflen;
 
     if ( flushfork( ofork ) < 0 ) {
         LOG(log_error, logtype_afpd, "afp_flushfork(%s): %s", of_name(ofork), strerror(errno) );
+    }
+
+    return( AFP_OK );
+}
+
+/*
+  FIXME
+  There is a lot to tell about fsync, fdatasync, F_FULLFSYNC.
+  fsync(2) on OSX is implemented differently than on other platforms.
+  see: http://mirror.linux.org.au/pub/linux.conf.au/2007/video/talks/278.pdf.
+ */
+int afp_syncfork(obj, ibuf, ibuflen, rbuf, rbuflen )
+    AFPObj  *obj _U_;
+    char    *ibuf, *rbuf _U_;
+    int     ibuflen _U_, *rbuflen;
+{
+    struct ofork        *ofork;
+    u_int16_t           ofrefnum;
+
+    *rbuflen = 0;
+    ibuf += 2;
+
+    memcpy(&ofrefnum, ibuf, sizeof(ofrefnum));
+    ibuf += sizeof( ofrefnum );
+
+    if (NULL == ( ofork = of_find( ofrefnum )) ) {
+        LOG(log_error, logtype_afpd, "afpd_syncfork: of_find(%d) could not locate fork", ofrefnum );
+        return( AFPERR_PARAM );
+    }
+
+    if ( flushfork( ofork ) < 0 ) {
+	LOG(log_error, logtype_afpd, "flushfork(%s): %s", of_name(ofork), strerror(errno) );
+	return AFPERR_MISC;
     }
 
     return( AFP_OK );

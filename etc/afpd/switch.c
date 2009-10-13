@@ -1,5 +1,5 @@
 /*
- * $Id: switch.c,v 1.12.8.1 2005/09/27 10:40:41 didg Exp $
+ * $Id: switch.c,v 1.12.8.3 2009/09/11 12:40:14 franklahm Exp $
  *
  * Copyright (c) 1990,1991 Regents of The University of Michigan.
  * All Rights Reserved.
@@ -152,7 +152,7 @@ int	(*postauth_switch[])() = {
     NULL, NULL, NULL, NULL,
     NULL, NULL, NULL, NULL,					/*  64 -  71 */
     NULL, NULL, NULL, NULL,
-    NULL, NULL, NULL, NULL,					/*  72 -  79 */
+    NULL, NULL, NULL, NULL,	                /*  72 -  79 */
     NULL, NULL, NULL, NULL,
     NULL, NULL, NULL, NULL,					/*  80 -  87 */
     NULL, NULL, NULL, NULL,

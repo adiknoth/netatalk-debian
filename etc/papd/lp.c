@@ -1,5 +1,5 @@
 /*
- * $Id: lp.c,v 1.14.8.4.2.8 2009/02/04 22:33:11 didg Exp $
+ * $Id: lp.c,v 1.14.8.4.2.9 2009/07/20 09:03:54 franklahm Exp $
  *
  * Copyright (c) 1990,1994 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -586,9 +586,9 @@ int lp_open( out, sat )
 	}
 
 	lp_setup_comments(CH_UNIX);
-	pipe_cmd = pipexlate(printer->p_printer);
+	pipe_cmd = printer->p_printer;
 	if (!pipe_cmd) {
-	    LOG(log_error, logtype_papd, "lp_open: can't generate pipe cmd" );
+	    LOG(log_error, logtype_papd, "lp_open: no pipe cmd" );
 	    spoolerror( out, NULL );
 	    return( -1 );
 	}

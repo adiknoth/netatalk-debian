@@ -43,7 +43,7 @@ printername may be just a name (\fBPrinter 1\fR), or it may be a full name in nb
 Systems using a BSD printing system should make use of a pipe to the printing command in question within the
 \fBpr\fR
 option (eg\&.
-\fBpr=|/usr/bin/lpr \-J%J \-u%U\fR)\&. Note: When printing using a pipe, papd recognizes several wildcards: %F will be replaced by the name present in the "%%For:" comment in the PostScript stream, same with %J for the "%%Title:" comment\&. %U will be substituted with the login name (the latter applies only when authenticated printing is in effect)\&.
+\fBpr=|/usr/bin/lpr)\&.
 .PP
 When CUPS support is compiled in, then
 \fBcupsautoadd \fR
@@ -148,39 +148,26 @@ HP Printer:\e
 .\}
 
 .PP
-An alternative to the technique outlined above is to direct papd\'s output via a pipe into another program\&. Using this mechanism almost all printing systems can be driven\&. Netatalk supplies three "wildcards" that get substituted with values of the already printed job:
-\fB%F\fR,
-\fB%U\fR
-and
-\fB%J\fR\&. Using these wildcards, one can pass those parameters directly to programs or implement small wrapper scripts to call the printing system in question\&.
+An alternative to the technique outlined above is to direct papd\'s output via a pipe into another program\&. Using this mechanism almost all printing systems can be driven\&.
 .PP
 \fBExample.\ \&papd.conf examples using pipes\fR
 .PP
 The first spooler is known as HP 8100\&. It pipes the print job to
 \fB/usr/bin/lpr\fR
-for printing using the value of the
-\fI%%Title: \fR
-comment as job name\&. PSSP authenticated printing is enabled, as is CAP\-style authenticated printing\&. Both methods support guest and cleartext authentication as specified by the \'\fBam\fR\' option\&. The PPD used is
-/etc/atalk/ppds/hp8100\&.ppd\&. The second spooler is called "Dump PostScript" and uses a pipe to
-\fBcat\fR
-to send the raw PostScript code into the user\'s home directory into a file called like the printjob\&.
+for printing.
+PSSP authenticated printing is enabled, as is CAP\-style authenticated printing\&. Both methods support guest and cleartext authentication as specified by the \'\fBam\fR\' option\&. The PPD used is
+/etc/atalk/ppds/hp8100\&.ppd\&.
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
 HP 8100:\e
-   :pr=|/usr/bin/lpr \-Plp \-J"%J":\e
+   :pr=|/usr/bin/lpr \-Plp:\e
    :sp:\e
    :ca=/tmp/print:\e
    :am=uams_guest\&.so,uams_pam\&.so:\e
    :pd=/etc/atalk/ppds/hp8100\&.ppd:
-
-Dump PostScript:LaserWriter@Server:\e
-   :pr=|cat >/home/%U/%J\-prn\&.out:\e
-   :pd=/usr/share/lib/ppd/mooralana\&.ppd:\e
-   :sp:au:op=lp:\e
-   :am=uams_clrtxt\&.so:
 .fi
 .if n \{\
 .RE
