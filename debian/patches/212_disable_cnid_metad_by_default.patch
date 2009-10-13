@@ -1,6 +1,5 @@
-diff -ruN netatalk-2.0.3.orig/config/netatalk.conf netatalk-2.0.3/config/netatalk.conf
---- netatalk-2.0.3.orig/config/netatalk.conf	2007-08-12 23:53:44.000000000 +0200
-+++ netatalk-2.0.3/config/netatalk.conf	2007-08-12 23:56:14.000000000 +0200
+--- a/config/netatalk.conf
++++ b/config/netatalk.conf
 @@ -32,7 +32,7 @@
  # Set which daemons to run (papd is dependent upon atalkd):
  ATALKD_RUN=yes
@@ -10,9 +9,8 @@ diff -ruN netatalk-2.0.3.orig/config/netatalk.conf netatalk-2.0.3/config/netatal
  AFPD_RUN=yes
  TIMELORD_RUN=no
  A2BOOT_RUN=no
-diff -ruN netatalk-2.0.3.orig/distrib/initscripts/rc.atalk.debian.tmpl netatalk-2.0.3/distrib/initscripts/rc.atalk.debian.tmpl
---- netatalk-2.0.3.orig/distrib/initscripts/rc.atalk.debian.tmpl	2007-08-12 23:53:44.000000000 +0200
-+++ netatalk-2.0.3/distrib/initscripts/rc.atalk.debian.tmpl	2007-08-12 23:54:33.000000000 +0200
+--- a/distrib/initscripts/rc.atalk.debian.tmpl
++++ b/distrib/initscripts/rc.atalk.debian.tmpl
 @@ -30,7 +30,7 @@
  ATALK_ZONE=
  ATALK_NAME=`/bin/hostname --short`

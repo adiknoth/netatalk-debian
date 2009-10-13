@@ -1,5 +1,5 @@
---- netatalk/bin/cnid/cnid_maint.in.old	2003-02-17 03:32:45.000000000 +0100
-+++ netatalk/bin/cnid/cnid_maint.in	2004-08-27 17:10:34.748613050 +0200
+--- a/bin/cnid/cnid_maint.in
++++ b/bin/cnid/cnid_maint.in
 @@ -24,17 +24,17 @@
  );
  

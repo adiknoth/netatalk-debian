@@ -1,5 +1,5 @@
---- netatalk/distrib/initscripts/rc.atalk.debian.tmpl.old
-+++ netatalk/distrib/initscripts/rc.atalk.debian.tmpl
+--- a/distrib/initscripts/rc.atalk.debian.tmpl
++++ b/distrib/initscripts/rc.atalk.debian.tmpl
 @@ -36,8 +36,10 @@
  atalk_startup() {
  	if [ "x$ATALKD_RUN" = "xyes" ]; then

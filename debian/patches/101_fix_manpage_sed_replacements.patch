@@ -1,5 +1,5 @@
---- netatalk/man/man5/Makefile.am.old
-+++ netatalk/man/man5/Makefile.am
+--- a/man/man5/Makefile.am
++++ b/man/man5/Makefile.am
 @@ -9,6 +9,8 @@
  	    -e s@:BINDIR:@${bindir}@ \
  	    -e s@:ETCDIR:@${pkgconfdir}@ \

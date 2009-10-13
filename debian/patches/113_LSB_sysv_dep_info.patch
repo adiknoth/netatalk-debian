@@ -1,5 +1,5 @@
---- netatalk/distrib/initscripts/rc.atalk.debian.tmpl.orig	2008-04-05 03:09:54.000000000 +0200
-+++ netatalk/distrib/initscripts/rc.atalk.debian.tmpl	2008-04-05 03:11:45.000000000 +0200
+--- a/distrib/initscripts/rc.atalk.debian.tmpl
++++ b/distrib/initscripts/rc.atalk.debian.tmpl
 @@ -1,4 +1,11 @@
  #!/bin/sh
 +### BEGIN INIT INFO

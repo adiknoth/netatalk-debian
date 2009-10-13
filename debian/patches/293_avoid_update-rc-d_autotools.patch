@@ -1,6 +1,6 @@
 --- a/distrib/initscripts/Makefile.in
 +++ b/distrib/initscripts/Makefile.in
-@@ -604,11 +604,11 @@
+@@ -609,11 +609,11 @@
  @USE_DEBIAN_TRUE@	chmod a+x netatalk
  
  @USE_DEBIAN_TRUE@install-data-hook:
@@ -8,9 +8,9 @@
 +@USE_DEBIAN_TRUE@#	update-rc.d netatalk defaults 90 10
  
  @USE_DEBIAN_TRUE@uninstall-startup:
--@USE_DEBIAN_TRUE@	rm -f /etc/init.d/netatalk
+-@USE_DEBIAN_TRUE@	rm -f $(DESTDIR)$(sysconfdir)/init.d/netatalk
 -@USE_DEBIAN_TRUE@	update-rc.d netatalk remove
-+@USE_DEBIAN_TRUE@#	rm -f /etc/init.d/netatalk
++@USE_DEBIAN_TRUE@#	rm -f $(DESTDIR)$(sysconfdir)/init.d/netatalk
 +@USE_DEBIAN_TRUE@#	update-rc.d netatalk remove
  
  #

@@ -1,6 +1,5 @@
-diff -u -r1.203 configure.in
---- netatalk/configure.in	28 Apr 2005 20:49:17 -0000	1.203
-+++ netatalk/configure.in	5 May 2006 10:46:30 -0000
+--- a/configure.in
++++ b/configure.in
 @@ -386,6 +386,9 @@
  dnl Check for optional server location protocol support (used by MacOS X)
  NETATALK_SRVLOC
@@ -11,9 +10,8 @@ diff -u -r1.203 configure.in
  dnl Check for PAM libs
  netatalk_cv_use_pam=no
  AC_PATH_PAM([
-diff -u -r1.16 afpd.conf.tmpl
---- netatalk/config/afpd.conf.tmpl	28 Apr 2005 20:49:20 -0000	1.16
-+++ netatalk/config/afpd.conf.tmpl	5 May 2006 10:46:31 -0000
+--- a/config/afpd.conf.tmpl
++++ b/config/afpd.conf.tmpl
 @@ -51,6 +51,8 @@
  #			  empty string.
  #     -noslp              Don't register this server with the Service
@@ -23,9 +21,8 @@ diff -u -r1.16 afpd.conf.tmpl
  #
  #
  #   Authentication Methods:
-diff -u -r1.5 Makefile.am
---- netatalk/contrib/a2boot/Makefile.am	28 Apr 2005 20:49:21 -0000	1.5
-+++ netatalk/contrib/a2boot/Makefile.am	5 May 2006 10:46:32 -0000
+--- a/contrib/a2boot/Makefile.am
++++ b/contrib/a2boot/Makefile.am
 @@ -10,7 +10,7 @@
  EXTRA_DIST = COPYRIGHT VERSION
  
@@ -35,9 +32,8 @@ diff -u -r1.5 Makefile.am
  	 -D_PATH_A_GS_BLOCKS=\"$(PKGCONFDIR)/a2boot/ProDOS16\ Boot\ Blocks\" \
  	 -D_PATH_A_2E_BLOCKS=\"$(PKGCONFDIR)/a2boot/Apple\ :2f:2fe\ Boot\ Blocks\" \
  	 -D_PATH_P16_IMAGE=\"$(PKGCONFDIR)/a2boot/ProDOS16\ Image\"
-diff -u -r1.38 Makefile.am
---- netatalk/etc/afpd/Makefile.am	30 Apr 2005 21:33:41 -0000	1.38
-+++ netatalk/etc/afpd/Makefile.am	5 May 2006 10:46:33 -0000
+--- a/etc/afpd/Makefile.am
++++ b/etc/afpd/Makefile.am
 @@ -8,19 +8,21 @@
  	 file.c enumerate.c desktop.c filedir.c fork.c appl.c gettok.c \
  	 mangle.c status.c afp_options.c afp_asp.c afp_dsi.c messages.c  \
@@ -64,9 +60,8 @@ diff -u -r1.38 Makefile.am
  	 -D_PATH_AFPDDEFVOL=\"$(pkgconfdir)/AppleVolumes.default\" \
  	 -D_PATH_AFPDSYSVOL=\"$(pkgconfdir)/AppleVolumes.system\" \
  	 -D_PATH_AFPDPWFILE=\"$(pkgconfdir)/afppasswd\" \
-diff -u -r1.23 afp_config.c
---- netatalk/etc/afpd/afp_config.c	28 Apr 2005 20:49:39 -0000	1.23
-+++ netatalk/etc/afpd/afp_config.c	5 May 2006 10:46:35 -0000
+--- a/etc/afpd/afp_config.c
++++ b/etc/afpd/afp_config.c
 @@ -50,6 +50,9 @@
  #ifdef USE_SRVLOC
  #include <slp.h>
@@ -164,9 +159,8 @@ diff -u -r1.23 afp_config.c
      return config;
  }
  
-diff -u -r1.35 afp_options.c
---- netatalk/etc/afpd/afp_options.c	28 Apr 2005 20:49:39 -0000	1.35
-+++ netatalk/etc/afpd/afp_options.c	5 May 2006 10:46:39 -0000
+--- a/etc/afpd/afp_options.c
++++ b/etc/afpd/afp_options.c
 @@ -202,10 +202,15 @@
      /* parse toggles */
      if (strstr(buf, " -nodebug"))
@@ -196,9 +190,8 @@ diff -u -r1.35 afp_options.c
  	printf( "  TCP wrappers support:\t" );
  #ifdef TCPWRAP
  	puts( "Yes" );
-diff -u -r1.21 globals.h
---- netatalk/etc/afpd/globals.h	28 Apr 2005 20:49:43 -0000	1.21
-+++ netatalk/etc/afpd/globals.h	5 May 2006 10:46:39 -0000
+--- a/etc/afpd/globals.h
++++ b/etc/afpd/globals.h
 @@ -35,6 +35,7 @@
  #define OPTION_CUSTOMICON    (1 << 4)
  #define OPTION_NOSLP         (1 << 5)
@@ -207,9 +200,8 @@ diff -u -r1.21 globals.h
  
  #ifdef FORCE_UIDGID
  /* set up a structure for this */
-diff -u -r1.6 dsi.h
---- netatalk/include/atalk/dsi.h	3 May 2005 14:55:12 -0000	1.6
-+++ netatalk/include/atalk/dsi.h	5 May 2006 10:46:41 -0000
+--- a/include/atalk/dsi.h
++++ b/include/atalk/dsi.h
 @@ -86,6 +86,10 @@
    char srvloc_url[512];
  #endif 
@@ -221,9 +213,8 @@ diff -u -r1.6 dsi.h
    /* buffer for OSX deadlock */
    int noblocking;
    char *buffer;
-diff -u -r1.2 summary.m4
---- netatalk/macros/summary.m4	28 Apr 2005 20:50:05 -0000	1.2
-+++ netatalk/macros/summary.m4	5 May 2006 10:46:46 -0000
+--- a/macros/summary.m4
++++ b/macros/summary.m4
 @@ -49,6 +49,7 @@
  	AC_MSG_RESULT([    Options:])
  	AC_MSG_RESULT([         CUPS support:           $netatalk_cv_use_cups])
@@ -232,9 +223,8 @@ diff -u -r1.2 summary.m4
  	AC_MSG_RESULT([         tcp wrapper support:    $netatalk_cv_tcpwrap])
  dnl	if test x"$netatalk_cv_linux_sendfile" != x; then
  dnl		AC_MSG_RESULT([         Linux sendfile support: $netatalk_cv_linux_sendfile])
-diff -u -r1.4 afpd.conf.5.tmpl
---- netatalk/man/man5/afpd.conf.5.tmpl	28 Apr 2005 20:50:06 -0000	1.4
-+++ netatalk/man/man5/afpd.conf.5.tmpl	5 May 2006 10:46:48 -0000
+--- a/man/man5/afpd.conf.5.tmpl
++++ b/man/man5/afpd.conf.5.tmpl
 @@ -269,6 +269,12 @@
  Do not register this server using the Service Location Protocol (if SLP
  support was compiled in)\&. This is useful if you are running multiple servers and want one to be hidden, perhaps because it is advertised elsewhere, ie\&. by a SLP Directory Agent\&.
@@ -248,8 +238,8 @@ diff -u -r1.4 afpd.conf.5.tmpl
  .SH "MISCELLANEOUS OPTIONS"
  .PP
  \-admingroup \fI[group]\fR
---- netatalk/etc/afpd/afp_avahi.c.org	2006-04-21 10:29:22.000000000 +0200
-+++ netatalk/etc/afpd/afp_avahi.c	2006-04-22 08:34:34.000000000 +0200
+--- a/etc/afpd/afp_avahi.c
++++ b/etc/afpd/afp_avahi.c
 @@ -0,0 +1,500 @@
 +/* -*- Mode: C; tab-width: 2; indent-tabs-mode: t; c-basic-offset: 2 -*- */
 +/*
@@ -751,8 +741,8 @@ diff -u -r1.4 afpd.conf.5.tmpl
 +}
 +
 +#endif /* USE_AVAHI */
---- netatalk/etc/afpd/afp_avahi.h.org	2006-04-21 10:29:23.000000000 +0200
-+++ netatalk/etc/afpd/afp_avahi.h	2006-04-22 07:40:05.000000000 +0200
+--- a/etc/afpd/afp_avahi.h
++++ b/etc/afpd/afp_avahi.h
 @@ -0,0 +1,58 @@
 +/* -*- Mode: C; tab-width: 2; indent-tabs-mode: t; c-basic-offset: 2 -*- */
 +/*
@@ -812,8 +802,8 @@ diff -u -r1.4 afpd.conf.5.tmpl
 +void av_zeroconf_unlock(void *);
 +
 +#endif   /* AFPD_AVAHI_H */
---- netatalk/etc/afpd/afp_bonjour.h.org	2006-04-21 10:29:30.000000000 +0200
-+++ netatalk/etc/afpd/afp_bonjour.h	2006-04-21 07:37:05.000000000 +0200
+--- a/etc/afpd/afp_bonjour.h
++++ b/etc/afpd/afp_bonjour.h
 @@ -0,0 +1,27 @@
 +/* -*- Mode: C; tab-width: 2; indent-tabs-mode: t; c-basic-offset: 2 -*- */
 +/*
@@ -842,8 +832,8 @@ diff -u -r1.4 afpd.conf.5.tmpl
 +int bo_zeroconf_run(void);
 +
 +#endif   /* AFPD_BONJOUR_H */
---- netatalk/etc/afpd/afp_bonjour.c.org	2006-04-21 10:29:28.000000000 +0200
-+++ netatalk/etc/afpd/afp_bonjour.c	2006-04-21 09:45:13.000000000 +0200
+--- a/etc/afpd/afp_bonjour.c
++++ b/etc/afpd/afp_bonjour.c
 @@ -0,0 +1,112 @@
 +/* -*- Mode: C; tab-width: 2; indent-tabs-mode: t; c-basic-offset: 2 -*- */
 +/*
@@ -957,8 +947,8 @@ diff -u -r1.4 afpd.conf.5.tmpl
 +}
 +
 +#endif /* HAVE_BONJOUR */
---- netatalk/etc/afpd/afp_howl.c.org	2006-04-21 10:29:34.000000000 +0200
-+++ netatalk/etc/afpd/afp_howl.c	2006-04-21 09:46:11.000000000 +0200
+--- a/etc/afpd/afp_howl.c
++++ b/etc/afpd/afp_howl.c
 @@ -0,0 +1,92 @@
 +/* -*- Mode: C; tab-width: 2; indent-tabs-mode: t; c-basic-offset: 2 -*- */
 +/*
@@ -1052,8 +1042,8 @@ diff -u -r1.4 afpd.conf.5.tmpl
 +}
 +
 +#endif /* USE_HOWL */
---- netatalk/etc/afpd/afp_howl.h.org	2006-04-21 10:29:33.000000000 +0200
-+++ netatalk/etc/afpd/afp_howl.h	2006-04-21 07:37:11.000000000 +0200
+--- a/etc/afpd/afp_howl.h
++++ b/etc/afpd/afp_howl.h
 @@ -0,0 +1,27 @@
 +/* -*- Mode: C; tab-width: 2; indent-tabs-mode: t; c-basic-offset: 2 -*- */
 +/*
@@ -1082,8 +1072,8 @@ diff -u -r1.4 afpd.conf.5.tmpl
 +void* ho_zeroconf_run(void);
 +
 +#endif   /* AFPD_HOWL_H */
---- netatalk/etc/afpd/afp_zeroconf.h.org	2006-04-21 10:29:39.000000000 +0200
-+++ netatalk/etc/afpd/afp_zeroconf.h	2006-04-21 11:39:20.000000000 +0200
+--- a/etc/afpd/afp_zeroconf.h
++++ b/etc/afpd/afp_zeroconf.h
 @@ -0,0 +1,40 @@
 +/* -*- Mode: C; tab-width: 2; indent-tabs-mode: t; c-basic-offset: 2 -*- */
 +/*
@@ -1125,8 +1115,8 @@ diff -u -r1.4 afpd.conf.5.tmpl
 +void zeroconf_deregister(void);
 +
 +#endif AFPD_ZEROCONF_H
---- netatalk/etc/afpd/afp_zeroconf.c.org	2006-04-21 10:29:38.000000000 +0200
-+++ netatalk/etc/afpd/afp_zeroconf.c	2006-04-21 13:12:38.000000000 +0200
+--- a/etc/afpd/afp_zeroconf.c
++++ b/etc/afpd/afp_zeroconf.c
 @@ -0,0 +1,97 @@
 +/* -*- Mode: C; tab-width: 2; indent-tabs-mode: t; c-basic-offset: 2 -*- */
 +/*
@@ -1225,8 +1215,8 @@ diff -u -r1.4 afpd.conf.5.tmpl
 +    av_zeroconf_shutdown(ctx);
 +#endif
 +}
---- netatalk/macros/zeroconf.m4.org	2006-04-21 10:29:51.000000000 +0200
-+++ netatalk/macros/zeroconf.m4	2006-04-22 07:26:56.000000000 +0200
+--- a/macros/zeroconf.m4
++++ b/macros/zeroconf.m4
 @@ -0,0 +1,101 @@
 +dnl Check for optional Zeroconf support
 +

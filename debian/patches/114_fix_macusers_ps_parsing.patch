@@ -1,5 +1,5 @@
---- netatalk/contrib/macusers/macusers.in.orig	2003-01-26 17:40:44.000000000 +0100
-+++ netatalk/contrib/macusers/macusers.in	2008-04-05 03:25:44.000000000 +0200
+--- a/contrib/macusers/macusers.in
++++ b/contrib/macusers/macusers.in
 @@ -80,7 +80,14 @@
          $time = $4;
  

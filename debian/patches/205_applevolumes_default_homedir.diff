@@ -1,5 +1,5 @@
---- netatalk/config/AppleVolumes.default.tmpl.old	2005-03-15 12:55:26.970845044 +0100
-+++ netatalk/config/AppleVolumes.default.tmpl	2005-03-15 12:57:48.186659354 +0100
+--- a/config/AppleVolumes.default.tmpl
++++ b/config/AppleVolumes.default.tmpl
 @@ -1,7 +1,3 @@
 -# This file looks empty when viewed with "vi".  In fact, there is one
 -# '~', so users with no AppleVolumes file in their home directory get
@@ -8,7 +8,7 @@
  # volume format:
  # :DEFAULT: [all of the default options except volume name]
  # path [name] [casefold:x] [options:z,l,j] \
-@@ -116,7 +112,5 @@
+@@ -117,7 +113,5 @@
  # cnidscheme:scheme   -> set the cnid scheme for the volume, default is [:DEFAULT_CNID_SCHEME:]
  #                        available schemes: [:COMPILED_BACKENDS:]
  #

@@ -1,5 +1,5 @@
---- netatalk/man/man8/psf.8.tmpl.old	2005-03-15 12:50:30.080552653 +0100
-+++ netatalk/man/man8/psf.8.tmpl	2005-03-15 12:50:50.525351065 +0100
+--- a/man/man8/psf.8.tmpl
++++ b/man/man8/psf.8.tmpl
 @@ -81,9 +81,9 @@
  .\}
  .nf

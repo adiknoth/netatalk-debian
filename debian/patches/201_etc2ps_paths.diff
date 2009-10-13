@@ -1,5 +1,5 @@
---- netatalk/etc/psf/etc2ps.sh.old	2003-06-06 18:27:06.000000000 +0200
-+++ netatalk/etc/psf/etc2ps.sh	2003-06-06 18:27:43.000000000 +0200
+--- a/etc/psf/etc2ps.sh
++++ b/etc/psf/etc2ps.sh
 @@ -9,11 +9,11 @@
  # tag in the case.
  #

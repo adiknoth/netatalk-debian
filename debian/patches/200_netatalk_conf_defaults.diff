@@ -1,5 +1,5 @@
---- netatalk/config/netatalk.conf.old	2005-03-15 12:47:46.160398959 +0100
-+++ netatalk/config/netatalk.conf	2005-03-15 12:48:12.387463653 +0100
+--- a/config/netatalk.conf
++++ b/config/netatalk.conf
 @@ -14,7 +14,7 @@
  #       quotes here if the zone name contains spaces.
  #
