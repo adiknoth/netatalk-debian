@@ -176,12 +176,12 @@ CDBS_BUILD_DEPENDS := $(CDBS_BUILD_DEPENDS), d-shlibs (>> 0.19)
 #  * lsof and procps needed by script macusers
 #  * rc needed by script acleandir.rc
 #  * db4.7_util needed by script cnid_maint
-#  * texlive-base-bin (dvips) needed by script etc2ps
+#  * texlive-base-bin (dvips) and groff (roff2ps) needed by script etc2ps
 #  * quota needed by daemon afpd
 #  * db4.2_util needed by example script netatalk_update.sh
 CDBS_DEPENDS = netbase, libpam-modules
 CDBS_RECOMMENDS = lsof, rc, db4.7-util, procps, cracklib-runtime
-CDBS_SUGGESTS = texlive-base-bin, quota, db4.2-util, libpam-cracklib
+CDBS_SUGGESTS = texlive-base-bin, groff, quota, db4.2-util, libpam-cracklib
 
 # Resolve, cleanup and apply CDBS-declared dependencies
 include debian/cdbs/1/rules/package-relations.mk
