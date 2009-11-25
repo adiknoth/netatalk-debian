@@ -257,42 +257,42 @@ EXTRA_DIST = $(TEMPLATES) rc.atalk.cobalt
 #
 # checking for "cobalt" style sysv scripts:
 #
-@USE_COBALT_TRUE@sysvdir = $(DESTDIR)$(sysconfdir)/rc.d/init.d
+@USE_COBALT_TRUE@sysvdir = /etc/rc.d/init.d
 
 #
 # checking for "Debian" style sysv scripts:
 #
-@USE_DEBIAN_TRUE@sysvdir = $(DESTDIR)$(sysconfdir)/init.d
+@USE_DEBIAN_TRUE@sysvdir = /etc/init.d
 
 #
 # checking for "Gentoo" style sysv scripts:
 #
-@USE_GENTOO_TRUE@sysvdir = $(DESTDIR)$(sysconfdir)/init.d
+@USE_GENTOO_TRUE@sysvdir = /etc/init.d
 
 #
 # checking for NetBSD init scripts
 #
-@USE_NETBSD_TRUE@sysvdir = $(DESTDIR)$(sysconfdir)/rc.d
+@USE_NETBSD_TRUE@sysvdir = /etc/rc.d
 
 #
 # checking for "redhat" style sysv scripts:
 #
-@USE_REDHAT_TRUE@sysvdir = $(DESTDIR)$(sysconfdir)/rc.d/init.d
+@USE_REDHAT_TRUE@sysvdir = /etc/rc.d/init.d
 
 #
 # checking for Solaris init scripts
 #
-@USE_SOLARIS_TRUE@sysvdir = $(DESTDIR)$(sysconfdir)/init.d
+@USE_SOLARIS_TRUE@sysvdir = /etc/init.d
 
 #
 # checking for "SuSE" style sysv scripts:
 #
-@USE_SUSE_TRUE@sysvdir = $(DESTDIR)$(sysconfdir)/init.d
+@USE_SUSE_TRUE@sysvdir = /etc/init.d
 
 #
 # checking for "tru64" style sysv scripts:
 #
-@USE_TRU64_TRUE@sysvdir = $(DESTDIR)$(sysconfdir)/init.d
+@USE_TRU64_TRUE@sysvdir = /sbin/init.d
 @USE_COBALT_TRUE@sysv_SCRIPTS = atalk
 @USE_DEBIAN_TRUE@sysv_SCRIPTS = atalk
 @USE_GENTOO_TRUE@sysv_SCRIPTS = atalk
@@ -524,7 +524,7 @@ uninstall: uninstall-startup
 
 @USE_REDHAT_TRUE@uninstall-startup:
 @USE_REDHAT_TRUE@	-chkconfig --del atalk
-@USE_REDHAT_TRUE@	rm -f $(DESTDIR)$(sysconfdir)/rc.d/init.d/atalk
+@USE_REDHAT_TRUE@	rm -f /etc/rc.d/init.d/atalk
 
 @USE_SUSE_TRUE@atalk: rc.atalk.suse
 @USE_SUSE_TRUE@	cp -f rc.atalk.suse atalk
@@ -535,7 +535,7 @@ uninstall: uninstall-startup
 
 @USE_SUSE_TRUE@uninstall-startup:
 @USE_SUSE_TRUE@	-insserv -d atalk
-@USE_SUSE_TRUE@	rm -f $(DESTDIR)$(sysconfdir)/init.d/atalk
+@USE_SUSE_TRUE@	rm -f /etc/init.d/atalk
 
 @USE_COBALT_TRUE@atalk: rc.atalk.cobalt
 @USE_COBALT_TRUE@	cp -f rc.atalk.cobalt atalk
@@ -583,15 +583,13 @@ uninstall: uninstall-startup
 @USE_SOLARIS_TRUE@	chmod a+x $@
 
 @USE_SOLARIS_TRUE@install-data-hook:
-@USE_SOLARIS_TRUE@	rm -f $(DESTDIR)$(sysconfdir)/rc2.d/S90atalk
-@USE_SOLARIS_TRUE@	-ln -s ../init.d/atalk $(DESTDIR)$(sysconfdir)/rc2.d/S90atalk
-@USE_SOLARIS_TRUE@	rm -f $(DESTDIR)$(sysconfdir)/rc0.d/K04atalk
-@USE_SOLARIS_TRUE@	-ln -s ../init.d/atalk $(DESTDIR)$(sysconfdir)/rc0.d/K04atalk
+@USE_SOLARIS_TRUE@	rm -f /etc/rc2.d/S90atalk
+@USE_SOLARIS_TRUE@	-ln -s ../init.d/atalk /etc/rc2.d/S90atalk
+@USE_SOLARIS_TRUE@	rm -f /etc/rc0.d/K04atalk
+@USE_SOLARIS_TRUE@	-ln -s ../init.d/atalk /etc/rc0.d/K04atalk
 
 @USE_SOLARIS_TRUE@uninstall-startup:
-@USE_SOLARIS_TRUE@	rm -f $(DESTDIR)$(sysconfdir)/init.d/atalk \
-@USE_SOLARIS_TRUE@		$(DESTDIR)$(sysconfdir)/rc2.d/S90atalk \
-@USE_SOLARIS_TRUE@		$(DESTDIR)$(sysconfdir)/rc0.d/K04atalk
+@USE_SOLARIS_TRUE@	rm -f /etc/init.d/atalk /etc/rc2.d/S90atalk /etc/rc0.d/K04atalk
 
 @USE_GENTOO_TRUE@atalk: rc.atalk.gentoo
 @USE_GENTOO_TRUE@	cp -f rc.atalk.gentoo atalk
@@ -602,7 +600,7 @@ uninstall: uninstall-startup
 
 @USE_GENTOO_TRUE@uninstall-startup:
 @USE_GENTOO_TRUE@	-rc-update del atalk default
-@USE_GENTOO_TRUE@	rm -f $(DESTDIR)$(sysconfdir)/init.d/atalk
+@USE_GENTOO_TRUE@	rm -f /etc/init.d/atalk
 
 @USE_DEBIAN_TRUE@atalk: rc.atalk.debian
 @USE_DEBIAN_TRUE@	cp -f rc.atalk.debian atalk
@@ -612,7 +610,7 @@ uninstall: uninstall-startup
 @USE_DEBIAN_TRUE@	update-rc.d atalk defaults 90 10
 
 @USE_DEBIAN_TRUE@uninstall-startup:
-@USE_DEBIAN_TRUE@	rm -f $(DESTDIR)$(sysconfdir)/init.d/atalk
+@USE_DEBIAN_TRUE@	rm -f /etc/init.d/atalk
 @USE_DEBIAN_TRUE@	update-rc.d atalk remove
 
 #
