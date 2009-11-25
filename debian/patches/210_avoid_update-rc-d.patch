@@ -1,6 +1,6 @@
 --- a/distrib/initscripts/Makefile.am
 +++ b/distrib/initscripts/Makefile.am
-@@ -231,11 +231,11 @@
+@@ -229,11 +229,11 @@
  	chmod a+x netatalk
  
  install-data-hook:
@@ -8,9 +8,9 @@
 +#	update-rc.d netatalk defaults 90 10
  
  uninstall-startup:
--	rm -f $(DESTDIR)$(sysconfdir)/init.d/netatalk
+-	rm -f /etc/init.d/netatalk
 -	update-rc.d netatalk remove
-+#	rm -f $(DESTDIR)$(sysconfdir)/init.d/netatalk
++#	rm -f /etc/init.d/netatalk
 +#	update-rc.d netatalk remove
  
  endif

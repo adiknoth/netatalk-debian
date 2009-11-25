@@ -11,16 +11,16 @@
  #
 @@ -294,7 +294,7 @@
  #
- @USE_TRU64_TRUE@sysvdir = $(DESTDIR)$(sysconfdir)/init.d
+ @USE_TRU64_TRUE@sysvdir = /sbin/init.d
  @USE_COBALT_TRUE@sysv_SCRIPTS = atalk
 -@USE_DEBIAN_TRUE@sysv_SCRIPTS = atalk
 +@USE_DEBIAN_TRUE@sysv_SCRIPTS = netatalk
  @USE_GENTOO_TRUE@sysv_SCRIPTS = atalk
  @USE_NETBSD_TRUE@sysv_SCRIPTS = afpd atalkd papd timelord
  @USE_REDHAT_TRUE@sysv_SCRIPTS = atalk
-@@ -604,16 +604,16 @@
+@@ -602,16 +602,16 @@
  @USE_GENTOO_TRUE@	-rc-update del atalk default
- @USE_GENTOO_TRUE@	rm -f $(DESTDIR)$(sysconfdir)/init.d/atalk
+ @USE_GENTOO_TRUE@	rm -f /etc/init.d/atalk
  
 -@USE_DEBIAN_TRUE@atalk: rc.atalk.debian
 -@USE_DEBIAN_TRUE@	cp -f rc.atalk.debian atalk
@@ -34,9 +34,9 @@
 +@USE_DEBIAN_TRUE@	update-rc.d netatalk defaults 90 10
  
  @USE_DEBIAN_TRUE@uninstall-startup:
--@USE_DEBIAN_TRUE@	rm -f $(DESTDIR)$(sysconfdir)/init.d/atalk
+-@USE_DEBIAN_TRUE@	rm -f /etc/init.d/atalk
 -@USE_DEBIAN_TRUE@	update-rc.d atalk remove
-+@USE_DEBIAN_TRUE@	rm -f $(DESTDIR)$(sysconfdir)/init.d/netatalk
++@USE_DEBIAN_TRUE@	rm -f /etc/init.d/netatalk
 +@USE_DEBIAN_TRUE@	update-rc.d netatalk remove
  
  #

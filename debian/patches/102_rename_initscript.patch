@@ -9,10 +9,10 @@
  EXTRA_DIST = $(TEMPLATES) rc.atalk.cobalt
  
  # overwrite automake uninstall
-@@ -224,18 +224,18 @@
+@@ -222,18 +222,18 @@
  if USE_DEBIAN
  
- sysvdir = $(DESTDIR)$(sysconfdir)/init.d
+ sysvdir = /etc/init.d
 -sysv_SCRIPTS = atalk
 +sysv_SCRIPTS = netatalk
  
@@ -28,9 +28,9 @@
 +	update-rc.d netatalk defaults 90 10
  
  uninstall-startup:
--	rm -f $(DESTDIR)$(sysconfdir)/init.d/atalk
+-	rm -f /etc/init.d/atalk
 -	update-rc.d atalk remove
-+	rm -f $(DESTDIR)$(sysconfdir)/init.d/netatalk
++	rm -f /etc/init.d/netatalk
 +	update-rc.d netatalk remove
  
  endif
