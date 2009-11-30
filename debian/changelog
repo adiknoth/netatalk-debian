@@ -1,3 +1,16 @@
+netatalk (2.0.5-2) unstable; urgency=low
+
+  * Add patches to sync with upstream stable HEAD:
+    + 001_init_sockaddr_in.patch
+    + 002_fix_cnid_maint_symlink_attack.patch
+    + 003_client-supported_volparam_bitmap.patch. Closes: bug#442228,
+      thanks also to Patrik Schindler.
+  * Link against BerkeleyDB 4.8. Update (build-)dependencies, patch 2.6,
+    README.Debian and example script netatalk_update.sh, and add NEWS
+    item.
+
+ -- Jonas Smedegaard <dr@jones.dk>  Tue, 01 Dec 2009 00:54:53 +0100
+
 netatalk (2.0.5-1) unstable; urgency=low
 
   * New upstream prerelease.

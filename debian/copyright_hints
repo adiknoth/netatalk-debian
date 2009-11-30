@@ -77,6 +77,7 @@ Files: CONTRIBUTORS
 	debian/netatalk.logcheck.ignore.server
 	debian/netatalk.logcheck.violations.ignore
 	debian/netatalk.pam
+	debian/patches/002_fix_cnid_maint_symlink_attack.patch
 	debian/patches/101_fix_manpage_sed_replacements.patch
 	debian/patches/102_rename_initscript.patch
 	debian/patches/103_initscript_background_off_by_default.patch
@@ -226,7 +227,6 @@ Files: CONTRIBUTORS
 	libatalk/compat/strdup.c
 	libatalk/dsi/Makefile.am
 	libatalk/dsi/README
-	libatalk/dummy.c
 	libatalk/nbp/Makefile.am
 	libatalk/netddp/Makefile.am
 	libatalk/tdb/Makefile.am
@@ -477,6 +477,7 @@ Copyright: 1990-1991, Regents of The University of Michigan
 License: UNKNOWN
 
 Files: bin/nbp/nbprgstr.c
+	debian/patches/003_client-supported_volparam_bitmap.patch
 	etc/afpd/afs.c
 	etc/afpd/appl.c
 	etc/afpd/auth.c
@@ -511,6 +512,7 @@ Copyright: 1990,1993, Regents of The University of Michigan
 License: UNKNOWN
 
 Files: bin/cnid/cnid2_create.in
+	debian/patches/001_init_sockaddr_in.patch
 	etc/cnid_dbd/cnid_metad.c
 	etc/cnid_dbd/comm.c
 	etc/cnid_dbd/comm.h
