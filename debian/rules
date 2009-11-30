@@ -40,6 +40,10 @@ DEB_UPSTREAM_URL = http://downloads.sourceforge.net/netatalk
 DEB_UPSTREAM_TARBALL_BASENAME_MANGLE = s/~(alpha|beta|rc)/\1/
 DEB_UPSTREAM_TARBALL_MD5 = f35cd7a4ce26c780de380cd2bcae5ce6
 
+db_stable = 4.2
+#db_testing = 4.2
+db_current = 4.7
+
 autotools-files = Makefile.in aclocal.m4 compile config.guess config.h.in config.sub configure depcomp install-sh ltmain.sh missing mkinstalldirs
 
 # Override defaults for old-style update-rc.d
@@ -157,7 +161,7 @@ get-orig-vcs: get-orig-source
 	rm -rf "$(DEB_UPSTREAM_WORKDIR)/vcstemp"
 
 # Needed for by upstream build process
-CDBS_BUILD_DEPENDS += , libdb4.7-dev, libwrap0-dev, libpam0g-dev, libcups2-dev, libkrb5-dev, libltdl3-dev
+CDBS_BUILD_DEPENDS += , libdb$(db_current)-dev, libwrap0-dev, libpam0g-dev, libcups2-dev, libkrb5-dev, libltdl3-dev
 CDBS_BUILD_DEPENDS += , libgcrypt11-dev | libgcrypt-dev, libcrack2-dev | cracklib-dev
 ifneq (,$(findstring zeroconf,$(DEB_BUILD_OPTIONS)))
 CDBS_BUILD_DEPENDS += , libavahi-client-dev (>= 0.6)
@@ -170,18 +174,18 @@ endif
 CDBS_BUILD_DEPENDS += , d-shlibs (>> 0.19)
 
 # Needed (always/often/seldom) at runtime
-#  db4.2-util needed only for upgrades from 2.0.4~beta2-4 or older: can be dropped after Squeeze+1
 #  * netbase needed by network-facing daemons
 #  * libpam-modules, libpam-cracklib and cracklib-runtime needed by daemons afpd and papd
 #  * lsof and procps needed by script macusers
 #  * rc needed by script acleandir.rc
-#  * db4.7_util needed by script cnid_maint
+#  * db4.7-util needed by script cnid_maint
 #  * texlive-base-bin (dvips) and groff (roff2ps) needed by script etc2ps
 #  * quota needed by daemon afpd
-#  * db4.2_util needed by example script netatalk_update.sh
+#  * db4.2-util needed by example script netatalk_update.sh for upgrades
+#    from 2.0.4~beta2-4 and earlier: can be dropped after Squeeze+1
 CDBS_DEPENDS = netbase, libpam-modules
-CDBS_RECOMMENDS = lsof, rc, db4.7-util, procps, cracklib-runtime, libpam-cracklib
-CDBS_SUGGESTS = texlive-base-bin, groff, quota, db4.2-util
+CDBS_RECOMMENDS = lsof, rc, db$(db_current)-util, procps, cracklib-runtime, libpam-cracklib
+CDBS_SUGGESTS = texlive-base-bin, groff, quota, $(db_stable:%=db%-util), $(db_testing:%=db%-util)
 
 # Resolve, cleanup and apply CDBS-declared dependencies
 include debian/cdbs/1/rules/package-relations.mk
