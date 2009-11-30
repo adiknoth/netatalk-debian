@@ -1,0 +1,57 @@
+Author: Didier Gautheron <dgautheron@magic.fr>
+Date:   Mon Nov 30 13:32:24 2009 +0000
+
+    in volparam bitmap only set bits defined in AFP version used by the client, cf debian bug #442228
+
+diff --git a/etc/afpd/volume.c b/etc/afpd/volume.c
+index cd5ccd2..7ba128d 100644
+--- a/etc/afpd/volume.c
++++ b/etc/afpd/volume.c
+@@ -1,5 +1,5 @@
+ /*
+- * $Id: volume.c,v 1.51.2.7.2.33.2.25 2009/09/07 11:35:04 franklahm Exp $
++ * $Id: volume.c,v 1.51.2.7.2.33.2.26 2009/11/30 13:32:24 didg Exp $
+  *
+  * Copyright (c) 1990,1993 Regents of The University of Michigan.
+  * All Rights Reserved.  See COPYRIGHT.
+@@ -1389,10 +1389,6 @@ int		*buflen;
+         switch ( bit ) {
+         case VOLPBIT_ATTR :
+             ashort = 0;
+-            if (0 == (vol->v_flags & AFPVOL_NOFILEID) && vol->v_cdb != NULL &&
+-                           (vol->v_cdb->flags & CNID_FLAG_PERSISTENT)) {
+-                ashort = VOLPBIT_ATTR_FILEID;
+-            }
+             /* check for read-only.
+              * NOTE: we don't actually set the read-only flag unless
+              *       it's passed in that way as it's possible to mount
+@@ -1401,13 +1397,22 @@ int		*buflen;
+                     ((utime(vol->v_path, NULL) < 0) && (errno == EROFS))) {
+                 ashort |= VOLPBIT_ATTR_RO;
+             }
+-            ashort |= VOLPBIT_ATTR_CATSEARCH;
+-            if (afp_version >= 30) {
+-                ashort |= VOLPBIT_ATTR_UTF8;
+-                if (vol->v_flags & AFPVOL_UNIX_PRIV)
+-                    ashort |= VOLPBIT_ATTR_UNIXPRIV;
+-                if (vol->v_flags & AFPVOL_TM)
+-                    ashort |= VOLPBIT_ATTR_TM;
++            /* prior 2.1 only VOLPBIT_ATTR_RO is defined */
++            if (afp_version > 20) {
++
++                if (0 == (vol->v_flags & AFPVOL_NOFILEID) && vol->v_cdb != NULL &&
++                           (vol->v_cdb->flags & CNID_FLAG_PERSISTENT)) {
++                    ashort |= VOLPBIT_ATTR_FILEID;
++                }
++
++                ashort |= VOLPBIT_ATTR_CATSEARCH;
++                if (afp_version >= 30) {
++                    ashort |= VOLPBIT_ATTR_UTF8;
++                    if (vol->v_flags & AFPVOL_UNIX_PRIV)
++                        ashort |= VOLPBIT_ATTR_UNIXPRIV;
++                    if (vol->v_flags & AFPVOL_TM)
++                        ashort |= VOLPBIT_ATTR_TM;
++                }
+             }
+             ashort = htons(ashort);
+             memcpy(data, &ashort, sizeof( ashort ));

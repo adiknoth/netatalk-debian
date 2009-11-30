@@ -1,3 +1,6 @@
+001_init_sockaddr_in.patch
+002_fix_cnid_maint_symlink_attack.patch
+003_client-supported_volparam_bitmap.patch
 101_fix_manpage_sed_replacements.patch
 102_rename_initscript.patch
 103_initscript_background_off_by_default.patch

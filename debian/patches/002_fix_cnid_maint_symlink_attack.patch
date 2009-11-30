@@ -1,0 +1,57 @@
+Author: Frank Lahm <franklahm@googlemail.com>
+Date:   Thu Nov 26 10:41:43 2009 +0000
+
+    Fix a symlink attack problem and a race condition in cnid_maint script. From SATOH Fumiyasu.
+
+diff --git a/bin/cnid/cnid_maint.in b/bin/cnid/cnid_maint.in
+index b622caf..c8bf467 100755
+--- a/bin/cnid/cnid_maint.in
++++ b/bin/cnid/cnid_maint.in
+@@ -3,11 +3,12 @@
+ #
+ # cnid_maint: A script to maintain the consistency of CNID databases.
+ #
+-# $Id: cnid_maint.in,v 1.15 2003/02/17 02:32:45 jmarcus Exp $
++# $Id: cnid_maint.in,v 1.15.8.1 2009/11/26 10:41:43 franklahm Exp $
+ #
+ 
+ use strict;
+ use Getopt::Std;
++use IO::File;
+ use vars qw(
+     $APPLE_VOLUMES_FILE
+     $STOP_CMD
+@@ -20,6 +21,7 @@ use vars qw(
+     $VERSION
+     $START_NETATALK
+     $LOCK_FILE
++    $LOCK
+     $HOLDING_LOCK
+ );
+ 
+@@ -86,10 +88,13 @@ if (-f $LOCK_FILE) {
+         end();
+ }
+ 
+-unless (open(LOCK, ">" . $LOCK_FILE)) {
++$LOCK = IO::File->new($LOCK_FILE, O_RDWR|O_CREAT|O_EXCL, 0600);
++unless (defined($LOCK)) {
+         error(2, "Unable to create $LOCK_FILE: $!");
+ }
+-flock(LOCK, LOCK_EX);
++unless (flock($LOCK, LOCK_EX|LOCK_NB)) {
++        error(2, "Unable to obtain lock: $LOCK_FILE: $!");
++}
+ $HOLDING_LOCK = 1;
+ 
+ # Check to see if the AppleVolumes.default file exists.  We will use this file
+@@ -314,8 +319,8 @@ sub end {
+                 }
+         }
+         if ($HOLDING_LOCK) {
+-                close(LOCK);
+                 unlink($LOCK_FILE);
++                close($LOCK);
+         }
+         print "\nRun of CNID DB Maintenance script ended at "
+             . scalar(localtime) . ".\n";
