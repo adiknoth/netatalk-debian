@@ -59,9 +59,9 @@ this will look like this:
 Upgrading Problems
 ==================
 
-This version of Netatalk uses Berkeley DB 4.7.
+This version of Netatalk uses Berkeley DB 4.8.
 
-Earlier releases used Berkeley DB 4.2.  As Netatalk does not
+Earlier releases used Berkeley DB 4.7/4.2/older.  As Netatalk does not
 automatically update its database, problems like volumes appearing empty
 (bug #200373) or connections getting rejected (bug #533344) may occur.
 
@@ -76,14 +76,14 @@ AppleVolumes files:
     done
     find $volumedir/.AppleDB -name "__db.*" -exec rm '{}' ';'
     for db in `find $volumedir/.AppleDB -name "*.db"`; do \
-      db4.7_load -f $db.data $db; \
+      db4.8_load -f $db.data $db; \
     done
 
-For both script and manual upgrade you need the packages libdb4.2-util
-and db4.7-util installed.
+For both script and manual upgrade you need the packages libdb4.8-util
+and db4.2-util installed - or the equivalent for other versions.
 
 If this does not work, you can just delete the database files, but
 please note that this will destroy all stored meta information about
 these files!
 
- -- Jonas Smedegaard <dr@jones.dk>  Mon, 16 Jun 2009 20:09:44 +0100
+ -- Jonas Smedegaard <dr@jones.dk>  Tue, 01 Dec 2009 00:46:28 +0100

@@ -41,8 +41,8 @@ DEB_UPSTREAM_TARBALL_BASENAME_MANGLE = s/~(alpha|beta|rc)/\1/
 DEB_UPSTREAM_TARBALL_MD5 = f35cd7a4ce26c780de380cd2bcae5ce6
 
 db_stable = 4.2
-#db_testing = 4.2
-db_current = 4.7
+db_testing = 4.7
+db_current = 4.8
 
 autotools-files = Makefile.in aclocal.m4 compile config.guess config.h.in config.sub configure depcomp install-sh ltmain.sh missing mkinstalldirs
 
@@ -178,11 +178,13 @@ CDBS_BUILD_DEPENDS += , d-shlibs (>> 0.19)
 #  * libpam-modules, libpam-cracklib and cracklib-runtime needed by daemons afpd and papd
 #  * lsof and procps needed by script macusers
 #  * rc needed by script acleandir.rc
-#  * db4.7-util needed by script cnid_maint
+#  * db4.8-util needed by script cnid_maint
 #  * texlive-base-bin (dvips) and groff (roff2ps) needed by script etc2ps
 #  * quota needed by daemon afpd
 #  * db4.2-util needed by example script netatalk_update.sh for upgrades
 #    from 2.0.4~beta2-4 and earlier: can be dropped after Squeeze+1
+#  * db4.7-util needed by example script netatalk_update.sh for upgrades
+#    from 2.0.5-1 and earlier: can be dropped when 2.0.5-2 is in testing
 CDBS_DEPENDS = netbase, libpam-modules
 CDBS_RECOMMENDS = lsof, rc, db$(db_current)-util, procps, cracklib-runtime, libpam-cracklib
 CDBS_SUGGESTS = texlive-base-bin, groff, quota, $(db_stable:%=db%-util), $(db_testing:%=db%-util)

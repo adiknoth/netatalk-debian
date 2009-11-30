@@ -1,3 +1,13 @@
+netatalk (2.0.5-2) unstable; urgency=low
+
+  * This version of Netatalk switches to Berkeley DB 4.8.
+
+    If after upgrading your volumes appear empty or connections are
+    rejected, then please see /usr/share/doc/netatalk/README.Debian for
+    information on how to update your databases.
+
+ -- Jonas Smedegaard <dr@jones.dk>  Tue, 01 Dec 2009 00:46:28 +0100
+
 netatalk (2.0.4~beta2-5) unstable; urgency=low
 
   * This version of Netatalk switches to Berkeley DB 4.7.

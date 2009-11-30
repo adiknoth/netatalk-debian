@@ -8,8 +8,8 @@ NEWDIR="${DIR}/.AppleDB"
 
 # Name binaries
 DBDUMPORIG=/usr/bin/db4.2_dump
-DBDUMPNEW=/usr/bin/db4.7_dump
-DBLOADNEW=/usr/bin/db4.7_load
+DBDUMPNEW=/usr/bin/db4.8_dump
+DBLOADNEW=/usr/bin/db4.8_load
 CNIDCREATOR=/usr/bin/cnid2_create
 
 ( [ -d "${DIR}" ] || [ -d "${NEWDIR}" ] ) || {
