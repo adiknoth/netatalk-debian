@@ -84,7 +84,7 @@ ifneq (,$(findstring openssl,$(DEB_BUILD_OPTIONS)))
 DEB_CONFIGURE_EXTRA_FLAGS += --with-openssl-dir --enable-pgp-uam
 uamlist = uams_dhx2.so,uams_clrtxt.so,uams_dhx.so,uams_randnum.so
 else
-DEB_CONFIGURE_EXTRA_FLAGS += --without-openssl-dir
+DEB_CONFIGURE_EXTRA_FLAGS += --with-openssl-dir=no
 uamlist = uams_dhx2.so,uams_clrtxt.so
 endif
 
