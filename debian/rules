@@ -81,10 +81,10 @@ endif
 
 # libgcrypt is GPL-compatible, but openssl supports randnum auth
 ifneq (,$(findstring openssl,$(DEB_BUILD_OPTIONS)))
-DEB_CONFIGURE_EXTRA_FLAGS += --with-openssl-dir --enable-pgp-uam
+DEB_CONFIGURE_EXTRA_FLAGS += --with-ssl-dir --enable-pgp-uam
 uamlist = uams_dhx2.so,uams_clrtxt.so,uams_dhx.so,uams_randnum.so
 else
-DEB_CONFIGURE_EXTRA_FLAGS += --with-openssl-dir=no
+DEB_CONFIGURE_EXTRA_FLAGS += --without-ssl-dir
 uamlist = uams_dhx2.so,uams_clrtxt.so
 endif
 
