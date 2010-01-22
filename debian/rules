@@ -119,6 +119,10 @@ clean::
 post-patches::
 	$(if $(findstring openssl,$(DEB_BUILD_OPTIONS)),,$(if $(shell egrep -i '^Build-Depends.*$(openssl_build_depends)' debian/control),$(error OpenSSL build-dependencies found in GPL build!)))
 
+# Check that we do not install anything linked with libssl in a GPL build
+binary-post-install/netatalk::
+	$(if $(findstring openssl,$(DEB_BUILD_OPTIONS)),,$(if $(shell objdump -x debian/netatalk/usr/lib/netatalk/* 2> /dev/null | sed -n '/NEEDED \+libssl\.so/p'),$(error OpenSSL dependencies found in GPL build!)))
+
 # Re-install initscript with debhelper to add pre- and postinst routines
 install/netatalk::
 	mv debian/netatalk/etc/init.d/netatalk debian/netatalk.init
