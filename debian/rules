@@ -74,9 +74,9 @@ openssl_build_depends = libssl-dev
 # Zeroconf is cool, but not yet stable, so disabled by default
 # Always disable SLP, as it was never really used by Apple
 ifneq (,$(findstring zeroconf,$(DEB_BUILD_OPTIONS)))
-DEB_CONFIGURE_EXTRA_FLAGS += --disable-slp --enable-zeroconf
+DEB_CONFIGURE_EXTRA_FLAGS += --disable-srvloc --enable-zeroconf
 else
-DEB_CONFIGURE_EXTRA_FLAGS += --disable-slp --disable-zeroconf
+DEB_CONFIGURE_EXTRA_FLAGS += --disable-srvloc --disable-zeroconf
 endif
 
 # libgcrypt is GPL-compatible, but openssl supports randnum auth
