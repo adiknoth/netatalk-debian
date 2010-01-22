@@ -56,7 +56,6 @@ DEB_CONFIGURE_EXTRA_FLAGS := \
 	--enable-tcp-wrappers			\
 	--enable-timelord --enable-overwrite	\
 	--with-pkgconfdir=/etc/netatalk		\
-	--with-nls-dir=/usr/share/netatalk/nls	\
 	--enable-krb4-uam --enable-krbV-uam	\
 	--with-cnid-dbd-txn			\
 	--with-libgcrypt-dir			\
