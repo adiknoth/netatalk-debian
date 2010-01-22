@@ -53,7 +53,7 @@ DEB_UPDATE_RCD_PARAMS = start 50 2 3 4 5 . stop 50 1 .
 
 DEB_CONFIGURE_EXTRA_FLAGS := \
 	--with-shadow --enable-fhs		\
-	--enable-tcp-wrappers --with-mangling	\
+	--enable-tcp-wrappers			\
 	--enable-timelord --enable-overwrite	\
 	--with-pkgconfdir=/etc/netatalk		\
 	--with-nls-dir=/usr/share/netatalk/nls	\
