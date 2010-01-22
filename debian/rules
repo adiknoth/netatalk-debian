@@ -62,9 +62,6 @@ DEB_CONFIGURE_EXTRA_FLAGS := \
 	--with-cracklib=/var/cache/cracklib/cracklib_dict	\
 	--enable-debian
 
-# libxfs currently broken: redefines several __swabXXX in xfs/swab.h
-DEB_CONFIGURE_EXTRA_FLAGS += --without-xfs
-
 DEB_INSTALL_EXAMPLES_netatalk = debian/examples/*
 
 openssl_build_depends = libssl-dev
