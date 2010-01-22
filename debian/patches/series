@@ -20,7 +20,7 @@
 210_avoid_update-rc-d.patch
 212_disable_cnid_metad_by_default.patch
 213_CVE-2008-5718.patch
-291_fix_manpage_sed_replacements_autotools.patch
-292_rename_initscript_autotools.patch
-293_avoid_update-rc-d_autotools.patch
-294_avoid_broken_xfs_autotools.patch
+#291_fix_manpage_sed_replacements_autotools.patch
+#292_rename_initscript_autotools.patch
+#293_avoid_update-rc-d_autotools.patch
+#294_avoid_broken_xfs_autotools.patch
