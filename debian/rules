@@ -65,6 +65,9 @@ DEB_ACLOCAL_ARGS = -I macros
 #  * Stop only in runlevel 1 (let system kill it in runlelels 0 and 6)
 DEB_UPDATE_RCD_PARAMS = start 50 2 3 4 5 . stop 50 1 .
 
+# Tighten security - more info at http://wiki.debian.org/Hardening
+export DEB_BUILD_HARDENING=1
+
 DEB_CONFIGURE_EXTRA_FLAGS := \
 	--with-shadow --enable-fhs		\
 	--enable-tcp-wrappers			\
@@ -194,7 +197,7 @@ CDBS_BUILD_DEPENDS += , $(openssl_build_depends)
 endif
 
 # Needed for our packaging routines
-CDBS_BUILD_DEPENDS += , d-shlibs (>> 0.19)
+CDBS_BUILD_DEPENDS += , d-shlibs (>> 0.19), hardening-includes
 
 # Needed (always/often/seldom) at runtime
 #  * netbase needed by network-facing daemons
