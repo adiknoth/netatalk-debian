@@ -152,7 +152,7 @@ binary-post-install/netatalk::
 	mv $(bindir)/achfile $(bindir)/apple_chfile
 	perl -p -e 's/(?<!Title: )achfile\\b/apple_chfile/g' <$(man1dir)/achfile.1 >$(man1dir)/apple_chfile.1
 	rm $(man1dir)/uniconv.1 $(man1dir)/afile.1 $(man1dir)/achfile.1
-	find $(man1dir) -type f -exec grep -Eq 'afile|achfile' -exec perl -i -pe 's/(\\fBa)((ch)?file\\fR)/$$1pple_$$2/g' '{}' ';'
+	find $(man1dir) -type f -exec grep -Eq 'afile|achfile' '{}' ';' -exec perl -i -pe 's/(\\fBa)((ch)?file\\fR)/$$1pple_$$2/g' '{}' ';'
 
 # Adjust PAM modules and UAMs loaded by default, depending on ssl support
 binary-post-install/netatalk::
