@@ -1,3 +1,31 @@
+netatalk (2.0.5-3) unstable; urgency=medium
+
+  * Fix replace/drop bogus and/or obsolete configure options:
+    + Use --without-ssl-dir/--with-ssl-dir (not --with-openssl-dir/
+      --without-openssl-dir). Closes: bug#565969, thanks to Fabian
+      Greffrath.
+    + Use --enable-tcp-wrappers (not --with-tcp-wrappers).
+    + Use --disable-srvloc (not --disable-slp).
+    + Drop --disable-logger (obsolete since 2.0.1).
+    + Drop --with-mangling (apparently obsolete since 2.0 alpha 1).
+    + Drop --with-nls-dir and --without-xfs (apparently obsolete).
+  * Autoreconfigure during build (since upstream does not enable
+    maintainer-mode). Disable autotools-related patches. Build-depend on
+    libtool, automake1.11 and autoconf. Closes: bug#559060, thanks to
+    Cyril Brulebois and others.
+  * Add safety-check to fail build if accidentally linked against
+    libssl. Thanks to Fabian Greffrath (see bug#565969).
+  * Disable atalkd by default, to not require supported network active
+    at daemon start time. Closes: bug#565568, thanks to Kurt Roeckx.
+    Add NEWS entry about the change.
+  * Build-depend on and enable hardening-includes.
+  * Fix adjust "See also" of manpages referring to afile or achfile.
+  * Set urgency=medium as earlier lack of explicit disabling openssl
+    caused the package to violate licensing for some architectures, also
+    affecting testing.
+
+ -- Jonas Smedegaard <dr@jones.dk>  Sat, 23 Jan 2010 05:08:37 +0100
+
 netatalk (2.0.5-2) unstable; urgency=low
 
   * Add patches to sync with upstream stable HEAD:
