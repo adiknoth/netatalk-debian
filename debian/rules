@@ -33,7 +33,6 @@ include /usr/share/cdbs/1/rules/upstream-tarball.mk
 include /usr/share/cdbs/1/rules/utils.mk
 include /usr/share/cdbs/1/rules/debhelper.mk
 include /usr/share/cdbs/1/class/autotools.mk
-include /usr/share/cdbs/1/rules/patchsys-quilt.mk
 
 DEB_UPSTREAM_URL = http://downloads.sourceforge.net/netatalk
 DEB_UPSTREAM_TARBALL_BASENAME_MANGLE = s/~(alpha|beta|rc)/\1/
