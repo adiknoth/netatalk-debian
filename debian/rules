@@ -17,11 +17,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-ifneq (,$(DEB_MAINTAINER_MODE))
-  # Enable stuff not policy compliant (eg. unsuitable for build daemons)
-  DEB_COPYRIGHT_CHECK_STRICT = yes
-  DEB_AUTO_UPDATE_DEBIAN_CONTROL = yes
-endif
 DEB_AUTO_UPDATE_ACLOCAL = 1.11
 DEB_AUTO_UPDATE_AUTOMAKE = 1.11
 DEB_AUTO_UPDATE_AUTOHEADER = 2.65
