@@ -7,9 +7,6 @@ Build-Depends: cdbs (>= 0.4.70~),
  devscripts (>= 2.10.7~),
  dh-buildinfo,
  debhelper (>= 6),
- libtool,
- automake1.11,
- autoconf,
  libdb4.8-dev,
  libwrap0-dev,
  libpam0g-dev,
@@ -23,7 +20,7 @@ Build-Depends: cdbs (>= 0.4.70~),
 Build-Conflicts: libavahi-compat-libdnssd-dev
 Vcs-Git: git://git.debian.org/git/collab-maint/netatalk.git
 Vcs-Browser: http://git.debian.org/?p=collab-maint/netatalk.git;a=summary
-Standards-Version: 3.8.3
+Standards-Version: 3.8.4
 Homepage: http://netatalk.sourceforge.net/
 
 Package: netatalk
