@@ -21,8 +21,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-extern int flock __P((int, int));
-extern int inet_aton __P((const char *, struct in_addr *));
+extern int flock (int, int);
+extern int inet_aton (const char *, struct in_addr *);
 #else /* __svr4__ */
 
 #ifdef sun
@@ -66,8 +66,8 @@ extern int inet_aton __P((const char *, struct in_addr *));
 #define SA_RESTART	0
 #endif
 
-extern char *strdup __P((const char *));
-extern int inet_aton __P((const char *, struct in_addr *));
+extern char *strdup (const char *);
+extern int inet_aton (const char *, struct in_addr *);
 #endif /* ultrix */
 
 #ifdef BSD4_4
@@ -77,7 +77,7 @@ extern int inet_aton __P((const char *, struct in_addr *));
 #endif /* BSD4_4 */
 
 #if defined(ultrix) || defined(_IBMR2) || defined(NEED_GETUSERSHELL)
-extern char *getusershell __P((void));
+extern char *getusershell (void);
 #endif
 
 #if !defined(HAVE_SNPRINTF) || !defined(HAVE_VSNPRINTF)
@@ -91,4 +91,15 @@ int snprintf (char *str,size_t count,const char *fmt,...);
 
 #ifndef HAVE_VSNPRINTF
 int vsnprintf(char *str, size_t count, const char *fmt, va_list args);
+#endif
+
+/* OpenBSD */
+#if defined(__OpenBSD__) && !defined(ENOTSUP)
+#define ENOTSUP EOPNOTSUPP
+#endif
+
+#if !defined(HAVE_PSELECT) || defined(__OpenBSD__)
+extern int pselect(int, fd_set * restrict, fd_set * restrict,
+                   fd_set * restrict, const struct timespec * restrict,
+                   const sigset_t * restrict);
 #endif

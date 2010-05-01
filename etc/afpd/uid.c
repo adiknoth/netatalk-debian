@@ -1,5 +1,5 @@
 /*
- * $Id: uid.c,v 1.13.8.1 2003/09/09 16:42:20 didg Exp $
+ * $Id: uid.c,v 1.14 2005/04/28 20:49:45 bfernhomberg Exp $
  * code: jeff@univrel.pr.uconn.edu
  *
  * These functions are abstracted here, so that all calls for resolving

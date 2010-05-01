@@ -56,7 +56,8 @@ am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
 	$(top_srcdir)/macros/ssl-check.m4 \
 	$(top_srcdir)/macros/summary.m4 \
 	$(top_srcdir)/macros/tcp-wrappers.m4 \
-	$(top_srcdir)/macros/util.m4 $(top_srcdir)/configure.in
+	$(top_srcdir)/macros/util.m4 $(top_srcdir)/macros/webmin.m4 \
+	$(top_srcdir)/configure.in
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -68,6 +69,7 @@ am_libcnid_tdb_la_OBJECTS = cnid_tdb_add.lo cnid_tdb_close.lo \
 	cnid_tdb_delete.lo cnid_tdb_get.lo cnid_tdb_lookup.lo \
 	cnid_tdb_open.lo cnid_tdb_resolve.lo cnid_tdb_update.lo
 libcnid_tdb_la_OBJECTS = $(am_libcnid_tdb_la_OBJECTS)
+@USE_TDB_BACKEND_TRUE@am_libcnid_tdb_la_rpath =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -100,7 +102,7 @@ BDB_LIBS = @BDB_LIBS@
 BDB_PATH = @BDB_PATH@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
-CFLAGS = @CFLAGS@ @BDB_CFLAGS@
+CFLAGS = @CFLAGS@
 COMPILE_64BIT_KMODULE = @COMPILE_64BIT_KMODULE@
 COMPILE_KERNEL_GCC = @COMPILE_KERNEL_GCC@
 CPP = @CPP@
@@ -142,11 +144,12 @@ KLDFLAGS = @KLDFLAGS@
 KRB5_CONFIG = @KRB5_CONFIG@
 LDFLAGS = @LDFLAGS@
 LIBADD_DL = @LIBADD_DL@
+LIBATALK_ACLS = @LIBATALK_ACLS@
 LIBGCRYPT_CFLAGS = @LIBGCRYPT_CFLAGS@
 LIBGCRYPT_CONFIG = @LIBGCRYPT_CONFIG@
 LIBGCRYPT_LIBS = @LIBGCRYPT_LIBS@
 LIBOBJS = @LIBOBJS@
-LIBS = @LIBS@ @BDB_LIBS@
+LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
@@ -163,8 +166,13 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PAMDIR = @PAMDIR@
+PAM_ACCOUNT = @PAM_ACCOUNT@
+PAM_AUTH = @PAM_AUTH@
 PAM_CFLAGS = @PAM_CFLAGS@
+PAM_DIRECTIVE = @PAM_DIRECTIVE@
 PAM_LIBS = @PAM_LIBS@
+PAM_PASSWORD = @PAM_PASSWORD@
+PAM_SESSION = @PAM_SESSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
 PKGCONFDIR = @PKGCONFDIR@
@@ -183,6 +191,11 @@ SSL_LIBS = @SSL_LIBS@
 STRIP = @STRIP@
 UAMS_PATH = @UAMS_PATH@
 VERSION = @VERSION@
+WEBMIN_PASS = @WEBMIN_PASS@
+WEBMIN_PATH = @WEBMIN_PATH@
+WEBMIN_PORT = @WEBMIN_PORT@
+WEBMIN_USER = @WEBMIN_USER@
+WEBMIN_VERSION = @WEBMIN_VERSION@
 WRAP_LIBS = @WRAP_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
@@ -240,9 +253,9 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-noinst_LTLIBRARIES = libcnid_tdb.la
+@USE_TDB_BACKEND_TRUE@noinst_LTLIBRARIES = libcnid_tdb.la
 libcnid_tdb_la_SOURCES = cnid_tdb_add.c \
-		         cnid_tdb_close.c \
+		     cnid_tdb_close.c \
 			 cnid_tdb_delete.c \
 			 cnid_tdb_get.c \
 			 cnid_tdb_lookup.c \
@@ -265,9 +278,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  libatalk/cnid/tdb/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  libatalk/cnid/tdb/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  libatalk/cnid/tdb/Makefile
+	  $(AUTOMAKE) --foreign  libatalk/cnid/tdb/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -295,7 +308,7 @@ clean-noinstLTLIBRARIES:
 	  rm -f "$${dir}/so_locations"; \
 	done
 libcnid_tdb.la: $(libcnid_tdb_la_OBJECTS) $(libcnid_tdb_la_DEPENDENCIES) 
-	$(LINK)  $(libcnid_tdb_la_OBJECTS) $(libcnid_tdb_la_LIBADD) $(LIBS)
+	$(LINK) $(am_libcnid_tdb_la_rpath) $(libcnid_tdb_la_OBJECTS) $(libcnid_tdb_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)

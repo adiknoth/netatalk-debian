@@ -1,5 +1,5 @@
 /*
- * $Id: status.c,v 1.13.6.11.2.3 2006/09/18 00:23:58 didg Exp $
+ * $Id: status.c,v 1.31 2010/03/29 15:22:57 franklahm Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -12,16 +12,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <ctype.h>
 #include <string.h>
+#include <time.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/socket.h>
 #include <atalk/logger.h>
 
+#if 0
 #ifdef BSD4_4
 #include <sys/param.h>
-#ifndef USE_GETHOSTID
+#ifndef HAVE_GETHOSTID
 #include <sys/sysctl.h>
-#endif /* USE_GETHOSTID */
+#endif /* HAVE_GETHOSTID */
 #endif /* BSD4_4 */
+#endif
 
 #include <netatalk/at.h>
 #include <netatalk/endian.h>
@@ -39,7 +46,7 @@
 static   size_t maxstatuslen = 0;
 
 static void status_flags(char *data, const int notif, const int ipok,
-                         const unsigned char passwdbits, const int dirsrvcs _U_)
+                         const unsigned char passwdbits, const int dirsrvcs _U_, int flags)
 {
     u_int16_t           status;
 
@@ -65,6 +72,9 @@ static void status_flags(char *data, const int notif, const int ipok,
     status |= AFPSRVRINFO_SRVRDIR; /* AFP 3.1 specs says we need to specify this, but may set the count to 0 */
     /* We don't set the UTF8 name flag here, we don't know whether we have enough space ... */
 
+    if (flags & OPTION_UUID)	/* 05122008 FIXME: can we set AFPSRVRINFO_UUID here ? see AFPSRVRINFO_SRVRDIR*/
+	status |= AFPSRVRINFO_UUID;
+
     status = htons(status);
     memcpy(data + AFPSTATUS_FLAGOFF, &status, sizeof(status));
 }
@@ -85,7 +95,7 @@ static int status_server(char *data, const char *server, const struct afp_option
     nbp_name(server, &Obj, &Type, &Zone);
     if ((size_t)-1 == (len = convert_string( 
 			options->unixcharset, options->maccharset, 
-			Obj, strlen(Obj), buf, sizeof(buf))) ) {
+			Obj, -1, buf, sizeof(buf))) ) {
 	len = MIN(strlen(Obj), 31);
     	*data++ = len;
     	memcpy( data, Obj, len );
@@ -138,28 +148,12 @@ static void status_machine(char *data)
     memcpy(start + AFPSTATUS_VERSOFF, &status, sizeof(status));
 }
 
-/* -------------------------------- 
- * it turns out that a server signature screws up separate
- * servers running on the same machine. to work around that, 
- * i add in an increment.
- * Not great, server signature are config dependent but well.
- */
- 
-static int           Id = 0;
-
 /* server signature is a 16-byte quantity */
-static u_int16_t status_signature(char *data, int *servoffset, DSI *dsi,
+static u_int16_t status_signature(char *data, int *servoffset,
                                   const struct afp_options *options)
 {
     char                 *status;
-    char		 *usersign;
-    int                  i;
     u_int16_t            offset, sigoff;
-    long                 hostid;
-#ifdef BSD4_4
-    int                  mib[2];
-    size_t               len;
-#endif /* BSD4_4 */
 
     status = data;
 
@@ -170,57 +164,10 @@ static u_int16_t status_signature(char *data, int *servoffset, DSI *dsi,
     /* jump to server signature offset */
     data += offset;
 
-    /* Signature type is user string */
-    if (strncmp(options->signature, "user", 4) == 0) {
-        if (strlen(options->signature) <= 5) {
-	    LOG(log_warning, logtype_afpd, "Signature %s id not valid. Switching back to hostid.",
-			    options->signature);
-	    goto server_signature_hostid;
-    }
-    usersign = options->signature + 5;
-        if (strlen(usersign) < 3) 
-	    LOG(log_warning, logtype_afpd, "Signature %s is very short !", 
-			    options->signature);
-    
-        memset(data, 0, 16);
-        strncpy(data, usersign, 16);
-	data += 16;
-        goto server_signature_done;
-    } /* signature = user */
+    memset(data, 0, 16);
+    memcpy(data, options->signature, 16);
+    data += 16;
 
-    /* If signature type is a standard hostid... */
-server_signature_hostid:
-    /* 16-byte signature consists of copies of the hostid */
-#if defined(BSD4_4) && defined(USE_GETHOSTID)
-    mib[0] = CTL_KERN;
-    mib[1] = KERN_HOSTID;
-    len = sizeof(hostid);
-    sysctl(mib, 2, &hostid, &len, NULL, 0);
-#else /* BSD4_4 && USE_GETHOSTID */
-    hostid = gethostid();
-#endif /* BSD4_4 && USE_GETHOSTID */
-    if (!hostid) {
-        if (dsi)
-            hostid = dsi->server.sin_addr.s_addr;
-        else {
-            struct hostent *host;
-
-            if ((host = gethostbyname(options->hostname)))
-                hostid = ((struct in_addr *) host->h_addr)->s_addr;
-        }
-    }
-
-    /* it turns out that a server signature screws up separate
-     * servers running on the same machine. to work around that, 
-     * i add in an increment */
-    hostid += Id;
-    Id++;
-    for (i = 0; i < 16; i += sizeof(hostid)) {
-        memcpy(data, &hostid, sizeof(hostid));
-        data += sizeof(hostid);
-     }
-
-server_signature_done:
     /* calculate net address offset */
     *servoffset += sizeof(offset);
     offset = htons(data - status);
@@ -258,25 +205,45 @@ static size_t status_netaddress(char *data, int *servoffset,
 
     /* ip address */
     if (dsi) {
-        const struct sockaddr_in *inaddr = &dsi->server;
+        if (dsi->server.ss_family == AF_INET) { /* IPv4 */
+            const struct sockaddr_in *inaddr = (struct sockaddr_in *)&dsi->server;
+            if (inaddr->sin_port == htons(DSI_AFPOVERTCP_PORT)) {
+                *data++ = 6; /* length */
+                *data++ = 0x01; /* basic ip address */
+                memcpy(data, &inaddr->sin_addr.s_addr,
+                       sizeof(inaddr->sin_addr.s_addr));
+                data += sizeof(inaddr->sin_addr.s_addr);
+                addresses_len += 7;
+            } else {
+                /* ip address + port */
+                *data++ = 8;
+                *data++ = 0x02; /* ip address with port */
+                memcpy(data, &inaddr->sin_addr.s_addr,
+                       sizeof(inaddr->sin_addr.s_addr));
+                data += sizeof(inaddr->sin_addr.s_addr);
+                memcpy(data, &inaddr->sin_port, sizeof(inaddr->sin_port));
+                data += sizeof(inaddr->sin_port);
+                addresses_len += 9;
+            }
+        } else { /* IPv6 */
+            const struct sockaddr_in6 *sa6 = (struct sockaddr_in6 *)&dsi->server;
+            if (sa6->sin6_port == htons(DSI_AFPOVERTCP_PORT)) {
+                *data++ = 18; /* length */
+                *data++ = 6; /* type */
+                memcpy(data, &sa6->sin6_addr.s6_addr, sizeof(sa6->sin6_addr.s6_addr));
+                data += sizeof(sa6->sin6_addr.s6_addr);
+                addresses_len += 19;
+            } else {
+                /* ip address + port */
+                *data++ = 20; /* length */
+                *data++ = 7; /* type*/
+                memcpy(data, &sa6->sin6_addr.s6_addr, sizeof(sa6->sin6_addr.s6_addr));
+                data += sizeof(sa6->sin6_addr.s6_addr);
+                memcpy(data, &sa6->sin6_port, sizeof(sa6->sin6_port));
+                data += sizeof(sa6->sin6_port);
+                addresses_len += 21;
+            }
 
-        if (inaddr->sin_port == htons(DSI_AFPOVERTCP_PORT)) {
-            *data++ = 6; /* length */
-            *data++ = 0x01; /* basic ip address */
-            memcpy(data, &inaddr->sin_addr.s_addr,
-                   sizeof(inaddr->sin_addr.s_addr));
-            data += sizeof(inaddr->sin_addr.s_addr);
-            addresses_len += 7;
-        } else {
-            /* ip address + port */
-            *data++ = 8;
-            *data++ = 0x02; /* ip address with port */
-            memcpy(data, &inaddr->sin_addr.s_addr,
-                   sizeof(inaddr->sin_addr.s_addr));
-            data += sizeof(inaddr->sin_addr.s_addr);
-            memcpy(data, &inaddr->sin_port, sizeof(inaddr->sin_port));
-            data += sizeof(inaddr->sin_port);
-            addresses_len += 9;
         }
     }
 
@@ -414,7 +381,7 @@ static size_t status_utf8servername(char *data, int *nameoffset,
 
     if ((size_t) -1 == (len = convert_string (
 					options->unixcharset, CH_UTF8_MAC, 
-					Obj, strlen(Obj), data+sizeof(namelen), maxstatuslen-offset )) ) {
+					Obj, -1, data+sizeof(namelen), maxstatuslen-offset )) ) {
 	LOG ( log_error, logtype_afpd, "Could not set utf8 servername");
 
 	/* set offset to 0 */
@@ -467,14 +434,6 @@ static void status_icon(char *data, const unsigned char *icondata,
 }
 
 /* ---------------------
-*/
-void status_reset()
-{
-    Id = 0;
-}
-
-
-/* ---------------------
  */
 void status_init(AFPConfig *aspconfig, AFPConfig *dsiconfig,
                  const struct afp_options *options)
@@ -483,7 +442,7 @@ void status_init(AFPConfig *aspconfig, AFPConfig *dsiconfig,
     DSI *dsi;
     char *status = NULL;
     size_t statuslen;
-    int c, sigoff;
+    int c, sigoff, ipok;
 
     if (!(aspconfig || dsiconfig) || !options)
         return;
@@ -495,10 +454,23 @@ void status_init(AFPConfig *aspconfig, AFPConfig *dsiconfig,
     } else
         asp = NULL;
 	
+    ipok = 0;
     if (dsiconfig) {
         status = dsiconfig->status;
         maxstatuslen=sizeof(dsiconfig->status);
         dsi = dsiconfig->obj.handle;
+        if (dsi->server.ss_family == AF_INET) { /* IPv4 */
+            const struct sockaddr_in *sa4 = (struct sockaddr_in *)&dsi->server;
+            ipok = sa4->sin_addr.s_addr ? 1 : 0;
+        } else { /* IPv6 */
+            const struct sockaddr_in6 *sa6 = (struct sockaddr_in6 *)&dsi->server;
+            for (int i=0; i<16; i++) {
+                if (sa6->sin6_addr.s6_addr[i]) {
+                    ipok = 1;
+                    break;
+                }
+            }
+        }
     } else
         dsi = NULL;
 
@@ -522,22 +494,24 @@ void status_init(AFPConfig *aspconfig, AFPConfig *dsiconfig,
      * (16-bytes), network addresses, volume icon/mask 
      */
 
-    status_flags(status, options->server_notif, options->fqdn ||
-                 (dsiconfig && dsi->server.sin_addr.s_addr),
+    status_flags(status,
+                 options->server_notif,
+                 (options->fqdn || ipok),
                  options->passwdbits, 
-		 (options->k5service && options->k5realm && options->fqdn));
+                 (options->k5service && options->k5realm && options->fqdn),
+                 options->flags);
     /* returns offset to signature offset */
     c = status_server(status, options->server ? options->server :
                       options->hostname, options);
     status_machine(status);
-    status_versions(status);
+    status_versions(status, asp, dsi);
     status_uams(status, options->uamlist);
     if (options->flags & OPTION_CUSTOMICON)
         status_icon(status, icon, sizeof(icon), c);
     else
         status_icon(status, apple_atalk_icon, sizeof(apple_atalk_icon), c);
 
-    sigoff = status_signature(status, &c, dsi, options);
+    sigoff = status_signature(status, &c, options);
     /* c now contains the offset where the netaddress offset lives */
 
     status_netaddress(status, &c, asp, dsi, options);
@@ -569,11 +543,214 @@ void status_init(AFPConfig *aspconfig, AFPConfig *dsiconfig,
     }
 }
 
+/* set_signature()                                                    */
+/*                                                                    */
+/* If found in conf file, use it.                                     */
+/* If not found in conf file, genarate and append in conf file.       */
+/* If conf file don't exist, create and genarate.                     */
+/* If cannot open conf file, use one-time signature.                  */
+/* If -signature user:xxxxx, use it.                                  */
+
+void set_signature(char *opt, struct afp_options *options) {
+    char *usersign;
+    int fd, i;
+    struct stat tmpstat;
+    char *servername_conf;
+    int header = 0;
+    char buf[1024], *p;
+    FILE *fp, *randomp;
+    size_t len;
+    
+    if (strcmp(opt, "auto") == 0) {
+        goto server_signature_auto;   /* default */
+    } else if (strcmp(opt, "host") == 0) {
+        LOG(log_warning, logtype_afpd, "WARNING: option \"-signature host\" is obsoleted. Switching back to auto.", opt);
+        goto server_signature_auto;   /* same as auto */
+    } else if (strncmp(opt, "user", 4) == 0) {
+        goto server_signature_user;   /*  user string */
+    } else {
+        LOG(log_error, logtype_afpd, "ERROR: option \"-signature %s\" is not valid. Switching back to auto.", opt);
+        goto server_signature_auto;   /* switch back to auto*/
+    }
+    
+server_signature_user:
+    
+    /* Signature type is user string */
+    len = strlen(opt);
+    if (len <= 5) {
+        LOG(log_warning, logtype_afpd, "WARNING: option \"-signature %s\" is not valid. Switching back to auto.", opt);
+        goto server_signature_auto;
+    }
+    usersign = opt + 5;
+    len = len - 5;
+    if (len > 16) {
+        LOG(log_warning, logtype_afpd, "WARNING: signature user string %s is very long !",  usersign);
+        len = 16;
+    } else if (len >= 3) {
+        LOG(log_info, logtype_afpd, "signature user string is %s.", usersign);
+    } else {
+        LOG(log_warning, logtype_afpd, "WARNING: signature user string %s is very short !",  usersign);
+    }
+    memset(options->signature, 0, 16);
+    memcpy(options->signature, usersign, len);
+    goto server_signature_done;
+    
+server_signature_auto:
+    
+    /* Signature type is auto, using afp_signature.conf */
+    if (!stat(options->sigconffile, &tmpstat)) {                /* conf file exists? */
+        if ((fp = fopen(options->sigconffile, "r")) != NULL) {  /* read open? */
+            /* scan in the conf file */
+            while (fgets(buf, sizeof(buf), fp) != NULL) { 
+                p = buf;
+                while (p && isblank(*p))
+                    p++;
+                if (!p || (*p == '#') || (*p == '\n'))
+                    continue;                             /* invalid line */
+                if (*p == '"') {
+                    p++;
+                    if ((servername_conf = strtok( p, "\"" )) == NULL)
+                        continue;                         /* syntax error: invalid quoted servername */
+                } else {
+                    if ((servername_conf = strtok( p, " \t" )) == NULL)
+                        continue;                         /* syntax error: invalid servername */
+                }
+                p = index(p, '\0');
+                p++;
+                if (*p == '\0')
+                    continue;                             /* syntax error: missing signature */
+                
+                if (strcmp(options->server, servername_conf))
+                    continue;                             /* another servername */
+                
+                while (p && isblank(*p))
+                    p++;
+                if ( 16 == sscanf(p, "%2hhX%2hhX%2hhX%2hhX%2hhX%2hhX%2hhX%2hhX%2hhX%2hhX%2hhX%2hhX%2hhX%2hhX%2hhX%2hhX",
+                                  &options->signature[ 0], &options->signature[ 1],
+                                  &options->signature[ 2], &options->signature[ 3],
+                                  &options->signature[ 4], &options->signature[ 5],
+                                  &options->signature[ 6], &options->signature[ 7],
+                                  &options->signature[ 8], &options->signature[ 9],
+                                  &options->signature[10], &options->signature[11],
+                                  &options->signature[12], &options->signature[13],
+                                  &options->signature[14], &options->signature[15]
+                         )) {
+                    fclose(fp);
+                    goto server_signature_done;                 /* found in conf file */
+                }
+            }
+            if ((fp = freopen(options->sigconffile, "a+", fp)) != NULL) { /* append because not found */
+                fseek(fp, 0L, SEEK_END);
+                if(ftell(fp) == 0) {                     /* size = 0 */
+                    header = 1;
+                    goto server_signature_random;
+                } else {
+                    fseek(fp, -1L, SEEK_END);
+                    if(fgetc(fp) != '\n') fputc('\n', fp); /* last char is \n? */
+                    goto server_signature_random;
+                }                    
+            } else {
+                LOG(log_error, logtype_afpd, "ERROR: Cannot write in %s (%s). Using one-time signature.",
+                    options->sigconffile, strerror(errno));
+                goto server_signature_random;
+            }
+        } else {
+            LOG(log_error, logtype_afpd, "ERROR: Cannot read %s (%s). Using one-time signature.",
+                options->sigconffile, strerror(errno));
+            goto server_signature_random;
+        }
+    } else {                                                          /* conf file don't exist */
+        if (( fd = creat(options->sigconffile, 0644 )) < 0 ) {
+            LOG(log_error, logtype_atalkd, "ERROR: Cannot create %s (%s). Using one-time signature.",
+                options->sigconffile, strerror(errno));
+            goto server_signature_random;
+        }
+        if (( fp = fdopen( fd, "w" )) == NULL ) {
+            LOG(log_error, logtype_atalkd, "ERROR: Cannot fdopen %s (%s). Using one-time signature.",
+                options->sigconffile, strerror(errno));
+            close(fd);
+            goto server_signature_random;
+        }
+        header = 1;
+        goto server_signature_random;
+    }
+    
+server_signature_random:
+    
+    /* generate signature from random number */
+    if ((randomp = fopen("/dev/urandom", "r")) != NULL) {   /* generate from /dev/urandom */
+        for (i=0 ; i<16 ; i++) {
+            (options->signature)[i] = fgetc(randomp);
+        }
+        LOG(log_note, logtype_afpd,
+            "generate %s's signature %02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X from /dev/urandom",
+            options->server,
+            (options->signature)[ 0], (options->signature)[ 1],
+            (options->signature)[ 2], (options->signature)[ 3],
+            (options->signature)[ 4], (options->signature)[ 5],
+            (options->signature)[ 6], (options->signature)[ 7],
+            (options->signature)[ 8], (options->signature)[ 9],
+            (options->signature)[10], (options->signature)[11],
+            (options->signature)[12], (options->signature)[13],
+            (options->signature)[14], (options->signature)[15]);
+        
+    } else {                                   /* genarate from random() because cannot open /dev/urandom */
+        srandom((unsigned int)time(NULL) + (unsigned int)options + (unsigned int)options->server);
+        for (i=0 ; i<16 ; i++) {
+            (options->signature)[i] = random() & 0xFF;
+        }
+        LOG(log_note, logtype_afpd,
+            "generate %s's signature %02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X from random()",
+            options->server,
+            (options->signature)[ 0], (options->signature)[ 1],
+            (options->signature)[ 2], (options->signature)[ 3],
+            (options->signature)[ 4], (options->signature)[ 5],
+            (options->signature)[ 6], (options->signature)[ 7],
+            (options->signature)[ 8], (options->signature)[ 9],
+            (options->signature)[10], (options->signature)[11],
+            (options->signature)[12], (options->signature)[13],
+            (options->signature)[14], (options->signature)[15]);
+    }
+
+    if (fp && header) {                                     /* conf file is created or size=0 */
+        fprintf(fp, "# DON'T TOUCH NOR COPY THOUGHTLESSLY!\n");
+        fprintf(fp, "# This file is auto-generated by afpd.\n");
+        fprintf(fp, "# \n");
+        fprintf(fp, "# ServerSignature is unique identifier used to prevent logging on to\n");
+        fprintf(fp, "# the same server twice.\n");
+        fprintf(fp, "# \n");
+        fprintf(fp, "# If setting \"-signature user:xxxxx\" in afpd.conf, this file is not used.\n\n");
+    }
+    
+    if (fp) {
+        fprintf(fp, "\"%s\"\t", options->server);
+        for (i=0 ; i<16 ; i++) {
+            fprintf(fp, "%02X", (options->signature)[i]);
+        }
+        fprintf(fp, "%s", "\n");
+        fclose(fp);
+    }
+    
+server_signature_done:
+    
+    /* retrun */
+    LOG(log_info, logtype_afpd,
+        " \"%s\"'s signature is  %02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
+        options->server,
+        (options->signature)[ 0], (options->signature)[ 1],
+        (options->signature)[ 2], (options->signature)[ 3],
+        (options->signature)[ 4], (options->signature)[ 5],
+        (options->signature)[ 6], (options->signature)[ 7],
+        (options->signature)[ 8], (options->signature)[ 9],
+        (options->signature)[10], (options->signature)[11],
+        (options->signature)[12], (options->signature)[13],
+        (options->signature)[14], (options->signature)[15]);
+    
+    return;
+}
+
 /* this is the same as asp/dsi_getstatus */
-int afp_getsrvrinfo(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj  *obj;
-char	*ibuf _U_, *rbuf;
-int	ibuflen _U_, *rbuflen;
+int afp_getsrvrinfo(AFPObj *obj, char *ibuf _U_, size_t ibuflen _U_, char *rbuf, size_t *rbuflen)
 {
     AFPConfig *config = obj->config;
 

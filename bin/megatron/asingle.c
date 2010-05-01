@@ -1,5 +1,5 @@
 /*
- * $Id: asingle.c,v 1.8.6.1.4.3 2006/02/26 22:41:19 didg Exp $
+ * $Id: asingle.c,v 1.14 2010/01/27 21:27:53 didg Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -47,14 +47,14 @@
 	following globals; therefore this module can only be used
 	for one of the two functions at a time.
  */
-struct single_file_data {
+static struct single_file_data {
     int			filed;
     char		path[ MAXPATHLEN + 1];
     struct ad_entry	entry[ ADEID_MAX ];
 } 		single;
 
 extern char	*forkname[];
-u_char		header_buf[ AD_HEADER_LEN ];
+static u_char	header_buf[ AD_HEADER_LEN ];
 
 /* 
  * single_open must be called first.  pass it a filename that is supposed
@@ -62,10 +62,7 @@ u_char		header_buf[ AD_HEADER_LEN ];
  * somewhat initialized; single_filed is set.
  */
 
-int single_open( singlefile, flags, fh, options )
-    char		*singlefile;
-    int			flags, options _U_;
-    struct FHeader	*fh;
+int single_open(char *singlefile, int flags, struct FHeader *fh, int options _U_)
 {
     int			rc;
 
@@ -96,8 +93,7 @@ int single_open( singlefile, flags, fh, options )
  * Otherwise, a value of -1 is returned.
  */
 
-int single_close( keepflag )
-    int			keepflag;
+int single_close( int keepflag)
 {
     if ( keepflag == KEEP ) {
 	return( close( single.filed ));
@@ -116,9 +112,7 @@ int single_close( keepflag )
  * bytes of the other two forks can be read, as well.
  */
 
-int single_header_read( fh, version )
-    struct FHeader	*fh;
-    int			version;
+int single_header_read( struct FHeader *fh, int version)
 {
 /*
  * entry_buf is used for reading in entry descriptors, and for reading in
@@ -339,7 +333,7 @@ int single_header_read( fh, version )
  * "Macintosh       " (that is seven blanks of padding).
  */
 #define MACINTOSH	"Macintosh       "
-u_char		sixteennulls[] = { 0, 0, 0, 0, 0, 0, 0, 0,
+static u_char		sixteennulls[] = { 0, 0, 0, 0, 0, 0, 0, 0,
 				    0, 0, 0, 0, 0, 0, 0, 0 };
 
 int single_header_test(void)
@@ -395,15 +389,12 @@ int single_header_test(void)
  *
  */
 
-int single_read( fork, buffer, length )
-    int			fork;
-    char		*buffer;
-    u_int32_t		length;
+ssize_t single_read( int fork, char *buffer, size_t length)
 {
     u_int32_t		entry_id;
     char		*buf_ptr;
-    int			readlen;
-    int			cc = 1;
+    size_t		readlen;
+    ssize_t		cc = 1;
     off_t		pos;
 
     switch ( fork ) {
@@ -418,9 +409,9 @@ int single_read( fork, buffer, length )
 	    break;
     }
 
-    if (single.entry[entry_id].ade_len > length) {
-	fprintf(stderr, "single_read: Trying to read past end of fork!, length %d, ade_len == %u\n", length, single.entry[entry_id].ade_len);
-	return single.entry[entry_id].ade_len;
+    if (single.entry[entry_id].ade_len > 0x7FFFFFFF) {
+	fprintf(stderr, "single_read: Trying to read past end of fork!, ade_len == %u\n", single.entry[entry_id].ade_len);
+	return -1;
     }
     if ( single.entry[ entry_id ].ade_len == 0 ) {
 	if ( fork == DATA ) {

@@ -55,7 +55,8 @@ am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
 	$(top_srcdir)/macros/ssl-check.m4 \
 	$(top_srcdir)/macros/summary.m4 \
 	$(top_srcdir)/macros/tcp-wrappers.m4 \
-	$(top_srcdir)/macros/util.m4 $(top_srcdir)/configure.in
+	$(top_srcdir)/macros/util.m4 $(top_srcdir)/macros/webmin.m4 \
+	$(top_srcdir)/configure.in
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -125,6 +126,7 @@ KLDFLAGS = @KLDFLAGS@
 KRB5_CONFIG = @KRB5_CONFIG@
 LDFLAGS = @LDFLAGS@
 LIBADD_DL = @LIBADD_DL@
+LIBATALK_ACLS = @LIBATALK_ACLS@
 LIBGCRYPT_CFLAGS = @LIBGCRYPT_CFLAGS@
 LIBGCRYPT_CONFIG = @LIBGCRYPT_CONFIG@
 LIBGCRYPT_LIBS = @LIBGCRYPT_LIBS@
@@ -146,8 +148,13 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PAMDIR = @PAMDIR@
+PAM_ACCOUNT = @PAM_ACCOUNT@
+PAM_AUTH = @PAM_AUTH@
 PAM_CFLAGS = @PAM_CFLAGS@
+PAM_DIRECTIVE = @PAM_DIRECTIVE@
 PAM_LIBS = @PAM_LIBS@
+PAM_PASSWORD = @PAM_PASSWORD@
+PAM_SESSION = @PAM_SESSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
 PKGCONFDIR = @PKGCONFDIR@
@@ -166,6 +173,11 @@ SSL_LIBS = @SSL_LIBS@
 STRIP = @STRIP@
 UAMS_PATH = @UAMS_PATH@
 VERSION = @VERSION@
+WEBMIN_PASS = @WEBMIN_PASS@
+WEBMIN_PATH = @WEBMIN_PATH@
+WEBMIN_PORT = @WEBMIN_PORT@
+WEBMIN_USER = @WEBMIN_USER@
+WEBMIN_VERSION = @WEBMIN_VERSION@
 WRAP_LIBS = @WRAP_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
@@ -225,14 +237,18 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 pkgconfdir = @PKGCONFDIR@
 SUFFIXES = .tmpl .
-man_MANS = AppleVolumes.default.5 afpd.conf.5 \
-	atalkd.conf.5 netatalk.conf.5 papd.conf.5 
+GENERATED_MANS = AppleVolumes.default.5 afpd.conf.5 \
+	atalkd.conf.5 netatalk.conf.5 papd.conf.5 \
+	afp_ldap.conf.5 afp_signature.conf.5
 
 TEMPLATE_FILES = AppleVolumes.default.5.tmpl afpd.conf.5.tmpl \
-	atalkd.conf.5.tmpl netatalk.conf.5.tmpl papd.conf.5.tmpl 
+	atalkd.conf.5.tmpl netatalk.conf.5.tmpl papd.conf.5.tmpl \
+	afp_ldap.conf.5.tmpl afp_signature.conf.5.tmpl
 
-CLEANFILES = $(man_MANS)
-EXTRA_DIST = $(TEMPLATE_FILES) 
+NONGENERATED_MANS = AppleVolumes.5 AppleVolumes.system.5
+man_MANS = $(GENERATED_MANS) $(NONGENERATED_MANS)
+CLEANFILES = $(GENERATED_MANS)
+EXTRA_DIST = $(TEMPLATE_FILES) $(NONGENERATED_MANS)
 all: all-am
 
 .SUFFIXES:
@@ -246,9 +262,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  man/man5/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  man/man5/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  man/man5/Makefile
+	  $(AUTOMAKE) --foreign  man/man5/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -454,10 +470,12 @@ uninstall-man: uninstall-man5
 
 
 .tmpl:
-	sed -e s@:SBINDIR:@${sbindir}@ \
-	    -e s@:BINDIR:@${bindir}@ \
-	    -e s@:ETCDIR:@${pkgconfdir}@ \
-	    -e s@:LIBDIR:@${libdir}@ \
+	sed -e "s@:SBINDIR:@${sbindir}@g" \
+	    -e "s@:BINDIR:@${bindir}@g" \
+	    -e "s@:ETCDIR:@${pkgconfdir}@g" \
+	    -e "s@:LIBDIR:@${libdir}@g" \
+	    -e "s@:DEFAULT_CNID_SCHEME:@${DEFAULT_CNID_SCHEME}@g" \
+	    -e "s@:COMPILED_BACKENDS:@${compiled_backends}@g" \
 	    <$< >$@
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

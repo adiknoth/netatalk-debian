@@ -1,5 +1,5 @@
 /*
- * $Id: psf.c,v 1.8.8.1 2004/01/10 08:24:23 bfernhomberg Exp $
+ * $Id: psf.c,v 1.13 2009/10/16 01:50:50 didg Exp $
  *
  * Copyright (c) 1990,1995 Regents of The University of Michigan.
  * All Rights Reserved. See COPYRIGHT.
@@ -55,8 +55,8 @@ int pexecv(char *path, char *argv[]);
 int copyio();
 int textps();
 
-char		psapath[] = _PATH_PSA;
-char		*psaargv[] = { "psa", 0, 0, 0, 0 };
+static char		psapath[] = _PATH_PSA;
+static char		*psaargv[] = { "psa", NULL, NULL, NULL, NULL };
 
 /*
  * If we're not doing accounting, we just call pap as below.
@@ -65,23 +65,22 @@ char		*psaargv[] = { "psa", 0, 0, 0, 0 };
  * arg 4.  The second time, we call it with "-c" in arg 2, pagecount.ps
  * in arg 3, and 0 in arg 4.
  */
-char		pappath[] = _PATH_PAP;
-char		*papargv[] = { "pap", "-sstatus", 0, 0, 0, 0, 0, 0 };
+static char		pappath[] = _PATH_PAP;
+static char		*papargv[] = { "pap", "-sstatus", NULL, NULL, NULL, NULL, NULL, NULL };
 
-char		revpath[] = _PATH_PSORDER;
-char		*revargv[] = { "psorder", "-d", 0 };
+static char		revpath[] = _PATH_PSORDER;
+static char		*revargv[] = { "psorder", "-d", NULL };
 
-char		*filtargv[] = { 0, 0, 0 };
+static char		*filtargv[] = { NULL, NULL, NULL };
 
-char		inbuf[ 1024 * 8 ];
-int		inlen;
+static char		inbuf[ 1024 * 8 ];
+static int		inlen;
 
-FILE		*acctfile = NULL;
-int		literal;
-int		width = 80, length = 66, indent = 0;
-char		*prog, *name, *host;
+static int		literal;
+static int		width = 80, length = 66, indent = 0;
+static char		*prog, *name, *host;
 
-struct papersize {
+static struct papersize {
     int		width;
     int		length;
    float	win;
@@ -91,9 +90,7 @@ struct papersize {
     { 80, 70, 8.27, 11.69 },			/* A4 */
 };
 
-int main( ac, av ) 
-    int		ac;
-    char	**av;
+int main( int ac, char **av)
 {
     int			c, rc, children = 0;
 #ifdef FUCKED
@@ -226,20 +223,20 @@ restart:
 		    papargv[ 4 ] = "-E";
 		    papargv[ 5 ] = _PATH_PAGECOUNT;
 		    papargv[ 6 ] = "-";
-		    papargv[ 7 ] = 0;
+		    papargv[ 7 ] = NULL;
 		} else if ( waitidle ) {
 		    papargv[ 2 ] = "-w";
 		    papargv[ 3 ] = "-c";
 		    papargv[ 4 ] = "-E";
 		    papargv[ 5 ] = _PATH_PAGECOUNT;
 		    papargv[ 6 ] = "-";
-		    papargv[ 7 ] = 0;
+		    papargv[ 7 ] = NULL;
 		} else {
 		    papargv[ 2 ] = "-c";
 		    papargv[ 3 ] = "-E";
 		    papargv[ 4 ] = _PATH_PAGECOUNT;
 		    papargv[ 5 ] = "-";
-		    papargv[ 6 ] = 0;
+		    papargv[ 6 ] = NULL;
 		}
 	    } else {
 		/*
@@ -249,13 +246,13 @@ restart:
 		papargv[ 3 ] = _PATH_PAGECOUNT;
 		papargv[ 4 ] = "-";
 		papargv[ 5 ] = _PATH_PAGECOUNT;
-		papargv[ 6 ] = 0;
+		papargv[ 6 ] = NULL;
 	    }
 #endif /* FUCKED */
 	} else {
 	    papargv[ 2 ] = "-c";
 	    papargv[ 3 ] = "-E";
-	    papargv[ 4 ] = 0;
+	    papargv[ 4 ] = NULL;
 	}
 
 	if (( c = pexecv( pappath, papargv )) < 0 ) {
@@ -313,14 +310,14 @@ restart:
 	if ( waitidle2 ) {
 	    papargv[ 3 ] = "-W";
 	    papargv[ 4 ] = _PATH_PAGECOUNT;
-	    papargv[ 5 ] = 0;
+	    papargv[ 5 ] = NULL;
 	} else if ( waitidle ) {
 	    papargv[ 3 ] = "-w";
 	    papargv[ 4 ] = _PATH_PAGECOUNT;
-	    papargv[ 5 ] = 0;
+	    papargv[ 5 ] = NULL;
 	} else {
 	    papargv[ 3 ] = _PATH_PAGECOUNT;
-	    papargv[ 4 ] = 0;
+	    papargv[ 4 ] = NULL;
 	}
 
 	if (( c = pexecv( pappath, papargv )) < 0 ) {
@@ -336,7 +333,7 @@ restart:
 	close( 1 );
     }
     while ( children ) {
-	if (( c = wait3( &status, 0, 0 )) < 0 ) {
+	if (( c = wait3( &status, 0, NULL )) < 0 ) {
 	    syslog( LOG_ERR, "wait3: %s", strerror(errno) );
 	    exit( 1 );
 	}
@@ -368,7 +365,7 @@ restart:
     exit( rc );
 }
 
-int copyio()
+int copyio(void)
 {
     /* implement the FSM needed to do the suspend. Note that
      * the last characters will be \031\001 so don't worry
@@ -460,10 +457,10 @@ notdone:
     return( 0 );
 }
 
-char		*font = "Courier";
-int		point = 11;
+static char		*font = "Courier";
+static int		point = 11;
 
-char		pspro[] = "\
+static char		pspro[] = "\
 /GSV save def						% global VM\n\
 /SP {\n\
 	/SV save def					% save vmstate\n\
@@ -482,7 +479,7 @@ char		pspro[] = "\
 /EP { SV restore showpage } bind def\n\
 %%EndProlog\n";
 
-int textps()
+int textps(void)
 {
     struct papersize	papersize;
     int			state = 0, line = 0, col = 0, npages = 0, rc;
@@ -691,8 +688,7 @@ out:
  * Manipulates file descriptors 0, 1, and 2, such that the new child
  * is reading from the parent's output.
  */
-int pexecv( path, argv )
-    char	*path, *argv[];
+int pexecv( char *path, char *argv[])
 {
     int		fd[ 2 ], c;
 

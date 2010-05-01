@@ -1,5 +1,15 @@
 /*
- * $Id: util.h,v 1.7.10.7 2004/06/09 01:15:19 bfernhomberg Exp $
+ * $Id: util.h,v 1.21 2010/02/28 22:29:16 didg Exp $
+ */
+
+/*!
+ * @file
+ * Netatalk utility functions
+ *
+ * Utility functions for these areas: \n
+ * * sockets \n
+ * * locking \n
+ * * misc UNIX function wrappers, eg for getcwd
  */
 
 #ifndef _ATALK_UTIL_H
@@ -19,10 +29,8 @@
 #define EXITERR_SYS  3  /* local system error */
 
 
-extern int     sys_ftruncate __P((int fd, off_t length));
-
 #ifdef WITH_SENDFILE
-extern ssize_t sys_sendfile __P((int __out_fd, int __in_fd, off_t *__offset,size_t __count));
+extern ssize_t sys_sendfile (int __out_fd, int __in_fd, off_t *__offset,size_t __count);
 #endif
 
 extern const int _diacasemap[], _dialowermap[];
@@ -32,27 +40,32 @@ extern void freeifacelist(char **);
 
 #define diatolower(x)     _dialowermap[(unsigned char) (x)]
 #define diatoupper(x)     _diacasemap[(unsigned char) (x)]
-extern int atalk_aton     __P((char *, struct at_addr *));
-extern void bprint        __P((char *, int));
-extern int strdiacasecmp  __P((const char *, const char *));
-extern int strndiacasecmp __P((const char *, const char *, size_t));
-extern pid_t server_lock  __P((char * /*program*/, char * /*file*/, 
-			       int /*debug*/));
-extern void fault_setup	  __P((void (*fn)(void *)));
+extern int atalk_aton     (char *, struct at_addr *);
+extern void bprint        (char *, int);
+extern int strdiacasecmp  (const char *, const char *);
+extern int strndiacasecmp (const char *, const char *, size_t);
+extern pid_t server_lock  (char * /*program*/, char * /*file*/, 
+			       int /*debug*/);
+extern void fault_setup	  (void (*fn)(void *));
 #define server_unlock(x)  (unlink(x))
 
+/* strlcpy and strlcat are used by pam modules */
+#ifndef UAM_MODULE_EXPORT
+#define UAM_MODULE_EXPORT 
+#endif
+
 #ifndef HAVE_STRLCPY
-size_t strlcpy __P((char *, const char *, size_t));
+UAM_MODULE_EXPORT size_t strlcpy (char *, const char *, size_t);
 #endif
  
 #ifndef HAVE_STRLCAT
-size_t strlcat __P((char *, const char *, size_t));
+UAM_MODULE_EXPORT size_t strlcat (char *, const char *, size_t);
 #endif
 
 #ifndef HAVE_DLFCN_H
-extern void *mod_open    __P((const char *));
-extern void *mod_symbol  __P((void *, const char *));
-extern void mod_close    __P((void *));
+extern void *mod_open    (const char *);
+extern void *mod_symbol  (void *, const char *);
+extern void mod_close    (void *);
 #define mod_error()      ""
 #else /* ! HAVE_DLFCN_H */
 #include <dlfcn.h>
@@ -75,35 +88,39 @@ extern void mod_close    __P((void *));
 #ifndef DLSYM_PREPEND_UNDERSCORE
 #define mod_symbol(a, b) dlsym(a, b)
 #else /* ! DLSYM_PREPEND_UNDERSCORE */
-extern void *mod_symbol  __P((void *, const char *));
+extern void *mod_symbol  (void *, const char *);
 #endif /* ! DLSYM_PREPEND_UNDERSCORE */
 #define mod_error()      dlerror()
 #define mod_close(a)     dlclose(a)
 #endif /* ! HAVE_DLFCN_H */
 
+/******************************************************************
+ * locking.c
+ ******************************************************************/
 
-/* volinfo for shell utilities */
+extern int lock_reg(int fd, int cmd, int type, off_t offest, int whence, off_t len);
+#define read_lock(fd, offset, whence, len) \
+    lock_reg((fd), F_SETLK, F_RDLCK, (offset), (whence), (len))
+#define write_lock(fd, offset, whence, len) \
+    lock_reg((fd), F_SETLK, F_WRLCK, (offset), (whence), (len))
+#define unlock(fd, offset, whence, len) \
+    lock_reg((fd), F_SETLK, F_UNLCK, (offset), (whence), (len))
 
-#define VOLINFOFILE ".volinfo"
+/******************************************************************
+ * socket.c
+ ******************************************************************/
 
-struct volinfo {
-    char                *v_name;
-    char                *v_path;
-    int                 v_flags;
-    int                 v_casefold;
-    char                *v_cnidscheme;
-    char                *v_dbpath;
-    char                *v_volcodepage;
-    charset_t           v_volcharset;
-    char                *v_maccodepage;
-    charset_t           v_maccharset;
-    int                 v_adouble;  /* default adouble format */
-    char                *(*ad_path)(const char *, int);
-    char                *v_dbd_host;
-    int                 v_dbd_port;
-};
+extern int setnonblock(int fd, int cmd);
+extern const char *getip_string(const struct sockaddr *sa);
+extern unsigned int getip_port(const struct sockaddr *sa);
+extern void apply_ip_mask(struct sockaddr *ai, int maskbits);
+extern int compare_ip(const struct sockaddr *sa1, const struct sockaddr *sa2);
 
-extern int loadvolinfo __P((char *path, struct volinfo *vol));
-extern int vol_load_charsets __P(( struct volinfo *vol));
+/******************************************************************
+ * unix.c
+ *****************************************************************/
 
-#endif
+extern const char *getcwdpath(void);
+extern int lchdir(const char *dir);
+
+#endif  /* _ATALK_UTIL_H */

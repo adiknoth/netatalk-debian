@@ -17,6 +17,7 @@
 # Makefile.am for bin/cnid/
 
 
+
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
@@ -36,10 +37,10 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-@USE_BDB_TRUE@bin_PROGRAMS = cnid_index$(EXEEXT)
+@USE_BDB_TRUE@bin_PROGRAMS = ad$(EXEEXT)
 subdir = bin/cnid
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(srcdir)/cnid2_create.in $(srcdir)/cnid_maint.in
+DIST_COMMON = $(noinst_HEADERS) $(srcdir)/Makefile.am \
+	$(srcdir)/Makefile.in $(srcdir)/cnid2_create.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
 	$(top_srcdir)/macros/cnid-backend.m4 \
@@ -59,18 +60,21 @@ am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
 	$(top_srcdir)/macros/ssl-check.m4 \
 	$(top_srcdir)/macros/summary.m4 \
 	$(top_srcdir)/macros/tcp-wrappers.m4 \
-	$(top_srcdir)/macros/util.m4 $(top_srcdir)/configure.in
+	$(top_srcdir)/macros/util.m4 $(top_srcdir)/macros/webmin.m4 \
+	$(top_srcdir)/configure.in
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
-CONFIG_CLEAN_FILES = cnid_maint cnid2_create
+CONFIG_CLEAN_FILES = cnid2_create
 am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bindir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
-am_cnid_index_OBJECTS = cnid_index.$(OBJEXT)
-cnid_index_OBJECTS = $(am_cnid_index_OBJECTS)
-cnid_index_DEPENDENCIES = $(top_builddir)/libatalk/libatalk.la
+am__ad_SOURCES_DIST = ad.c ad_util.c ad_ls.c ad_cp.c
+@USE_BDB_TRUE@am_ad_OBJECTS = ad.$(OBJEXT) ad_util.$(OBJEXT) \
+@USE_BDB_TRUE@	ad_ls.$(OBJEXT) ad_cp.$(OBJEXT)
+ad_OBJECTS = $(am_ad_OBJECTS)
+@USE_BDB_TRUE@ad_DEPENDENCIES = $(top_builddir)/libatalk/libatalk.la
 binSCRIPT_INSTALL = $(INSTALL_SCRIPT)
 SCRIPTS = $(bin_SCRIPTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
@@ -85,8 +89,9 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(cnid_index_SOURCES)
-DIST_SOURCES = $(cnid_index_SOURCES)
+SOURCES = $(ad_SOURCES)
+DIST_SOURCES = $(am__ad_SOURCES_DIST)
+HEADERS = $(noinst_HEADERS)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -105,7 +110,7 @@ BDB_LIBS = @BDB_LIBS@
 BDB_PATH = @BDB_PATH@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
-CFLAGS = @CFLAGS@ @BDB_CFLAGS@ 
+CFLAGS = @CFLAGS@
 COMPILE_64BIT_KMODULE = @COMPILE_64BIT_KMODULE@
 COMPILE_KERNEL_GCC = @COMPILE_KERNEL_GCC@
 CPP = @CPP@
@@ -147,11 +152,12 @@ KLDFLAGS = @KLDFLAGS@
 KRB5_CONFIG = @KRB5_CONFIG@
 LDFLAGS = @LDFLAGS@
 LIBADD_DL = @LIBADD_DL@
+LIBATALK_ACLS = @LIBATALK_ACLS@
 LIBGCRYPT_CFLAGS = @LIBGCRYPT_CFLAGS@
 LIBGCRYPT_CONFIG = @LIBGCRYPT_CONFIG@
 LIBGCRYPT_LIBS = @LIBGCRYPT_LIBS@
 LIBOBJS = @LIBOBJS@
-LIBS = @LIBS@ @BDB_LIBS@
+LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
@@ -168,8 +174,13 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PAMDIR = @PAMDIR@
+PAM_ACCOUNT = @PAM_ACCOUNT@
+PAM_AUTH = @PAM_AUTH@
 PAM_CFLAGS = @PAM_CFLAGS@
+PAM_DIRECTIVE = @PAM_DIRECTIVE@
 PAM_LIBS = @PAM_LIBS@
+PAM_PASSWORD = @PAM_PASSWORD@
+PAM_SESSION = @PAM_SESSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
 PKGCONFDIR = @PKGCONFDIR@
@@ -188,6 +199,11 @@ SSL_LIBS = @SSL_LIBS@
 STRIP = @STRIP@
 UAMS_PATH = @UAMS_PATH@
 VERSION = @VERSION@
+WEBMIN_PASS = @WEBMIN_PASS@
+WEBMIN_PATH = @WEBMIN_PATH@
+WEBMIN_PORT = @WEBMIN_PORT@
+WEBMIN_USER = @WEBMIN_USER@
+WEBMIN_VERSION = @WEBMIN_VERSION@
 WRAP_LIBS = @WRAP_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
@@ -245,11 +261,14 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-EXTRA_DIST = cnid_maint.in cnid2_create.in
-@USE_BDB_TRUE@bin_SCRIPTS = cnid_maint cnid2_create
-#bin_SCRIPTS = 
-cnid_index_SOURCES = cnid_index.c 
-cnid_index_LDADD = $(top_builddir)/libatalk/libatalk.la       
+EXTRA_DIST = cnid2_create.in
+noinst_HEADERS = ad.h
+@USE_BDB_TRUE@bin_SCRIPTS = cnid2_create
+@USE_BDB_TRUE@ad_SOURCES = ad.c ad_util.c \
+@USE_BDB_TRUE@	ad_ls.c \
+@USE_BDB_TRUE@	ad_cp.c
+
+@USE_BDB_TRUE@ad_LDADD = $(top_builddir)/libatalk/libatalk.la
 all: all-am
 
 .SUFFIXES:
@@ -263,9 +282,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  bin/cnid/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  bin/cnid/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  bin/cnid/Makefile
+	  $(AUTOMAKE) --foreign  bin/cnid/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -283,8 +302,6 @@ $(top_srcdir)/configure:  $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-cnid_maint: $(top_builddir)/config.status $(srcdir)/cnid_maint.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 cnid2_create: $(top_builddir)/config.status $(srcdir)/cnid2_create.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 install-binPROGRAMS: $(bin_PROGRAMS)
@@ -315,9 +332,9 @@ clean-binPROGRAMS:
 	  echo " rm -f $$p $$f"; \
 	  rm -f $$p $$f ; \
 	done
-cnid_index$(EXEEXT): $(cnid_index_OBJECTS) $(cnid_index_DEPENDENCIES) 
-	@rm -f cnid_index$(EXEEXT)
-	$(LINK) $(cnid_index_OBJECTS) $(cnid_index_LDADD) $(LIBS)
+ad$(EXEEXT): $(ad_OBJECTS) $(ad_DEPENDENCIES) 
+	@rm -f ad$(EXEEXT)
+	$(LINK) $(ad_OBJECTS) $(ad_LDADD) $(LIBS)
 install-binSCRIPTS: $(bin_SCRIPTS)
 	@$(NORMAL_INSTALL)
 	test -z "$(bindir)" || $(MKDIR_P) "$(DESTDIR)$(bindir)"
@@ -344,7 +361,10 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cnid_index.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ad.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ad_cp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ad_ls.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ad_util.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -448,7 +468,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS) $(SCRIPTS)
+all-am: Makefile $(PROGRAMS) $(SCRIPTS) $(HEADERS)
 installdirs:
 	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bindir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \

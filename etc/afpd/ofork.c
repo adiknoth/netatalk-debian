@@ -1,5 +1,5 @@
 /*
- * $Id: ofork.c,v 1.20.6.6.2.7 2008/11/25 15:16:33 didg Exp $
+ * $Id: ofork.c,v 1.32 2010/03/12 15:16:49 franklahm Exp $
  *
  * Copyright (c) 1996 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -70,8 +70,7 @@ static void of_unhash(struct ofork *of)
 }
 
 #ifdef DEBUG1
-void of_pforkdesc( f )
-FILE	*f;
+void of_pforkdesc( FILE *f)
 {
     int	ofrefnum;
 
@@ -102,11 +101,10 @@ int of_flush(const struct vol *vol)
     return( 0 );
 }
 
-int of_rename(vol, s_of, olddir, oldpath, newdir, newpath)
-const struct vol *vol;
-struct ofork *s_of;
-struct dir *olddir, *newdir;
-const char *oldpath _U_, *newpath;
+int of_rename(const struct vol *vol,
+              struct ofork *s_of,
+              struct dir *olddir, const char *oldpath _U_,
+              struct dir *newdir, const char *newpath)
 {
     struct ofork *of, *next, *d_ofork;
     int done = 0;
@@ -151,14 +149,13 @@ const char *oldpath _U_, *newpath;
 #define min(a,b)	((a)<(b)?(a):(b))
 
 struct ofork *
-            of_alloc(vol, dir, path, ofrefnum, eid, ad, st)
-struct vol      *vol;
-struct dir	*dir;
-char		*path;
-u_int16_t	*ofrefnum;
-const int       eid;
-struct adouble  *ad;
-struct stat     *st;
+of_alloc(struct vol *vol,
+    struct dir	   *dir,
+    char	   *path,
+    u_int16_t	   *ofrefnum,
+    const int      eid,
+    struct adouble *ad,
+    struct stat    *st)
 {
     struct ofork        *of, *d_ofork;
     u_int16_t		refnum, of_refnum;
@@ -287,15 +284,34 @@ int of_stat  (struct path *path)
 int ret;
     path->st_errno = 0;
     path->st_valid = 1;
-    if ((ret = stat(path->u_name, &path->st)) < 0)
+    if ((ret = lstat(path->u_name, &path->st)) < 0)
     	path->st_errno = errno;
    return ret;
 }
 
-/* -------------------------- */
-int of_statdir  (const struct vol *vol, struct path *path)
+#ifdef HAVE_RENAMEAT
+int of_fstatat(int dirfd, struct path *path)
 {
-static char pathname[ MAXPATHLEN + 1];
+    int ret;
+
+    path->st_errno = 0;
+    path->st_valid = 1;
+
+    if ((ret = fstatat(dirfd, path->u_name, &path->st, AT_SYMLINK_NOFOLLOW)) < 0)
+    	path->st_errno = errno;
+
+   return ret;
+}
+#endif /* HAVE_RENAMEAT */
+
+/* -------------------------- 
+   stat the current directory.
+   stat(".") works even if "." is deleted thus
+   we have to stat ../name because we want to know if it's there
+*/
+int of_statdir  (struct vol *vol, struct path *path)
+{
+static char pathname[ MAXPATHLEN + 1] = "../";
 int ret;
 
     if (*path->m_name) {
@@ -305,10 +321,9 @@ int ret;
     path->st_errno = 0;
     path->st_valid = 1;
     /* FIXME, what about: we don't have r-x perm anymore ? */
-    strcpy(pathname, "../");
-    strlcat(pathname, path->d_dir->d_u_name, MAXPATHLEN);
+    strlcpy(pathname +3, path->d_dir->d_u_name, sizeof (pathname) -3);
 
-    if (!(ret = stat(pathname, &path->st)))
+    if (!(ret = lstat(pathname, &path->st)))
         return 0;
         
     path->st_errno = errno;
@@ -317,15 +332,14 @@ int ret;
        if (movecwd(vol, curdir->d_parent)) 
            return -1;
        path->st_errno = 0;
-       if ((ret = stat(path->d_dir->d_u_name, &path->st)) < 0) 
+       if ((ret = lstat(path->d_dir->d_u_name, &path->st)) < 0) 
            path->st_errno = errno;
     }
     return ret;
 }
 
 /* -------------------------- */
-struct ofork *
-            of_findname(struct path *path)
+struct ofork *of_findname(struct path *path)
 {
     struct ofork *of;
     struct file_key key;
@@ -349,8 +363,42 @@ struct ofork *
     return NULL;
 }
 
-void of_dealloc( of )
-struct ofork	*of;
+/*!
+ * @brief Search for open fork by dirfd/name
+ *
+ * Function call of_fstatat with dirfd and path and uses dev and ino
+ * to search the open fork table.
+ *
+ * @param dirfd     (r) directory fd
+ * @param path      (rw) pointer to struct path
+ */
+#ifdef HAVE_RENAMEAT
+struct ofork *of_findnameat(int dirfd, struct path *path)
+{
+    struct ofork *of;
+    struct file_key key;
+    
+    if ( ! path->st_valid) {
+        of_fstatat(dirfd, path);
+    }
+    	
+    if (path->st_errno)
+        return NULL;
+
+    key.dev = path->st.st_dev;
+    key.inode = path->st.st_ino;
+
+    for (of = ofork_table[hashfn(&key)]; of; of = of->next) {
+        if (key.dev == of->key.dev && key.inode == of->key.inode ) {
+            return of;
+        }
+    }
+
+    return NULL;
+}
+#endif
+
+void of_dealloc( struct ofork *of)
 {
     if (!oforks)
         return;
@@ -379,6 +427,42 @@ struct ofork	*of;
     free( of );
 }
 
+/* --------------------------- */
+int of_closefork(struct ofork *ofork)
+{
+    struct timeval      tv;
+    int			adflags, doflush = 0;
+    int                 ret;
+
+    adflags = 0;
+    if ((ofork->of_flags & AFPFORK_DATA) && (ad_data_fileno( ofork->of_ad ) != -1)) {
+            adflags |= ADFLAGS_DF;
+    }
+    if ( (ofork->of_flags & AFPFORK_OPEN) && ad_reso_fileno( ofork->of_ad ) != -1 ) {
+        adflags |= ADFLAGS_HF;
+        /*
+         * Only set the rfork's length if we're closing the rfork.
+         */
+        if ((ofork->of_flags & AFPFORK_RSRC)) {
+            ad_refresh( ofork->of_ad );
+            if ((ofork->of_flags & AFPFORK_DIRTY) && !gettimeofday(&tv, NULL)) {
+                ad_setdate(ofork->of_ad, AD_DATE_MODIFY | AD_DATE_UNIX,tv.tv_sec);
+            	doflush++;
+            }
+            if ( doflush ) {
+                 ad_flush( ofork->of_ad );
+            }
+        }
+    }
+    ret = 0;
+    if ( ad_close( ofork->of_ad, adflags ) < 0 ) {
+        ret = -1;
+    }
+ 
+    of_dealloc( ofork );
+    return ret;
+}
+
 /* ----------------------
 
 */
@@ -394,5 +478,25 @@ struct adouble *of_ad(const struct vol *vol, struct path *path, struct adouble *
         adp = ad;
     }
     return adp;
+}
+
+/* ---------------------- 
+   close all forks for a volume
+*/
+void of_closevol(const struct vol *vol)
+{
+    int	refnum;
+
+    if (!oforks)
+        return;
+
+    for ( refnum = 0; refnum < nforks; refnum++ ) {
+        if (oforks[ refnum ] != NULL && oforks[refnum]->of_vol == vol) {
+            if (of_closefork( oforks[ refnum ]) < 0 ) {
+                LOG(log_error, logtype_afpd, "of_closevol: %s", strerror(errno) );
+            }
+        }
+    }
+    return;
 }
 

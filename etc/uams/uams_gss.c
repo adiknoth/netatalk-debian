@@ -1,5 +1,5 @@
 /*
- * $Id: uams_gss.c,v 1.2.2.4.2.2 2009/09/16 09:40:40 franklahm Exp $
+ * $Id: uams_gss.c,v 1.12 2010/03/30 10:25:49 franklahm Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * Copyright (c) 1999 Adrian Sun (asun@u.washington.edu)
@@ -12,7 +12,6 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
-#ifndef ATACC
 #include <stdio.h>
 #include <stdlib.h>
 #ifdef HAVE_UNISTD_H
@@ -66,6 +65,10 @@ char *strchr (), *strrchr ();
 /* BF: This is a Heimdal/MIT compatibility fix */
 #ifndef HAVE_GSS_C_NT_HOSTBASED_SERVICE
 #define GSS_C_NT_HOSTBASED_SERVICE gss_nt_service_name
+#endif
+
+#ifdef MIN
+#undef MIN
 #endif
 
 #define MIN(a, b) ((a > b) ? b : a)
@@ -138,17 +141,22 @@ static int get_afpd_principal(void *obj, gss_name_t *server_name)
 {
     OM_uint32 major_status = 0, minor_status = 0;
     char *realm, *fqdn, *service, *principal, *p;
-    int realmlen=0, fqdnlen=0, servicelen=0;
+    size_t realmlen=0, fqdnlen=0, servicelen=0;
     size_t principal_length;
     gss_buffer_desc s_princ_buffer;
 
     /* get all the required information from afpd */
     if (uam_afpserver_option(obj, UAM_OPTION_KRB5REALM, (void*) &realm, &realmlen) < 0)
         return 1;
+    LOG(log_debug, logtype_uams, "get_afpd_principal: REALM: %s", realm);
+
     if (uam_afpserver_option(obj, UAM_OPTION_FQDN, (void*) &fqdn, &fqdnlen) < 0)
         return 1;
+    LOG(log_debug, logtype_uams, "get_afpd_principal: fqdn: %s", fqdn);
+
     if (uam_afpserver_option(obj, UAM_OPTION_KRB5SERVICE, (void *)&service, &servicelen) < 0)
         return 1;
+    LOG(log_debug, logtype_uams, "get_afpd_principal: service: %s", service);
 
     /* we need all the info, log error and return if one's missing */
     if (!service || !servicelen || !fqdn || !fqdnlen || !realm || !realmlen) {
@@ -284,7 +292,7 @@ static int wrap_sessionkey(gss_ctx_id_t context, struct session_info *sinfo)
     sesskey_buff.value = sinfo->sessionkey;
     sesskey_buff.length = sinfo->sessionkey_len;
 
-    /* gss_wrap the session key with the default mechanism.
+    /* gss_wrap the session key with the default machanism.
        Require both confidentiality and integrity services */
     gss_wrap (&status, context, 1, GSS_C_QOP_DEFAULT, &sesskey_buff, NULL, &wrap_buff);
 
@@ -316,10 +324,17 @@ static int wrap_sessionkey(gss_ctx_id_t context, struct session_info *sinfo)
 static int acquire_credentials (gss_name_t *server_name, gss_cred_id_t *server_creds)
 {
     OM_uint32 major_status = 0, minor_status = 0;
+    char *envp;
 
-    LOG(log_debug, logtype_uams,
-        "acquire credentials: acquiring credentials (uid = %d, keytab = %s)",
-        (int)geteuid(), getenv( "KRB5_KTNAME") );
+    if ((envp = getenv("KRB5_KTNAME")))
+        LOG(log_debug, logtype_uams,
+            "acquire credentials: acquiring credentials (uid = %d, keytab = %s)",
+            (int)geteuid(), envp);
+    else
+        LOG(log_debug, logtype_uams,
+            "acquire credentials: acquiring credentials (uid = %d) - $KRB5_KTNAME not found in env",
+            (int)geteuid());
+        
     /*
      * Acquire credentials usable for accepting context negotiations.
      * Credentials are for server_name, have an indefinite lifetime,
@@ -444,8 +459,8 @@ cleanup_vars:
 
 /* -------------------------- */
 static int gss_login(void *obj, struct passwd **uam_pwd,
-                     char *ibuf, int ibuflen,
-                     char *rbuf, int *rbuflen)
+                     char *ibuf, size_t ibuflen,
+                     char *rbuf, size_t *rbuflen)
 {
 
     u_int16_t  temp16;
@@ -462,8 +477,8 @@ static int gss_login(void *obj, struct passwd **uam_pwd,
 }
 
 static int gss_logincont(void *obj, struct passwd **uam_pwd,
-                         char *ibuf, int ibuflen,
-                         char *rbuf, int *rbuflen)
+                         char *ibuf, size_t ibuflen,
+                         char *rbuf, size_t *rbuflen)
 {
     struct passwd *pwd = NULL;
     u_int16_t login_id;
@@ -471,7 +486,7 @@ static int gss_logincont(void *obj, struct passwd **uam_pwd,
     u_int16_t ticket_len;
     char *p;
     int rblen;
-    int userlen;
+    size_t userlen;
     struct session_info *sinfo;
 
     /* Apple's AFP 3.1 documentation specifies that this command
@@ -500,7 +515,7 @@ static int gss_logincont(void *obj, struct passwd **uam_pwd,
 
     rblen = *rbuflen = 0;
 
-    if (ibuflen < 3) {
+    if (ibuflen < 1 +sizeof(login_id)) {
         LOG(log_info, logtype_uams, "uams_gss.c :LoginCont: received incomplete packet");
         return AFPERR_PARAM;
     }
@@ -537,7 +552,7 @@ static int gss_logincont(void *obj, struct passwd **uam_pwd,
 
     if ((ibuf - p + 1) % 2) ibuf++, ibuflen--; /* deal with potential padding */
 
-    LOG(log_info, logtype_uams, "uams_gss.c :LoginCont: client thinks user is %s", p);
+    LOG(log_debug, logtype_uams, "uams_gss.c :LoginCont: client thinks user is %s", p);
 
     /* get the length of the ticket the client sends us */
     memcpy(&ticket_len, ibuf, sizeof(ticket_len));
@@ -559,7 +574,7 @@ static int gss_logincont(void *obj, struct passwd **uam_pwd,
            encoding is the gssapi name in? */
         if((pwd = uam_getname( obj, username, userlen )) == NULL) {
             LOG(log_info, logtype_uams, "uam_getname() failed for %s", username);
-            return AFPERR_PARAM;
+            return AFPERR_NOTAUTH;
         }
         if (uam_checkuser(pwd) < 0) {
             LOG(log_info, logtype_uams, "%s not a valid user", username);
@@ -581,8 +596,8 @@ static int gss_logincont(void *obj, struct passwd **uam_pwd,
  * point is trustworthy as we'll have a signed ticket to parse in logincont.
  */
 static int gss_login_ext(void *obj, char *uname, struct passwd **uam_pwd,
-                         char *ibuf, int ibuflen,
-                         char *rbuf, int *rbuflen)
+                         char *ibuf, size_t ibuflen,
+                         char *rbuf, size_t *rbuflen)
 {
     u_int16_t  temp16;
 
@@ -622,4 +637,3 @@ UAM_MODULE_EXPORT struct uam_export uams_gss = {
     UAM_MODULE_VERSION,
     uam_setup, uam_cleanup
 };
-#endif

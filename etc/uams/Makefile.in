@@ -64,7 +64,8 @@ am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
 	$(top_srcdir)/macros/ssl-check.m4 \
 	$(top_srcdir)/macros/summary.m4 \
 	$(top_srcdir)/macros/tcp-wrappers.m4 \
-	$(top_srcdir)/macros/util.m4 $(top_srcdir)/configure.in
+	$(top_srcdir)/macros/util.m4 $(top_srcdir)/macros/webmin.m4 \
+	$(top_srcdir)/configure.in
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -89,12 +90,10 @@ uams_dhx2_pam_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 @BUILD_PAM_TRUE@@HAVE_LIBGCRYPT_TRUE@@USE_DHX2_TRUE@	-rpath \
 @BUILD_PAM_TRUE@@HAVE_LIBGCRYPT_TRUE@@USE_DHX2_TRUE@	$(uamsdir)
 uams_dhx2_passwd_la_LIBADD =
-am_uams_dhx2_passwd_la_OBJECTS =  \
-	uams_dhx2_passwd_la-uams_dhx2_passwd.lo
+am_uams_dhx2_passwd_la_OBJECTS = uams_dhx2_passwd.lo
 uams_dhx2_passwd_la_OBJECTS = $(am_uams_dhx2_passwd_la_OBJECTS)
 uams_dhx2_passwd_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) \
-	$(uams_dhx2_passwd_la_CFLAGS) $(CFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(uams_dhx2_passwd_la_LDFLAGS) $(LDFLAGS) -o $@
 @HAVE_LIBGCRYPT_TRUE@@USE_DHX2_TRUE@am_uams_dhx2_passwd_la_rpath =  \
 @HAVE_LIBGCRYPT_TRUE@@USE_DHX2_TRUE@	-rpath $(uamsdir)
@@ -108,11 +107,10 @@ uams_dhx_pam_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 @BUILD_PAM_TRUE@@HAVE_OPENSSL_TRUE@@USE_DHX_TRUE@	-rpath \
 @BUILD_PAM_TRUE@@HAVE_OPENSSL_TRUE@@USE_DHX_TRUE@	$(uamsdir)
 uams_dhx_passwd_la_LIBADD =
-am_uams_dhx_passwd_la_OBJECTS = uams_dhx_passwd_la-uams_dhx_passwd.lo
+am_uams_dhx_passwd_la_OBJECTS = uams_dhx_passwd.lo
 uams_dhx_passwd_la_OBJECTS = $(am_uams_dhx_passwd_la_OBJECTS)
 uams_dhx_passwd_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) \
-	$(uams_dhx_passwd_la_CFLAGS) $(CFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(uams_dhx_passwd_la_LDFLAGS) $(LDFLAGS) -o $@
 @HAVE_OPENSSL_TRUE@@USE_DHX_TRUE@am_uams_dhx_passwd_la_rpath = -rpath \
 @HAVE_OPENSSL_TRUE@@USE_DHX_TRUE@	$(uamsdir)
@@ -124,11 +122,11 @@ uams_gss_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(CFLAGS) $(uams_gss_la_LDFLAGS) $(LDFLAGS) -o $@
 @USE_GSSAPI_TRUE@am_uams_gss_la_rpath = -rpath $(uamsdir)
 uams_guest_la_LIBADD =
-am_uams_guest_la_OBJECTS = uams_guest_la-uams_guest.lo
+am_uams_guest_la_OBJECTS = uams_guest.lo
 uams_guest_la_OBJECTS = $(am_uams_guest_la_OBJECTS)
 uams_guest_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(uams_guest_la_CFLAGS) \
-	$(CFLAGS) $(uams_guest_la_LDFLAGS) $(LDFLAGS) -o $@
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(uams_guest_la_LDFLAGS) $(LDFLAGS) -o $@
 uams_pam_la_LIBADD =
 am_uams_pam_la_OBJECTS = uams_pam_la-uams_pam.lo
 uams_pam_la_OBJECTS = $(am_uams_pam_la_OBJECTS)
@@ -137,24 +135,24 @@ uams_pam_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(CFLAGS) $(uams_pam_la_LDFLAGS) $(LDFLAGS) -o $@
 @BUILD_PAM_TRUE@am_uams_pam_la_rpath = -rpath $(uamsdir)
 uams_passwd_la_LIBADD =
-am_uams_passwd_la_OBJECTS = uams_passwd_la-uams_passwd.lo
+am_uams_passwd_la_OBJECTS = uams_passwd.lo
 uams_passwd_la_OBJECTS = $(am_uams_passwd_la_OBJECTS)
 uams_passwd_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(uams_passwd_la_CFLAGS) \
-	$(CFLAGS) $(uams_passwd_la_LDFLAGS) $(LDFLAGS) -o $@
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(uams_passwd_la_LDFLAGS) $(LDFLAGS) -o $@
 uams_pgp_la_LIBADD =
-am_uams_pgp_la_OBJECTS = uams_pgp_la-uams_pgp.lo
+am_uams_pgp_la_OBJECTS = uams_pgp.lo
 uams_pgp_la_OBJECTS = $(am_uams_pgp_la_OBJECTS)
 uams_pgp_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(uams_pgp_la_CFLAGS) \
-	$(CFLAGS) $(uams_pgp_la_LDFLAGS) $(LDFLAGS) -o $@
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(uams_pgp_la_LDFLAGS) $(LDFLAGS) -o $@
 @USE_PGP_TRUE@am_uams_pgp_la_rpath = -rpath $(uamsdir)
 uams_randnum_la_LIBADD =
-am_uams_randnum_la_OBJECTS = uams_randnum_la-uams_randnum.lo
+am_uams_randnum_la_OBJECTS = uams_randnum.lo
 uams_randnum_la_OBJECTS = $(am_uams_randnum_la_OBJECTS)
 uams_randnum_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(uams_randnum_la_CFLAGS) \
-	$(CFLAGS) $(uams_randnum_la_LDFLAGS) $(LDFLAGS) -o $@
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(uams_randnum_la_LDFLAGS) $(LDFLAGS) -o $@
 @USE_RANDNUM_TRUE@am_uams_randnum_la_rpath = -rpath $(uamsdir)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -207,13 +205,7 @@ BDB_LIBS = @BDB_LIBS@
 BDB_PATH = @BDB_PATH@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
-
-#
-# flags
-#
-
-# do that on behalf of the brokeness of automake 1.4
-CFLAGS = @CFLAGS@ @SSL_CFLAGS@ @LIBGCRYPT_CFLAGS@
+CFLAGS = @CFLAGS@
 COMPILE_64BIT_KMODULE = @COMPILE_64BIT_KMODULE@
 COMPILE_KERNEL_GCC = @COMPILE_KERNEL_GCC@
 CPP = @CPP@
@@ -255,6 +247,7 @@ KLDFLAGS = @KLDFLAGS@
 KRB5_CONFIG = @KRB5_CONFIG@
 LDFLAGS = @LDFLAGS@
 LIBADD_DL = @LIBADD_DL@
+LIBATALK_ACLS = @LIBATALK_ACLS@
 LIBGCRYPT_CFLAGS = @LIBGCRYPT_CFLAGS@
 LIBGCRYPT_CONFIG = @LIBGCRYPT_CONFIG@
 LIBGCRYPT_LIBS = @LIBGCRYPT_LIBS@
@@ -276,8 +269,13 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PAMDIR = @PAMDIR@
+PAM_ACCOUNT = @PAM_ACCOUNT@
+PAM_AUTH = @PAM_AUTH@
 PAM_CFLAGS = @PAM_CFLAGS@
+PAM_DIRECTIVE = @PAM_DIRECTIVE@
 PAM_LIBS = @PAM_LIBS@
+PAM_PASSWORD = @PAM_PASSWORD@
+PAM_SESSION = @PAM_SESSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
 PKGCONFDIR = @PKGCONFDIR@
@@ -296,6 +294,11 @@ SSL_LIBS = @SSL_LIBS@
 STRIP = @STRIP@
 UAMS_PATH = @UAMS_PATH@
 VERSION = @VERSION@
+WEBMIN_PASS = @WEBMIN_PASS@
+WEBMIN_PATH = @WEBMIN_PATH@
+WEBMIN_PORT = @WEBMIN_PORT@
+WEBMIN_USER = @WEBMIN_USER@
+WEBMIN_VERSION = @WEBMIN_VERSION@
 WRAP_LIBS = @WRAP_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
@@ -390,16 +393,17 @@ uams_dhx_pam_la_SOURCES = uams_dhx_pam.c
 uams_dhx2_passwd_la_SOURCES = uams_dhx2_passwd.c
 uams_dhx2_pam_la_SOURCES = uams_dhx2_pam.c
 uams_gss_la_SOURCES = uams_gss.c
-uams_guest_la_CFLAGS = @CFLAGS@
-uams_randnum_la_CFLAGS = @CFLAGS@ @SSL_CFLAGS@
-uams_passwd_la_CFLAGS = @CFLAGS@
-uams_pam_la_CFLAGS = @CFLAGS@ @PAM_CFLAGS@
-uams_pgp_la_CFLAGS = @CFLAGS@ @SSL_CFLAGS@
-uams_dhx_passwd_la_CFLAGS = @CFLAGS@ @SSL_CFLAGS@
-uams_dhx_pam_la_CFLAGS = @CFLAGS@ @SSL_CFLAGS@ @PAM_CFLAGS@
-uams_dhx2_passwd_la_CFLAGS = @CFLAGS@ @LIBGCRYPT_CFLAGS@
-uams_dhx2_pam_la_CFLAGS = @CFLAGS@ @LIBGCRYPT_CFLAGS@ @PAM_CFLAGS@
-uams_gss_la_CFLAGS = @CFLAGS@ @GSSAPI_CFLAGS@
+
+#
+# flags
+#
+
+# do that on behalf of the brokeness of automake 1.4
+AM_CFLAGS = @SSL_CFLAGS@ @LIBGCRYPT_CFLAGS@
+uams_pam_la_CFLAGS = @PAM_CFLAGS@
+uams_dhx_pam_la_CFLAGS = @PAM_CFLAGS@
+uams_dhx2_pam_la_CFLAGS = @PAM_CFLAGS@
+uams_gss_la_CFLAGS = @GSSAPI_CFLAGS@
 uams_guest_la_LDFLAGS = -module -avoid-version
 uams_randnum_la_LDFLAGS = -module -avoid-version @SSL_LIBS@
 uams_passwd_la_LDFLAGS = -module -avoid-version @CRYPT_LIBS@
@@ -439,9 +443,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  etc/uams/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  etc/uams/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  etc/uams/Makefile
+	  $(AUTOMAKE) --foreign  etc/uams/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -514,15 +518,15 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uams_dhx2_pam_la-uams_dhx2_pam.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uams_dhx2_passwd_la-uams_dhx2_passwd.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uams_dhx2_passwd.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uams_dhx_pam_la-uams_dhx_pam.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uams_dhx_passwd_la-uams_dhx_passwd.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uams_dhx_passwd.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uams_gss_la-uams_gss.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uams_guest_la-uams_guest.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uams_guest.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uams_pam_la-uams_pam.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uams_passwd_la-uams_passwd.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uams_pgp_la-uams_pgp.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uams_randnum_la-uams_randnum.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uams_passwd.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uams_pgp.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uams_randnum.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -552,26 +556,12 @@ uams_dhx2_pam_la-uams_dhx2_pam.lo: uams_dhx2_pam.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(uams_dhx2_pam_la_CFLAGS) $(CFLAGS) -c -o uams_dhx2_pam_la-uams_dhx2_pam.lo `test -f 'uams_dhx2_pam.c' || echo '$(srcdir)/'`uams_dhx2_pam.c
 
-uams_dhx2_passwd_la-uams_dhx2_passwd.lo: uams_dhx2_passwd.c
-@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(uams_dhx2_passwd_la_CFLAGS) $(CFLAGS) -MT uams_dhx2_passwd_la-uams_dhx2_passwd.lo -MD -MP -MF $(DEPDIR)/uams_dhx2_passwd_la-uams_dhx2_passwd.Tpo -c -o uams_dhx2_passwd_la-uams_dhx2_passwd.lo `test -f 'uams_dhx2_passwd.c' || echo '$(srcdir)/'`uams_dhx2_passwd.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/uams_dhx2_passwd_la-uams_dhx2_passwd.Tpo $(DEPDIR)/uams_dhx2_passwd_la-uams_dhx2_passwd.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uams_dhx2_passwd.c' object='uams_dhx2_passwd_la-uams_dhx2_passwd.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(uams_dhx2_passwd_la_CFLAGS) $(CFLAGS) -c -o uams_dhx2_passwd_la-uams_dhx2_passwd.lo `test -f 'uams_dhx2_passwd.c' || echo '$(srcdir)/'`uams_dhx2_passwd.c
-
 uams_dhx_pam_la-uams_dhx_pam.lo: uams_dhx_pam.c
 @am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(uams_dhx_pam_la_CFLAGS) $(CFLAGS) -MT uams_dhx_pam_la-uams_dhx_pam.lo -MD -MP -MF $(DEPDIR)/uams_dhx_pam_la-uams_dhx_pam.Tpo -c -o uams_dhx_pam_la-uams_dhx_pam.lo `test -f 'uams_dhx_pam.c' || echo '$(srcdir)/'`uams_dhx_pam.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/uams_dhx_pam_la-uams_dhx_pam.Tpo $(DEPDIR)/uams_dhx_pam_la-uams_dhx_pam.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uams_dhx_pam.c' object='uams_dhx_pam_la-uams_dhx_pam.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(uams_dhx_pam_la_CFLAGS) $(CFLAGS) -c -o uams_dhx_pam_la-uams_dhx_pam.lo `test -f 'uams_dhx_pam.c' || echo '$(srcdir)/'`uams_dhx_pam.c
-
-uams_dhx_passwd_la-uams_dhx_passwd.lo: uams_dhx_passwd.c
-@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(uams_dhx_passwd_la_CFLAGS) $(CFLAGS) -MT uams_dhx_passwd_la-uams_dhx_passwd.lo -MD -MP -MF $(DEPDIR)/uams_dhx_passwd_la-uams_dhx_passwd.Tpo -c -o uams_dhx_passwd_la-uams_dhx_passwd.lo `test -f 'uams_dhx_passwd.c' || echo '$(srcdir)/'`uams_dhx_passwd.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/uams_dhx_passwd_la-uams_dhx_passwd.Tpo $(DEPDIR)/uams_dhx_passwd_la-uams_dhx_passwd.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uams_dhx_passwd.c' object='uams_dhx_passwd_la-uams_dhx_passwd.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(uams_dhx_passwd_la_CFLAGS) $(CFLAGS) -c -o uams_dhx_passwd_la-uams_dhx_passwd.lo `test -f 'uams_dhx_passwd.c' || echo '$(srcdir)/'`uams_dhx_passwd.c
 
 uams_gss_la-uams_gss.lo: uams_gss.c
 @am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(uams_gss_la_CFLAGS) $(CFLAGS) -MT uams_gss_la-uams_gss.lo -MD -MP -MF $(DEPDIR)/uams_gss_la-uams_gss.Tpo -c -o uams_gss_la-uams_gss.lo `test -f 'uams_gss.c' || echo '$(srcdir)/'`uams_gss.c
@@ -580,40 +570,12 @@ uams_gss_la-uams_gss.lo: uams_gss.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(uams_gss_la_CFLAGS) $(CFLAGS) -c -o uams_gss_la-uams_gss.lo `test -f 'uams_gss.c' || echo '$(srcdir)/'`uams_gss.c
 
-uams_guest_la-uams_guest.lo: uams_guest.c
-@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(uams_guest_la_CFLAGS) $(CFLAGS) -MT uams_guest_la-uams_guest.lo -MD -MP -MF $(DEPDIR)/uams_guest_la-uams_guest.Tpo -c -o uams_guest_la-uams_guest.lo `test -f 'uams_guest.c' || echo '$(srcdir)/'`uams_guest.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/uams_guest_la-uams_guest.Tpo $(DEPDIR)/uams_guest_la-uams_guest.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uams_guest.c' object='uams_guest_la-uams_guest.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(uams_guest_la_CFLAGS) $(CFLAGS) -c -o uams_guest_la-uams_guest.lo `test -f 'uams_guest.c' || echo '$(srcdir)/'`uams_guest.c
-
 uams_pam_la-uams_pam.lo: uams_pam.c
 @am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(uams_pam_la_CFLAGS) $(CFLAGS) -MT uams_pam_la-uams_pam.lo -MD -MP -MF $(DEPDIR)/uams_pam_la-uams_pam.Tpo -c -o uams_pam_la-uams_pam.lo `test -f 'uams_pam.c' || echo '$(srcdir)/'`uams_pam.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/uams_pam_la-uams_pam.Tpo $(DEPDIR)/uams_pam_la-uams_pam.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uams_pam.c' object='uams_pam_la-uams_pam.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(uams_pam_la_CFLAGS) $(CFLAGS) -c -o uams_pam_la-uams_pam.lo `test -f 'uams_pam.c' || echo '$(srcdir)/'`uams_pam.c
-
-uams_passwd_la-uams_passwd.lo: uams_passwd.c
-@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(uams_passwd_la_CFLAGS) $(CFLAGS) -MT uams_passwd_la-uams_passwd.lo -MD -MP -MF $(DEPDIR)/uams_passwd_la-uams_passwd.Tpo -c -o uams_passwd_la-uams_passwd.lo `test -f 'uams_passwd.c' || echo '$(srcdir)/'`uams_passwd.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/uams_passwd_la-uams_passwd.Tpo $(DEPDIR)/uams_passwd_la-uams_passwd.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uams_passwd.c' object='uams_passwd_la-uams_passwd.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(uams_passwd_la_CFLAGS) $(CFLAGS) -c -o uams_passwd_la-uams_passwd.lo `test -f 'uams_passwd.c' || echo '$(srcdir)/'`uams_passwd.c
-
-uams_pgp_la-uams_pgp.lo: uams_pgp.c
-@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(uams_pgp_la_CFLAGS) $(CFLAGS) -MT uams_pgp_la-uams_pgp.lo -MD -MP -MF $(DEPDIR)/uams_pgp_la-uams_pgp.Tpo -c -o uams_pgp_la-uams_pgp.lo `test -f 'uams_pgp.c' || echo '$(srcdir)/'`uams_pgp.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/uams_pgp_la-uams_pgp.Tpo $(DEPDIR)/uams_pgp_la-uams_pgp.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uams_pgp.c' object='uams_pgp_la-uams_pgp.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(uams_pgp_la_CFLAGS) $(CFLAGS) -c -o uams_pgp_la-uams_pgp.lo `test -f 'uams_pgp.c' || echo '$(srcdir)/'`uams_pgp.c
-
-uams_randnum_la-uams_randnum.lo: uams_randnum.c
-@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(uams_randnum_la_CFLAGS) $(CFLAGS) -MT uams_randnum_la-uams_randnum.lo -MD -MP -MF $(DEPDIR)/uams_randnum_la-uams_randnum.Tpo -c -o uams_randnum_la-uams_randnum.lo `test -f 'uams_randnum.c' || echo '$(srcdir)/'`uams_randnum.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/uams_randnum_la-uams_randnum.Tpo $(DEPDIR)/uams_randnum_la-uams_randnum.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uams_randnum.c' object='uams_randnum_la-uams_randnum.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(uams_randnum_la_CFLAGS) $(CFLAGS) -c -o uams_randnum_la-uams_randnum.lo `test -f 'uams_randnum.c' || echo '$(srcdir)/'`uams_randnum.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

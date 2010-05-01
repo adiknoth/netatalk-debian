@@ -1,5 +1,5 @@
 /*
- * $Id: afp_options.c,v 1.30.2.2.2.11.2.2 2009/04/30 09:35:06 franklahm Exp $
+ * $Id: afp_options.c,v 1.54 2010/04/02 16:17:22 hat001 Exp $
  *
  * Copyright (c) 1997 Adrian Sun (asun@zoology.washington.edu)
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
@@ -62,8 +62,8 @@ char *strchr (), *strrchr ();
 #endif /* MIN */
 
 /* FIXME CNID */
-char             Cnid_srv[MAXHOSTNAMELEN + 1] = "localhost";
-int              Cnid_port = 4700;
+const char *Cnid_srv = "localhost";
+const char *Cnid_port = "4700";
 
 #define OPTIONS "dn:f:s:uc:g:P:ptDS:TL:F:U:hIvVm:"
 #define LENGTH 512
@@ -127,6 +127,8 @@ void afp_options_free(struct afp_options *opt,
         free(opt->server);
     if (opt->ipaddr && (opt->ipaddr != save->ipaddr))
         free(opt->ipaddr);
+    if (opt->port && (opt->port != save->port))
+        free(opt->port);
     if (opt->fqdn && (opt->fqdn != save->fqdn))
         free(opt->fqdn);
     if (opt->uampath && (opt->uampath != save->uampath))
@@ -147,6 +149,11 @@ void afp_options_free(struct afp_options *opt,
 	free(opt->unixcodepage);
     if (opt->maccodepage && (opt->maccodepage != save->maccodepage))
 	free(opt->maccodepage);
+
+    if (opt->ntdomain && (opt->ntdomain != save->ntdomain))
+	free(opt->ntdomain);
+    if (opt->ntseparator && (opt->ntseparator != save->ntseparator))
+	free(opt->ntseparator);
 }
 
 /* initialize options */
@@ -158,18 +165,18 @@ void afp_options_init(struct afp_options *options)
     options->defaultvol.name = _PATH_AFPDDEFVOL;
     options->systemvol.name = _PATH_AFPDSYSVOL;
     options->configfile = _PATH_AFPDCONF;
+    options->sigconffile = _PATH_AFPDSIGCONF;
     options->uampath = _PATH_AFPDUAMPATH;
     options->uamlist = "uams_dhx.so,uams_dhx2.so";
     options->guest = "nobody";
     options->loginmesg = "";
-    options->transports = AFPTRANS_ALL;
+    options->transports = AFPTRANS_TCP; /*  TCP only */
     options->passwdfile = _PATH_AFPDPWFILE;
     options->tickleval = 30;
     options->timeout = 4;
     options->sleep = 10* 120; /* 10 h in 30 seconds tick */
     options->server_notif = 1;
     options->authprintdir = NULL;
-    options->signature = "host";
     options->umask = 0;
 #ifdef ADMIN_GRP
     options->admingid = 0;
@@ -181,6 +188,13 @@ void afp_options_init(struct afp_options *options)
     options->unixcodepage = "LOCALE";
     options->maccharset = CH_MAC;
     options->maccodepage = "MAC_ROMAN";
+    options->volnamelen = 80; /* spec: 255, 10.1: 73, 10.4/10.5: 80 */
+    options->ntdomain = NULL;
+    options->ntseparator = NULL;
+#ifdef USE_SRVLOC
+    /* don't advertize slp by default */
+    options->flags |= OPTION_NOSLP;
+#endif
 }
 
 /* parse an afpd.conf line. i'm doing it this way because it's
@@ -203,9 +217,9 @@ int afp_options_parseline(char *buf, struct afp_options *options)
     if (strstr(buf, " -nodebug"))
         options->flags &= ~OPTION_DEBUG;
 #ifdef USE_SRVLOC
-    if (strstr(buf, " -noslp"))
-        options->flags |= OPTION_NOSLP;
-#endif /* USE_SRVLOC */
+    if (strstr(buf, " -slp"))
+        options->flags &= ~OPTION_NOSLP;
+#endif
 
     if (strstr(buf, " -nouservolfirst"))
         options->flags &= ~OPTION_USERVOLFIRST;
@@ -252,6 +266,17 @@ int afp_options_parseline(char *buf, struct afp_options *options)
 
     /* figure out options w/ values. currently, this will ignore the setting
      * if memory is lacking. */
+
+    if ((c = getoption(buf, "-hostname"))) {
+        int len = strlen (c);
+        if (len <= MAXHOSTNAMELEN) {
+            memcpy(options->hostname, c, len);
+            options->hostname[len] = 0;
+        }
+        else
+            LOG(log_info, logtype_afpd, "WARNING: hostname %s is too long (%d)",c,len);
+    }
+
     if ((c = getoption(buf, "-defaultvol")) && (opt = strdup(c)))
         options->defaultvol.name = opt;
     if ((c = getoption(buf, "-systemvol")) && (opt = strdup(c)))
@@ -289,121 +314,31 @@ int afp_options_parseline(char *buf, struct afp_options *options)
     if ((c = getoption(buf, "-server_quantum")))
         options->server_quantum = strtoul(c, NULL, 0);
 
-#ifndef DISABLE_LOGGER
-    /* -setuplogtype <syslog|filelog> <logtype> <loglevel> <filename>*/
+    if ((c = getoption(buf, "-volnamelen"))) {
+        options->volnamelen = atoi(c);
+        if (options->volnamelen < 8) {
+            options->volnamelen = 8; /* max mangled volname "???#FFFF" */
+        }
+        if (options->volnamelen > 255) {
+	    options->volnamelen = 255; /* AFP3 spec */
+        }
+    }
+
     /* -[no]setuplog <logtype> <loglevel> [<filename>]*/
-    if ((c = getoption(buf, "-setuplog")))
-    {
-      char *ptr, *logsource, *logtype, *loglevel, *filename;
-
-      LOG(log_debug6, logtype_afpd, "setting up logtype, c is %s", c);
-      ptr = c;
-      
-      /* 
-      logsource = ptr = c;
-      if (ptr)
-      {
-        ptr = strpbrk(ptr, " \t");
-        if (ptr) 
-        {
-          *ptr++ = 0;
-          while (*ptr && isspace(*ptr))
-            ptr++;
+    c = buf;
+    /* Now THIS is hokey! Multiple occurrences are not supported by our current code, */
+    /* so I have to loop myself. */
+    while (NULL != (c = strstr(c, "-setuplog"))) {
+        char *optstr;
+        if ((optstr = getoption(c, "-setuplog"))) {
+            setuplog(optstr);
+            c += sizeof("-setuplog");
         }
-      }
-      */
-
-      logtype = ptr; 
-      if (ptr)
-      {
-        ptr = strpbrk(ptr, " \t");
-        if (ptr) 
-        {
-          *ptr++ = 0;
-          while (*ptr && isspace(*ptr))
-            ptr++;
-        }
-      }
-
-      loglevel = ptr;
-      if (ptr)
-      {
-        ptr = strpbrk(ptr, " \t");
-        if (ptr) 
-        {
-          *ptr++ = 0;
-          while (*ptr && isspace(*ptr))
-            ptr++;
-        }
-      }
-
-      filename = ptr;
-      if (ptr)
-      {
-        ptr = strpbrk(ptr, " \t");
-        if (ptr) 
-        {
-          *ptr++ = 0;
-          while (*ptr && isspace(*ptr))
-            ptr++;
-        }
-      }
-
-      LOG(log_debug7, logtype_afpd, "calling setuplog %s %s %s", 
-          logtype, loglevel, filename);
-
-      setuplog(logtype, loglevel, filename);
     }
 
     if ((c = getoption(buf, "-unsetuplog")))
-    {
-      char *ptr, *logtype, *loglevel, *filename;
+      unsetuplog(c);
 
-      LOG(log_debug6, logtype_afpd, "unsetting up logtype, c is %s", c);
-
-      ptr = c;
-      logtype = ptr;
-      if (ptr)
-      {
-        ptr = strpbrk(ptr, " \t");
-        if (ptr)
-        {
-          *ptr++ = 0;
-          while (*ptr && isspace(*ptr))
-            ptr++;
-        }
-      }
-
-      loglevel = ptr;
-      if (ptr)
-      {
-        ptr = strpbrk(ptr, " \t");
-        if (ptr)
-        {
-          *ptr++ = 0;
-           while (*ptr && isspace(*ptr))
-             ptr++;
-        }
-      }
-
-      filename = ptr;
-      if (ptr)
-      {
-        ptr = strpbrk(ptr, " \t");
-        if (ptr)
-        {
-          *ptr++ = 0;
-          while (*ptr && isspace(*ptr))
-            ptr++;
-        }
-      }
-      
-      LOG(log_debug7, logtype_afpd, "calling setuplog %s %s %s",
-              logtype, NULL, filename);
-
-      setuplog(logtype, NULL, filename);
-    }
-#endif /* DISABLE_LOGGER */
 #ifdef ADMIN_GRP
     if ((c = getoption(buf, "-admingroup"))) {
         struct group *gr = getgrnam(c);
@@ -434,6 +369,7 @@ int afp_options_parseline(char *buf, struct afp_options *options)
         options->uamlist = opt;
 
     if ((c = getoption(buf, "-ipaddr"))) {
+#if 0
         struct in_addr inaddr;
         if (inet_aton(c, &inaddr) && (opt = strdup(c))) {
             if (!gethostbyaddr((const char *) &inaddr, sizeof(inaddr), AF_INET))
@@ -443,26 +379,25 @@ int afp_options_parseline(char *buf, struct afp_options *options)
         else {
             LOG(log_error, logtype_afpd, "Error parsing -ipaddr, is %s in numbers-and-dots notation?", c);
         }
+#endif
+        options->ipaddr = strdup(c);
     }
 
     /* FIXME CNID Cnid_srv is a server attribute */
     if ((c = getoption(buf, "-cnidserver"))) {
-        char *p;
-	int len;        
-        p = strchr(c, ':');
-	if (p != NULL && (len = p - c) <= MAXHOSTNAMELEN) {
-	    memcpy(Cnid_srv, c, len);
-	    Cnid_srv[len] = 0;
-	    Cnid_port = atoi(p +1);
-	}
+        char *p = strrchr(c, ':');
+        if (p)
+            *p = 0;
+        Cnid_srv = strdup(c);
+        if (p)
+            Cnid_port = strdup(p + 1);
+        LOG(log_debug, logtype_afpd, "CNID Server: %s:%s", Cnid_srv, Cnid_port);
     }
 
     if ((c = getoption(buf, "-port")))
-        options->port = atoi(c);
+        options->port = strdup(c);
     if ((c = getoption(buf, "-ddpaddr")))
         atalk_aton(c, &options->ddpaddr);
-    if ((c = getoption(buf, "-signature")) && (opt = strdup(c)))
-        options->signature = opt;
 
     /* do a little checking for the domain name. */
     if ((c = getoption(buf, "-fqdn"))) {
@@ -501,6 +436,23 @@ int afp_options_parseline(char *buf, struct afp_options *options)
                 options->maccodepage = opt;
 	}
     }
+    
+    if ((c = strstr(buf, "-closevol"))) {
+        options->closevol= 1;
+    }
+
+    if ((c = getoption(buf, "-ntdomain")) && (opt = strdup(c)))
+       options->ntdomain = opt;
+
+    if ((c = getoption(buf, "-ntseparator")) && (opt = strdup(c)))
+       options->ntseparator = opt;
+     
+    if ((c = getoption(buf, "-signature")) && (opt = strdup(c))) {
+        set_signature(opt, options);
+    }
+    else {
+        set_signature("auto", options);
+    }
 
     return 1;
 }
@@ -509,7 +461,7 @@ int afp_options_parseline(char *buf, struct afp_options *options)
  * Show version information about afpd.
  * Used by "afp -v".
  */
-void show_version( )
+static void show_version( void )
 {
 	printf( "afpd %s - Apple Filing Protocol (AFP) daemon of Netatalk\n\n", VERSION );
 
@@ -520,7 +472,7 @@ void show_version( )
 
 	puts( "afpd has been compiled with support for these features:\n" );
 
-	printf( "        AFP3.1 support:\t" );
+	printf( "        AFP3.x support:\t" );
 #ifdef AFP3x
 	puts( "Yes" );
 #else
@@ -567,7 +519,7 @@ void show_version( )
  * Show extended version information about afpd and Netatalk.
  * Used by "afp -V".
  */
-void show_version_extended( )
+static void show_version_extended(void )
 {
 	show_version( );
 
@@ -631,22 +583,24 @@ void show_version_extended( )
 /*
  * Display compiled-in default paths
  */
-void show_paths( void )
+static void show_paths( void )
 {
 	printf( "             afpd.conf:\t%s\n", _PATH_AFPDCONF );
+	printf( "    afp_signature.conf:\t%s\n", _PATH_AFPDSIGCONF );
 	printf( "   AppleVolumes.system:\t%s\n", _PATH_AFPDSYSVOL );
 	printf( "  AppleVolumes.default:\t%s\n", _PATH_AFPDDEFVOL );
 	printf( "       UAM search path:\t%s\n", _PATH_AFPDUAMPATH );
+    printf( "  Server messages path:\t%s\n", SERVERTEXT);
 }
 
 /*
- * Display usage information about adpd.
+ * Display usage information about afpd.
  */
-void show_usage( char *name )
+static void show_usage( char *name )
 {
-	fprintf( stderr, "Usage:\t%s [-dDIptTu] [-c maxconnections] [-f defaultvolumes] [-F config]\n", name );
-	fprintf( stderr, "\t     [-g guest] [-L message] [-m umask][-n nbpname] [-P pidfile]\n" );
-	fprintf( stderr, "\t     [-s systemvolumes] [-S port] [-U uams]\n" );
+	fprintf( stderr, "Usage:\t%s [-duptDTI] [-f defaultvolumes] [-s systemvolumes] [-n nbpname]\n", name );
+	fprintf( stderr, "\t     [-c maxconnections] [-g guest] [-P pidfile] [-S port] [-L message]\n" );
+	fprintf( stderr, "\t     [-F configfile] [-U uams] [-m umask]\n" );
 	fprintf( stderr, "\t%s -h|-v|-V\n", name );
 }
 
@@ -712,7 +666,7 @@ int afp_options_parse(int ac, char **av, struct afp_options *options)
             options->transports &= ~AFPTRANS_DDP;
             break;
         case 'S':
-            options->port = atoi(optarg);
+            options->port = optarg;
             break;
         case 'T':
             options->transports &= ~AFPTRANS_TCP;
@@ -765,9 +719,8 @@ int afp_options_parse(int ac, char **av, struct afp_options *options)
 
 #ifdef ultrix
     openlog( p, LOG_PID ); /* ultrix only */
-#else /* ultrix */
+#else
     set_processname(p);
-    syslog_setup(log_debug, logtype_default, logoption_ndelay|logoption_pid, logfacility_daemon);
 #endif /* ultrix */
 
     return 1;

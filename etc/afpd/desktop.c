@@ -1,5 +1,5 @@
 /*
- * $Id: desktop.c,v 1.26.2.4.2.18.2.8 2009/01/13 01:05:53 didg Exp $
+ * $Id: desktop.c,v 1.50 2010/01/22 04:40:38 didg Exp $
  *
  * See COPYRIGHT.
  *
@@ -18,7 +18,6 @@
 #include <ctype.h>
 
 #include <errno.h>
-#include <dirent.h>
 
 #include <atalk/adouble.h>
 #include <sys/uio.h>
@@ -40,10 +39,7 @@
 #include "mangle.h"
 
 
-int afp_opendt(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj  *obj _U_;
-char	*ibuf, *rbuf;
-int	ibuflen _U_, *rbuflen;
+int afp_opendt(AFPObj *obj _U_, char *ibuf, size_t ibuflen _U_, char *rbuf, size_t *rbuflen)
 {
     struct vol	*vol;
     u_int16_t	vid;
@@ -61,27 +57,20 @@ int	ibuflen _U_, *rbuflen;
     return( AFP_OK );
 }
 
-int afp_closedt(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj  *obj _U_;
-char	*ibuf _U_, *rbuf _U_;
-int	ibuflen _U_, *rbuflen;
+int afp_closedt(AFPObj *obj _U_, char *ibuf _U_, size_t ibuflen _U_, char *rbuf _U_, size_t *rbuflen)
 {
     *rbuflen = 0;
     return( AFP_OK );
 }
 
-struct savedt	si = { { 0, 0, 0, 0 }, -1, 0, 0 };
+static struct savedt	si = { { 0, 0, 0, 0 }, -1, 0, 0 };
 
 static char *icon_dtfile(struct vol *vol, u_char creator[ 4 ])
 {
     return dtfile( vol, creator, ".icon" );
 }
 
-static int iconopen( vol, creator, flags, mode )
-struct vol	*vol;
-u_char	creator[ 4 ];
-int flags;
-int mode;
+static int iconopen(struct vol *vol, u_char creator[ 4 ], int flags, int mode)
 {
     char	*dtf, *adt, *adts;
 
@@ -126,17 +115,15 @@ int mode;
     return 0;
 }
 
-int afp_addicon(obj, ibuf, ibuflen, rbuf, rbuflen)
-AFPObj  *obj;
-char	*ibuf, *rbuf;
-int	ibuflen _U_, *rbuflen;
+int afp_addicon(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf, size_t *rbuflen)
 {
     struct vol		*vol;
 #ifndef NO_DDP
     struct iovec	iov[ 2 ];
 #endif
     u_char		fcreator[ 4 ], imh[ 12 ], irh[ 12 ], *p;
-    int			itype, cc = AFP_OK, iovcnt = 0, buflen;
+    int			itype, cc = AFP_OK, iovcnt = 0;
+    size_t 		buflen;
     u_int32_t           ftype, itag;
     u_int16_t		bsize, rsize, vid;
 
@@ -290,12 +277,6 @@ addicon_err:
             }
 
             while ((iovcnt = dsi_write(dsi, rbuf, buflen))) {
-#ifdef DEBUG1
-                if ( obj->options.flags & OPTION_DEBUG ) {
-                    printf("(write) command cont'd: %d\n", iovcnt);
-                    bprint(rbuf, iovcnt);
-                }
-#endif
                 if ((cc = write(si.sdt_fd, rbuf, iovcnt)) < 0) {
                     LOG(log_error, logtype_afpd, "afp_addicon(%s): write: %s", icon_dtfile(vol, fcreator), strerror(errno));
                     dsi_writeflush(dsi);
@@ -353,10 +334,7 @@ static const u_char	uicon[] = {
 };
 #endif
 
-int afp_geticoninfo(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj  *obj _U_;
-char	*ibuf, *rbuf;
-int	ibuflen _U_, *rbuflen;
+int afp_geticoninfo(AFPObj *obj _U_, char *ibuf, size_t ibuflen _U_, char *rbuf, size_t *rbuflen)
 {
     struct vol	*vol;
     u_char	fcreator[ 4 ], ih[ 12 ];
@@ -427,14 +405,11 @@ int	ibuflen _U_, *rbuflen;
 }
 
 
-int afp_geticon(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj  *obj;
-char	*ibuf, *rbuf;
-int	ibuflen _U_, *rbuflen;
+int afp_geticon(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf, size_t *rbuflen)
 {
     struct vol	*vol;
     off_t       offset;
-    int		rc, buflen;
+    ssize_t	rc, buflen;
     u_char	fcreator[ 4 ], ftype[ 4 ], itype, ih[ 12 ];
     u_int16_t	vid, bsize, rsize;
 
@@ -521,15 +496,16 @@ int	ibuflen _U_, *rbuflen;
             return AFPERR_PARAM;
         }
 
-        if ((*rbuflen = dsi_readinit(dsi, rbuf, buflen, rc, AFP_OK)) < 0)
+        if ((buflen = dsi_readinit(dsi, rbuf, buflen, rc, AFP_OK)) < 0)
             goto geticon_exit;
 
+        *rbuflen = buflen;
         /* do to the streaming nature, we have to exit if we encounter
          * a problem. much confusion results otherwise. */
         while (*rbuflen > 0) {
 #ifdef WITH_SENDFILE
             if (!obj->options.flags & OPTION_DEBUG) {
-                if (sys_sendfile(dsi->socket, si.sdt_fd, &offset, dsi->datasize) < 0) {
+                if (dsi_stream_read_file(dsi, si.sdt_fd, offset, dsi->datasize) < 0) {
                     switch (errno) {
                     case ENOSYS:
                     case EINVAL:  /* there's no guarantee that all fs support sendfile */
@@ -538,19 +514,16 @@ int	ibuflen _U_, *rbuflen;
                         goto geticon_exit;
                     }
                 }
-                goto geticon_done;
+                else {
+                    dsi_readdone(dsi);
+                    return AFP_OK;
+                }
             }
 #endif
             buflen = read(si.sdt_fd, rbuf, *rbuflen);
             if (buflen < 0)
                 goto geticon_exit;
 
-#ifdef DEBUG1
-            if (obj->options.flags & OPTION_DEBUG) {
-                printf( "(read) reply: %d, %d\n", buflen, dsi->clientID);
-                bprint(rbuf, buflen);
-            }
-#endif
             /* dsi_read() also returns buffer size of next allocation */
             buflen = dsi_read(dsi, rbuf, buflen); /* send it off */
             if (buflen < 0)
@@ -558,13 +531,12 @@ int	ibuflen _U_, *rbuflen;
 
             *rbuflen = buflen;
         }
-
-geticon_done:
+        
         dsi_readdone(dsi);
         return AFP_OK;
 
 geticon_exit:
-        LOG(log_info, logtype_afpd, "afp_geticon(%s): %s", icon_dtfile(vol, fcreator), strerror(errno));
+        LOG(log_error, logtype_afpd, "afp_geticon(%s): %s", icon_dtfile(vol, fcreator), strerror(errno));
         dsi_readdone(dsi);
         obj->exit(EXITERR_SYS);
         return AFP_OK;
@@ -618,35 +590,22 @@ char *dtfile(const struct vol *vol, u_char creator[], char *ext )
  * mpath is only a filename 
  * did filename parent directory ID.
 */
-static char  upath[ MAXPATHLEN + 2]; /* for convert_charset dest_len parameter +2 */
-static char  mpath[ MAXPATHLEN + 2];/* for convert_charset dest_len parameter +2 */
 
 char *mtoupath(const struct vol *vol, char *mpath, cnid_t did, int utf8)
 {
+    static char  upath[ MAXPATHLEN + 2]; /* for convert_charset dest_len parameter +2 */
     char	*m, *u;
     size_t       inplen;
     size_t       outlen;
-    u_int16_t	 flags = 0;
+    u_int16_t	 flags;
         
     if ( *mpath == '\0' ) {
         return( "." );
     }
 
     /* set conversion flags */
-    if (!(vol->v_flags & AFPVOL_NOHEX))
-        flags |= CONV_ESCAPEHEX;
-    if (!(vol->v_flags & AFPVOL_USEDOTS))
-        flags |= CONV_ESCAPEDOTS;
-
-    if (vol->v_casefold & AFPVOL_MTOUUPPER)
-        flags |= CONV_TOUPPER;
-    else if (vol->v_casefold & AFPVOL_MTOULOWER)
-        flags |= CONV_TOLOWER;
-
-    if (vol->v_flags & AFPVOL_EILSEQ) {
-        flags |= CONV__EILSEQ;
-    }
-
+    flags = vol->v_mtou_flags;
+    
     m = demangle(vol, mpath, did);
     if (m != mpath) {
         return m;
@@ -664,7 +623,7 @@ char *mtoupath(const struct vol *vol, char *mpath, cnid_t did, int utf8)
     }
 
 #ifdef DEBUG
-    LOG(log_debug, logtype_afpd, "mtoupath: '%s':'%s'", mpath, upath);
+    LOG(log_debug9, logtype_afpd, "mtoupath: '%s':'%s'", mpath, upath);
 #endif /* DEBUG */
     return( upath );
 }
@@ -674,21 +633,15 @@ char *mtoupath(const struct vol *vol, char *mpath, cnid_t did, int utf8)
 */
 char *utompath(const struct vol *vol, char *upath, cnid_t id, int utf8)
 {
+    static char  mpath[ MAXPATHLEN + 2]; /* for convert_charset dest_len parameter +2 */
     char        *m, *u;
-    u_int16_t    flags = CONV_IGNORE | CONV_UNESCAPEHEX;
+    u_int16_t    flags;
     size_t       outlen;
 
     m = mpath;
     outlen = strlen(upath);
 
-    if ((vol->v_casefold & AFPVOL_UTOMUPPER))
-        flags |= CONV_TOUPPER;
-    else if ((vol->v_casefold & AFPVOL_UTOMLOWER))
-        flags |= CONV_TOLOWER;
-
-    if (vol->v_flags & AFPVOL_EILSEQ) {
-        flags |= CONV__EILSEQ;
-    }
+    flags = vol->v_utom_flags;
 
     u = upath;
 
@@ -698,10 +651,7 @@ char *utompath(const struct vol *vol, char *upath, cnid_t id, int utf8)
 	goto utompath_error;
     }
 
-    if (!(flags & CONV_REQMANGLE)) 
-        flags = 0;
-    else
-        flags = 1;
+    flags = !!(flags & CONV_REQMANGLE);
 
     if (utf8)
         flags |= 2;
@@ -709,7 +659,7 @@ char *utompath(const struct vol *vol, char *upath, cnid_t id, int utf8)
     m = mangle(vol, mpath, outlen, upath, id, flags);
 
 #ifdef DEBUG
-    LOG(log_debug, logtype_afpd, "utompath: '%s':'%s':'%2.2X'", upath, m, ntohl(id));
+    LOG(log_debug9, logtype_afpd, "utompath: '%s':'%s':'%2.2X'", upath, m, ntohl(id));
 #endif /* DEBUG */
     return(m);
 
@@ -732,7 +682,7 @@ static int ad_addcomment(struct vol *vol, struct path *path, char *ibuf)
     clen = min( clen, 199 );
 
     upath = path->u_name;
-    if (!vol_unix_priv(vol) && check_access(upath, OPENACC_WR ) < 0) {
+    if (check_access(upath, OPENACC_WR ) < 0) {
         return AFPERR_ACCESS;
     }
     
@@ -743,14 +693,12 @@ static int ad_addcomment(struct vol *vol, struct path *path, char *ibuf)
     } else
         adp = of->of_ad;
 
-    if (ad_open( upath , vol_noadouble(vol) |
-                 (( isadir) ? ADFLAGS_HF|ADFLAGS_DIR : ADFLAGS_HF),
-                 O_RDWR|O_CREAT, 0666, adp) < 0 ) {
+    if (ad_open_metadata( upath , ( (isadir) ? ADFLAGS_DIR : 0), O_CREAT, adp) < 0 ) {
         return( AFPERR_ACCESS );
     }
 
     if (ad_getentryoff(adp, ADEID_COMMENT)) {
-        if ( (ad_getoflags( adp, ADFLAGS_HF ) & O_CREAT) ) {
+        if ( (ad_get_MD_flags( adp ) & O_CREAT) ) {
             if ( *path->m_name == '\0' ) {
                 name = curdir->d_m_name;
             } else {
@@ -760,17 +708,14 @@ static int ad_addcomment(struct vol *vol, struct path *path, char *ibuf)
         }
         ad_setentrylen( adp, ADEID_COMMENT, clen );
         memcpy( ad_entry( adp, ADEID_COMMENT ), ibuf, clen );
-        ad_flush( adp, ADFLAGS_HF );
+        ad_flush( adp );
     }
-    ad_close( adp, ADFLAGS_HF );
+    ad_close_metadata( adp);
     return( AFP_OK );
 }
 
 /* ----------------------------- */
-int afp_addcomment(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj _U_;
-char	*ibuf, *rbuf _U_;
-int		ibuflen _U_, *rbuflen;
+int afp_addcomment(AFPObj *obj _U_, char *ibuf, size_t ibuflen _U_, char *rbuf _U_, size_t *rbuflen)
 {
     struct vol		*vol;
     struct dir		*dir;
@@ -805,7 +750,7 @@ int		ibuflen _U_, *rbuflen;
 }
 
 /* -------------------- */
-static int ad_getcomment(struct vol *vol, struct path *path, char *rbuf, int *rbuflen)
+static int ad_getcomment(struct vol *vol, struct path *path, char *rbuf, size_t *rbuflen)
 {
     struct adouble	ad, *adp;
     struct ofork        *of;
@@ -821,12 +766,12 @@ static int ad_getcomment(struct vol *vol, struct path *path, char *rbuf, int *rb
     } else
         adp = of->of_ad;
         
-    if ( ad_metadata( upath,( isadir) ? ADFLAGS_DIR : 0, adp) < 0 ) {
+    if ( ad_metadata( upath, ((isadir) ? ADFLAGS_DIR : 0), adp) < 0 ) {
         return( AFPERR_NOITEM );
     }
 
     if (!ad_getentryoff(adp, ADEID_COMMENT)) {
-        ad_close( adp, ADFLAGS_HF );
+        ad_close_metadata( adp );
         return AFPERR_NOITEM;
     }
     /*
@@ -834,7 +779,7 @@ static int ad_getcomment(struct vol *vol, struct path *path, char *rbuf, int *rb
      */
     if ( ad_getentrylen( adp, ADEID_COMMENT ) <= 0 ||
             ad_getentrylen( adp, ADEID_COMMENT ) > 199 ) {
-        ad_close( adp, ADFLAGS_HF );
+        ad_close_metadata( adp );
         return( AFPERR_NOITEM );
     }
 
@@ -842,16 +787,13 @@ static int ad_getcomment(struct vol *vol, struct path *path, char *rbuf, int *rb
     *rbuf++ = clen;
     memcpy( rbuf, ad_entry( adp, ADEID_COMMENT ), clen);
     *rbuflen = clen + 1;
-    ad_close( adp, ADFLAGS_HF );
+    ad_close_metadata( adp);
 
     return( AFP_OK );
 }
 
 /* -------------------- */
-int afp_getcomment(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj _U_;
-char	*ibuf, *rbuf;
-int		ibuflen _U_, *rbuflen;
+int afp_getcomment(AFPObj *obj _U_, char *ibuf, size_t ibuflen _U_, char *rbuf, size_t *rbuflen)
 {
     struct vol		*vol;
     struct dir		*dir;
@@ -890,7 +832,7 @@ static int ad_rmvcomment(struct vol *vol, struct path *path)
     char		*upath;
 
     upath = path->u_name;
-    if (!vol_unix_priv(vol) && check_access(upath, OPENACC_WR ) < 0) {
+    if (check_access(upath, OPENACC_WR ) < 0) {
         return AFPERR_ACCESS;
     }
 
@@ -901,9 +843,7 @@ static int ad_rmvcomment(struct vol *vol, struct path *path)
     } else
         adp = of->of_ad;
 
-    if ( ad_open( upath,
-                   (isadir) ? ADFLAGS_HF|ADFLAGS_DIR : ADFLAGS_HF,
-                  O_RDWR, 0, adp) < 0 ) {
+    if ( ad_open_metadata( upath, (isadir) ? ADFLAGS_DIR : 0, 0, adp) < 0 ) {
         switch ( errno ) {
         case ENOENT :
             return( AFPERR_NOITEM );
@@ -916,17 +856,14 @@ static int ad_rmvcomment(struct vol *vol, struct path *path)
 
     if (ad_getentryoff(adp, ADEID_COMMENT)) {
         ad_setentrylen( adp, ADEID_COMMENT, 0 );
-        ad_flush( adp, ADFLAGS_HF );
+        ad_flush( adp );
     }
-    ad_close( adp, ADFLAGS_HF );
+    ad_close_metadata( adp);
     return( AFP_OK );
 }
 
 /* ----------------------- */
-int afp_rmvcomment(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj      *obj _U_;
-char	*ibuf, *rbuf _U_;
-int		ibuflen _U_, *rbuflen;
+int afp_rmvcomment(AFPObj *obj _U_, char *ibuf, size_t ibuflen _U_, char *rbuf _U_, size_t *rbuflen)
 {
     struct vol		*vol;
     struct dir		*dir;

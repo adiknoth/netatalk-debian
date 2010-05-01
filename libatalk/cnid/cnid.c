@@ -1,5 +1,5 @@
 /* 
- * $Id: cnid.c,v 1.1.4.11.2.5 2009/07/20 18:35:30 didg Exp $
+ * $Id: cnid.c,v 1.13 2010/03/31 09:47:32 franklahm Exp $
  *
  * Copyright (c) 2003 the Netatalk Team
  * Copyright (c) 2003 Rafal Lewczuk <rlewczuk@pronet.pl>
@@ -37,7 +37,6 @@ static struct list_head modules = ATALK_LIST_HEAD_INIT(modules);
 
 static sigset_t sigblockset;
 static const struct itimerval none = {{0, 0}, {0, 0}};
-static struct itimerval savetimer;
 
 /* Registers new CNID backend module. */
 
@@ -93,14 +92,15 @@ static int cnid_dir(const char *dir, mode_t mask)
 }
 
 /* Opens CNID database using particular back-end */
-struct _cnid_db *cnid_open(const char *volpath, mode_t mask, char *type, int flags)
+struct _cnid_db *cnid_open(const char *volpath, mode_t mask, char *type, int flags,
+                           const char *cnidsrv, const char *cnidport)
 {
     struct _cnid_db *db;
     cnid_module *mod = NULL;
     struct list_head *ptr;
     uid_t uid = -1;  
     gid_t gid = -1;
-    
+
     list_for_each(ptr, &modules) {
         if (0 == strcmp(list_entry(ptr, cnid_module, db_list)->name, type)) {
 	    mod = list_entry(ptr, cnid_module, db_list);
@@ -113,7 +113,7 @@ struct _cnid_db *cnid_open(const char *volpath, mode_t mask, char *type, int fla
         return NULL;
     }
 
-    if ((mod->flags & CNID_FLAG_SETUID)) {
+    if ((mod->flags & CNID_FLAG_SETUID) && !(flags & CNID_FLAG_MEMORY)) {
         uid = geteuid();
         gid = getegid();
         if (seteuid(0)) {
@@ -129,9 +129,10 @@ struct _cnid_db *cnid_open(const char *volpath, mode_t mask, char *type, int fla
         }
     }
 
-    db = mod->cnid_open(volpath, mask);
+    struct cnid_open_args args = {volpath, mask, flags, cnidsrv, cnidport};
+    db = mod->cnid_open(&args);
 
-    if ((mod->flags & CNID_FLAG_SETUID)) {
+    if ((mod->flags & CNID_FLAG_SETUID) && !(flags & CNID_FLAG_MEMORY)) {
         seteuid(0);
         if ( setegid(gid) < 0 || seteuid(uid) < 0) {
             LOG(log_error, logtype_afpd, "can't seteuid back %s", strerror(errno));
@@ -144,7 +145,7 @@ struct _cnid_db *cnid_open(const char *volpath, mode_t mask, char *type, int fla
         return NULL;
     }
     /* FIXME should module know about it ? */
-    if (flags) {
+    if ((flags & CNID_FLAG_NODEV)) {
         db->flags |= CNID_FLAG_NODEV;
     }
     db->flags |= mod->flags;
@@ -154,6 +155,7 @@ struct _cnid_db *cnid_open(const char *volpath, mode_t mask, char *type, int fla
         sigaddset(&sigblockset, SIGTERM);
         sigaddset(&sigblockset, SIGHUP);
         sigaddset(&sigblockset, SIGUSR1);
+        sigaddset(&sigblockset, SIGUSR2);
         sigaddset(&sigblockset, SIGALRM);
     }
 
@@ -165,7 +167,6 @@ static void block_signal( u_int32_t flags)
 {
     if ((flags & CNID_FLAG_BLOCK)) {
         sigprocmask(SIG_BLOCK, &sigblockset, NULL);
-        setitimer(ITIMER_REAL, &none, &savetimer);
     }
 }
 
@@ -173,9 +174,28 @@ static void block_signal( u_int32_t flags)
 static void unblock_signal(u_int32_t flags)
 {
     if ((flags & CNID_FLAG_BLOCK)) {
-        setitimer(ITIMER_REAL, &savetimer, NULL);
         sigprocmask(SIG_UNBLOCK, &sigblockset, NULL);
     }
+}
+
+/* ------------------- 
+  protect against bogus value from the DB.
+  adddir really doesn't like 2
+*/
+static cnid_t valide(cnid_t id)
+{
+  if (id == CNID_INVALID)
+      return id;
+      
+  if (id < CNID_START) {
+    static int err = 0;
+    if (!err) {
+        err = 1;
+        LOG(log_error, logtype_afpd, "Error: Invalid cnid, corrupted DB?");
+    }
+    return CNID_INVALID;
+  }
+  return id;
 }
 
 /* Closes CNID database. Currently it's just a wrapper around db->cnid_close(). */
@@ -201,7 +221,7 @@ cnid_t cnid_add(struct _cnid_db *cdb, const struct stat *st, const cnid_t did,
 cnid_t ret;
 
     block_signal(cdb->flags);
-    ret = cdb->cnid_add(cdb, st, did, name, len, hint);
+    ret = valide(cdb->cnid_add(cdb, st, did, name, len, hint));
     unblock_signal(cdb->flags);
     return ret;
 }
@@ -224,7 +244,7 @@ cnid_t cnid_get(struct _cnid_db *cdb, const cnid_t did, char *name,const size_t 
 cnid_t ret;
 
     block_signal(cdb->flags);
-    ret = cdb->cnid_get(cdb, did, name, len);
+    ret = valide(cdb->cnid_get(cdb, did, name, len));
     unblock_signal(cdb->flags);
     return ret;
 }
@@ -257,7 +277,7 @@ cnid_t cnid_lookup(struct _cnid_db *cdb, const struct stat *st, const cnid_t did
 cnid_t ret;
 
     block_signal(cdb->flags);
-    ret = cdb->cnid_lookup(cdb, st, did, name, len);
+    ret = valide(cdb->cnid_lookup(cdb, st, did, name, len));
     unblock_signal(cdb->flags);
     return ret;
 }
@@ -289,4 +309,14 @@ int ret;
     return ret;
 }
 			
+/* --------------- */
+cnid_t cnid_rebuild_add(struct _cnid_db *cdb, const struct stat *st, const cnid_t did,
+                       char *name, const size_t len, cnid_t hint)
+{
+cnid_t ret;
 
+    block_signal(cdb->flags);
+    ret = cdb->cnid_rebuild_add(cdb, st, did, name, len, hint);
+    unblock_signal(cdb->flags);
+    return ret;
+}

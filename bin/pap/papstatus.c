@@ -1,5 +1,5 @@
 /*
- * $Id: papstatus.c,v 1.4.14.1 2004/06/15 00:44:03 bfernhomberg Exp $
+ * $Id: papstatus.c,v 1.7 2009/10/14 01:38:28 didg Exp $
  *
  * Copyright (c) 1990,1991 Regents of The University of Michigan.
  * All Rights Reserved.
@@ -45,10 +45,9 @@
 #define _PATH_PAPRC	".paprc"
 
 /* Forward Declaration */
-void getstatus(ATP atp, struct sockaddr_at *sat);
+static void getstatus(ATP atp, struct sockaddr_at *sat);
 
-void usage( path )
-    char	*path;
+static void usage(char *path)
 {
     char	*p;
 
@@ -62,8 +61,8 @@ void usage( path )
     exit( 1 );
 }
 
-char *
-paprc()
+static char *
+paprc(void)
 {
     static char	s[ 32 + 1 + 32 + 1 + 32 ];
     char	*name = NULL;
@@ -84,14 +83,12 @@ paprc()
     return( name );
 }
 
-char			*printer = NULL;
+static char			*printer = NULL;
 
-char			cbuf[ 8 ];
-struct nbpnve		nn;
+static char			cbuf[ 8 ];
+static struct nbpnve		nn;
 
-int main( ac, av )
-    int		ac;
-    char	**av;
+int main( int ac, char **av)
 {
     ATP			atp;
     int			wait, c, err = 0;
@@ -167,9 +164,7 @@ int main( ac, av )
     return 0;
 }
 
-void getstatus( atp, sat )
-    ATP			atp;
-    struct sockaddr_at	*sat;
+static void getstatus(ATP atp, struct sockaddr_at *sat)
 {
     struct iovec	iov;
     struct atp_block	atpb;

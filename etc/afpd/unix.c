@@ -1,5 +1,5 @@
 /*
- * $Id: unix.c,v 1.43.2.1.2.10.2.5 2009/01/28 05:37:58 didg Exp $
+ * $Id: unix.c,v 1.61 2010/02/10 14:05:37 franklahm Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -30,14 +30,14 @@ char *strchr (), *strrchr ();
 #endif /* STDC_HEADERS */
 
 #include <errno.h>
-#include <dirent.h>
 #include <limits.h>
 #include <sys/param.h>
-#include <sys/stat.h>
 #include <atalk/logger.h>
 #include <atalk/adouble.h>
+#include <atalk/vfs.h>
 #include <atalk/afp.h>
 #include <atalk/util.h>
+#include <atalk/unix.h>
 
 #include "auth.h"
 #include "directory.h"
@@ -45,13 +45,15 @@ char *strchr (), *strrchr ();
 #include "unix.h"
 #include "fork.h"
 
+#ifdef HAVE_NFSv4_ACLS
+extern void acltoownermode(char *path, struct stat *st,uid_t uid, struct maccess *ma);
+#endif
+
+
 /*
  * Get the free space on a partition.
  */
-int ustatfs_getvolspace( vol, bfree, btotal, bsize )
-const struct vol	*vol;
-VolSpace    *bfree, *btotal;
-u_int32_t   *bsize;
+int ustatfs_getvolspace(const struct vol *vol, VolSpace *bfree, VolSpace *btotal, u_int32_t *bsize)
 {
     VolSpace maxVolSpace = (~(VolSpace)0);
 
@@ -99,8 +101,7 @@ u_int32_t   *bsize;
     return( AFP_OK );
 }
 
-static int utombits( bits )
-mode_t	bits;
+static int utombits(mode_t bits)
 {
     int		mbits;
 
@@ -117,9 +118,7 @@ mode_t	bits;
 /* --------------------------------
     cf AFP 3.0 page 63
 */
-void utommode( stat, ma )
-struct stat		*stat;
-struct maccess	*ma;
+void utommode(struct stat *stat, struct maccess *ma)
 {
 mode_t mode;
 
@@ -169,31 +168,28 @@ mode_t mode;
  *
  * Note: the previous method, using access(), does not work correctly
  * over NFS.
- * FIXME what about ACL?
  *
  * dir parameter is used by AFS
  */
-void accessmode( path, ma, dir, st )
-char		*path;
-struct maccess	*ma;
-struct dir	*dir _U_;
-struct stat     *st;
+void accessmode(char *path, struct maccess *ma, struct dir *dir _U_, struct stat *st)
 
 {
 struct stat     sb;
 
     ma->ma_user = ma->ma_owner = ma->ma_world = ma->ma_group = 0;
     if (!st) {
-        if (stat(path, &sb) != 0)
+        if (lstat(path, &sb) != 0)
             return;
         st = &sb;
     }
     utommode( st, ma );
-    return;
+#ifdef HAVE_NFSv4_ACLS
+    /* 10.5 Finder looks at OS 9 mode, so we must do some mapping */
+    acltoownermode( path, st, uuid, ma);
+#endif
 }
 
-int gmem( gid )
-const gid_t	gid;
+int gmem(const gid_t gid)
 {
     int		i;
 
@@ -205,8 +201,7 @@ const gid_t	gid;
     return( 0 );
 }
 
-static mode_t mtoubits( bits )
-u_char	bits;
+static mode_t mtoubits(u_char bits)
 {
     mode_t	mode;
 
@@ -225,8 +220,7 @@ u_char	bits;
    and from AFP 3.0 spec page 63 
    the mac mode should be save somewhere 
 */
-mode_t mtoumode( ma )
-struct maccess	*ma;
+mode_t mtoumode(struct maccess *ma)
 {
     mode_t		mode;
 
@@ -242,80 +236,9 @@ struct maccess	*ma;
     return( mode );
 }
 
-/* ----------------------------- */
-char *fullpathname(const char *name)
-{
-    static char wd[ MAXPATHLEN + 1];
-
-    if ( getcwd( wd , MAXPATHLEN) ) {
-        strlcat(wd, "/", MAXPATHLEN);
-        strlcat(wd, name, MAXPATHLEN);
-    }
-    else {
-        strlcpy(wd, name, MAXPATHLEN);
-    }
-    return wd;
-}
-
-/* -----------------------------
-   a dropbox is a folder where w is set but not r eg:
-   rwx-wx-wx or rwx-wx-- 
-   rwx----wx (is not asked by a Mac with OS >= 8.0 ?)
-*/
-static int stickydirmode(name, mode, dropbox)
-char * name;
-const mode_t mode;
-const int dropbox;
-{
-    int retval = 0;
-
-#ifdef DROPKLUDGE
-    /* Turn on the sticky bit if this is a drop box, also turn off the setgid bit */
-    if (dropbox) {
-        int uid;
-
-        if ( ( (mode & S_IWOTH) && !(mode & S_IROTH)) ||
-             ( (mode & S_IWGRP) && !(mode & S_IRGRP)) )
-        {
-            uid=geteuid();
-            if ( seteuid(0) < 0) {
-                LOG(log_error, logtype_afpd, "stickydirmode: unable to seteuid root: %s", strerror(errno));
-            }
-            if ( (retval=chmod( name, ( (DIRBITS | mode | S_ISVTX) & ~default_options.umask) )) < 0) {
-                LOG(log_error, logtype_afpd, "stickydirmode: chmod \"%s\": %s", fullpathname(name), strerror(errno) );
-            } else {
-#ifdef DEBUG
-                LOG(log_info, logtype_afpd, "stickydirmode: (debug) chmod \"%s\": %s", fullpathname(name), strerror(retval) );
-#endif /* DEBUG */
-            }
-            seteuid(uid);
-            return retval;
-        }
-    }
-#endif /* DROPKLUDGE */
-
-    /*
-     *  Ignore EPERM errors:  We may be dealing with a directory that is
-     *  group writable, in which case chmod will fail.
-     */
-    if ( (chmod( name, (DIRBITS | mode) & ~default_options.umask ) < 0) && errno != EPERM)  {
-        LOG(log_error, logtype_afpd, "stickydirmode: chmod \"%s\": %s", fullpathname(name), strerror(errno) );
-        retval = -1;
-    }
-
-    return retval;
-}
-
-/* ------------------------- */
-int dir_rx_set(mode_t mode)
-{
-    return (mode & (S_IXUSR | S_IRUSR)) == (S_IXUSR | S_IRUSR);
-}
-
 #define EXEC_MODE (S_IXGRP | S_IXUSR | S_IXOTH)
 
-int setdeskmode( mode )
-const mode_t	mode;
+int setdeskmode(const mode_t mode)
 {
     char		wd[ MAXPATHLEN + 1];
     struct stat         st;
@@ -358,7 +281,7 @@ const mode_t	mode;
             *m = '\0';
             strcat( modbuf, subp->d_name );
             /* XXX: need to preserve special modes */
-            if (stat(modbuf, &st) < 0) {
+            if (lstat(modbuf, &st) < 0) {
                 LOG(log_error, logtype_afpd, "setdeskmode: stat %s: %s",fullpathname(modbuf), strerror(errno) );
                 continue;
             }
@@ -391,10 +314,7 @@ const mode_t	mode;
 }
 
 /* --------------------- */
-int setfilunixmode (vol, path, mode)
-const struct vol *vol;
-struct path* path;
-mode_t mode;
+int setfilunixmode (const struct vol *vol, struct path* path, mode_t mode)
 {
     if (!path->st_valid) {
         of_stat(path);
@@ -406,99 +326,56 @@ mode_t mode;
         
     mode |= vol->v_fperm;
 
-    if (setfilmode( path->u_name, mode, &path->st) < 0)
+    if (setfilmode( path->u_name, mode, &path->st, vol->v_umask) < 0)
         return -1;
     /* we need to set write perm if read set for resource fork */
-    return setfilmode(vol->ad_path( path->u_name, ADFLAGS_HF ), ad_hf_mode(mode), &path->st);
+    return vol->vfs->vfs_setfilmode(vol, path->u_name, mode, &path->st);
 }
 
-/* --------------------- */
-int setfilmode(name, mode, st)
-char * name;
-mode_t mode;
-struct stat *st;
-{
-struct stat sb;
-mode_t mask = S_IRWXU | S_IRWXG | S_IRWXO;  /* rwx for owner group and other, by default */
-
-    if (!st) {
-        if (stat(name, &sb) != 0)
-            return -1;
-        st = &sb;
-    }
-   
-   mode |= st->st_mode & ~mask; /* keep other bits from previous mode */
-   if ( chmod( name,  mode & ~default_options.umask ) < 0 && errno != EPERM ) {
-       return -1;
-   }
-   return 0;
-}
 
 /* --------------------- */
-int setdirunixmode( vol, name, mode )
-const struct vol *vol;
-const char       *name;
-mode_t           mode;
+int setdirunixmode(const struct vol *vol, const char *name, mode_t mode)
 {
-char *adouble = vol->ad_path( name, ADFLAGS_DIR );
 
     int dropbox = (vol->v_flags & AFPVOL_DROPBOX);
+
+    LOG(log_debug, logtype_afpd, "setdirunixmode('%s', mode:%04o) {v_dperm:%04o}",
+        fullpathname(name), mode, vol->v_dperm);
+
     mode |= vol->v_dperm;
 
     if (dir_rx_set(mode)) {
-    	/* extending right? dir first then .AppleDouble */
-    	if ( stickydirmode(name, DIRBITS | mode, dropbox) < 0 )
+    	/* extending right? dir first then .AppleDouble in rf_setdirmode */
+    	if ( stickydirmode(name, DIRBITS | mode, dropbox, vol->v_umask) < 0 )
         	return -1;
-    	if (vol->v_adouble != AD_VERSION2_OSX) {
-            if (stickydirmode(ad_dir(adouble), DIRBITS | mode, dropbox) < 0 && !vol_noadouble(vol)) {
-                return  -1 ;
-            }
-        }
     }
-    if (setfilmode(adouble, ad_hf_mode(mode), NULL) < 0 && !vol_noadouble(vol)) {
+    if (vol->vfs->vfs_setdirunixmode(vol, name, mode, NULL) < 0 && !vol_noadouble(vol)) {
         return  -1 ;
     }
     if (!dir_rx_set(mode)) {
-    	if (vol->v_adouble != AD_VERSION2_OSX) {
-            if (stickydirmode(ad_dir(adouble), DIRBITS | mode, dropbox) < 0 && !vol_noadouble(vol)) {
-                return  -1 ;
-            }
-        }
-    	if ( stickydirmode(name, DIRBITS | mode, dropbox) < 0 )
+    	if ( stickydirmode(name, DIRBITS | mode, dropbox, vol->v_umask) < 0 )
             return -1;
     }
     return 0;
 }
 
 /* --------------------- */
-int setdirmode( vol, name, mode )
-const struct vol *vol;
-const char       *name;
-mode_t           mode;
+int setdirmode(const struct vol *vol, const char *name, mode_t mode)
 {
-    char		buf[ MAXPATHLEN + 1];
     struct stat		st;
-    char		*m;
     struct dirent	*dirp;
     DIR			*dir;
     mode_t              hf_mode;
     int                 osx = vol->v_adouble == AD_VERSION2_OSX;
     int                 dropbox = (vol->v_flags & AFPVOL_DROPBOX);
-    char                *adouble = vol->ad_path( name, ADFLAGS_DIR );
-    char                *adouble_p = ad_dir(adouble);
     
     mode |= vol->v_dperm;
     hf_mode = ad_hf_mode(mode);
 
     if (dir_rx_set(mode)) {
-    	/* extending right? dir first then .AppleDouble */
-    	if ( stickydirmode(name, DIRBITS | mode, dropbox) < 0 )
+    	/* extending right? dir first */
+    	if ( stickydirmode(name, DIRBITS | mode, dropbox, vol->v_umask) < 0 )
         	return -1;
-    	if (!osx) {
-            if (stickydirmode(adouble_p, DIRBITS | mode, dropbox) < 0 && !vol_noadouble(vol)) {
-                return  -1 ;
-            }
-        }
     }
     
     if (( dir = opendir( name )) == NULL ) {
@@ -511,7 +388,7 @@ mode_t           mode;
         if ( *dirp->d_name == '.' && (!osx || dirp->d_name[1] != '_')) {
             continue;
         }
-        if ( stat( dirp->d_name, &st ) < 0 ) {
+        if ( lstat( dirp->d_name, &st ) < 0 ) {
             LOG(log_error, logtype_afpd, "setdirmode: stat %s: %s",dirp->d_name, strerror(errno) );
             continue;
         }
@@ -519,76 +396,27 @@ mode_t           mode;
         if (!S_ISDIR(st.st_mode)) {
            int setmode = (osx && *dirp->d_name == '.')?hf_mode:mode;
 
-           if (setfilmode(dirp->d_name, setmode, &st) < 0) {
+           if (setfilmode(dirp->d_name, setmode, &st, vol->v_umask) < 0) {
                 LOG(log_error, logtype_afpd, "setdirmode: chmod %s: %s",dirp->d_name, strerror(errno) );
                 return -1;
            }
         }
-#if 0
-        /* Don't change subdir perm */
-        else if (S_ISDIR(st.st_mode)) {
-                if (stickydirmode(dirp->d_name, DIRBITS | mode, dropbox) < 0)
-                    return (-1);
-            } else if (stickydirmode(dirp->d_name, mode, dropbox) < 0)
-                return (-1);
-        }
-#endif
     }
     closedir( dir );
     
-    if (osx) {
-        goto setdirmode_noadouble;
+    if (vol->vfs->vfs_setdirmode(vol, name, mode, NULL) < 0 && !vol_noadouble(vol)) {
+        return  -1 ;
     }
-    
-    /* change perm of .AppleDouble's files
-    */
-    if (( dir = opendir( adouble_p )) == NULL ) {
-        if (vol_noadouble(vol))
-            goto setdirmode_noadouble;
-        LOG(log_error, logtype_afpd, "setdirmode: opendir %s: %s", fullpathname(".AppleDouble"),strerror(errno) );
-        return( -1 );
-    }
-    strcpy( buf, adouble_p);
-    strcat( buf, "/" );
-    m = strchr( buf, '\0' );
-    for ( dirp = readdir( dir ); dirp != NULL; dirp = readdir( dir )) {
-        if ( strcmp( dirp->d_name, "." ) == 0 ||
-                strcmp( dirp->d_name, ".." ) == 0 ) {
-            continue;
-        }
-        *m = '\0';
-        strcat( buf, dirp->d_name );
-
-        if ( stat( buf, &st ) < 0 ) {
-            LOG(log_error, logtype_afpd, "setdirmode: stat %s: %s", buf, strerror(errno) );
-            continue;
-        }
-        if (!S_ISDIR(st.st_mode)) {
-           if (setfilmode(buf, hf_mode , &st) < 0) {
-               /* FIXME what do we do then? */
-           }
-        }
-    } /* end for */
-    closedir( dir );
 
     if (!dir_rx_set(mode)) {
-        /* XXX: need to preserve special modes */
-        if (stickydirmode(adouble_p, DIRBITS | mode, dropbox) < 0 ) {
-                return  -1 ;
-        }
-    }
-
-setdirmode_noadouble:
-    if (!dir_rx_set(mode)) {
-    	if ( stickydirmode(name, DIRBITS | mode, dropbox) < 0 )
+    	if ( stickydirmode(name, DIRBITS | mode, dropbox, vol->v_umask) < 0 )
         	return -1;
     }
     return( 0 );
 }
 
-int setdeskowner( uid, gid )
-const uid_t	uid;
-const gid_t	gid;
+/* ----------------------------- */
+int setdeskowner(const uid_t uid, const gid_t gid)
 {
     char		wd[ MAXPATHLEN + 1];
     char		modbuf[12 + 1], *m;
@@ -650,14 +478,8 @@ const gid_t	gid;
 }
 
 /* ----------------------------- */
-int setfilowner(vol, uid, gid, path)
-const struct vol *vol;
-const uid_t	uid;
-const gid_t	gid;
-struct path* path;
+int setfilowner(const struct vol *vol, const uid_t uid, const gid_t gid, struct path* path)
 {
-    struct stat st;
-    char  *ad_p;
 
     if (!path->st_valid) {
         of_stat(path);
@@ -667,48 +489,32 @@ struct path* path;
         return -1;
     }
 
-    if ( chown( path->u_name, uid, gid ) < 0 && errno != EPERM ) {
+    if ( lchown( path->u_name, uid, gid ) < 0 && errno != EPERM ) {
         LOG(log_debug, logtype_afpd, "setfilowner: chown %d/%d %s: %s",
             uid, gid, path->u_name, strerror(errno) );
 	return -1;
     }
 
-    ad_p = vol->ad_path( path->u_name, ADFLAGS_HF );
-
-    if ( stat( ad_p, &st ) < 0 ) {
-	/* ignore */
-        return 0;
-    }
-    if ( chown( ad_p, uid, gid ) < 0 &&
-            errno != EPERM ) {
-        LOG(log_debug, logtype_afpd, "setfilowner: chown %d/%d %s: %s",
-            uid, gid, ad_p, strerror(errno) );
+    if (vol->vfs->vfs_chown(vol, path->u_name, uid, gid ) < 0 && errno != EPERM) {
+        LOG(log_debug, logtype_afpd, "setfilowner: rf_chown %d/%d %s: %s",
+            uid, gid, path->u_name, strerror(errno) );
         return -1;
     }
+
     return 0;
 }
-
 
 /* --------------------------------- 
  * uid/gid == 0 need to be handled as special cases. they really mean
  * that user/group should inherit from other, but that doesn't fit
  * into the unix permission scheme. we can get around this by
  * co-opting some bits. */
-int setdirowner(vol, name, uid, gid )
-const struct vol *vol;
-const char      *name;
-const uid_t	uid;
-const gid_t	gid;
+int setdirowner(const struct vol *vol, const char *name, const uid_t uid, const gid_t gid)
 {
-    char		buf[ MAXPATHLEN + 1];
     struct stat		st;
-    char		*m;
     struct dirent	*dirp;
     DIR			*dir;
     int                 osx = vol->v_adouble == AD_VERSION2_OSX;
-    int                 noadouble = vol_noadouble(vol);
-    char                *adouble; 
-    char                *adouble_p;
 
     if (( dir = opendir( name )) == NULL ) {
         return( -1 );
@@ -717,13 +523,13 @@ const gid_t	gid;
         if ( *dirp->d_name == '.' && (!osx || dirp->d_name[1] != '_')) {
             continue;
         }
-        if ( stat( dirp->d_name, &st ) < 0 ) {
+        if ( lstat( dirp->d_name, &st ) < 0 ) {
             LOG(log_error, logtype_afpd, "setdirowner: stat %s: %s",
                 fullpathname(dirp->d_name), strerror(errno) );
             continue;
         }
         if (( st.st_mode & S_IFMT ) == S_IFREG ) {
-            if ( chown( dirp->d_name, uid, gid ) < 0 && errno != EPERM ) {
+            if ( lchown( dirp->d_name, uid, gid ) < 0 && errno != EPERM ) {
                 LOG(log_debug, logtype_afpd, "setdirowner: chown %s: %s",
                     fullpathname(dirp->d_name), strerror(errno) );
                 /* return ( -1 ); Sometimes this is okay */
@@ -731,56 +537,15 @@ const gid_t	gid;
         }
     }
     closedir( dir );
+
+    if (vol->vfs->vfs_setdirowner(vol, name, uid, gid) < 0) {
+        return -1;
+    }
     
-    if (osx) {
-       goto setdirowner_noadouble;
-    }
-
-    adouble = vol->ad_path( name, ADFLAGS_DIR );
-    adouble_p = ad_dir(adouble);
-    if (( dir = opendir( adouble_p )) == NULL ) {
-        if (noadouble)
-            goto setdirowner_noadouble;
+    if ( lstat( ".", &st ) < 0 ) {
         return( -1 );
     }
-    strcpy( buf, adouble_p );
-    strcat( buf, "/" );
-    m = strchr( buf, '\0' );
-    for ( dirp = readdir( dir ); dirp != NULL; dirp = readdir( dir )) {
-        if ( strcmp( dirp->d_name, "." ) == 0 ||
-                strcmp( dirp->d_name, ".." ) == 0 ) {
-            continue;
-        }
-        *m = '\0';
-        strcat( buf, dirp->d_name );
-        if ( chown( buf, uid, gid ) < 0 && errno != EPERM ) {
-            LOG(log_debug, logtype_afpd, "setdirowner: chown %d/%d %s: %s",
-                uid, gid, fullpathname(buf), strerror(errno) );
-            /* return ( -1 ); Sometimes this is okay */
-        }
-    }
-    closedir( dir );
-
-    /*
-     * We cheat: we know that chown doesn't do anything.
-     */
-    if ( stat( ".AppleDouble", &st ) < 0 ) {
-        LOG(log_error, logtype_afpd, "setdirowner: stat %s: %s", fullpathname(".AppleDouble"), strerror(errno) );
-        return( -1 );
-    }
-    if ( gid && gid != st.st_gid && chown( ".AppleDouble", uid, gid ) < 0 &&
-            errno != EPERM ) {
-        LOG(log_debug, logtype_afpd, "setdirowner: chown %d/%d %s: %s",
-            uid, gid,fullpathname(".AppleDouble"), strerror(errno) );
-        /* return ( -1 ); Sometimes this is okay */
-    }
-
-setdirowner_noadouble:
-    if ( stat( ".", &st ) < 0 ) {
-        return( -1 );
-    }
-    if ( gid && gid != st.st_gid && chown( ".", uid, gid ) < 0 &&
-            errno != EPERM ) {
+    if ( gid && gid != st.st_gid && lchown( ".", uid, gid ) < 0 && errno != EPERM ) {
         LOG(log_debug, logtype_afpd, "setdirowner: chown %d/%d %s: %s",
             uid, gid, fullpathname("."), strerror(errno) );
     }
@@ -804,7 +569,7 @@ static int recursive_chown(const char *path, uid_t uid, gid_t gid) {
 	return -1;
     }
 
-    if (stat(path, &sbuf) < 0) {
+    if (lstat(path, &sbuf) < 0) {
 	LOG(log_error, logtype_afpd, "cannot chown() file [%s] (uid = %d): %s", path, uid, strerror(errno));
 	return -1;
     }
@@ -834,46 +599,4 @@ recursive_chown_end:
     return ret;
 }
 #endif
-
-/* This is equivalent of unix rename(). */
-int unix_rename(const char *oldpath, const char *newpath)
-{
-#if 0
-	char pd_name[PATH_MAX+1];
-	int i;
-        struct stat pd_stat;
-        uid_t uid;
-#endif
-
-	if (rename(oldpath, newpath) < 0)
-		return -1;
-#if 0
-	for (i = 0; i <= PATH_MAX && newpath[i] != '\0'; i++)
-		pd_name[i] = newpath[i];
-	pd_name[i] = '\0';
-
-	while (i > 0 && pd_name[i] != '/') i--;
-	if (pd_name[i] == '/') i++;
-
-        pd_name[i++] = '.'; pd_name[i++] = '\0';
-
-        if (stat(pd_name, &pd_stat) < 0) {
-	    LOG(log_error, logtype_afpd, "stat() of parent dir failed: pd_name = %s, uid = %d: %s",
-		pd_name, geteuid(), strerror(errno));
-		return 0;
-	}
-
-	/* So we have SGID bit set... */
-        if ((S_ISGID & pd_stat.st_mode)	!= 0) {
-            uid = geteuid();
-            if (seteuid(0) < 0)
-		LOG(log_error, logtype_afpd, "seteuid() failed: %s", strerror(errno));
-            if (recursive_chown(newpath, uid, pd_stat.st_gid) < 0)
-		LOG(log_error, logtype_afpd, "chown() of parent dir failed: newpath=%s, uid=%d: %s",
-		    pd_name, geteuid(), strerror(errno));
-            seteuid(uid);
-	}
-#endif
-	return 0;
-}
 

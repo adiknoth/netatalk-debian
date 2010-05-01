@@ -1,4 +1,4 @@
-dnl $Id: db3-check.m4,v 1.11.6.9.2.5 2009/03/25 18:09:58 franklahm Exp $
+dnl $Id: db3-check.m4,v 1.23 2010/04/12 14:28:48 franklahm Exp $
 dnl Autoconf macros to check for the Berkeley DB library
 
 dnl -- check header for minimum version and return version in
@@ -28,11 +28,11 @@ AC_DEFUN([NETATALK_BDB_TRY_LINK],[
     atalk_cv_bdb_version=no
     maj=$atalk_cv_bdb_MAJOR
     min=$atalk_cv_bdb_MINOR
-    atalk_cv_bdb_try_libs="-ldb$maj$min -ldb$maj.$min -ldb-$maj$min -ldb-$maj.$min"
+    atalk_cv_bdb_try_libs="db$maj$min db$maj.$min db-$maj$min db-$maj.$min db$maj-$maj.$min db"
 
     for lib in $atalk_cv_bdb_try_libs ; do
-        LIBS="$lib $savedlibs"
-        AC_MSG_CHECKING([Berkeley DB library ($lib)])
+        LIBS="-l$lib $savedlibs"
+        AC_MSG_CHECKING([Berkeley DB library (-l$lib)])
         AC_TRY_RUN([
             #include <stdio.h>
             #include <db.h>
@@ -53,13 +53,27 @@ AC_DEFUN([NETATALK_BDB_TRY_LINK],[
                 return (0);
             }
         ],[
-
             AC_MSG_RESULT(yes)
             atalk_cv_bdb_version="yes"
-            atalk_cv_lib_db="$lib"
+            atalk_cv_lib_db="-l$lib"
             break
         ],[
             AC_MSG_RESULT(no)
+        ],[
+            bdblibs=`ls $bdblibdir/lib$lib.* 2>/dev/null`
+            for bdblib in $bdblibs ; do
+                echo "Testing for lib file $bdblib" >&AS_MESSAGE_LOG_FD
+                if test -f "$bdblib" ; then
+                    AC_MSG_RESULT([yes (cross-compiling)])
+                    atalk_cv_bdb_version="yes"
+                    atalk_cv_lib_db="-l$lib"
+                    break
+                fi
+            done
+            if test "x$atalk_cv_bdb_version" = "xyes" ; then
+                break
+            fi
+            AC_MSG_RESULT([no (cross-compiling)])
         ])
     done
     LIBS="$savedlibs"
@@ -70,15 +84,23 @@ AC_DEFUN([AC_PATH_BDB],[
     trybdbdir=""
     dobdbsearch=yes
     bdb_search_dirs="/usr/local /usr"
-    search_subdirs="/ /db4.7 /db47 /db4.6 /db46 /db4.5 /db45 /db4.4 /db44 /db4.3 /db43 /db4.2 /db42 /db4.1 /db41 /db4"
+    search_subdirs="/ /db4.7 /db47 /db4.6 /db46 /db4.5 /db45 /db4.4 /db44 /db4"
 
-    dnl required BDB version
+    bdbfound=no
+    savedcflags="$CFLAGS"
+    savedldflags="$LDFLAGS"
+    savedcppflags="$CPPFLAGS"
+    savedlibs="$LIBS"
+    saved_shlibpath_var=$shlibpath_var
+
+    dnl required BDB version: 4.6, because of cursor API change
     DB_MAJOR_REQ=4
-    DB_MINOR_REQ=1
+    DB_MINOR_REQ=6
     DB_PATCH_REQ=0
 
     dnl make sure atalk_libname is defined beforehand
     [[ -n "$atalk_libname" ]] || AC_MSG_ERROR([internal error, atalk_libname undefined])
+    saved_atalk_libname=$atalk_libname
 
     dnl define the required BDB version
     AC_DEFINE_UNQUOTED(DB_MAJOR_REQ, ${DB_MAJOR_REQ}, [Required BDB version, major])
@@ -93,15 +115,9 @@ AC_DEFUN([AC_PATH_BDB],[
             dobdbsearch=yes
         else
             bdb_search_dirs="$withval"
+            atalk_libname=lib
         fi
     )
-
-    bdbfound=no
-    savedcflags="$CFLAGS"
-    savedldflags="$LDFLAGS"
-    savedcppflags="$CPPFLAGS"
-    savedlibs="$LIBS"
-    saved_shlibpath_var=$shlibpath_var
 
     if test "x$dobdbsearch" = "xyes"; then
         for bdbdir in $bdb_search_dirs; do
@@ -158,6 +174,7 @@ AC_DEFUN([AC_PATH_BDB],[
     LDFLAGS="$savedldflags"
     CPPFLAGS="$savedcppflags"
     LIBS="$savedlibs"
+    atalk_libname=$saved_atalk_libname
 
     if test "x$bdbfound" = "xyes"; then
         ifelse([$1], , :, [$1])

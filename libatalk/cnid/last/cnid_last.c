@@ -1,6 +1,6 @@
 
 /*
- * $Id: cnid_last.c,v 1.1.4.1.2.3 2005/09/27 10:40:41 didg Exp $
+ * $Id: cnid_last.c,v 1.5 2010/03/31 09:47:32 franklahm Exp $
  *
  * Copyright (c) 1999. Adrian Sun (asun@zoology.washington.edu)
  * All Rights Reserved. See COPYRIGHT.
@@ -144,15 +144,15 @@ static struct _cnid_db *cnid_last_new(const char *volpath)
     return cdb;
 }
 
-struct _cnid_db *cnid_last_open(const char *dir, mode_t mask _U_)
+struct _cnid_db *cnid_last_open(struct cnid_open_args *args)
 {
     struct _cnid_db *cdb;
 
-    if (!dir) {
+    if (!args->dir) {
         return NULL;
     }
 
-    if ((cdb = cnid_last_new(dir)) == NULL) {
+    if ((cdb = cnid_last_new(args->dir)) == NULL) {
         LOG(log_error, logtype_default, "cnid_open: Unable to allocate memory for database");
         return NULL;
     }

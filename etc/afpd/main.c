@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.20.4.2.2.9.2.1 2006/08/01 08:42:45 didg Exp $
+ * $Id: main.c,v 1.26 2009/10/14 02:24:05 didg Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -147,14 +147,12 @@ static void afp_goaway(int sig)
     return;
 }
 
-static void child_handler()
+static void child_handler(int sig _U_)
 {
     server_child_handler(server_children);
 }
 
-int main( ac, av )
-int		ac;
-char	**av;
+int main(int ac, char **av)
 {
     AFPConfig           *config;
     fd_set              rfds;
@@ -190,8 +188,10 @@ char	**av;
         exit(0);
     }
 
+#if 0
     /* Register CNID  */
     cnid_init();
+#endif
 
     /* install child handler for asp and dsi. we do this before afp_goaway
      * as afp_goaway references stuff from here. 
@@ -219,7 +219,7 @@ char	**av;
     sigaddset(&sv.sa_mask, SIGUSR1);
     
     sv.sa_flags = SA_RESTART;
-    if ( sigaction( SIGCHLD, &sv, 0 ) < 0 ) {
+    if ( sigaction( SIGCHLD, &sv, NULL ) < 0 ) {
         LOG(log_error, logtype_afpd, "main: sigaction: %s", strerror(errno) );
         afp_exit(EXITERR_SYS);
     }
@@ -231,7 +231,7 @@ char	**av;
     sigaddset(&sv.sa_mask, SIGHUP);
     sigaddset(&sv.sa_mask, SIGCHLD);
     sv.sa_flags = SA_RESTART;
-    if ( sigaction( SIGUSR1, &sv, 0 ) < 0 ) {
+    if ( sigaction( SIGUSR1, &sv, NULL ) < 0 ) {
         LOG(log_error, logtype_afpd, "main: sigaction: %s", strerror(errno) );
         afp_exit(EXITERR_SYS);
     }
@@ -242,7 +242,7 @@ char	**av;
     sigaddset(&sv.sa_mask, SIGUSR1);
     sigaddset(&sv.sa_mask, SIGCHLD);
     sv.sa_flags = SA_RESTART;
-    if ( sigaction( SIGHUP, &sv, 0 ) < 0 ) {
+    if ( sigaction( SIGHUP, &sv, NULL ) < 0 ) {
         LOG(log_error, logtype_afpd, "main: sigaction: %s", strerror(errno) );
         afp_exit(EXITERR_SYS);
     }
@@ -254,7 +254,7 @@ char	**av;
     sigaddset(&sv.sa_mask, SIGUSR1);
     sigaddset(&sv.sa_mask, SIGCHLD);
     sv.sa_flags = SA_RESTART;
-    if ( sigaction( SIGTERM, &sv, 0 ) < 0 ) {
+    if ( sigaction( SIGTERM, &sv, NULL ) < 0 ) {
         LOG(log_error, logtype_afpd, "main: sigaction: %s", strerror(errno) );
         afp_exit(EXITERR_SYS);
     }
@@ -283,6 +283,9 @@ char	**av;
         afp_exit(EXITERR_CONF);
     }
     sigprocmask(SIG_UNBLOCK, &sigs, NULL);
+
+    /* Register CNID  */
+    cnid_init();
 
     /* watch atp, dsi sockets and ipc parent/child file descriptor. */
     if ((ipc = server_ipc_create())) {

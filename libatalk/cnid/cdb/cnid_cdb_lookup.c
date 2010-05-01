@@ -1,5 +1,5 @@
 /*
- * $Id: cnid_cdb_lookup.c,v 1.1.4.5.2.2 2005/09/27 10:40:41 didg Exp $
+ * $Id: cnid_cdb_lookup.c,v 1.6 2009/11/20 17:22:11 didg Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -34,7 +34,7 @@ cnid_t cnid_cdb_lookup(struct _cnid_db *cdb, const struct stat *st, const cnid_t
         return 0;
     }
     
-    if ((buf = make_cnid_data(st, did, name, len)) == NULL) {
+    if ((buf = make_cnid_data(cdb->flags, st, did, name, len)) == NULL) {
         LOG(log_error, logtype_default, "cnid_lookup: Pathname is too long");
         return 0;
     }
@@ -67,7 +67,7 @@ cnid_t cnid_cdb_lookup(struct _cnid_db *cdb, const struct stat *st, const cnid_t
         type_devino = ntohl(type_devino);
     }
 
-    buf = make_cnid_data(st, did, name, len);
+    buf = make_cnid_data(cdb->flags, st, did, name, len);
     key.data = buf +CNID_DID_OFS;
     key.size = CNID_DID_LEN + len + 1;
     
@@ -132,7 +132,7 @@ cnid_t cnid_cdb_lookup(struct _cnid_db *cdb, const struct stat *st, const cnid_t
     cnid_cdb_update(cdb, id, st, did, name, len);
 
 #ifdef DEBUG
-    LOG(log_info, logtype_default, "cnid_lookup: Looked up did %u, name %s, as %u (needed update)", ntohl(did), name, ntohl(id));
+    LOG(log_debug9, logtype_default, "cnid_lookup: Looked up did %u, name %s, as %u (needed update)", ntohl(did), name, ntohl(id));
 #endif
     return id;
 }

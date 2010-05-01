@@ -1,5 +1,5 @@
 /*
- * $Id: filedir.h,v 1.9 2002/10/11 14:18:32 didg Exp $
+ * $Id: filedir.h,v 1.11 2009/10/15 10:43:13 didg Exp $
  */
 
 #ifndef AFPD_FILEDIR_H
@@ -12,21 +12,20 @@
 
 extern struct afp_options default_options;
 
-extern char		*ctoupath __P((const struct vol *, struct dir *,
-                                char *));
-extern char		*absupath __P((const struct vol *, struct dir *,
-                                char *));
-extern int		veto_file __P((const char *veto_str, const char *path));
-extern int 		check_name __P((const struct vol *vol, char *name));
+extern char		*ctoupath (const struct vol *, struct dir *,
+                                char *);
+extern char		*absupath (const struct vol *, struct dir *,
+                                char *);
+extern int		veto_file (const char *veto_str, const char *path);
+extern int 		check_name (const struct vol *vol, char *name);
+
+extern int matchfile2dirperms (char *, struct vol *, int);
 
 /* FP functions */
-extern int	matchfile2dirperms __P((char *, struct vol *, int));
-extern int	afp_moveandrename __P((AFPObj *, char *, int, char *, int *));
-extern int	afp_rename __P((AFPObj *, char *, int, char *, int *));
-extern int	afp_delete __P((AFPObj *, char *, int, char *, int *));
-extern int	afp_getfildirparams __P((AFPObj *, char *, int, char *,
-                                        int *));
-extern int	afp_setfildirparams __P((AFPObj *, char *, int, char *,
-                                        int *));
+int afp_moveandrename (AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size_t *rbuflen);
+int afp_rename (AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size_t *rbuflen);
+int afp_delete (AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size_t *rbuflen);
+int afp_getfildirparams (AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size_t *rbuflen);
+int afp_setfildirparams (AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size_t *rbuflen);
 
 #endif

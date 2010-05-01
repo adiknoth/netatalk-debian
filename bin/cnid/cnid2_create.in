@@ -3,7 +3,7 @@
 #
 # Upgrade version 1 CNID databases to version 2
 #
-# $Id: cnid2_create.in,v 1.1.2.6 2004/03/17 15:17:34 lenneis Exp $
+# $Id: cnid2_create.in,v 1.2 2005/04/28 20:49:19 bfernhomberg Exp $
 #
 # Copyright (C) Joerg Lenneis 2003
 # All Rights Reserved.  See COPYING.
@@ -22,7 +22,7 @@ my $toplevel = $ARGV[0];
 $toplevel = ".." unless $toplevel;
 
 # Main file information data structure. Each entry in did_table points
-# to a list of hashes. Key is a DID and each list member a hash
+# to a list of hashes. Key is a DID and each list member is a hash
 # describing a file or directory in the directory corresponding to the
 # DID. n_entries is the number of items found, output_list contains
 # all entries that are eventually written to the output file.
@@ -77,7 +77,7 @@ sub print_eentry($$)
     my $reason = shift;
     my $entry  = shift;
 
-    printf "??:%-6s%-9s%-9s%-9s%-9s%s\n",
+    printf "??:%s %-9s%-9s%-9s%-9s%s\n",
     $reason,
     $entry->{cnid},
     $entry->{dev},
@@ -240,7 +240,7 @@ sub expand_did_table($$)
 	$entry->{reached} = 1;
 	push @output_list, $entry;
 	expand_did_table($entry->{cnid}, $name);
-    }    
+    }
 }
 
 sub find_unreachable()
@@ -255,6 +255,50 @@ sub find_unreachable()
 	}
     }
 }
+
+sub find_duplicates()
+{
+    my %seen_cnid;
+    my %seen_devino;
+    my %seen_didname;    
+    my $cnid;
+    my $devino;
+    my $didname;
+    my $err;
+    my $entry;
+    
+    for (my $i = 0; $i < scalar(@output_list); $i++) {
+	$err = 0;
+	$entry = $output_list[$i];
+	$cnid = $entry->{cnid};
+	$devino = $entry->{dev} . $entry->{ino};
+	$didname = $entry->{did} . $entry->{name};
+	if ($seen_cnid{$cnid}) {
+	    print_eentry("exist_cnid", $entry);
+	    $err++;
+	}
+	if ($seen_cnid{$cnid}) {
+	    print_eentry("dupl_cnid", $entry);
+	    $err++;
+	}
+	if ($seen_devino{$devino}) {
+	    print_eentry("dupl_devino", $entry);
+	    $err++;
+	}
+	if ($seen_didname{$didname}) {
+	    print_eentry("dupl_didname", $entry);
+	    $err++;
+	}
+	if ($err) {
+	    splice(@output_list, $i, 1);
+	} else {
+	    $seen_cnid{$cnid} = 1;
+	    $seen_devino{$devino} = 1;
+	    $seen_didname{$didname} = 1;
+	}
+    }
+}
+
 
 print "Finding the current CNID from $didname_dump\n";
 $current_cnid = find_current_cnid();
@@ -277,6 +321,9 @@ if ($n_entries > scalar(@output_list)) {
     print "Looking for unreachable nodes in the directory tree:\n";
     find_unreachable();
 }
+
+print "Looking for duplicate entries\n";
+find_duplicates();
 
 print "Creating $cnid2_dump\n";
 open CNID2, "> $cnid2_dump" or die "Unable to open $cnid2_dump for writing: $!";

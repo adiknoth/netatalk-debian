@@ -16,6 +16,10 @@
 #include <atalk/server_child.h>
 #include <netatalk/endian.h>
 
+#ifdef __OpenBSD__
+#include <sys/socket.h>
+#endif
+
 /* What a DSI packet looks like:
  0                               32
  |-------------------------------|
@@ -56,19 +60,23 @@ struct dsi_block {
 typedef struct DSI {
   dsi_proto protocol;
   struct dsi_block header;
-  struct sockaddr_in server, client;
+  struct sockaddr_storage server, client;
   
-  sigset_t sigblockset, oldset;
-  int      sigblocked;
-  struct itimerval timer, savetimer;
-  
+  struct itimerval timer;
+
+  int	   in_write;	  /* in the middle of writing multiple packets, signal handlers
+			   * can't write to the socket 
+			  */
+  int      msg_request;   /* pending message to the client */
+  int      down_request;  /* pending SIGUSR1 down in 5 mn */
+
   u_int32_t attn_quantum, datasize, server_quantum;
   u_int16_t serverID, clientID;
   char      *status;
   u_int8_t  commands[DSI_CMDSIZ], data[DSI_DATASIZ];
   size_t statuslen;
   size_t datalen, cmdlen;
-  size_t read_count, write_count;
+  off_t  read_count, write_count;
   int asleep; /* client won't reply AFP 0x7a ? */
   /* inited = initialized?, child = a child?, noreply = send reply? */
   char child, inited, noreply;
@@ -87,7 +95,6 @@ typedef struct DSI {
 #endif 
 
   /* buffer for OSX deadlock */
-  int noblocking;
   char *buffer;
   char *start;
   char *eof;
@@ -138,47 +145,49 @@ typedef struct DSI {
 #define DSI_AFPOVERTCP_PORT 548
 
 /* basic initialization: dsi_init.c */
-extern DSI *dsi_init __P((const dsi_proto /*protocol*/,
+extern DSI *dsi_init (const dsi_proto /*protocol*/,
 			  const char * /*program*/, 
 			  const char * /*host*/, const char * /*address*/,
-			  const int /*port*/, const int /*proxy*/,
-			  const u_int32_t /* server quantum */));
-extern void dsi_setstatus __P((DSI *, char *, const size_t));
+			  const char * /*port*/, const int /*proxy*/,
+			  const u_int32_t /* server quantum */);
+extern void dsi_setstatus (DSI *, char *, const size_t);
 
 /* in dsi_getsess.c */
-extern DSI *dsi_getsession __P((DSI *, server_child *, const int));
-extern void dsi_kill __P((int));
+extern DSI *dsi_getsession (DSI *, server_child *, const int);
+extern void dsi_kill (int);
 
 
 /* DSI Commands: individual files */
-extern void dsi_opensession __P((DSI *));
-extern int  dsi_attention __P((DSI *, AFPUserBytes));
-extern int  dsi_cmdreply __P((DSI *, const int));
-extern int dsi_tickle __P((DSI *));
-extern void dsi_getstatus __P((DSI *));
-extern void dsi_close __P((DSI *));
-extern void dsi_sleep __P((DSI *, const int ));
+extern void dsi_opensession (DSI *);
+extern int  dsi_attention (DSI *, AFPUserBytes);
+extern int  dsi_cmdreply (DSI *, const int);
+extern int dsi_tickle (DSI *);
+extern void dsi_getstatus (DSI *);
+extern void dsi_close (DSI *);
+extern void dsi_sleep (DSI *, const int );
 
-/* set, unset socket blocking mode */
-extern int dsi_block __P((DSI *, const int));
-
+#define DSI_NOWAIT 1
 /* low-level stream commands -- in dsi_stream.c */
-extern size_t dsi_stream_write __P((DSI *, void *, const size_t, const int mode));
-extern size_t dsi_stream_read __P((DSI *, void *, const size_t));
-extern int dsi_stream_send __P((DSI *, void *, size_t));
-extern int dsi_stream_receive __P((DSI *, void *, const size_t, size_t *));
+extern ssize_t dsi_stream_write (DSI *, void *, const size_t, const int mode);
+extern size_t dsi_stream_read (DSI *, void *, const size_t);
+extern int dsi_stream_send (DSI *, void *, size_t);
+extern int dsi_stream_receive (DSI *, void *, const size_t, size_t *);
+
+#ifdef WITH_SENDFILE
+extern ssize_t dsi_stream_read_file(DSI *, int, off_t off, const size_t len);
+#endif
 
 /* client writes -- dsi_write.c */
-extern size_t dsi_writeinit __P((DSI *, void *, const size_t));
-extern size_t dsi_write __P((DSI *, void *, const size_t));
-extern void   dsi_writeflush __P((DSI *));
+extern size_t dsi_writeinit (DSI *, void *, const size_t);
+extern size_t dsi_write (DSI *, void *, const size_t);
+extern void   dsi_writeflush (DSI *);
 #define dsi_wrtreply(a,b)  dsi_cmdreply(a,b)
 
 /* client reads -- dsi_read.c */
-extern ssize_t dsi_readinit __P((DSI *, void *, const size_t, const size_t,
-				 const int));
-extern ssize_t dsi_read __P((DSI *, void *, const size_t));
-extern void dsi_readdone __P((DSI *));
+extern ssize_t dsi_readinit (DSI *, void *, const size_t, const size_t,
+				 const int);
+extern ssize_t dsi_read (DSI *, void *, const size_t);
+extern void dsi_readdone (DSI *);
 
 /* some useful macros */
 #define dsi_serverID(x)   ((x)->serverID++)

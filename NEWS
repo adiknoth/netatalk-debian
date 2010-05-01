@@ -1,9 +1,85 @@
+Changes in 2.1-release
+======================
+
+* NEW: afpd: new volume option "volsizelimit" for limitting reported volume
+       size. Useful for limitting TM backup size.
+* UPD: dbd: -c option for rebuilding volumes which prevents the creation
+       of .AppleDouble stuff, only removes orphaned files.
+
+Changes in 2.1-beta2
+====================
+* NEW: afpd: static generated AFP signature stored in afp_signature.conf,
+       cf man 5 afp_signature.conf
+* NEW: afpd: clustering support: new per volume option "cnidserver".
+* UPD: afpd: set volume defaults options "upriv" and "usedots" in the
+       volume config file AppleVolumes.default. This will only affect
+       new installations, but not upgrades.
+* FIX: afpd: prevent security attack guessing valid server accounts. afpd
+       now returns error -5023 for unknown users, as does AppleFileServer.
+
+Changes in 2.1-beta1
+====================
+
+* NEW: afpd: AFP 3.2 support
+* NEW: afpd: Extended Attributes support using native attributes or
+       using files inside .AppleDouble directories.
+* NEW: afpd: ACL support with ZFS
+* NEW: cnid_metad: options -l and -f to configure logging
+* NEW: IPv6 support
+* NEW: AppleDouble compatible UNIX files utility suite `ad ...`.
+       With 2.1 only `ad ls`.
+* NEW: CNID database maintanance utility dbd
+* NEW: support BerkeleyDB upgrade. Starting with the next release
+       after 2.1 in case of BerkeleyDB library updates, Netatalk
+       will be able to upgrade the CNID databases.
+* NEW: afpd: store and read CNIDs to/from AppleDouble files by default.
+       This is used as a cache and as a backup in case the database
+       is deleted or corrupted. It can be disabled with a new volume
+       option "nocnidcache".
+* NEW: afpd: sending SIGINT to a child afpd process enables debug logging
+       to /tmp/afpd.PID.XXXXXX.
+* NEW: configure args to download and install a "private" Webmin instance
+       including only basic Webmin modules plus our netatalk.wbm.
+* NEW: fallback to a temporary in memory tdb CNID database if the volume
+       database can't be opened.
+* NEW: support for Unicode characters in the range above U+010000 using
+       internal surrogate pairs
+* NEW: apple_dump: utility to dump AppleSingle and AppleDouble files
+* NEW: afpldaptest: utility to check afp_ldap.conf.
+* UPD: atalkd and papd are now disabled by default. AppleTalk is legacy.
+* UPD: slp advertisement is now disabled by default. server option -slp
+       SRVLOC is legacy.
+* UPD: cdb/dbd CNID backend requires BerkeleyDB >= 4.6
+* UPD: afpd: default CNID backend is "dbd"
+* UPD: afpd: try to install PAM config that pulls in system|common auth
+* UPD: afpd: symlink handling: never followed server side, client resolves
+       them, so it's safe to use them now.
+* UPD: afpd: Comment out all extension->type/creator mappings in
+       AppleVolumes.system. They're unmaintained, possibly wrong and
+       do not fit for OS X.
+* FIX: rewritten logger
+* FIX: afpd: UNIX permissions handling
+* FIX: cnid_dbd: always use BerkeleyDB transactions
+* FIX: initscripts installation now correctly uses autoconf paths,
+       ie they're installed to --sysconfdir.
+* FIX: UTF-8 volume name length
+* FIX: atalkd: workaround for broken Linux 2.6 AT kernel module:
+       Linux 2.6 sends broadcast queries to the first available socket
+       which is in our case the last configured one. atalkd now tries to
+       find the right one.
+       Note: now a misconfigured or plugged router can broadcast a wrong route !
+* REM: afpd: removed CNID backends "db3", "hash" and "mtab"
+* REM: cnid_maint: use dbd
+* REM: cleanappledouble.pl: use dbd
+* REM: nu: use `macusers` instead
+
 Changes in 2.0.5
 ================
 
 * NEW: afpd: Time Machine support with new volume option "tm".
 * FIX: papd: Remove variable expansion for BSD printers. Fixes CVE-2008-5718.
-* FIX: afpd: .AppleDxxx folders were user accessible if option 'usedots' was set 
+* FIX: afpd: .AppleDxxx folders were user accessible if option 'usedots'
+       was set 
 * FIX: afpd: vetoed files/dirs where still accessible
 * FIX: afpd: cnid_resolve: don't return '..' as a valid name.
 * FIX: uniconv: -d option wasn't working
@@ -123,7 +199,7 @@ Changes in 2.0.1
        file of unknown type.
 * FIX: fix two Tru64 UNIX compilation errors, 
        from Burkhard Schmidt bs AT cpfs.mpg.de
-* FIX: afpd: FPMapId wasn't using UTF8 for groups if requested by client.
+* FIX: afpd: FPMapId wasn't using UTF8 for groups if requested by client.       
 
 Changes in 2.0.0
 ================
@@ -236,7 +312,7 @@ Changes in 2.0-beta2
 * FIX: numerous small bugfixes.
 
 Changes in 2.0-beta1
-=====================
+====================
 
 * NEW: OSX style adouble scheme
 * NEW: japanese SHIFT_JIS codepage (iconv supplied)

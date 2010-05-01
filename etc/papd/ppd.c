@@ -1,5 +1,5 @@
 /*
- * $Id: ppd.c,v 1.9.8.1.2.7 2009/02/03 08:25:00 didg Exp $
+ * $Id: ppd.c,v 1.17 2009/10/14 02:24:05 didg Exp $
  *
  * Copyright (c) 1995 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -26,21 +26,21 @@
 struct ppd_font		*ppd_fonts = NULL;
 
 struct ppd_feature	ppd_features[] = {
-    { "*LanguageLevel",	0 },
-    { "*PSVersion",	0 },
+    { "*LanguageLevel",	NULL },
+    { "*PSVersion",	NULL },
 #ifdef HAVE_CUPS
     { "*FreeVM",	"33554432" },
 #else
-    { "*FreeVM",	0 },
+    { "*FreeVM",	NULL },
 #endif
-    { "*Product",	0 },
-    { "*PCFileName",	0 },
-    { "*ModelName",	0 },
-    { "*NickName",	0 },
-    { "*ColorDevice",	0 },
-    { "*FaxSupport",	0 },
-    { "*TTRasterizer",	0 },
-    { 0, 0 },
+    { "*Product",	NULL },
+    { "*PCFileName",	NULL },
+    { "*ModelName",	NULL },
+    { "*NickName",	NULL },
+    { "*ColorDevice",	NULL },
+    { "*FaxSupport",	NULL },
+    { "*TTRasterizer",	NULL },
+    { NULL, NULL },
 };
 
 struct ppdent {
@@ -53,7 +53,7 @@ struct ppdent {
 #ifndef SHOWPPD
 static int ppd_inited;
 
-static void ppd_init()
+static void ppd_init(void)
 {
     if (ppd_inited)
         return;
@@ -68,10 +68,7 @@ static void ppd_init()
 
 /* quick and ugly hack to be able to read
    ppd files with Mac line ending */
-static char* my_fgets(buf, bufsize, stream) 
-    char   *buf;
-    size_t bufsize;
-    FILE   *stream;
+static char* my_fgets(char *buf, size_t bufsize, FILE *stream)
 {
     int p;           /* uninitialized, OK 310105 */
     size_t count = 0;
@@ -94,8 +91,7 @@ static char* my_fgets(buf, bufsize, stream)
     return buf;
 }
 
-static struct ppdent *getppdent( stream )
-    FILE	*stream;
+static struct ppdent *getppdent( FILE *stream)
 {
     static char			buf[ 1024 ];
     static struct ppdent	ppdent;
@@ -179,9 +175,7 @@ static struct ppdent *getppdent( stream )
     return( NULL );
 }
 
-int read_ppd( file, fcnt )
-    char	*file;
-    int		fcnt;
+int read_ppd(char *file, int fcnt)
 {
     FILE		*ppdfile;
     struct ppdent	*pe;
@@ -255,8 +249,7 @@ int read_ppd( file, fcnt )
     return( 0 );
 }
 
-struct ppd_font *ppd_font( font )
-    char	*font;
+struct ppd_font *ppd_font( char *font)
 {
     struct ppd_font	*pfo;
 
@@ -274,9 +267,7 @@ struct ppd_font *ppd_font( font )
     return( NULL );
 }
 
-struct ppd_feature *ppd_feature( feature, len )
-    const char	*feature;
-    int		len;
+struct ppd_feature *ppd_feature( const char *feature, int len)
 {
     struct ppd_feature	*pfe;
     char		ppd_feature_main[ 256 ];

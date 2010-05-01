@@ -1,5 +1,5 @@
 /*
- * $Id: macbin.c,v 1.10.10.1.2.1 2005/02/06 10:16:00 didg Exp $
+ * $Id: macbin.c,v 1.15 2010/01/27 21:27:53 didg Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -26,6 +26,7 @@
 #include <netatalk/endian.h>
 #include "megatron.h"
 #include "macbin.h"
+#include "updcrc.h"
 
 /* This allows megatron to generate .bin files that won't choke other
    well-known converter apps. It also makes sure that checksums
@@ -52,7 +53,7 @@
 	following globals; therefore this module can only be used
 	for one of the two functions at a time.
  */
-struct bin_file_data {
+static struct bin_file_data {
     u_int32_t		forklen[ NUMFORKS ];
     char		path[ MAXPATHLEN + 1];
     int			filed;
@@ -61,7 +62,7 @@ struct bin_file_data {
 } 		bin;
 
 extern char	*forkname[];
-u_char		head_buf[HEADBUFSIZ];
+static u_char	head_buf[HEADBUFSIZ];
 
 /* 
  * bin_open must be called first.  pass it a filename that is supposed
@@ -69,10 +70,7 @@ u_char		head_buf[HEADBUFSIZ];
  * somewhat initialized; bin_filed is set.
  */
 
-int bin_open( binfile, flags, fh, options )
-    char		*binfile;
-    int			flags, options;
-    struct FHeader	*fh;
+int bin_open(char *binfile, int flags, struct FHeader *fh, int options)
 {
     int			maxlen;
     int			rc;
@@ -145,8 +143,7 @@ int bin_open( binfile, flags, fh, options )
  * Otherwise, a value of -1 is returned.
  */
 
-int bin_close( keepflag )
-    int			keepflag;
+int bin_close(int keepflag)
 {
 #if DEBUG
     fprintf( stderr, "entering bin_close\n" );
@@ -170,14 +167,11 @@ int bin_close( keepflag )
  * return zero and no more than that.
  */
 
-int bin_read( fork, buffer, length )
-    int			fork;
-    char		*buffer;
-    int			length;
+ssize_t bin_read( int fork, char *buffer, size_t length)
 {
     char		*buf_ptr;
-    int			readlen;
-    int			cc = 1;
+    size_t		readlen;
+    ssize_t		cc = 1;
     off_t		pos;
 
 #if DEBUG >= 3
@@ -185,9 +179,9 @@ int bin_read( fork, buffer, length )
     fprintf( stderr, "bin_read: remaining length is %d\n", bin.forklen[fork] );
 #endif /* DEBUG >= 3 */
 
-    if (bin.forklen[fork] > length) {
-	fprintf(stderr, "This should never happen, dude! length %d, fork length == %u\n", length, bin.forklen[fork]);
-	return bin.forklen[fork];
+    if (bin.forklen[fork] > 0x7FFFFFFF) {
+	fprintf(stderr, "This should never happen, dude! fork length == %u\n", bin.forklen[fork]);
+	return -1;
     }
 
     if ( bin.forklen[ fork ] == 0 ) {
@@ -242,14 +236,11 @@ int bin_read( fork, buffer, length )
  * bin_write 
  */
 
-int bin_write( fork, buffer, length )
-    int			fork;
-    char		*buffer;
-    int			length;
+ssize_t bin_write(int fork, char *buffer, size_t length)
 {
     char		*buf_ptr;
-    int			writelen;
-    int			cc = 0;
+    size_t		writelen;
+    ssize_t		cc = 0;
     off_t		pos;
     u_char		padchar = 0x7f;
 		/* Not sure why, but it seems this must be 0x7f to match
@@ -285,11 +276,6 @@ int bin_write( fork, buffer, length )
     if ( cc < 0 ) {
 	perror( "Couldn't write to macbinary file:" );
 	return( cc );
-    }
-
-    if (length > bin.forklen[fork]) {
-	fprintf(stderr, "This should never happen, dude! length %d, fork length %u\n", length, bin.forklen[fork]);
-	return bin.forklen[fork];
     }
 
     bin.forklen[fork] -= length;
@@ -329,9 +315,7 @@ int bin_write( fork, buffer, length )
  * of the bytes of the other two forks can be read, as well.
  */
 
-int bin_header_read( fh, revision )
-    struct FHeader	*fh;
-    int			revision;
+int bin_header_read(struct FHeader *fh, int revision)
 {
     u_short		mask;
 
@@ -431,8 +415,7 @@ int bin_header_read( fh, revision )
  * bin_header_write and bin_header_read are opposites.
  */
 
-int bin_header_write( fh )
-    struct FHeader	*fh;
+int bin_header_write(struct FHeader *fh)
 {
     char		*write_ptr;
     u_int32_t           t;

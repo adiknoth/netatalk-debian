@@ -1,6 +1,6 @@
-
 /*
- * $Id: cnid_cdb_open.c,v 1.1.4.10.2.1 2005/09/27 10:40:41 didg Exp $
+
+ * $Id: cnid_cdb_open.c,v 1.5 2010/03/31 09:47:32 franklahm Exp $
  *
  * Copyright (c) 1999. Adrian Sun (asun@zoology.washington.edu)
  * All Rights Reserved. See COPYRIGHT.
@@ -85,10 +85,7 @@ static int my_yield(void)
 }
 
 /* --------------- */
-static int didname(dbp, pkey, pdata, skey)
-DB *dbp _U_;
-const DBT *pkey _U_, *pdata;
-DBT *skey;
+static int didname(DB *dbp _U_, const DBT *pkey _U_, const DBT *pdata, DBT *skey)
 {
 int len;
  
@@ -100,10 +97,7 @@ int len;
 }
  
 /* --------------- */
-static int devino(dbp, pkey, pdata, skey)
-DB *dbp _U_;
-const DBT *pkey _U_, *pdata;
-DBT *skey;
+static int devino(DB *dbp _U_, const DBT *pkey _U_, const DBT *pdata, DBT *skey)
 {
     memset(skey, 0, sizeof(DBT));
     skey->data = (char *)pdata->data + CNID_DEVINO_OFS;
@@ -172,6 +166,7 @@ static struct _cnid_db *cnid_cdb_new(const char *volpath)
     cdb->cnid_update = cnid_cdb_update;
     cdb->cnid_close = cnid_cdb_close;
     cdb->cnid_getstamp = cnid_cdb_getstamp;
+    cdb->cnid_rebuild_add = cnid_cdb_rebuild_add;
 
     return cdb;
 }
@@ -207,7 +202,7 @@ static int upgrade_required(char *dbdir)
 }
 
 /* --------------- */
-struct _cnid_db *cnid_cdb_open(const char *dir, mode_t mask)
+struct _cnid_db *cnid_cdb_open(struct cnid_open_args *args)
 {
     struct stat st;
     char path[MAXPATHLEN + 1];
@@ -217,18 +212,18 @@ struct _cnid_db *cnid_cdb_open(const char *dir, mode_t mask)
     static int first = 0;
     int rc;
 
-    if (!dir || *dir == 0) {
+    if (!args->dir || *args->dir == 0) {
         return NULL;
     }
 
     /* this checks .AppleDB.
        We need space for dir + '/' + DBHOMELEN + '/' + DBLEN */
-    if ((len = strlen(dir)) > (MAXPATHLEN - DBHOMELEN - DBLEN - 2)) {
-        LOG(log_error, logtype_default, "cnid_open: Pathname too large: %s", dir);
+    if ((len = strlen(args->dir)) > (MAXPATHLEN - DBHOMELEN - DBLEN - 2)) {
+        LOG(log_error, logtype_default, "cnid_open: Pathname too large: %s", args->dir);
         return NULL;
     }
 
-    if ((cdb = cnid_cdb_new(dir)) == NULL) {
+    if ((cdb = cnid_cdb_new(args->dir)) == NULL) {
         LOG(log_error, logtype_default, "cnid_open: Unable to allocate memory for database");
         return NULL;
     }
@@ -241,14 +236,14 @@ struct _cnid_db *cnid_cdb_open(const char *dir, mode_t mask)
     cdb->_private = (void *) db;
     db->magic = CNID_DB_MAGIC;
 
-    strcpy(path, dir);
+    strcpy(path, args->dir);
     if (path[len - 1] != '/') {
         strcat(path, "/");
         len++;
     }
 
     strcpy(path + len, DBHOME);
-    if ((stat(path, &st) < 0) && (ad_mkdir(path, 0777 & ~mask) < 0)) {
+    if ((stat(path, &st) < 0) && (ad_mkdir(path, 0777 & ~args->mask) < 0)) {
         LOG(log_error, logtype_default, "cnid_open: DBHOME mkdir failed for %s", path);
         goto fail_adouble;
     }
@@ -275,7 +270,7 @@ struct _cnid_db *cnid_cdb_open(const char *dir, mode_t mask)
     }
 
     /* Open the database environment. */
-    if ((rc = db->dbenv->open(db->dbenv, path, DBOPTIONS, 0666 & ~mask)) != 0) {
+    if ((rc = db->dbenv->open(db->dbenv, path, DBOPTIONS, 0666 & ~args->mask)) != 0) {
 	LOG(log_error, logtype_default, "cnid_open: dbenv->open (rw) of %s failed: %s", path, db_strerror(rc));
 	/* FIXME: This should probably go. Even if it worked, any use for a read-only DB? Didier? */
         if (rc == DB_RUNRECOVERY) {
@@ -288,10 +283,10 @@ struct _cnid_db *cnid_cdb_open(const char *dir, mode_t mask)
         /* We can't get a full transactional environment, so multi-access
          * is out of the question.  Let's assume a read-only environment,
          * and try to at least get a shared memory pool. */
-        if ((rc = db->dbenv->open(db->dbenv, path, DB_INIT_MPOOL, 0666 & ~mask)) != 0) {
+        if ((rc = db->dbenv->open(db->dbenv, path, DB_INIT_MPOOL, 0666 & ~args->mask)) != 0) {
             /* Nope, not a MPOOL, either.  Last-ditch effort: we'll try to
              * open the environment with no flags. */
-            if ((rc = db->dbenv->open(db->dbenv, path, 0, 0666 & ~mask)) != 0) {
+            if ((rc = db->dbenv->open(db->dbenv, path, 0, 0666 & ~args->mask)) != 0) {
                 LOG(log_error, logtype_default, "cnid_open: dbenv->open of %s failed: %s", path, db_strerror(rc));
                 goto fail_lock;
             }
@@ -310,7 +305,7 @@ struct _cnid_db *cnid_cdb_open(const char *dir, mode_t mask)
         goto fail_appinit;
     }
 
-    if ((rc = my_open(db->db_cnid, DBCNID, DBCNID, DB_BTREE, open_flag, 0666 & ~mask)) != 0) {
+    if ((rc = my_open(db->db_cnid, DBCNID, DBCNID, DB_BTREE, open_flag, 0666 & ~args->mask)) != 0) {
         LOG(log_error, logtype_default, "cnid_open: Failed to open dev/ino database: %s",
             db_strerror(rc));
         goto fail_appinit;
@@ -325,7 +320,7 @@ struct _cnid_db *cnid_cdb_open(const char *dir, mode_t mask)
         goto fail_appinit;
     }
 
-    if ((rc = my_open(db->db_didname, DBCNID, DBDIDNAME, DB_BTREE, open_flag, 0666 & ~mask))) {
+    if ((rc = my_open(db->db_didname, DBCNID, DBDIDNAME, DB_BTREE, open_flag, 0666 & ~args->mask))) {
         LOG(log_error, logtype_default, "cnid_open: Failed to open did/name database: %s",
             db_strerror(rc));
         goto fail_appinit;
@@ -340,7 +335,7 @@ struct _cnid_db *cnid_cdb_open(const char *dir, mode_t mask)
         goto fail_appinit;
     }
 
-    if ((rc = my_open(db->db_devino, DBCNID, DBDEVINO, DB_BTREE, open_flag, 0666 & ~mask)) != 0) {
+    if ((rc = my_open(db->db_devino, DBCNID, DBDEVINO, DB_BTREE, open_flag, 0666 & ~args->mask)) != 0) {
         LOG(log_error, logtype_default, "cnid_open: Failed to open devino database: %s",
             db_strerror(rc));
         goto fail_appinit;

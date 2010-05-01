@@ -1,5 +1,5 @@
 /*
- * $Id: uam.c,v 1.24.6.7.2.4 2005/09/27 10:40:41 didg Exp $
+ * $Id: uam.c,v 1.35 2009/11/08 01:15:31 didg Exp $
  *
  * Copyright (c) 1999 Adrian Sun (asun@zoology.washington.edu)
  * All Rights Reserved.  See COPYRIGHT.
@@ -70,9 +70,6 @@ char *strchr (), *strrchr ();
 #endif /* TRU64 */
 
 /* --- server uam functions -- */
-#ifndef NO_LOAD_UAM
-extern  int uam_setup(const char *path);
-#endif
 
 /* uam_load. uams must have a uam_setup function. */
 struct uam_mod *uam_load(const char *path, const char *name)
@@ -81,12 +78,10 @@ struct uam_mod *uam_load(const char *path, const char *name)
     struct uam_mod *mod;
     void *module;
 
-#ifndef NO_LOAD_UAM
     if ((module = mod_open(path)) == NULL) {
         LOG(log_error, logtype_afpd, "uam_load(%s): failed to load: %s", name, mod_error());
         return NULL;
     }
-#endif
 
     if ((mod = (struct uam_mod *) malloc(sizeof(struct uam_mod))) == NULL) {
         LOG(log_error, logtype_afpd, "uam_load(%s): malloc failed", name);
@@ -97,7 +92,6 @@ struct uam_mod *uam_load(const char *path, const char *name)
     if ((p = strchr(buf, '.')))
         *p = '\0';
 
-#ifndef NO_LOAD_UAM
     if ((mod->uam_fcn = mod_symbol(module, buf)) == NULL) {
         LOG(log_error, logtype_afpd, "uam_load(%s): mod_symbol error for symbol %s",
             name,
@@ -118,9 +112,6 @@ struct uam_mod *uam_load(const char *path, const char *name)
         LOG(log_error, logtype_afpd, "uam_load(%s): uam_setup failed", name);
         goto uam_load_err;
     }
-#else
-   uam_setup(name);
-#endif
 
     mod->uam_module = module;
     return mod;
@@ -140,14 +131,11 @@ void uam_unload(struct uam_mod *mod)
     if (mod->uam_fcn->uam_cleanup)
         (*mod->uam_fcn->uam_cleanup)();
 
-#ifndef NO_LOAD_UAM
     mod_close(mod->uam_module);
-#endif    
     free(mod);
 }
 
 /* -- client-side uam functions -- */
-#ifndef ATACC
 /* set up stuff for this uam. */
 int uam_register(const int type, const char *path, const char *name, ...)
 {
@@ -211,69 +199,6 @@ int uam_register(const int type, const char *path, const char *name, ...)
 
     return ret;
 }
-#endif
-
-#ifdef ATACC
-int uam_register_fn(const int type, const char *path, const char *name, void *fn1, void *fn2, 
-                     void *fn3, void *fn4)
-{
-    va_list ap;
-    struct uam_obj *uam;
-
-    if (!name)
-        return -1;
-
-    /* see if it already exists. */
-    if ((uam = auth_uamfind(type, name, strlen(name)))) {
-        if (strcmp(uam->uam_path, path)) {
-            /* it exists, but it's not the same module. */
-            LOG(log_error, logtype_afpd, "uam_register: \"%s\" already loaded by %s",
-                name, path);
-            return -1;
-        }
-        uam->uam_count++;
-        return 0;
-    }
-
-    /* allocate space for uam */
-    if ((uam = calloc(1, sizeof(struct uam_obj))) == NULL)
-        return -1;
-
-    uam->uam_name = name;
-    uam->uam_path = strdup(path);
-    uam->uam_count++;
-
-    switch (type) {
-    case UAM_SERVER_LOGIN_EXT: /* expect four arguments */
-        uam->u.uam_login.login_ext = fn4;
-        uam->u.uam_login.login = fn1;
-        uam->u.uam_login.logincont = fn2;
-        uam->u.uam_login.logout = fn3;
-        break;
-    case UAM_SERVER_LOGIN: /* expect three arguments */
-        uam->u.uam_login.login_ext = NULL;
-        uam->u.uam_login.login = fn1;
-        uam->u.uam_login.logincont = fn2;
-        uam->u.uam_login.logout = fn3;
-        break;
-    case UAM_SERVER_CHANGEPW: /* one argument */
-        uam->u.uam_changepw = fn1;
-        break;
-    case UAM_SERVER_PRINTAUTH: /* x arguments */
-    default:
-        break;
-    }
-
-    /* attach to other uams */
-    if (auth_register(type, uam) < 0) {
-        free(uam->uam_path);
-        free(uam);
-        return -1;
-    }
-
-    return 0;
-}
-#endif
 
 void uam_unregister(const int type, const char *name)
 {
@@ -291,7 +216,10 @@ void uam_unregister(const int type, const char *name)
     free(uam);
 }
 
-/* --- helper functions for plugin uams --- */
+/* --- helper functions for plugin uams --- 
+ * name: user name
+ * len:  size of name buffer.
+*/
 
 struct passwd *uam_getname(void *private, char *name, const int len)
 {
@@ -305,11 +233,33 @@ struct passwd *uam_getname(void *private, char *name, const int len)
 
     if ((pwent = getpwnam(name)))
         return pwent;
+        
+    /* if we have a NT domain name try with it */
+    if (obj->options.ntdomain && obj->options.ntseparator) {
+        /* FIXME What about charset ? */
+        size_t ulen = strlen(obj->options.ntdomain) + strlen(obj->options.ntseparator) + strlen(name);
+        if ((p = malloc(ulen +1))) {
+            strcpy(p, obj->options.ntdomain);
+            strcat(p, obj->options.ntseparator);
+            strcat(p, name);
+            pwent = getpwnam(p);
+            free(p);
+            if (pwent) {
+                int len = strlen(pwent->pw_name);              
+                if (len < MAXUSERLEN) {
+                    strncpy(name,pwent->pw_name, MAXUSERLEN);  
+                }else{
+                    LOG(log_error, logtype_uams, "MAJOR:The name %s is longer than %d",pwent->pw_name,MAXUSERLEN);
+                }
 
+                return pwent;
+            }
+        }
+    }
 #ifndef NO_REAL_USER_NAME
 
     if ( (size_t) -1 == (namelen = convert_string((utf8_encoding())?CH_UTF8_MAC:obj->options.maccharset,
-				CH_UCS2, name, strlen(name), username, sizeof(username))))
+				CH_UCS2, name, -1, username, sizeof(username))))
 	return NULL;
 
     setpwent();
@@ -318,10 +268,10 @@ struct passwd *uam_getname(void *private, char *name, const int len)
             *p = '\0';
 
 	if ((size_t)-1 == ( gecoslen = convert_string(obj->options.unixcharset, CH_UCS2, 
-				pwent->pw_gecos, strlen(pwent->pw_gecos), user, sizeof(username))) )
+				pwent->pw_gecos, -1, user, sizeof(username))) )
 		continue;
 	if ((size_t)-1 == ( pwnamelen = convert_string(obj->options.unixcharset, CH_UCS2, 
-				pwent->pw_name, strlen(pwent->pw_name), pwname, sizeof(username))) )
+				pwent->pw_name, -1, pwname, sizeof(username))) )
 		continue;
 
 
@@ -402,10 +352,10 @@ int uam_random_string (AFPObj *obj, char *buf, int len)
 
 /* afp-specific functions */
 int uam_afpserver_option(void *private, const int what, void *option,
-                         int *len)
+                         size_t *len)
 {
-AFPObj *obj = private;
-    char **buf = (char **) option; /* most of the options are this */
+    AFPObj *obj = private;
+    const char **buf = (const char **) option; /* most of the options are this */
     struct session_info **sinfo = (struct session_info **) option;
 
     if (!obj || !option)
@@ -475,19 +425,19 @@ AFPObj *obj = private;
         break;
         
     case UAM_OPTION_CLIENTNAME:
-        {
-            struct DSI *dsi = obj->handle;
-            struct hostent *hp;
+    {
+        struct DSI *dsi = obj->handle;
+        const struct sockaddr *sa;
+        char hbuf[NI_MAXHOST];
+        
+        sa = (struct sockaddr *)&dsi->client;
+        if (getnameinfo(sa, sizeof(dsi->client), hbuf, sizeof(hbuf), NULL, 0, 0) == 0)
+            *buf = hbuf;
+        else
+            *buf = getip_string((struct sockaddr *)&dsi->client);
 
-            hp = gethostbyaddr( (char *) &dsi->client.sin_addr,
-                                sizeof( struct in_addr ),
-                                dsi->client.sin_family );
-            if( hp )
-                *buf = hp->h_name;
-            else
-                *buf = inet_ntoa( dsi->client.sin_addr );
-        }
         break;
+    }
     case UAM_OPTION_COOKIE:
         /* it's up to the uam to actually store something useful here.
          * this just passes back a handle to the cookie. the uam side
@@ -532,7 +482,7 @@ AFPObj *obj = private;
 /* if we need to maintain a connection, this is how we do it.
  * because an action pointer gets passed in, we can stream 
  * DSI connections */
-int uam_afp_read(void *handle, char *buf, int *buflen,
+int uam_afp_read(void *handle, char *buf, size_t *buflen,
                  int (*action)(void *, void *, const int))
 {
     AFPObj *obj = handle;
@@ -622,7 +572,9 @@ int uam_sia_validate_user(sia_collect_func_t * collect, int argc, char **argv,
 #endif /* TRU64 */
 
 /* --- papd-specific functions (just placeholders) --- */
-void append(void *pf  _U_, char *data _U_, int len _U_)
+struct papfile;
+
+UAM_MODULE_EXPORT void append(struct papfile *pf  _U_, const char *data _U_, int len _U_)
 {
     return;
 }

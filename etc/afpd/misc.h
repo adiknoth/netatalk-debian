@@ -1,5 +1,5 @@
 /*
- * $Id: misc.h,v 1.3 2001/12/03 05:03:38 jmarcus Exp $
+ * $Id: misc.h,v 1.5 2009/10/15 10:43:13 didg Exp $
  */
 
 #ifndef AFPD_MISC_H
@@ -10,19 +10,19 @@
 
 /* FP functions */
 /* messages.c */
-extern int	afp_getsrvrmesg __P((AFPObj *, char *, int, char *, int *));
+int	afp_getsrvrmesg (AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size_t *rbuflen);
 
 /* afs.c */
 #ifdef AFS
-extern int	afp_getdiracl __P((AFPObj *, char *, int, char *, int *));
-extern int	afp_setdiracl __P((AFPObj *, char *, int, char *, int *));
+int	afp_getdiracl (AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size_t *rbuflen);
+int	afp_setdiracl (AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size_t *rbuflen);
 #else /* AFS */
 #define afp_getdiracl	NULL
 #define afp_setdiracl	NULL
 #endif /* AFS */
 
 #if defined( AFS ) && defined( UAM_AFSKRB )
-extern int	afp_afschangepw __P((AFPObj *, char *, int, char *, int *));
+int	afp_afschangepw (AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size_t *rbuflen);
 #else /* AFS && UAM_AFSKRB */
 #define afp_afschangepw	NULL
 #endif /* AFS && UAM_AFSKRB */

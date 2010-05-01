@@ -1,5 +1,5 @@
 /*
- * $Id: nad.c,v 1.11.8.2.2.3 2006/09/19 00:08:00 didg Exp $
+ * $Id: nad.c,v 1.18 2010/01/27 21:27:53 didg Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -27,12 +27,11 @@
 #include "megatron.h"
 #include "nad.h"
 
-struct volinfo	vol;
+static struct volinfo	vol;
 static char		hexdig[] = "0123456789abcdef";
 
 static char mtou_buf[MAXPATHLEN + 1], utom_buf[MAXPATHLEN + 1];
-static char *mtoupathcap( mpath )
-    char	*mpath;
+static char *mtoupathcap(char *mpath)
 {
     char	*m, *u, *umax;
     int		i = 0;
@@ -67,8 +66,7 @@ static char *mtoupathcap( mpath )
 #define hextoint( c )	( isdigit( c ) ? c - '0' : c + 10 - 'a' )
 #define islxdigit(x)	(!isupper(x)&&isxdigit(x))
 
-static char *utompathcap( upath )
-    char	*upath;
+static char *utompathcap( char *upath)
 {
     char	*m, *u;
     int h;
@@ -346,7 +344,7 @@ utompath_error:
     return(utompathcap( upath ));
 }
 
-char *mtoupathiconv(char *mpath)
+static char *mtoupathiconv(char *mpath)
 {
     char        *m, *u;
     size_t       inplen;
@@ -411,7 +409,7 @@ void select_charset( int options)
     int			hexfork[ NUMFORKS ];
 #endif /* HEXOUTPUT */
 
-struct nad_file_data {
+static struct nad_file_data {
     char		macname[ MAXPATHLEN + 1 ];
     char		adpath[ 2 ][ MAXPATHLEN + 1];
     int			offset[ NUMFORKS ];
@@ -431,10 +429,7 @@ static void initvol(char *path)
 }
 
 
-int nad_open( path, openflags, fh, options )
-    char		*path;
-    int			openflags, options;
-    struct FHeader	*fh;
+int nad_open( char *path, int openflags, struct FHeader *fh, int options)
 {
     struct stat		st;
     int			fork;
@@ -451,7 +446,7 @@ int nad_open( path, openflags, fh, options )
     	initvol(path);
 	strcpy( nad.adpath[0], path );
 	strcpy( nad.adpath[1], 
-		nad.ad.ad_path( nad.adpath[0], ADFLAGS_DF|ADFLAGS_HF ));
+		nad.ad.ad_ops->ad_path( nad.adpath[0], ADFLAGS_HF ));
 	for ( fork = 0 ; fork < NUMFORKS ; fork++ ) {
 	    if ( stat( nad.adpath[ fork ], &st ) < 0 ) {
 		if ( errno == ENOENT ) {
@@ -479,7 +474,7 @@ int nad_open( path, openflags, fh, options )
 	strcpy( nad.macname, fh->name );
 	strcpy( nad.adpath[0], mtoupath( nad.macname ));
 	strcpy( nad.adpath[1], 
-		nad.ad.ad_path( nad.adpath[0], ADFLAGS_DF|ADFLAGS_HF ));
+		nad.ad.ad_ops->ad_path( nad.adpath[0], ADFLAGS_HF ));
 #if DEBUG
     fprintf(stderr, "%s\n", nad.macname);
     fprintf(stderr, "%s is adpath[0]\n", nad.adpath[0]);
@@ -499,8 +494,7 @@ int nad_open( path, openflags, fh, options )
     }
 }
 
-int nad_header_read( fh )
-    struct FHeader	*fh;
+int nad_header_read(struct FHeader *fh)
 {
     u_int32_t		temptime;
     struct stat		st;
@@ -611,8 +605,7 @@ int nad_header_read( fh )
 
 }
 
-int nad_header_write( fh )
-    struct FHeader	*fh;
+int nad_header_write(struct FHeader *fh)
 {
     u_int32_t		temptime;
 
@@ -691,19 +684,16 @@ int nad_header_write( fh )
 #endif /* HEXOUTPUT */
 
     nad.offset[ DATA ] = nad.offset[ RESOURCE ] = 0;
-    ad_flush( &nad.ad, ADFLAGS_DF|ADFLAGS_HF );
+    ad_flush( &nad.ad );
 
     return( 0 );
 }
 
-int			forkeid[] = { ADEID_DFORK, ADEID_RFORK };
+static int		forkeid[] = { ADEID_DFORK, ADEID_RFORK };
 
-int nad_read( fork, forkbuf, bufc )
-    int			fork;
-    char		*forkbuf;
-    int			bufc;
+ssize_t nad_read(int fork, char *forkbuf, size_t bufc)
 {
-    int			cc = 0;
+    ssize_t		cc = 0;
 
 #if DEBUG
     fprintf( stderr, "Entering nad_read\n" );
@@ -723,14 +713,11 @@ int nad_read( fork, forkbuf, bufc )
     return( cc );
 }
 
-int nad_write( fork, forkbuf, bufc )
-    int			fork;
-    char		*forkbuf;
-    int			bufc;
+ssize_t nad_write(int fork, char *forkbuf, size_t bufc)
 {
     char		*buf_ptr;
-    int			writelen;
-    int			cc = 0;
+    size_t		writelen;
+    ssize_t		cc = 0;
 
 #if DEBUG
     fprintf( stderr, "Entering nad_write\n" );
@@ -758,12 +745,11 @@ int nad_write( fork, forkbuf, bufc )
     return( bufc );
 }
 
-int nad_close( status )
-int			status;
+int nad_close(int status)
 {
     int			rv;
     if ( status == KEEP ) {
-	if (( rv = ad_flush( &nad.ad, ADFLAGS_DF|ADFLAGS_HF )) < 0 ) {
+	if (( rv = ad_flush( &nad.ad )) < 0 ) {
 	    fprintf( stderr, "nad_close rv for flush %d\n", rv );
 	    return( rv );
 	}

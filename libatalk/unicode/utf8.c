@@ -36,6 +36,15 @@
 #include <atalk/unicode.h>
 #include "byteorder.h"
 
+/* Given a trailing UTF-8 byte, get the contribution from it to
+ * the Unicode scalar value for a particular bit shift amount
+ */
+#define GETUCVAL(utf8_trailbyte,shift)  ((unsigned int) (( utf8_trailbyte & 0x3F) << shift))
+
+/* Given a unicode scalar, get a trail UTF-8 byte for a particular bit shift amount */
+#define GETUTF8TRAILBYTE(uc,shift)      ((char)( 0x80 | ((uc >> shift) & 0x3F) ) )
+
+
 
 static size_t   utf8_pull(void *,char **, size_t *, char **, size_t *);
 static size_t   utf8_push(void *,char **, size_t *, char **, size_t *);
@@ -47,7 +56,8 @@ struct charset_functions charset_utf8 =
 	utf8_pull,
 	utf8_push,
 	CHARSET_VOLUME | CHARSET_MULTIBYTE | CHARSET_PRECOMPOSED,
-	NULL, NULL, NULL
+	NULL,
+	NULL, NULL
 };
 
 struct charset_functions charset_utf8_mac =
@@ -57,36 +67,64 @@ struct charset_functions charset_utf8_mac =
 	utf8_pull,
 	utf8_push,
 	CHARSET_VOLUME | CHARSET_CLIENT | CHARSET_MULTIBYTE | CHARSET_DECOMPOSED,
-	NULL, NULL, NULL
+	NULL,
+	NULL, NULL
 };
 
-/* ------------------------ */
+/* ------------------- Convert from UTF-8 to UCS-2 -------------------*/
 static size_t utf8_pull(void *cd _U_, char **inbuf, size_t *inbytesleft,
 			 char **outbuf, size_t *outbytesleft)
 {
 	ucs2_t uc = 0;
+	ucs2_t hi, low;     /* surrogate pair */
+	unsigned int codepoint, surrogate;
 	int len;
 
 	while (*inbytesleft >= 1 && *outbytesleft >= 2) {
 		unsigned char *c = (unsigned char *)*inbuf;
 		len = 1;
 
+		/* Arrange conditionals in the order of most frequent occurrence 
+		 * for users of Latin-based chars */
 		if ((c[0] & 0x80) == 0) {
 			uc = c[0];
-		} else if ((c[0] & 0xf0) == 0xe0) {
-			if (*inbytesleft < 3) {
-				LOG(log_debug, logtype_default, "short utf8 char");
-				goto badseq;
-			}
-			uc = ((ucs2_t) (c[0] & 0x0f) << 12) | ((ucs2_t) (c[1] ^ 0x80) << 6) | (ucs2_t) (c[2] ^ 0x80);
-			len = 3;
 		} else if ((c[0] & 0xe0) == 0xc0) {
 			if (*inbytesleft < 2) {
 				LOG(log_debug, logtype_default, "short utf8 char");
 				goto badseq;
 			}
-			uc = ((ucs2_t) (c[0] & 0x1f) << 6) | (ucs2_t) (c[1] ^ 0x80);
+			uc = (ucs2_t) (((c[0] & 0x1f) << 6) | GETUCVAL(c[1],0)) ;
 			len = 2;
+		} else if ((c[0] & 0xf0) == 0xe0) {
+			if (*inbytesleft < 3) {
+				LOG(log_debug, logtype_default, "short utf8 char");
+				goto badseq;
+			}
+			uc = (ucs2_t) (((c[0] & 0x0f) << 12) | GETUCVAL(c[1],6) | GETUCVAL(c[2],0)) ;
+			len = 3;
+		} else if ((c[0] & 0xf8) == 0xf0) {
+			/* 4 bytes, which happens for surrogate pairs only */
+			if (*inbytesleft < 4) {
+				LOG(log_debug, logtype_default, "short utf8 char");
+				goto badseq;
+			}
+			if (*outbytesleft < 4) {
+				LOG(log_debug, logtype_default, "short ucs-2 write");
+				errno = E2BIG;
+				return -1;
+			}
+			codepoint = ((c[0] & 0x07) << 18) | GETUCVAL(c[1],12) |
+				GETUCVAL(c[2],6) |  GETUCVAL(c[3],0);
+			hi = (ucs2_t)( ((codepoint - 0x10000) >> 10) + 0xD800);
+			low = (ucs2_t)(0xDC00 + (codepoint & 0x03FF));
+			surrogate = (hi << 16) | low;
+			SIVAL(*outbuf,0,surrogate);
+			len = 4;
+			(*inbuf)  += 4;
+			(*inbytesleft)  -= 4;
+			(*outbytesleft) -= 4;
+			(*outbuf) += 4;
+			continue;
 		}
 		else {
 			errno = EINVAL;
@@ -112,55 +150,90 @@ badseq:
 	return -1;
 }
 
-/* ------------------------ */
+/* --------------------- Convert from UCS-2 to UTF-8 -----------*/
 static size_t utf8_push(void *cd _U_, char **inbuf, size_t *inbytesleft,
 			 char **outbuf, size_t *outbytesleft)
 {
 	ucs2_t uc=0;
-	int len;
+	ucs2_t hi, low;
+	unsigned int surrogatepair, codepoint;
+	int olen, ilen;
 
 	while (*inbytesleft >= 2 && *outbytesleft >= 1) {
 		unsigned char *c = (unsigned char *)*outbuf;
 		uc = SVAL((*inbuf),0);
-		len=1;
+		olen=1;
+		ilen=2;
 
-		if ( uc >= 0x800 ) {
-			if ( uc >= 0x202a && uc <= 0x202e ) {
-				/* ignore bidi hint characters */
-			   len = 0;
-		 	}
-		 	else {
-				if (*outbytesleft < 3) {
-					LOG(log_debug, logtype_default, "short utf8 write");
-					goto toobig;
-				}
-				c[2] = 0x80 | (uc & 0x3f);
-				uc = uc >> 6;
-				uc |= 0x800;
-                        	c[1] = 0x80 | (uc&0x3f);
-                        	uc = uc >> 6;
-                        	uc |= 0xc0;
-                        	c[0] = uc;
-				len = 3;
-			}
-		} else if (uc >= 0x80) {
+		/* Arrange conditionals in the order of most frequent occurrence for
+		   users of Latin-based chars */
+		if (uc < 0x80) {
+			c[0] = uc;
+		} else if (uc < 0x800) {
 			if (*outbytesleft < 2) {
 				LOG(log_debug, logtype_default, "short utf8 write");
 				goto toobig;
 			}
-			c[1] = 0x80 | (uc&0x3f);
-			uc = uc >> 6;
-			uc |= 0xc0;
-			c[0] = uc;
-			len = 2;
+			c[1] = GETUTF8TRAILBYTE(uc, 0);
+			c[0] = (char)(0xc0 | ((uc >> 6) & 0x1f));
+			olen = 2;
+		}
+		else if ( uc >= 0x202a && uc <= 0x202e ) {
+			/* ignore bidi hint characters */
+			olen = 0;
+		}
+		/*
+		 * A 2-byte uc value represents a stand-alone Unicode character if
+		 *     0 <= uc < 0xd800 or 0xdfff < uc <= 0xffff.
+		 * If  0xd800 <= uc <= 0xdfff, uc itself does not represent a Unicode character.
+		 * Rather, it is just part of a surrogate pair.  A surrogate pair consists of 
+		 * a high surrogate in the range [0xd800 ... 0xdbff] and a low surrogate in the
+		 * range [0xdc00 ... 0xdfff].  Together the pair maps to a single Unicode character
+		 * whose scalar value is 64K or larger.  It is this scalar value that is transformed
+		 * to UTF-8, not the individual surrogates.
+		 *
+		 * See www.unicode.org/faq/utf_bom.html for more info.
+		 */
+
+		else if ( 0xd800 <= uc && uc <= 0xdfff) {
+			/* surrogate - needs 4 bytes from input and 4 bytes for output to UTF-8 */
+			if (*outbytesleft < 4) {
+				LOG(log_debug, logtype_default, "short utf8 write");
+				goto toobig;
+			}
+			if (*inbytesleft < 4) {
+				errno = EINVAL;
+				return -1;
+			}
+			surrogatepair = IVAL((*inbuf),0);
+			low = (ucs2_t)surrogatepair;
+			hi = (ucs2_t)(surrogatepair >> 16);
+			if ( 0xd800 <= hi && hi <= 0xdbff && 0xdc00 <= low && low <= 0xdfff) {
+				codepoint = ((hi - 0xd800) << 10) + (low - 0xdc00) + 0x10000;
+				c[3] = GETUTF8TRAILBYTE(codepoint, 0);
+				c[2] = GETUTF8TRAILBYTE(codepoint, 6);
+				c[1] = GETUTF8TRAILBYTE(codepoint, 12);
+				c[0] = (char)(0xf0 | ((codepoint >> 18) & 0x07));
+				ilen = olen = 4;
+			} else { /* invalid values for surrogate */
+				errno = EINVAL;
+				return -1;
+			}
 		} else {
-			c[0] = uc;
+			if (*outbytesleft < 3) {
+				LOG(log_debug, logtype_default, "short utf8 write");
+				goto toobig;
+			}
+			c[2] = GETUTF8TRAILBYTE(uc, 0);
+			c[1] = GETUTF8TRAILBYTE(uc, 6);
+			c[0] = (char)(0xe0 | ((uc >> 12) & 0x0f));
+			olen = 3;
 		}
 
-		(*inbytesleft)  -= 2;
-		(*outbytesleft) -= len;
-		(*inbuf)  += 2;
-		(*outbuf) += len;
+		(*inbytesleft)  -= ilen;
+		(*outbytesleft) -= olen;
+		(*inbuf)  += ilen;
+		(*outbuf) += olen;
 	}
 
 	if (*inbytesleft == 1) {

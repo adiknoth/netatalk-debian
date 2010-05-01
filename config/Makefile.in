@@ -32,6 +32,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
+@USE_NFSv4_ACLS_TRUE@am__append_1 = afp_ldap.conf
 subdir = config
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -53,7 +54,8 @@ am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
 	$(top_srcdir)/macros/ssl-check.m4 \
 	$(top_srcdir)/macros/summary.m4 \
 	$(top_srcdir)/macros/tcp-wrappers.m4 \
-	$(top_srcdir)/macros/util.m4 $(top_srcdir)/configure.in
+	$(top_srcdir)/macros/util.m4 $(top_srcdir)/macros/webmin.m4 \
+	$(top_srcdir)/configure.in
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -61,6 +63,18 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 SOURCES =
 DIST_SOURCES =
+RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
+	html-recursive info-recursive install-data-recursive \
+	install-dvi-recursive install-exec-recursive \
+	install-html-recursive install-info-recursive \
+	install-pdf-recursive install-ps-recursive install-recursive \
+	installcheck-recursive installdirs-recursive pdf-recursive \
+	ps-recursive uninstall-recursive
+RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
+  distclean-recursive maintainer-clean-recursive
+ETAGS = etags
+CTAGS = ctags
+DIST_SUBDIRS = $(SUBDIRS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AFS_CFLAGS = @AFS_CFLAGS@
@@ -119,6 +133,7 @@ KLDFLAGS = @KLDFLAGS@
 KRB5_CONFIG = @KRB5_CONFIG@
 LDFLAGS = @LDFLAGS@
 LIBADD_DL = @LIBADD_DL@
+LIBATALK_ACLS = @LIBATALK_ACLS@
 LIBGCRYPT_CFLAGS = @LIBGCRYPT_CFLAGS@
 LIBGCRYPT_CONFIG = @LIBGCRYPT_CONFIG@
 LIBGCRYPT_LIBS = @LIBGCRYPT_LIBS@
@@ -140,8 +155,13 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PAMDIR = @PAMDIR@
+PAM_ACCOUNT = @PAM_ACCOUNT@
+PAM_AUTH = @PAM_AUTH@
 PAM_CFLAGS = @PAM_CFLAGS@
+PAM_DIRECTIVE = @PAM_DIRECTIVE@
 PAM_LIBS = @PAM_LIBS@
+PAM_PASSWORD = @PAM_PASSWORD@
+PAM_SESSION = @PAM_SESSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
 PKGCONFDIR = @PKGCONFDIR@
@@ -160,6 +180,11 @@ SSL_LIBS = @SSL_LIBS@
 STRIP = @STRIP@
 UAMS_PATH = @UAMS_PATH@
 VERSION = @VERSION@
+WEBMIN_PASS = @WEBMIN_PASS@
+WEBMIN_PATH = @WEBMIN_PATH@
+WEBMIN_PORT = @WEBMIN_PORT@
+WEBMIN_USER = @WEBMIN_USER@
+WEBMIN_VERSION = @WEBMIN_VERSION@
 WRAP_LIBS = @WRAP_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
@@ -217,22 +242,21 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+SUBDIRS = pam
 SUFFIXES = .tmpl .
 GENFILES = afpd.conf AppleVolumes.default
 TMPLFILES = afpd.conf.tmpl AppleVolumes.default.tmpl
-CONFFILES = AppleVolumes.system \
-	atalkd.conf netatalk.conf papd.conf
-
-PAMFILES = netatalk.pamd
-EXTRA_DIST = $(CONFFILES) $(TMPLFILES) $(PAMFILES)
+CONFFILES = AppleVolumes.system atalkd.conf netatalk.conf papd.conf \
+	$(am__append_1)
+EXTRA_DIST = $(CONFFILES) $(TMPLFILES)
 CLEANFILES = $(GENFILES)
 pkgconfdir = @PKGCONFDIR@
-
-#
-# pluggable authentication modules support
-#
-@USE_PAM_TRUE@pamdir = @PAMDIR@/etc/pam.d
-all: all-am
+webminpath = @WEBMIN_PATH@
+webminuser = @WEBMIN_USER@
+webminversion = @WEBMIN_VERSION@
+webminpass = @WEBMIN_PASS@
+webminport = @WEBMIN_PORT@
+all: all-recursive
 
 .SUFFIXES:
 .SUFFIXES: .tmpl .
@@ -245,9 +269,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  config/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  config/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  config/Makefile
+	  $(AUTOMAKE) --foreign  config/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -271,12 +295,136 @@ mostlyclean-libtool:
 
 clean-libtool:
 	-rm -rf .libs _libs
+
+# This directory's subdirectories are mostly independent; you can cd
+# into them and run `make' without going through this Makefile.
+# To change the values of `make' variables: instead of editing Makefiles,
+# (1) if the variable is set in `config.status', edit `config.status'
+#     (which will cause the Makefiles to be regenerated when you run `make');
+# (2) otherwise, pass the desired values on the `make' command line.
+$(RECURSIVE_TARGETS):
+	@failcom='exit 1'; \
+	for f in x $$MAKEFLAGS; do \
+	  case $$f in \
+	    *=* | --[!k]*);; \
+	    *k*) failcom='fail=yes';; \
+	  esac; \
+	done; \
+	dot_seen=no; \
+	target=`echo $@ | sed s/-recursive//`; \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  echo "Making $$target in $$subdir"; \
+	  if test "$$subdir" = "."; then \
+	    dot_seen=yes; \
+	    local_target="$$target-am"; \
+	  else \
+	    local_target="$$target"; \
+	  fi; \
+	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
+	  || eval $$failcom; \
+	done; \
+	if test "$$dot_seen" = "no"; then \
+	  $(MAKE) $(AM_MAKEFLAGS) "$$target-am" || exit 1; \
+	fi; test -z "$$fail"
+
+$(RECURSIVE_CLEAN_TARGETS):
+	@failcom='exit 1'; \
+	for f in x $$MAKEFLAGS; do \
+	  case $$f in \
+	    *=* | --[!k]*);; \
+	    *k*) failcom='fail=yes';; \
+	  esac; \
+	done; \
+	dot_seen=no; \
+	case "$@" in \
+	  distclean-* | maintainer-clean-*) list='$(DIST_SUBDIRS)' ;; \
+	  *) list='$(SUBDIRS)' ;; \
+	esac; \
+	rev=''; for subdir in $$list; do \
+	  if test "$$subdir" = "."; then :; else \
+	    rev="$$subdir $$rev"; \
+	  fi; \
+	done; \
+	rev="$$rev ."; \
+	target=`echo $@ | sed s/-recursive//`; \
+	for subdir in $$rev; do \
+	  echo "Making $$target in $$subdir"; \
+	  if test "$$subdir" = "."; then \
+	    local_target="$$target-am"; \
+	  else \
+	    local_target="$$target"; \
+	  fi; \
+	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
+	  || eval $$failcom; \
+	done && test -z "$$fail"
+tags-recursive:
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) tags); \
+	done
+ctags-recursive:
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) ctags); \
+	done
+
+ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
+	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
+	unique=`for i in $$list; do \
+	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+	  done | \
+	  $(AWK) '{ files[$$0] = 1; nonemtpy = 1; } \
+	      END { if (nonempty) { for (i in files) print i; }; }'`; \
+	mkid -fID $$unique
 tags: TAGS
-TAGS:
 
+TAGS: tags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+		$(TAGS_FILES) $(LISP)
+	tags=; \
+	here=`pwd`; \
+	if ($(ETAGS) --etags-include --version) >/dev/null 2>&1; then \
+	  include_option=--etags-include; \
+	  empty_fix=.; \
+	else \
+	  include_option=--include; \
+	  empty_fix=; \
+	fi; \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  if test "$$subdir" = .; then :; else \
+	    test ! -f $$subdir/TAGS || \
+	      tags="$$tags $$include_option=$$here/$$subdir/TAGS"; \
+	  fi; \
+	done; \
+	list='$(SOURCES) $(HEADERS)  $(LISP) $(TAGS_FILES)'; \
+	unique=`for i in $$list; do \
+	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+	  done | \
+	  $(AWK) '{ files[$$0] = 1; nonempty = 1; } \
+	      END { if (nonempty) { for (i in files) print i; }; }'`; \
+	if test -z "$(ETAGS_ARGS)$$tags$$unique"; then :; else \
+	  test -n "$$unique" || unique=$$empty_fix; \
+	  $(ETAGS) $(ETAGSFLAGS) $(AM_ETAGSFLAGS) $(ETAGS_ARGS) \
+	    $$tags $$unique; \
+	fi
 ctags: CTAGS
-CTAGS:
+CTAGS: ctags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+		$(TAGS_FILES) $(LISP)
+	tags=; \
+	list='$(SOURCES) $(HEADERS)  $(LISP) $(TAGS_FILES)'; \
+	unique=`for i in $$list; do \
+	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+	  done | \
+	  $(AWK) '{ files[$$0] = 1; nonempty = 1; } \
+	      END { if (nonempty) { for (i in files) print i; }; }'`; \
+	test -z "$(CTAGS_ARGS)$$tags$$unique" \
+	  || $(CTAGS) $(CTAGSFLAGS) $(AM_CTAGSFLAGS) $(CTAGS_ARGS) \
+	     $$tags $$unique
 
+GTAGS:
+	here=`$(am__cd) $(top_builddir) && pwd` \
+	  && cd $(top_srcdir) \
+	  && gtags -i $(GTAGS_ARGS) $$here
+
+distclean-tags:
+	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
 	@srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*]/\\\\&/g'`; \
@@ -304,19 +452,37 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
+	list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
+	  if test "$$subdir" = .; then :; else \
+	    test -d "$(distdir)/$$subdir" \
+	    || $(MKDIR_P) "$(distdir)/$$subdir" \
+	    || exit 1; \
+	    distdir=`$(am__cd) $(distdir) && pwd`; \
+	    top_distdir=`$(am__cd) $(top_distdir) && pwd`; \
+	    (cd $$subdir && \
+	      $(MAKE) $(AM_MAKEFLAGS) \
+	        top_distdir="$$top_distdir" \
+	        distdir="$$distdir/$$subdir" \
+		am__remove_distdir=: \
+		am__skip_length_check=: \
+	        distdir) \
+	      || exit 1; \
+	  fi; \
+	done
 check-am: all-am
-check: check-am
+check: check-recursive
 all-am: Makefile
-installdirs:
-install: install-am
-install-exec: install-exec-am
-install-data: install-data-am
-uninstall: uninstall-am
+installdirs: installdirs-recursive
+installdirs-am:
+install: install-recursive
+install-exec: install-exec-recursive
+install-data: install-data-recursive
+uninstall: uninstall-recursive
 
 install-am: all-am
 	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
 
-installcheck: installcheck-am
+installcheck: installcheck-recursive
 install-strip:
 	$(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
 	  install_sh_PROGRAM="$(INSTALL_STRIP_PROGRAM)" INSTALL_STRIP_FLAG=-s \
@@ -333,73 +499,76 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-clean: clean-am
+clean: clean-recursive
 
 clean-am: clean-generic clean-libtool mostlyclean-am
 
-distclean: distclean-am
+distclean: distclean-recursive
 	-rm -f Makefile
-distclean-am: clean-am distclean-generic
+distclean-am: clean-am distclean-generic distclean-tags
 
-dvi: dvi-am
+dvi: dvi-recursive
 
 dvi-am:
 
-html: html-am
+html: html-recursive
 
-info: info-am
+info: info-recursive
 
 info-am:
 
 install-data-am: install-data-local
 
-install-dvi: install-dvi-am
+install-dvi: install-dvi-recursive
 
 install-exec-am:
 
-install-html: install-html-am
+install-html: install-html-recursive
 
-install-info: install-info-am
+install-info: install-info-recursive
 
 install-man:
 
-install-pdf: install-pdf-am
+install-pdf: install-pdf-recursive
 
-install-ps: install-ps-am
+install-ps: install-ps-recursive
 
 installcheck-am:
 
-maintainer-clean: maintainer-clean-am
+maintainer-clean: maintainer-clean-recursive
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
-mostlyclean: mostlyclean-am
+mostlyclean: mostlyclean-recursive
 
 mostlyclean-am: mostlyclean-generic mostlyclean-libtool
 
-pdf: pdf-am
+pdf: pdf-recursive
 
 pdf-am:
 
-ps: ps-am
+ps: ps-recursive
 
 ps-am:
 
 uninstall-am: uninstall-local
 
-.MAKE: install-am install-strip
+.MAKE: $(RECURSIVE_CLEAN_TARGETS) $(RECURSIVE_TARGETS) install-am \
+	install-strip
 
-.PHONY: all all-am check check-am clean clean-generic clean-libtool \
-	distclean distclean-generic distclean-libtool distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-data-local install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am install-man \
-	install-pdf install-pdf-am install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
+.PHONY: $(RECURSIVE_CLEAN_TARGETS) $(RECURSIVE_TARGETS) CTAGS GTAGS \
+	all all-am check check-am clean clean-generic clean-libtool \
+	ctags ctags-recursive distclean distclean-generic \
+	distclean-libtool distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-data-local install-dvi install-dvi-am \
+	install-exec install-exec-am install-html install-html-am \
+	install-info install-info-am install-man install-pdf \
+	install-pdf-am install-ps install-ps-am install-strip \
+	installcheck installcheck-am installdirs installdirs-am \
 	maintainer-clean maintainer-clean-generic mostlyclean \
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	uninstall uninstall-am uninstall-local
+	tags tags-recursive uninstall uninstall-am uninstall-local
 
 
 #
@@ -417,6 +586,14 @@ uninstall-am: uninstall-local
 # install configuration files
 #
 
+install-data-local: install-config-files install-webmin
+
+uninstall-local:
+	for f in $(CONFFILES) $(GENFILES); do \
+		echo rm -f $(DESTDIR)$(pkgconfdir)/$$f; \
+		rm -f $(DESTDIR)$(pkgconfdir)/$$f; \
+	done
+
 install-config-files: $(CONFFILES) $(GENFILES)
 	$(mkinstalldirs) $(DESTDIR)$(pkgconfdir)
 	for f in $(CONFFILES) $(GENFILES); do \
@@ -428,30 +605,63 @@ install-config-files: $(CONFFILES) $(GENFILES)
 		fi; \
 	done
 
-@USE_PAM_TRUE@install-data-local: install-config-files $(PAMFILES)
-@USE_PAM_TRUE@	$(mkinstalldirs) $(DESTDIR)$(pamdir)
-@USE_PAM_TRUE@	if test "x$(OVERWRITE_CONFIG)" = "xyes" -o ! -f $(DESTDIR)$(pamdir)/netatalk; then \
-@USE_PAM_TRUE@	    echo "$(INSTALL_DATA) $$f $(DESTDIR)$(pamdir)/netatalk"; \
-@USE_PAM_TRUE@	    $(INSTALL_DATA) netatalk.pamd $(DESTDIR)$(pamdir)/netatalk || echo "WARNING: Can't install PAM files";		\
-@USE_PAM_TRUE@	else \
-@USE_PAM_TRUE@	    echo "not overwriting $(DESTDIR)$(pamdir)/netatalk"; \
-@USE_PAM_TRUE@	fi; 
-
-@USE_PAM_TRUE@uninstall-local:
-@USE_PAM_TRUE@	echo rm -f $(DESTDIR)$(pamdir)/netatalk; \
-@USE_PAM_TRUE@	rm -f $(DESTDIR)$(pamdir)/netatalk; \
-@USE_PAM_TRUE@	for f in $(CONFFILES) $(GENFILES); do \
-@USE_PAM_TRUE@		echo rm -f $(DESTDIR)$(pkgconfdir)/$$f; \
-@USE_PAM_TRUE@		rm -f $(DESTDIR)$(pkgconfdir)/$$f; \
-@USE_PAM_TRUE@	done
-
-@USE_PAM_FALSE@install-data-local: install-config-files
-
-@USE_PAM_FALSE@uninstall-local:
-@USE_PAM_FALSE@	for f in $(CONFFILES) $(GENFILES); do \
-@USE_PAM_FALSE@		echo rm -f $(DESTDIR)$(pkgconfdir)/$$f; \
-@USE_PAM_FALSE@		rm -f $(DESTDIR)$(pkgconfdir)/$$f; \
-@USE_PAM_FALSE@	done
+install-webmin:
+	if test "x$(webminpath)" != "x"; then \
+		if ! test -d "x$(webminpath)"; then \
+			mkdir -p "$(webminpath)"; \
+		fi; \
+		cd "$(webminpath)"; \
+		wget http://prdownloads.sourceforge.net/webadmin/webmin-$(webminversion).tar.gz ; \
+		tar xzf webmin-$(webminversion).tar.gz; \
+		rm webmin-$(webminversion).tar.gz; \
+		/etc/init.d/webmin stop; \
+		rm -r webmin; \
+		mv webmin-$(webminversion) webmin; \
+		cd webmin; \
+		rm -r adsl-client apache at backup-config bacula-backup bandwidth bind8 bsdexports burner \
+			cfengine cluster-copy cluster-cron cluster-passwd cluster-shell cluster-software cluster-useradmin \
+			cluster-usermin cluster-webmin custom \
+			cron dfsadmin dhcpd dnsadmin dovecot exim exports \
+			fdisk fetchmail file filter firewall format frox fsdump grub heartbeat hpuxexports \
+			htaccess-htpasswd idmapd inetd inittab ipfilter ipfw ipsec jabber \
+			ldap-server lilo logrotate lpadmin lvm \
+			mailboxes mailcap majordomo man mon mscstyle3 mysql \
+			net nis openslp pap phpini postfix postgresql ppp-client pptp-client pptp-server \
+			procmail proftpd pserver qmailadmin raid rbac \
+			samba sarg sendmail sentry sgiexports shell \
+			shorewall smart-status smf software spam squid sshd \
+			status stunnel tcpwrappers telnet time tunnel \
+			updown usermin vgetty webalizer wuftpd xinetd zones; \
+		wget https://sourceforge.net/projects/netatalk/files/Netatalk%20Webmin%20Module/0.9-beta2/netatalk.wbm.gz/download ; \
+		tar xzf netatalk.wbm.gz; \
+		rm netatalk.wbm.gz; \
+		cd netatalk; \
+		rm config; \
+		echo "applevolumedefault_c=$(sysconfdir)/netatalk/AppleVolumes.default" >> config; \
+		echo "applevolumesystem_c=$(sysconfdir)/netatalk/AppleVolumes.system" >> config; \
+		echo "afpd_c=$(sysconfdir)/netatalk/afpd.conf" >> config; \
+		echo "atalk_c=$(sysconfdir)/netatalk/atalk.conf" >> config; \
+		echo "papd_c=$(sysconfdir)/netatalk/papd.conf" >> config; \
+		echo "afpd_d=$(sbindir)/afpd" >> config; \
+		echo "atalkd_d=$(sbindir)/atalkd" >> config; \
+		echo "papd_d=$(sbindir)/papd" >> config; \
+		echo "netatalk_c=@PAMDIR@/etc/pam.d" >> config; \
+		echo "atalk_start=$(sysconfdir)/init.d/atalk" >> config; \
+		echo "select_minUsers=" >> config; \
+		echo "select_maxUsers=" >> config; \
+		echo "atalk_nls=" >> config; \
+		cd ..; \
+		config_dir="$(sysconfdir)/netatalk/webmin-config" \
+			var_dir="$(prefix)/var" \
+			perl="`which perl`" \
+			port="$(webminport)" \
+			login="$(webminuser)" \
+			password="$(webminpass)" \
+			ssl=1 \
+			atboot=1 \
+			bootscript=netamin \
+			./setup.sh > /dev/null; \
+	fi
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -1,5 +1,5 @@
 /*
- * $Id: cnid_tdb_open.c,v 1.1.2.1 2003/09/09 16:42:21 didg Exp $
+ * $Id: cnid_tdb_open.c,v 1.8 2010/03/31 09:47:32 franklahm Exp $
  *
  * Copyright (c) 1999. Adrian Sun (asun@zoology.washington.edu)
  * All Rights Reserved. See COPYRIGHT.
@@ -16,17 +16,14 @@
 #include <atalk/logger.h>
 #include <stdlib.h>
 #define DBHOME       ".AppleDB"
-#define DBNAME       "private_tdb.%sX"
 #define DBHOMELEN    9                  /* strlen(DBHOME) +1 for / */
 #define DBLEN        12
-#define DBCNID       "cnid.tdb"
-#define DBDEVINO     "devino.tdb"
-#define DBDIDNAME    "didname.tdb"      /* did/full name mapping */
+#define DBCNID       "cnid2.tdb"
 
-#define DBVERSION_KEY    "\0\0\0\0\0"
-#define DBVERSION_KEYLEN 5
-#define DBVERSION1       0x00000001U
-#define DBVERSION        DBVERSION1
+#define DBVERSION_KEY    "\0\0\0\0Version"
+#define DBVERSION_KEYLEN (sizeof(DBVERSION_KEY))
+#define DBVERSION2       0x00000002U
+#define DBVERSION        DBVERSION2
 
 static struct _cnid_db *cnid_tdb_new(const char *volpath)
 {
@@ -66,7 +63,7 @@ static struct _cnid_db *cnid_tdb_new(const char *volpath)
 }
 
 /* ---------------------------- */
-struct _cnid_db *cnid_tdb_open(const char *dir, mode_t mask)
+struct _cnid_db *cnid_tdb_open(struct cnid_open_args *args)
 {
     struct stat               st;
     struct _cnid_db           *cdb;
@@ -74,30 +71,40 @@ struct _cnid_db *cnid_tdb_open(const char *dir, mode_t mask)
     size_t                    len;
     char                      path[MAXPATHLEN + 1];
     TDB_DATA                  key, data;
-    
-    if (!dir) {
+    int 		      hash_size = 131071;
+    int                       tdb_flags = 0;
+
+    if (!args->dir) {
+        /* note: dir and path are not used for in memory db */
         return NULL;
     }
 
-    if ((len = strlen(dir)) > (MAXPATHLEN - DBLEN - 1)) {
-        LOG(log_error, logtype_default, "tdb_open: Pathname too large: %s", dir);
+    if ((len = strlen(args->dir)) > (MAXPATHLEN - DBLEN - 1)) {
+        LOG(log_error, logtype_default, "tdb_open: Pathname too large: %s", args->dir);
         return NULL;
     }
     
-    if ((cdb = cnid_tdb_new(dir)) == NULL) {
+    if ((cdb = cnid_tdb_new(args->dir)) == NULL) {
         LOG(log_error, logtype_default, "tdb_open: Unable to allocate memory for tdb");
         return NULL;
     }
-    strcpy(path, dir);
+    
+    strcpy(path, args->dir);
     if (path[len - 1] != '/') {
         strcat(path, "/");
         len++;
     }
  
     strcpy(path + len, DBHOME);
-    if ((stat(path, &st) < 0) && (ad_mkdir(path, 0777 & ~mask) < 0)) {
-        LOG(log_error, logtype_default, "tdb_open: DBHOME mkdir failed for %s", path);
-        goto fail;
+    if (!(args->flags & CNID_FLAG_MEMORY)) {
+        if ((stat(path, &st) < 0) && (ad_mkdir(path, 0777 & ~args->mask) < 0)) {
+            LOG(log_error, logtype_default, "tdb_open: DBHOME mkdir failed for %s", path);
+            goto fail;
+        }
+    }
+    else {
+        hash_size = 0;
+        tdb_flags = TDB_INTERNAL;
     }
     strcat(path, "/");
  
@@ -105,20 +112,16 @@ struct _cnid_db *cnid_tdb_open(const char *dir, mode_t mask)
 
     path[len + DBHOMELEN] = '\0';
     strcat(path, DBCNID);
-    db->tdb_cnid = tdb_open(path, 0, 0 , O_RDWR | O_CREAT, 0666 & ~mask);
+
+    db->tdb_cnid = tdb_open(path, hash_size, tdb_flags , O_RDWR | O_CREAT, 0666 & ~args->mask);
     if (!db->tdb_cnid) {
         LOG(log_error, logtype_default, "tdb_open: unable to open tdb", path);
         goto fail;
     }
     /* ------------- */
+    db->tdb_didname = db->tdb_cnid;
+    db->tdb_devino = db->tdb_cnid;
 
-    path[len + DBHOMELEN] = '\0';
-    strcat(path, DBDIDNAME);
-    db->tdb_didname = tdb_open(path, 0, 0 , O_RDWR | O_CREAT, 0666 & ~mask);
-    if (!db->tdb_cnid) {
-        LOG(log_error, logtype_default, "tdb_open: unable to open tdb", path);
-        goto fail;
-    }
     /* Check for version.  This way we can update the database if we need
      * to change the format in any way. */
     memset(&key, 0, sizeof(key));
@@ -141,15 +144,6 @@ struct _cnid_db *cnid_tdb_open(const char *dir, mode_t mask)
         free(data.dptr);
     }
         
-    /* ------------- */
-    path[len + DBHOMELEN] = '\0';
-    strcat(path, DBDEVINO);
-    db->tdb_devino = tdb_open(path, 0, 0 , O_RDWR | O_CREAT, 0666 & ~mask);
-    if (!db->tdb_devino) {
-        LOG(log_error, logtype_default, "tdb_open: unable to open tdb", path);
-        goto fail;
-    }
-
     return cdb;
 
 fail:
@@ -164,7 +158,7 @@ struct _cnid_module cnid_tdb_module = {
     "tdb",
     {NULL, NULL},
     cnid_tdb_open,
-    CNID_FLAG_SETUID
+    CNID_FLAG_SETUID | CNID_FLAG_BLOCK
 };
 
 

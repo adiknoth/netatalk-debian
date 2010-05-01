@@ -1,5 +1,5 @@
 /*
- * $Id: afp_config.c,v 1.22.6.9.2.4 2009/02/03 08:25:00 didg Exp $
+ * $Id: afp_config.c,v 1.32 2010/03/29 15:22:57 franklahm Exp $
  *
  * Copyright (c) 1997 Adrian Sun (asun@zoology.washington.edu)
  * All Rights Reserved.  See COPYRIGHT.
@@ -50,6 +50,9 @@ char *strchr (), *strrchr ();
 #ifdef USE_SRVLOC
 #include <slp.h>
 #endif /* USE_SRVLOC */
+#ifdef HAVE_NFSv4_ACLS
+#include <atalk/ldapconfig.h>
+#endif
 
 #include "globals.h"
 #include "afp_config.h"
@@ -114,7 +117,7 @@ static char * srvloc_encode(const struct afp_options *options, const char *name)
 
 	/* Convert name to maccharset */
         if ((size_t)-1 ==(convert_string_allocate( options->unixcharset, options->maccharset,
-			 name, strlen(name), &conv_name)) )
+			 name, -1, &conv_name)) )
 		return (char*)name;
 
 	/* Escape characters */
@@ -348,19 +351,16 @@ static AFPConfig *DSIConfigInit(const struct afp_options *options,
     AFPConfig *config;
     DSI *dsi;
     char *p, *q;
-#ifdef USE_SRVLOC
-    SLPError err;
-    SLPError callbackerr;
-    SLPHandle hslp;
-    struct servent *afpovertcp;
-    int afp_port = 548;
-    char *srvloc_hostname, *hostname;
-#endif /* USE_SRVLOC */
 
     if ((config = (AFPConfig *) calloc(1, sizeof(AFPConfig))) == NULL) {
         LOG(log_error, logtype_afpd, "DSIConfigInit: malloc(config): %s", strerror(errno) );
         return NULL;
     }
+
+    LOG(log_debug, logtype_afpd, "DSIConfigInit: hostname: %s, ip/port: %s/%s, ",
+        options->hostname,
+        options->ipaddr ? options->ipaddr : "default",
+        options->port ? options->port : "548");
 
     if ((dsi = dsi_init(protocol, "afpd", options->hostname,
                         options->ipaddr, options->port,
@@ -372,18 +372,24 @@ static AFPConfig *DSIConfigInit(const struct afp_options *options,
     }
 
     if (options->flags & OPTION_PROXY) {
-        LOG(log_info, logtype_afpd, "ASIP proxy initialized for %s:%d (%s)",
-            inet_ntoa(dsi->server.sin_addr), ntohs(dsi->server.sin_port),
-            VERSION);
+        LOG(log_info, logtype_afpd, "AFP/TCP proxy initialized for %s:%d (%s)",
+            getip_string((struct sockaddr *)&dsi->server), getip_port((struct sockaddr *)&dsi->server), VERSION);
     } else {
-        LOG(log_info, logtype_afpd, "ASIP started on %s:%d(%d) (%s)",
-            inet_ntoa(dsi->server.sin_addr), ntohs(dsi->server.sin_port),
-            dsi->serversock, VERSION);
+        LOG(log_info, logtype_afpd, "AFP/TCP started, advertising %s:%d (%s)",
+            getip_string((struct sockaddr *)&dsi->server), getip_port((struct sockaddr *)&dsi->server), VERSION);
     }
 
 #ifdef USE_SRVLOC
     dsi->srvloc_url[0] = '\0';	/*  Mark that we haven't registered.  */
     if (!(options->flags & OPTION_NOSLP)) {
+        SLPError err;
+        SLPError callbackerr;
+        SLPHandle hslp;
+        unsigned int afp_port;
+        int   l;
+        char *srvloc_hostname;
+        const char *hostname;
+
 	err = SLPOpen("en", SLP_FALSE, &hslp);
 	if (err != SLP_OK) {
 	    LOG(log_error, logtype_afpd, "DSIConfigInit: Error opening SRVLOC handle");
@@ -396,10 +402,7 @@ static AFPConfig *DSIConfigInit(const struct afp_options *options,
 	 * use a non-default port, they can, but be aware, this server might
 	 * not show up int the Network Browser.
 	 */
-	afpovertcp = getservbyname("afpovertcp", "tcp");
-	if (afpovertcp != NULL) {
-	    afp_port = afpovertcp->s_port;
-	}
+	afp_port = getip_port((struct sockaddr *)&dsi->server);
 	/* If specified use the FQDN to register with srvloc, otherwise use IP. */
 	p = NULL;
 	if (options->fqdn) {
@@ -407,19 +410,21 @@ static AFPConfig *DSIConfigInit(const struct afp_options *options,
 	    p = strchr(hostname, ':');
 	}	
 	else 
-	    hostname = inet_ntoa(dsi->server.sin_addr);
+	    hostname = getip_string((struct sockaddr *)&dsi->server);
+
 	srvloc_hostname = srvloc_encode(options, (options->server ? options->server : options->hostname));
 
-	if (strlen(srvloc_hostname) > (sizeof(dsi->srvloc_url) - strlen(hostname) - 21)) {
+	if ((p) || afp_port == 548) {
+	    l = snprintf(dsi->srvloc_url, sizeof(dsi->srvloc_url), "afp://%s/?NAME=%s", hostname, srvloc_hostname);
+	}
+	else {
+	    l = snprintf(dsi->srvloc_url, sizeof(dsi->srvloc_url), "afp://%s:%d/?NAME=%s", hostname, afp_port, srvloc_hostname);
+	}
+
+	if (l == -1 || l >= (int)sizeof(dsi->srvloc_url)) {
 	    LOG(log_error, logtype_afpd, "DSIConfigInit: Hostname is too long for SRVLOC");
 	    dsi->srvloc_url[0] = '\0';
 	    goto srvloc_reg_err;
-	}
-	if ((p) || dsi->server.sin_port == afp_port) {
-	    sprintf(dsi->srvloc_url, "afp://%s/?NAME=%s", hostname, srvloc_hostname);
-	}
-	else {
-	    sprintf(dsi->srvloc_url, "afp://%s:%d/?NAME=%s", hostname, ntohs(dsi->server.sin_port), srvloc_hostname);
 	}
 
 	err = SLPReg(hslp,
@@ -443,6 +448,7 @@ static AFPConfig *DSIConfigInit(const struct afp_options *options,
 	}
 
 	LOG(log_info, logtype_afpd, "Sucessfully registered %s with SRVLOC", dsi->srvloc_url);
+	config->server_cleanup = dsi_cleanup;
 
 srvloc_reg_err:
 	SLPClose(hslp);
@@ -466,9 +472,6 @@ srvloc_reg_err:
     (*refcount)++;
 
     config->server_start = dsi_start;
-#ifdef USE_SRVLOC
-    config->server_cleanup = dsi_cleanup;
-#endif 
     return config;
 }
 
@@ -538,7 +541,13 @@ AFPConfig *configinit(struct afp_options *cmdline)
     struct afp_options options;
     AFPConfig *config=NULL, *first = NULL; 
 
-    status_reset();
+#ifdef HAVE_NFSv4_ACLS
+    /* Parse afp_ldap.conf first so we can set the uuid option */
+    LOG(log_debug, logtype_afpd, "Start parsing afp_ldap.conf");
+    acl_ldap_readconfig(_PATH_ACL_LDAPCONF);
+    LOG(log_debug, logtype_afpd, "Finished parsing afp_ldap.conf");
+#endif
+
     /* if config file doesn't exist, load defaults */
     if ((fp = fopen(cmdline->configfile, "r")) == NULL)
     {
@@ -574,6 +583,12 @@ AFPConfig *configinit(struct afp_options *cmdline)
         if (!afp_options_parseline(p, &options))
             continue;
 
+#ifdef HAVE_NFSv4_ACLS
+	/* Enable UUID support if LDAP config is complete */
+	if (ldap_config_valid)
+	    options.flags |= OPTION_UUID;
+#endif
+
         /* this should really get a head and a tail to simplify things. */
         if (!first) {
             if ((first = AFPConfigInit(&options, cmdline)))
@@ -587,7 +602,7 @@ AFPConfig *configinit(struct afp_options *cmdline)
     fclose(fp);
 
     if (!have_option)
-        return AFPConfigInit(cmdline, cmdline);
+        first = AFPConfigInit(cmdline, cmdline);
 
     return first;
 }

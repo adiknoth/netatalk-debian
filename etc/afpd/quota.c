@@ -1,5 +1,5 @@
 /*
- * $Id: quota.c,v 1.22.8.11.2.3 2006/09/11 08:05:02 didg Exp $
+ * $Id: quota.c,v 1.35 2010/04/03 07:11:35 franklahm Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -41,14 +41,16 @@ char *strchr (), *strrchr ();
 
 #include <atalk/logger.h>
 #include <atalk/afp.h>
+#include <atalk/compat.h>
 
 #include "auth.h"
 #include "volume.h"
 #include "unix.h"
 
-/* if you want to debug quota
+/*
 #define DEBUG_QUOTA 0
 */
+
 #define WANT_USER_QUOTA 0
 #define WANT_GROUP_QUOTA 1
 
@@ -189,11 +191,7 @@ static int get_linux_quota(int what, char *path, uid_t euser_id, struct dqblk *d
  Abstract out the XFS Quota Manager quota get call.
 ****************************************************************************/
 
-static int get_linux_xfs_quota(what, path, euser_id, dqb)
-int what;
-char *path;
-uid_t euser_id;
-struct dqblk *dqb;
+static int get_linux_xfs_quota(int what, char *path, uid_t euser_id, struct dqblk *dqb)
 {
 	int ret = -1;
 #ifdef HAVE_LINUX_XQM_H
@@ -220,11 +218,7 @@ struct dqblk *dqb;
 ** For API v2 the results are copied back into a v1 structure.
 ** Taken from quota-1.4.8 perl module
 */
-static int get_linux_fs_quota( what, path, euser_id, dqb)
-int what;
-char *path;
-uid_t euser_id;
-struct dqblk *dqb;
+static int get_linux_fs_quota(int what, char *path, uid_t euser_id, struct dqblk *dqb)
 {
 	int ret;
 
@@ -296,16 +290,14 @@ struct dqblk *dqb;
  * on which "file" resides.  Returns NULL on failure.
  */
 static char *
-mountp( file, nfs)
-char	*file;
-int         *nfs;
+mountp( char *file, int *nfs)
 {
     struct stat			sb;
     FILE 			*mtab;
     dev_t			devno;
     static struct mnttab	mnt;
 
-    if ( stat( file, &sb ) < 0 ) {
+    if ( lstat( file, &sb ) < 0 ) {
         return( NULL );
     }
     devno = sb.st_dev;
@@ -316,14 +308,14 @@ int         *nfs;
 
     while ( getmntent( mtab, &mnt ) == 0 ) {
         /* local fs */
-        if ( (stat( mnt.mnt_special, &sb ) == 0) && (devno == sb.st_rdev)) {
+        if ( (lstat( mnt.mnt_special, &sb ) == 0) && (devno == sb.st_rdev)) {
             fclose( mtab );
             return mnt.mnt_mountp;
         }
 
         /* check for nfs. we probably should use
          * strcmp(mnt.mnt_fstype, MNTTYPE_NFS), but that's not as fast. */
-        if ((stat(mnt.mnt_mountp, &sb) == 0) && (devno == sb.st_dev) &&
+        if ((lstat(mnt.mnt_mountp, &sb) == 0) && (devno == sb.st_dev) &&
                 strchr(mnt.mnt_special, ':')) {
             *nfs = 1;
             fclose( mtab );
@@ -343,9 +335,7 @@ int         *nfs;
 */
 
 static char *
-special( file, nfs )
-char *file;
-int  *nfs;
+special( char *file, int *nfs)
 {
     static struct fs_data	fsd;
 
@@ -364,9 +354,7 @@ int  *nfs;
 #if (defined(HAVE_SYS_MOUNT_H) && !defined(__linux__)) || defined(BSD4_4) || defined(_IBMR2)
 
 static char *
-special( file, nfs )
-char	*file;
-int         *nfs;
+special(char *file, int *nfs)
 {
     static struct statfs	sfs;
 
@@ -389,9 +377,7 @@ int         *nfs;
 #else /* BSD4_4 */
 
 static char *
-special( file, nfs )
-char *file;
-int *nfs;
+special(char *file, int *nfs)
 {
     struct stat		sb;
     FILE 		*mtab;
@@ -399,7 +385,7 @@ int *nfs;
     struct mntent	*mnt;
     int 		found=0;
 
-    if ( stat( file, &sb ) < 0 ) {
+    if ( lstat( file, &sb ) < 0 ) {
         return( NULL );
     }
     devno = sb.st_dev;
@@ -410,14 +396,14 @@ int *nfs;
 
     while (( mnt = getmntent( mtab )) != NULL ) {
         /* check for local fs */
-        if ( (stat( mnt->mnt_fsname, &sb ) == 0) && devno == sb.st_rdev) {
+        if ( (lstat( mnt->mnt_fsname, &sb ) == 0) && devno == sb.st_rdev) {
 	    found = 1;
 	    break;
         }
 
         /* check for an nfs mount entry. the alternative is to use
         * strcmp(mnt->mnt_type, MNTTYPE_NFS) instead of the strchr. */
-        if ((stat(mnt->mnt_dir, &sb) == 0) && (devno == sb.st_dev) &&
+        if ((lstat(mnt->mnt_dir, &sb) == 0) && (devno == sb.st_dev) &&
                 strchr(mnt->mnt_fsname, ':')) {
             *nfs = 1;
 	    found = 1;
@@ -442,10 +428,7 @@ int *nfs;
 #endif /* __svr4__ */
 
 
-static int getfsquota(vol, uid, dq)
-struct vol		*vol;
-const int		uid;
-struct dqblk		*dq;
+static int getfsquota(struct vol *vol, const int uid, struct dqblk *dq)
 
 {
 	struct dqblk dqg;
@@ -559,10 +542,7 @@ struct dqblk		*dq;
 }
 
 
-static int getquota( vol, dq, bsize)
-struct vol		*vol;
-struct dqblk	 	*dq;
-const u_int32_t		bsize;
+static int getquota( struct vol *vol, struct dqblk *dq, const u_int32_t bsize)
 {
     char *p;
 
@@ -645,8 +625,7 @@ const u_int32_t		bsize;
 #endif /* TRU64 */
 }
 
-static int overquota( dqblk )
-struct dqblk	  *dqblk;
+static int overquota( struct dqblk *dqblk)
 {
     struct timeval	tv;
 
@@ -664,7 +643,7 @@ struct dqblk	  *dqblk;
         return( 0 );
     }
 #else /* ultrix */
-    if ( gettimeofday( &tv, 0 ) < 0 ) {
+    if ( gettimeofday( &tv, NULL ) < 0 ) {
         LOG(log_error, logtype_afpd, "overquota: gettimeofday: %s", strerror(errno) );
         return( AFPERR_PARAM );
     }
@@ -701,10 +680,7 @@ struct dqblk	  *dqblk;
 #define tobytes(a, b)  dbtob((VolSpace) (a))
 #endif
 
-int uquota_getvolspace( vol, bfree, btotal, bsize)
-struct vol	*vol;
-VolSpace	*bfree, *btotal;
-const u_int32_t bsize;
+int uquota_getvolspace( struct vol *vol, VolSpace *bfree, VolSpace *btotal, const u_int32_t bsize)
 {
 	u_int64_t this_bsize;
 	struct dqblk dqblk;
@@ -720,19 +696,19 @@ const u_int32_t bsize;
 #endif
 
 #ifdef DEBUG_QUOTA
-        LOG(log_info, logtype_afpd, "after calling getquota in uquota_getvolspace!" );
-        LOG(log_info, logtype_afpd, "dqb_ihardlimit: %u", dqblk.dqb_ihardlimit );
-        LOG(log_info, logtype_afpd, "dqb_isoftlimit: %u", dqblk.dqb_isoftlimit );
-        LOG(log_info, logtype_afpd, "dqb_curinodes : %u", dqblk.dqb_curinodes );
-        LOG(log_info, logtype_afpd, "dqb_bhardlimit: %u", dqblk.dqb_bhardlimit );
-        LOG(log_info, logtype_afpd, "dqb_bsoftlimit: %u", dqblk.dqb_bsoftlimit );
-        LOG(log_info, logtype_afpd, "dqb_curblocks : %u", dqblk.dqb_curblocks );
-        LOG(log_info, logtype_afpd, "dqb_btime     : %u", dqblk.dqb_btime );
-        LOG(log_info, logtype_afpd, "dqb_itime     : %u", dqblk.dqb_itime );
-        LOG(log_info, logtype_afpd, "bsize/this_bsize : %u/%u", bsize, this_bsize );
-	LOG(log_info, logtype_afpd, "dqblk.dqb_bhardlimit size: %u", tobytes( dqblk.dqb_bhardlimit, this_bsize ));
-	LOG(log_info, logtype_afpd, "dqblk.dqb_bsoftlimit size: %u", tobytes( dqblk.dqb_bsoftlimit, this_bsize ));
-	LOG(log_info, logtype_afpd, "dqblk.dqb_curblocks  size: %u", tobytes( dqblk.dqb_curblocks, this_bsize ));
+        LOG(log_debug, logtype_afpd, "after calling getquota in uquota_getvolspace!" );
+        LOG(log_debug, logtype_afpd, "dqb_ihardlimit: %u", dqblk.dqb_ihardlimit );
+        LOG(log_debug, logtype_afpd, "dqb_isoftlimit: %u", dqblk.dqb_isoftlimit );
+        LOG(log_debug, logtype_afpd, "dqb_curinodes : %u", dqblk.dqb_curinodes );
+        LOG(log_debug, logtype_afpd, "dqb_bhardlimit: %u", dqblk.dqb_bhardlimit );
+        LOG(log_debug, logtype_afpd, "dqb_bsoftlimit: %u", dqblk.dqb_bsoftlimit );
+        LOG(log_debug, logtype_afpd, "dqb_curblocks : %u", dqblk.dqb_curblocks );
+        LOG(log_debug, logtype_afpd, "dqb_btime     : %u", dqblk.dqb_btime );
+        LOG(log_debug, logtype_afpd, "dqb_itime     : %u", dqblk.dqb_itime );
+        LOG(log_debug, logtype_afpd, "bsize/this_bsize : %u/%u", bsize, this_bsize );
+	LOG(log_debug, logtype_afpd, "dqblk.dqb_bhardlimit size: %u", tobytes( dqblk.dqb_bhardlimit, this_bsize ));
+	LOG(log_debug, logtype_afpd, "dqblk.dqb_bsoftlimit size: %u", tobytes( dqblk.dqb_bsoftlimit, this_bsize ));
+	LOG(log_debug, logtype_afpd, "dqblk.dqb_curblocks  size: %u", tobytes( dqblk.dqb_curblocks, this_bsize ));
 #endif /* DEBUG_QUOTA */ 
 
 	/* no limit set for this user. it might be set in the future. */
@@ -755,10 +731,10 @@ const u_int32_t bsize;
     	}
 
 #ifdef DEBUG_QUOTA
-        LOG(log_info, logtype_afpd, "bfree          : %u", *bfree );
-        LOG(log_info, logtype_afpd, "btotal         : %u", *btotal );
-        LOG(log_info, logtype_afpd, "bfree          : %uKB", *bfree/1024 );
-        LOG(log_info, logtype_afpd, "btotal         : %uKB", *btotal/1024 );
+        LOG(log_debug, logtype_afpd, "bfree          : %u", *bfree );
+        LOG(log_debug, logtype_afpd, "btotal         : %u", *btotal );
+        LOG(log_debug, logtype_afpd, "bfree          : %uKB", *bfree/1024 );
+        LOG(log_debug, logtype_afpd, "btotal         : %uKB", *btotal/1024 );
 #endif
 
 	return( AFP_OK );

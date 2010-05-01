@@ -1,24 +1,28 @@
 /*
- * $Id: dbd.h,v 1.1.4.3.2.1 2004/12/21 13:36:12 didg Exp $
+ * $Id: dbd.h,v 1.7 2009/11/25 14:59:15 franklahm Exp $
  *
  * Copyright (C) Joerg Lenneis 2003
+ * Copyright (C) Frank Lahm 2009
  * All Rights Reserved.  See COPYING.
  */
 
 #ifndef CNID_DBD_DBD_H
 #define CNID_DBD_DBD_H 1
 
-
 #include <atalk/cnid_dbd_private.h>
 
-extern int      dbd_stamp __P((void));
-extern int      dbd_add  __P((struct cnid_dbd_rqst *, struct cnid_dbd_rply *));
-extern int      dbd_get  __P((struct cnid_dbd_rqst *, struct cnid_dbd_rply *));
-extern int      dbd_resolve  __P((struct cnid_dbd_rqst *, struct cnid_dbd_rply *));
-extern int      dbd_lookup  __P((struct cnid_dbd_rqst *, struct cnid_dbd_rply *));
-extern int      dbd_update  __P((struct cnid_dbd_rqst *, struct cnid_dbd_rply *));
-extern int      dbd_delete  __P((struct cnid_dbd_rqst *, struct cnid_dbd_rply *));
-extern int      dbd_getstamp  __P((struct cnid_dbd_rqst *, struct cnid_dbd_rply *));
-extern int      dbd_check  __P((char *));
+extern int add_cnid(DBD *dbd, struct cnid_dbd_rqst *rqst, struct cnid_dbd_rply *rply);
+extern int get_cnid(DBD *dbd, struct cnid_dbd_rply *rply);
+
+extern int dbd_stamp(DBD *dbd);
+extern int dbd_add(DBD *dbd, struct cnid_dbd_rqst *, struct cnid_dbd_rply *, int nolookup);
+extern int dbd_lookup(DBD *dbd, struct cnid_dbd_rqst *, struct cnid_dbd_rply *, int roflag);
+extern int dbd_get(DBD *dbd, struct cnid_dbd_rqst *, struct cnid_dbd_rply *);
+extern int dbd_resolve(DBD *dbd, struct cnid_dbd_rqst *, struct cnid_dbd_rply *);
+extern int dbd_update(DBD *dbd, struct cnid_dbd_rqst *, struct cnid_dbd_rply *);
+extern int dbd_delete(DBD *dbd, struct cnid_dbd_rqst *, struct cnid_dbd_rply *, int idx);
+extern int dbd_getstamp(DBD *dbd, struct cnid_dbd_rqst *, struct cnid_dbd_rply *);
+extern int dbd_rebuild_add(DBD *dbd, struct cnid_dbd_rqst *, struct cnid_dbd_rply *);
+extern int dbd_check_indexes(DBD *dbd, char *);
 
 #endif /* CNID_DBD_DBD_H */

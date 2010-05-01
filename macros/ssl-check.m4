@@ -1,4 +1,4 @@
-dnl $Id: ssl-check.m4,v 1.8.6.4.2.1 2008/12/02 03:11:59 didg Exp $
+dnl $Id: ssl-check.m4,v 1.14 2008/11/22 12:07:26 didg Exp $
 dnl Autoconf macro to check for SSL or OpenSSL
 
 AC_DEFUN([AC_CRYPT], [

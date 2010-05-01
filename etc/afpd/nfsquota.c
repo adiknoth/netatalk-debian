@@ -1,5 +1,5 @@
 /*
- * $Id: nfsquota.c,v 1.10.8.3.2.1 2005/01/31 17:00:59 didg Exp $
+ * $Id: nfsquota.c,v 1.13 2009/10/13 22:55:37 didg Exp $
  *
  * parts of this are lifted from the bsd quota program and are
  * therefore under the following copyright:
@@ -57,11 +57,10 @@ char *strchr (), *strrchr ();
 
 /* lifted (with modifications) from the bsd quota program */
 static int
-callaurpc(vol, prognum, versnum, procnum, inproc, in, outproc, out)
-struct vol *vol;
-u_long prognum, versnum, procnum;
-xdrproc_t inproc, outproc;
-char *in, *out;
+callaurpc(struct vol *vol,
+    u_long prognum, u_long versnum, u_long procnum,
+    xdrproc_t inproc, char *in, 
+    xdrproc_t outproc, char *out)
 {
     enum clnt_stat clnt_stat;
     struct timeval tottimeout;

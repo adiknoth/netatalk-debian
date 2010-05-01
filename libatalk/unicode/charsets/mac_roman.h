@@ -1,6 +1,6 @@
 
 /*
- * $Id: mac_roman.h,v 1.1.2.1 2003/09/09 16:42:22 didg Exp $
+ * $Id: mac_roman.h,v 1.2 2005/04/28 20:50:04 bfernhomberg Exp $
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

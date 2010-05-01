@@ -1,5 +1,5 @@
 /*
- * $Id: pap.c,v 1.9.6.1 2004/06/15 00:44:03 bfernhomberg Exp $
+ * $Id: pap.c,v 1.14 2009/10/16 01:10:59 didg Exp $
  *
  * Copyright (c) 1990,1994 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -30,14 +30,12 @@
 #define FUCKED
 
 #define _PATH_PAPRC	".paprc"
-char	*nbpfailure = "AppleTalk printer offline";
 
 /* Forward Declarations */
-void updatestatus(char *s, int len);
-int send_file(int fd, ATP atp, int lastfile);
+static void updatestatus(char *s, int len);
+static int send_file(int fd, ATP atp, int lastfile);
 
-void usage( path )
-    char	*path;
+static void usage(char *path)
 {
     char	*p;
 
@@ -63,8 +61,8 @@ void usage( path )
     exit( 2 );
 }
 
-char *
-paprc()
+static char *
+paprc(void)
 {
     static char	s[ 32 + 1 + 32 + 1 + 32 ];
     char	*name = NULL;
@@ -90,20 +88,20 @@ paprc()
     return( name );
 }
 
-char			*printer = NULL;
-char			*status = NULL;
-int			noeof = 0;
-int			waitforprinter = 0;
+static char			*printer = NULL;
+static char			*status = NULL;
+static int			noeof = 0;
+static int			waitforprinter = 0;
 
-unsigned char		connid, quantum, oquantum = PAP_MAXQUANTUM;
-struct sockaddr_at	sat;
+static unsigned char		connid, quantum, oquantum = PAP_MAXQUANTUM;
+static struct sockaddr_at	sat;
 
-char			cbuf[ 8 ];
-struct nbpnve		nn;
-ATP			satp;
+static char			cbuf[ 8 ];
+static struct nbpnve		nn;
+static ATP			satp;
 
-char		fbuf[ PAP_MAXQUANTUM ][ 4 + PAP_MAXDATA ];
-struct iovec	rfiov[ PAP_MAXQUANTUM ] = {
+static char		fbuf[ PAP_MAXQUANTUM ][ 4 + PAP_MAXDATA ];
+static struct iovec	rfiov[ PAP_MAXQUANTUM ] = {
     { fbuf[ 0 ] + 4,	0 },
     { fbuf[ 1 ] + 4,	0 },
     { fbuf[ 2 ] + 4,	0 },
@@ -113,7 +111,8 @@ struct iovec	rfiov[ PAP_MAXQUANTUM ] = {
     { fbuf[ 6 ] + 4,	0 },
     { fbuf[ 7 ] + 4,	0 },
 };
-struct iovec	sniov[ PAP_MAXQUANTUM ] = {
+
+static struct iovec	sniov[ PAP_MAXQUANTUM ] = {
     { fbuf[ 0 ],	0 },
     { fbuf[ 1 ],	0 },
     { fbuf[ 2 ],	0 },
@@ -124,8 +123,8 @@ struct iovec	sniov[ PAP_MAXQUANTUM ] = {
     { fbuf[ 7 ],	0 },
 };
 
-char		nbuf[ PAP_MAXQUANTUM ][ 4 + PAP_MAXDATA ];
-struct iovec	rniov[ PAP_MAXQUANTUM ] = {
+static char		nbuf[ PAP_MAXQUANTUM ][ 4 + PAP_MAXDATA ];
+static struct iovec	rniov[ PAP_MAXQUANTUM ] = {
     { nbuf[ 0 ],	0 },
     { nbuf[ 1 ],	0 },
     { nbuf[ 2 ],	0 },
@@ -135,7 +134,8 @@ struct iovec	rniov[ PAP_MAXQUANTUM ] = {
     { nbuf[ 6 ],	0 },
     { nbuf[ 7 ],	0 },
 };
-struct iovec	sfiov[ PAP_MAXQUANTUM ] = {
+
+static struct iovec	sfiov[ PAP_MAXQUANTUM ] = {
     { nbuf[ 0 ] + 4,	0 },
     { nbuf[ 1 ] + 4,	0 },
     { nbuf[ 2 ] + 4,	0 },
@@ -146,11 +146,9 @@ struct iovec	sfiov[ PAP_MAXQUANTUM ] = {
     { nbuf[ 7 ] + 4,	0 },
 };
 
-int debug;
+static int debug;
 
-int main( ac, av )
-    int		ac;
-    char	**av;
+int main( int ac, char	**av)
 {
     ATP			atp;
     struct atp_block	atpb;
@@ -322,7 +320,7 @@ int main( ac, av )
     cbuf[ 2 ] = cbuf[ 3 ] = 0;
     cbuf[ 4 ] = atp_sockaddr( atp )->sat_port;
     cbuf[ 5 ] = oquantum;	/* flow quantum */
-    if ( gettimeofday( &stv, 0 ) < 0 ) {
+    if ( gettimeofday( &stv, NULL ) < 0 ) {
 	perror( "gettimeofday" );
 	exit( 2 );
     }
@@ -330,7 +328,7 @@ int main( ac, av )
 	if ( cuts ) {
 	    waiting = 0xffff;
 	} else {
-	    if ( gettimeofday( &tv, 0 ) < 0 ) {
+	    if ( gettimeofday( &tv, NULL ) < 0 ) {
 		perror( "gettimeofday" );
 		exit( 2 );
 	    }
@@ -464,14 +462,11 @@ int main( ac, av )
     exit( 0 );
 }
 
-int		data = 0;
-unsigned char	port;
-u_int16_t       seq = 0, rseq = 1;
+static int		data = 0;
+static unsigned char	port;
+static u_int16_t	seq = 0;
 
-int send_file( fd, atp, lastfile )
-    int			fd;
-    ATP			atp;
-    int			lastfile;
+static int send_file( int fd, ATP atp, int lastfile)
 {
     struct timeval	stv, tv;
     struct sockaddr_at	ssat;
@@ -481,7 +476,7 @@ int send_file( fd, atp, lastfile )
     int			cc, i;
     unsigned short	netseq;
 
-    if ( gettimeofday( &stv, 0 ) < 0 ) {
+    if ( gettimeofday( &stv, NULL ) < 0 ) {
 	perror( "gettimeofday" );
 	exit( 2 );
     }
@@ -507,7 +502,7 @@ int send_file( fd, atp, lastfile )
 	if(debug){ printf( "READ %d >\n", seq ), fflush( stdout );}
 
     for (;;) {
-	if ( gettimeofday( &tv, 0 ) < 0 ) {
+	if ( gettimeofday( &tv, NULL ) < 0 ) {
 	    perror( "gettimeofday" );
 	    exit( 2 );
 	}
@@ -543,7 +538,7 @@ int send_file( fd, atp, lastfile )
 	}
 	FD_SET( atp_fileno( atp ), &fds );
 
-	if (( cc = select( FD_SETSIZE, &fds, 0, 0, &tv )) < 0 ) {
+	if (( cc = select( FD_SETSIZE, &fds, NULL, NULL, &tv )) < 0 ) {
 	    perror( "select" );
 	    exit( 2 );
 	}
@@ -845,9 +840,7 @@ int send_file( fd, atp, lastfile )
     }
 }
 
-void updatestatus( s, len )
-    char	*s;
-    int		len;
+static void updatestatus(char *s, int len)
 {
     int			fd = -1;
     struct iovec	iov[ 3 ];

@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.17.8.6.2.3 2009/01/19 02:25:57 didg Exp $
+ * $Id: main.c,v 1.25 2009/12/13 02:21:47 didg Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved. See COPYRIGHT.
@@ -55,6 +55,7 @@
 #include <atalk/compat.h>
 #include <atalk/zip.h>
 #include <atalk/rtmp.h>
+#include <atalk/nbp.h>
 #include <atalk/ddp.h>
 #include <atalk/atp.h>
 #include <atalk/paths.h>
@@ -70,6 +71,7 @@
 #include "list.h"
 #include "rtmp.h"
 #include "zip.h"
+#include "nbp.h"
 #include "atserv.h"
 #include "main.h"
 
@@ -97,12 +99,11 @@ int ifconfig(const char *iname, unsigned long cmd, struct sockaddr_at *sa);
 
 #define PKTSZ	1024
 
-extern int	rtmp_packet();
-extern int	nbp_packet();
-extern int	aep_packet();
-extern int	zip_packet();
+extern int aep_packet(struct atport *ap, struct sockaddr_at *from, char *data, int len);
 
 int		rtfd;
+int 		transition = 0;
+int		stabletimer, newrtmpdata = 0;
 
 static struct atserv	atserv[] = {
     { "rtmp",		1,	rtmp_packet },		/* 0 */
@@ -114,17 +115,17 @@ static int		atservNATSERV = elements( atserv );
 
 struct interface	*interfaces = NULL, *ciface = NULL;
 
-int		debug = 0, quiet = 0, chatty = 0;
-char		*configfile = NULL;
-int		ziptimeout = 0, transition = 0;
-int		stabletimer, stable = 0, newrtmpdata = 0, noparent = 0;
-static int	ninterfaces;
-int		defphase = IFACE_PHASE2;
-int		nfds = 0;
-fd_set		fds;
-char		Packet[ PKTSZ ];
-char		*version = VERSION;
-static char     *pidfile = _PATH_ATALKDLOCK;
+static int		debug = 0, quiet = 0, chatty = 0;
+static char		*configfile = NULL;
+static int		ziptimeout = 0;
+static int		stable = 0, noparent = 0;
+static int		ninterfaces;
+static int		defphase = IFACE_PHASE2;
+static int		nfds = 0;
+static fd_set		fds;
+static char		Packet[ PKTSZ ];
+static char		*version = VERSION;
+static char     	*pidfile = _PATH_ATALKDLOCK;
 
 
 /* from config.c */
@@ -163,6 +164,30 @@ static void atalkd_exit(const int i)
   exit(i);
 }
 
+/* XXX need better error handling for gone interfaces, delete routes and so on 
+ * moreover there's no way to put an interface back short of restarting atalkd
+ * thus after the first time, silently fail
+*/
+static ssize_t sendto_iface(struct interface *iface, int sockfd, const void *buf, size_t len, 
+                       const struct sockaddr_at	 *dest_addr)
+{
+    ssize_t ret = sendto( sockfd, buf, len, 0, (struct sockaddr *)dest_addr, sizeof( struct sockaddr_at ));
+
+    if (ret < 0 ) {
+        if (!(iface->i_flags & IFACE_ERROR)) {
+            LOG(log_error, logtype_atalkd, "as_timer sendto %u.%u (%u): %s",
+				    ntohs( dest_addr->sat_addr.s_net ),
+				    dest_addr->sat_addr.s_node,
+				    ntohs( iface->i_rt->rt_firstnet ),
+				    strerror(errno) );
+        }
+        iface->i_flags |= IFACE_ERROR;
+    }
+    else {
+        iface->i_flags &= ~IFACE_ERROR;
+    }
+    return ret;
+}
 
 static void as_timer(int sig _U_)
 {
@@ -182,6 +207,7 @@ static void as_timer(int sig _U_)
     ap=zap=rap=NULL;
 
     memset(&sat, 0, sizeof( struct sockaddr_at ));
+
     for ( iface = interfaces; iface; iface = iface->i_next ) {
 	if ( iface->i_flags & IFACE_LOOPBACK ) {
 	    continue;
@@ -195,8 +221,7 @@ static void as_timer(int sig _U_)
 	    }
 	}
 
-	if (( iface->i_flags & ( IFACE_ADDR|IFACE_CONFIG|IFACE_NOROUTER )) ==
-		IFACE_ADDR ) {
+	if (( iface->i_flags & ( IFACE_ADDR|IFACE_CONFIG|IFACE_NOROUTER )) == IFACE_ADDR ) {
 	    if ( iface->i_time < 3 ) {
 		if ( iface->i_flags & IFACE_PHASE1 ) {
 		  if (rtmp_request( iface ) < 0) {
@@ -220,10 +245,8 @@ static void as_timer(int sig _U_)
 			 * No seed info, and we've got multiple interfaces.
 			 * Wait forever.
 			 */
-			LOG(log_info, logtype_atalkd,
-				"as_timer multiple interfaces, no seed" );
-			LOG(log_info, logtype_atalkd, "as_timer can't configure %s",
-				iface->i_name );
+			LOG(log_info, logtype_atalkd, "as_timer multiple interfaces, no seed" );
+			LOG(log_info, logtype_atalkd, "as_timer can't configure %s", iface->i_name );
 			LOG(log_info, logtype_atalkd, "as_timer waiting for router" );
 			iface->i_time = 0;
 			continue;
@@ -234,8 +257,7 @@ static void as_timer(int sig _U_)
 			 */
 			iface->i_flags |= IFACE_CONFIG;
 			for ( zt = iface->i_czt; zt; zt = zt->zt_next ) {
-			    if (addzone( iface->i_rt, zt->zt_len, 
-					 zt->zt_name) < 0) {
+			    if (addzone( iface->i_rt, zt->zt_len, zt->zt_name) < 0) {
 			      LOG(log_error, logtype_atalkd, "addzone: %s", strerror(errno));
 			      atalkd_exit(1);
 			    }
@@ -245,26 +267,20 @@ static void as_timer(int sig _U_)
 			    iface->i_rt->rt_flags |= RTMPTAB_HASZONES;
 			}
 			if ( iface->i_flags & IFACE_PHASE1 ) {
-			    LOG(log_info, logtype_atalkd,
-				    "as_timer configured %s phase 1 from seed",
-				    iface->i_name );
+			    LOG(log_info, logtype_atalkd, "as_timer configured %s phase 1 from seed", iface->i_name );
 			    setaddr( iface, IFACE_PHASE1,
 				    iface->i_caddr.sat_addr.s_net,
 				    iface->i_addr.sat_addr.s_node,
 				    iface->i_caddr.sat_addr.s_net,
 				    iface->i_caddr.sat_addr.s_net );
 			} else {
-			    LOG(log_info, logtype_atalkd,
-				    "as_timer configured %s phase 2 from seed",
-				    iface->i_name );
+			    LOG(log_info, logtype_atalkd, "as_timer configured %s phase 2 from seed", iface->i_name );
 			}
 
 			if ( looproute( iface, RTMP_ADD )) { /* -1 or 1 */
-			    LOG(log_error, logtype_atalkd,
-				    "as_timer: can't route %u.%u to loop: %s",
-				    ntohs( iface->i_addr.sat_addr.s_net ),
-				    iface->i_addr.sat_addr.s_node,
-				    strerror(errno) );
+			    LOG(log_error, logtype_atalkd, "as_timer: can't route %u.%u to loop: %s", 
+			            ntohs( iface->i_addr.sat_addr.s_net ),
+				    iface->i_addr.sat_addr.s_node, strerror(errno) );
 			    atalkd_exit( 1 );
 			}
 			if ( iface == ciface ) {
@@ -282,16 +298,12 @@ static void as_timer(int sig _U_)
 		    if ( iface->i_flags & IFACE_PHASE2 ) {
 			iface->i_rt->rt_firstnet = 0;
 			iface->i_rt->rt_lastnet = htons( STARTUP_LASTNET );
-			setaddr( iface, IFACE_PHASE2,
-				iface->i_addr.sat_addr.s_net,
-				iface->i_addr.sat_addr.s_node,
+			setaddr( iface, IFACE_PHASE2, iface->i_addr.sat_addr.s_net, iface->i_addr.sat_addr.s_node,
 				0, htons( STARTUP_LASTNET ));
 		    }
 		    if ( looproute( iface, RTMP_ADD ) ) { /* -1 or 1 */
-			LOG(log_error, logtype_atalkd,
-				"as_timer: can't route %u.%u to loopback: %s",
-				ntohs( iface->i_addr.sat_addr.s_net ),
-				iface->i_addr.sat_addr.s_node,
+			LOG(log_error, logtype_atalkd, "as_timer: can't route %u.%u to loopback: %s",
+				ntohs( iface->i_addr.sat_addr.s_net ), iface->i_addr.sat_addr.s_node,
 				strerror(errno) );
 			atalkd_exit( 1 );
 		    }
@@ -323,14 +335,12 @@ static void as_timer(int sig _U_)
 	     * our zone has gone away.
 	     */
 	    if ( ++gate->g_state >= RTMPTAB_BAD ) {
-		LOG(log_info, logtype_atalkd, "as_timer gateway %u.%u down",
-			ntohs( gate->g_sat.sat_addr.s_net ),
+		LOG(log_info, logtype_atalkd, "as_timer gateway %u.%u down", ntohs( gate->g_sat.sat_addr.s_net ),
 			gate->g_sat.sat_addr.s_node );
 		rtmp = gate->g_rt;
 		while ( rtmp ) {
 		    frtmp = rtmp->rt_next;
-		    if ( rtmp->rt_hops == RTMPHOPS_POISON ||
-			    rtmp->rt_iprev == 0 ) {
+		    if ( rtmp->rt_hops == RTMPHOPS_POISON || rtmp->rt_iprev == NULL ) {
 			rtmp_free( rtmp );
 		    } else {
 			rtmp->rt_hops = RTMPHOPS_POISON;
@@ -344,13 +354,13 @@ static void as_timer(int sig _U_)
 		    }
 		    rtmp = frtmp;
 		}
-		if ( gate->g_rt == 0 ) {
-		    if ( gate->g_prev == 0 ) {
+		if ( gate->g_rt == NULL ) {
+		    if ( gate->g_prev == NULL ) {
 			gate->g_iface->i_gate = gate->g_next;
 		    } else {
 			gate->g_prev->g_next = gate->g_next;
 		    }
-		    if ( gate->g_next != 0 ) {
+		    if ( gate->g_next != NULL ) {
 			gate->g_next->g_prev = gate->g_prev;
 		    }
 		    fgate = gate;	/* can't free here, just mark it */
@@ -365,8 +375,7 @@ static void as_timer(int sig _U_)
 		 * if we're not a seed router.
 		 */
 
-		if ( gate->g_iface->i_gate == 0 && 
-		     ((iface->i_flags & IFACE_SEED) == 0)) {
+		if ( gate->g_iface->i_gate == NULL && ((iface->i_flags & IFACE_SEED) == 0)) {
 		    gate->g_iface->i_flags |= IFACE_NOROUTER;
 		    gate->g_iface->i_flags &= ~IFACE_CONFIG;
 
@@ -423,7 +432,7 @@ static void as_timer(int sig _U_)
 		 */
 		if ( rtmp->rt_state >= RTMPTAB_BAD ) {
 		    frtmp = rtmp->rt_next;
-		    if ( rtmp->rt_iprev == 0 ) {	/* not in use */
+		    if ( rtmp->rt_iprev == NULL ) {	/* not in use */
 			rtmp_free( rtmp );
 		    } else {				/* in use */
 			if ( rtmp->rt_hops == RTMPHOPS_POISON ) {
@@ -445,8 +454,7 @@ static void as_timer(int sig _U_)
 		/*
 		 * Do ZIP lookups.
 		 */
-		if ( rtmp->rt_iprev &&
-			( rtmp->rt_flags & RTMPTAB_HASZONES ) == 0 ) {
+		if ( rtmp->rt_iprev && ( rtmp->rt_flags & RTMPTAB_HASZONES ) == 0 ) {
 		    if ( data + sizeof( u_short ) > end || n == 255 ) {
 			/* send what we've got */
 			zh.zh_op = ZIPOP_QUERY;
@@ -456,11 +464,7 @@ static void as_timer(int sig _U_)
 			*data++ = DDPTYPE_ZIP;
 			memcpy( data, &zh, sizeof( struct ziphdr ));
 
-			if ( sendto( zap->ap_fd, packet, cc, 0,
-				(struct sockaddr *)&sat,
-				sizeof( struct sockaddr_at )) < 0 ) {
-			    LOG(log_error, logtype_atalkd, "as_timer sendto: %s", strerror(errno) );
-			}
+			sendto_iface(iface,  zap->ap_fd, packet, cc, &sat);
 			sentzipq = 1;
 
 			n = 0;
@@ -478,8 +482,7 @@ static void as_timer(int sig _U_)
 		     * ask about, and warn that we can't get it's zone.
 		     */
 		    if ( rtmp->rt_nzq++ == 3 ) {
-			LOG(log_info, logtype_atalkd, "as_timer can't get zone for %u",
-				ntohs( rtmp->rt_firstnet ));
+			LOG(log_info, logtype_atalkd, "as_timer can't get zone for %u", ntohs( rtmp->rt_firstnet ));
 		    }
 		    if ( rtmp->rt_nzq > 3 ) {
 			if ( ziptimeout ) {
@@ -506,10 +509,7 @@ static void as_timer(int sig _U_)
 		*data++ = DDPTYPE_ZIP;
 		memcpy( data, &zh, sizeof( struct ziphdr ));
 
-		if ( sendto( zap->ap_fd, packet, cc, 0, (struct sockaddr *)&sat,
-			sizeof( struct sockaddr_at )) < 0 ) {
-		    LOG(log_error, logtype_atalkd, "as_timer sendto: %s", strerror(errno) );
-		}
+		sendto_iface( iface, zap->ap_fd, packet, cc, &sat);
 	    }
 	}
 	if ( fgate ) {
@@ -575,31 +575,27 @@ static void as_timer(int sig _U_)
 		 */
 		for ( rtmp = iface2->i_rt; rtmp; rtmp = rtmp->rt_inext ) {
 		    /* don't broadcast routes we have no zone for */
-		    if ( rtmp->rt_zt == 0 ||
+		    if ( rtmp->rt_zt == NULL ||
 			    ( rtmp->rt_flags & RTMPTAB_ZIPQUERY ) ||
 			    ( rtmp->rt_flags & RTMPTAB_HASZONES ) == 0 ) {
 			continue;
 		    }
 
+		    /* split horizon */
+		    if (rtmp->rt_iface == iface) {
+		        continue;
+		    }
+
 		    if ((( rtmp->rt_flags & RTMPTAB_EXTENDED ) &&
 			    data + 2 * SZ_RTMPTUPLE > end ) ||
 			    data + SZ_RTMPTUPLE > end ) {
-			if ( sendto( rap->ap_fd, packet, data - packet, 0,
-				(struct sockaddr *)&sat,
-				sizeof( struct sockaddr_at )) < 0 ) {
-			    LOG(log_error, logtype_atalkd, "as_timer sendto %u.%u (%u): %s",
-				    ntohs( sat.sat_addr.s_net ),
-				    sat.sat_addr.s_node,
-				    ntohs( iface->i_rt->rt_firstnet ),
-				    strerror(errno) );
-			}
+
+			sendto_iface(iface,rap->ap_fd, packet, data - packet, &sat);
 
 			if ( iface->i_flags & IFACE_PHASE2 ) {
-			    data = packet + 1 + sizeof( struct rtmp_head ) +
-				    2 * SZ_RTMPTUPLE;
+			    data = packet + 1 + sizeof( struct rtmp_head ) + 2 * SZ_RTMPTUPLE;
 			} else {
-			    data = packet + 1 + sizeof( struct rtmp_head ) +
-				    SZ_RTMPTUPLE;
+			    data = packet + 1 + sizeof( struct rtmp_head ) + SZ_RTMPTUPLE;
 			}
 			n = 0;
 		    }
@@ -624,15 +620,7 @@ static void as_timer(int sig _U_)
 
 	    /* send rest */
 	    if ( n ) {
-		if ( sendto( rap->ap_fd, packet, data - packet, 0,
-			(struct sockaddr *)&sat,
-			sizeof( struct sockaddr_at )) < 0 ) {
-		    LOG(log_error, logtype_atalkd, "as_timer sendto %u.%u (%u): %s",
-			    ntohs( sat.sat_addr.s_net ),
-			    sat.sat_addr.s_node,
-			    ntohs( iface->i_rt->rt_firstnet ),
-			    strerror(errno) );
-		}
+		sendto_iface(iface, rap->ap_fd, packet, data - packet, &sat);
 	    }
 	}
     }
@@ -713,10 +701,8 @@ consistency()
 }
 #endif /* DEBUG */
 
-#if !defined( ibm032 ) && !defined( _IBMR2 )
-    void
-#endif /* ! ibm032 && ! _IBMR2 */
-as_debug()
+static void
+as_debug(int sig _U_)
 {
     struct interface	*iface;
     struct list		*l;
@@ -817,10 +803,8 @@ as_debug()
 /*
  * Called when SIGTERM is recieved.  Remove all routes and then exit.
  */
-#if !defined( ibm032 ) && !defined( _IBMR2 )
-    void
-#endif /* ! ibm032 && ! _IBMR2 */
-as_down()
+static void
+as_down(int sig _U_)
 {
     struct interface	*iface;
     struct gate		*gate;
@@ -853,9 +837,7 @@ as_down()
     atalkd_exit( 0 );
 }
 
-int main( ac, av )
-    int		ac;
-    char	**av;
+int main( int ac, char **av)
 {
     extern char         *optarg;
     extern int          optind;
@@ -1233,10 +1215,9 @@ int main( ac, av )
  * and rtmp_packet()) to set the initial "bootstrapping" address
  * on an interface.
  */
-void bootaddr( iface )
-    struct interface	*iface;
+void bootaddr(struct interface *iface)
 {
-    if ( iface == 0 ) {
+    if ( iface == NULL ) {
 	return;
     }
 
@@ -1406,9 +1387,7 @@ smaller net range.", iface->i_name, ntohs(first), ntohs(last), strerror(errno));
     nfds++;
 }
 
-int ifsetallmulti ( iname, set )
-const char		*iname;
-int set;
+int ifsetallmulti (const char *iname, int set)
 {
     int sock;
     struct ifreq ifr;
@@ -1443,10 +1422,7 @@ int set;
     return (0);
 }
 
-int ifconfig( iname, cmd, sa )
-    const char		*iname;
-    unsigned long	cmd;
-    struct sockaddr_at	*sa;
+int ifconfig( const char *iname, unsigned long cmd, struct sockaddr_at *sa)
 {
     struct ifreq	ifr;
     int			s;
@@ -1469,8 +1445,7 @@ int ifconfig( iname, cmd, sa )
     return( 0 );
 }
 
-void dumpconfig( iface )
-    struct interface	*iface;
+void dumpconfig( struct interface *iface)
 {
     struct list		*l;
 
@@ -1506,7 +1481,7 @@ void dumpconfig( iface )
 }
 
 #ifdef DEBUG
-void dumproutes()
+void dumproutes(void)
 {
     struct interface	*iface;
     struct rtmptab	*rtmp;
@@ -1554,7 +1529,7 @@ void dumproutes()
     fflush( stdout );
 }
 
-void dumpzones()
+void dumpzones(void)
 {
     struct interface	*iface;
     struct rtmptab	*rtmp;

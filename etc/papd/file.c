@@ -1,5 +1,5 @@
 /*
- * $Id: file.c,v 1.9.12.1 2009/02/03 08:25:00 didg Exp $
+ * $Id: file.c,v 1.12 2009/10/14 02:24:05 didg Exp $
  *
  * Copyright (c) 1990,1994 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -19,10 +19,7 @@
 
 /* 
 */
-int markline( pf, start, linelength, crlflength )
-    char		**start;
-    int			*linelength, *crlflength;
-    struct papfile	*pf;
+int markline( struct papfile *pf, char **start, int *linelength, int *crlflength )
 {
     char		*p;
 
@@ -66,10 +63,7 @@ int markline( pf, start, linelength, crlflength )
     return( 1 );
 }
 
-void morespace( pf, data, len )
-    struct papfile	*pf;
-    const char		*data;
-    int			len;
+void morespace(struct papfile *pf, const char *data, int len)
 {
     char		*nbuf;
     int			nsize;
@@ -83,11 +77,11 @@ void morespace( pf, data, len )
 	nsize = (( pf->pf_bufsize + len ) / PF_MORESPACE +
 		(( pf->pf_bufsize + len ) % PF_MORESPACE != 0 )) * PF_MORESPACE;
 	if ( pf->pf_buf ) {
-	    if (( nbuf = (char *)realloc( pf->pf_buf, nsize )) == 0 ) {
+	    if (( nbuf = (char *)realloc( pf->pf_buf, nsize )) == NULL ) {
 		exit( 1 );
 	    }
 	} else {
-	    if (( nbuf = (char *)malloc( nsize )) == 0 ) {
+	    if (( nbuf = (char *)malloc( nsize )) == NULL ) {
 		exit( 1 );
 	    }
 	}
@@ -101,10 +95,7 @@ void morespace( pf, data, len )
 }
 
 
-void append(pf, data, len)
-    struct papfile	*pf;
-    const char		*data;
-    int			len;
+void append(struct papfile *pf, const char *data, int len)
 {
     if ((pf->pf_data + pf->pf_datalen + len) >
 	(pf->pf_buf + pf->pf_bufsize)) {
@@ -116,9 +107,7 @@ void append(pf, data, len)
 }
 
 
-void spoolerror( out, str )
-    struct papfile	*out;
-    char		*str;
+void spoolerror(struct papfile *out, char *str)
 {
     char	*pserr1 = "%%[ Error: ";
     char	*pserr2 = " ]%%\n";

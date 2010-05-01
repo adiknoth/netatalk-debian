@@ -1,5 +1,5 @@
 /*
- * $Id: aecho.c,v 1.5.10.1.4.1 2005/09/27 10:40:40 didg Exp $
+ * $Id: aecho.c,v 1.9 2009/10/14 01:38:28 didg Exp $
  *
  * Copyright (c) 1990,1991 Regents of The University of Michigan.
  * All Rights Reserved.
@@ -59,15 +59,15 @@
 #define SOCKLEN_T unsigned int
 #endif /* ! SOCKLEN_T */
 
-struct sockaddr_at	target;
-int			sock;
-unsigned int		nsent = 0, nrecv = 0;
-time_t			totalms = 0, minms = -1, maxms = -1;
-unsigned int     	pings = 0;
+static struct sockaddr_at	target;
+static int			sock;
+static unsigned int		nsent = 0, nrecv = 0;
+static time_t			totalms = 0, minms = -1, maxms = -1;
+static unsigned int     	pings = 0;
 
-void usage(char *);
+static void usage(char *);
 
-void done()
+static void done(int sig _U_)
 {
     if ( nsent) {
 	printf( "\n----%d.%d AEP Statistics----\n",
@@ -82,7 +82,7 @@ void done()
     exit( 0 );
 }
   
-void aep_send()
+static void aep_send(int sig _U_)
 {
     struct timeval	tv;
     char		*p, buf[ 1024 ];
@@ -108,12 +108,10 @@ void aep_send()
 	exit( 1 );
     }
     nsent++;
-    if (pings && nsent > pings) done();
+    if (pings && nsent > pings) done(0);
 }
 
-int main( ac, av )
-    int		ac;
-    char	**av;
+int main(int ac, char **av)
 {
     struct servent	*se;
     struct sigaction	sv;
@@ -255,11 +253,11 @@ int main( ac, av )
 	printf( "%d bytes from %u.%u: aep_seq=%d. time=%ld. ms\n",
 		cc, ntohs( sat.sat_addr.s_net ), sat.sat_addr.s_node,
 		seq, ms );
-        if (pings && seq + 1 >= pings) done();
+        if (pings && seq + 1 >= pings) done(0);
     }
 }
 
-void usage( char * av0 )
+static void usage( char * av0 )
 {
     fprintf( stderr, "usage:\t%s [-A source address ] [-c count] ( addr | nbpname )\n", av0 );
     exit( 1 );

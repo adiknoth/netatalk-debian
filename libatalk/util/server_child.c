@@ -1,5 +1,5 @@
 /*
- * $Id: server_child.c,v 1.7.4.1.2.4.2.2 2008/11/25 15:16:35 didg Exp $
+ * $Id: server_child.c,v 1.12 2010/01/21 14:14:49 didg Exp $
  *
  * Copyright (c) 1997 Adrian Sun (asun@zoology.washington.edu)
  * All rights reserved. See COPYRIGHT.
@@ -341,7 +341,7 @@ void server_child_kill_one_by_id(server_child *children, const int forkid, const
           child->valid = 1;
 	  child->idlen = idlen;
           child->clientid = id;
-	  LOG(log_info, logtype_default, "Setting clientid (len %d) for %d, boottime %X", idlen, child->pid, boottime);
+	  LOG(log_debug, logtype_default, "Setting clientid (len %d) for %d, boottime %X", idlen, child->pid, boottime);
       }
       child = tmp;
     }
@@ -416,11 +416,11 @@ void server_reset_signal(void)
     sv.sa_handler =  SIG_DFL;
     sigemptyset( &sv.sa_mask );
     
-    sigaction(SIGALRM, &sv, 0 );
-    sigaction(SIGHUP,  &sv, 0 );
-    sigaction(SIGTERM, &sv, 0 );
-    sigaction(SIGUSR1, &sv, 0 );
-    sigaction(SIGCHLD, &sv, 0 );
+    sigaction(SIGALRM, &sv, NULL );
+    sigaction(SIGHUP,  &sv, NULL );
+    sigaction(SIGTERM, &sv, NULL );
+    sigaction(SIGUSR1, &sv, NULL );
+    sigaction(SIGCHLD, &sv, NULL );
     
     sigemptyset(&sigs);
     sigaddset(&sigs, SIGALRM);

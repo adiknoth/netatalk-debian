@@ -1,5 +1,5 @@
 /*
- * $Id: dbd_getstamp.c,v 1.1.2.3.2.1 2005/09/27 10:40:41 didg Exp $
+ * $Id: dbd_getstamp.c,v 1.4 2009/05/06 11:54:24 franklahm Exp $
  *
  * Copyright (C) Joerg Lenneis 2003
  * All Rights Reserved.  See COPYING.
@@ -21,7 +21,7 @@
 
 /* Return the unique stamp associated with this database */
 
-int dbd_getstamp(struct cnid_dbd_rqst *rqst _U_, struct cnid_dbd_rply *rply)
+int dbd_getstamp(DBD *dbd, struct cnid_dbd_rqst *rqst _U_, struct cnid_dbd_rply *rply)
 {
     DBT key, data;
     int rc;
@@ -35,7 +35,7 @@ int dbd_getstamp(struct cnid_dbd_rqst *rqst _U_, struct cnid_dbd_rply *rply)
     key.data = ROOTINFO_KEY;
     key.size = ROOTINFO_KEYLEN;
 
-    if ((rc = dbif_get(DBIF_IDX_CNID, &key, &data, 0)) < 0) {
+    if ((rc = dbif_get(dbd, DBIF_CNID, &key, &data, 0)) < 0) {
         LOG(log_error, logtype_cnid, "dbd_getstamp: Error getting rootinfo record");
         rply->result = CNID_DBD_RES_ERR_DB;
         return -1;
@@ -50,9 +50,9 @@ int dbd_getstamp(struct cnid_dbd_rqst *rqst _U_, struct cnid_dbd_rply *rply)
     rply->namelen = CNID_DEV_LEN;
     rply->name = (char *)data.data + CNID_DEV_OFS;
     
-#ifdef DEBUG
-    LOG(log_info, logtype_cnid, "cnid_getstamp: Returning stamp");
-#endif
+
+    LOG(log_debug, logtype_cnid, "cnid_getstamp: Returning stamp '%08x'", *(uint32_t *)rply->name);
+
     rply->result = CNID_DBD_RES_OK;
     return 1;
 }

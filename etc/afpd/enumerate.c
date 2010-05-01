@@ -1,5 +1,5 @@
 /*
- * $Id: enumerate.c,v 1.39.2.2.2.5.2.1 2005/09/27 10:40:41 didg Exp $
+ * $Id: enumerate.c,v 1.49 2010/02/10 14:05:37 franklahm Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -13,13 +13,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-
-#include <atalk/logger.h>
 #include <sys/file.h>
 #include <sys/param.h>
 
+#include <atalk/logger.h>
 #include <atalk/afp.h>
 #include <atalk/adouble.h>
+#include <atalk/vfs.h>
 #include <atalk/cnid.h>
 #include "desktop.h"
 #include "directory.h"
@@ -31,71 +31,6 @@
 
 #define min(a,b)	((a)<(b)?(a):(b))
 
-/* ---------------------------- */
-struct dir *
-            adddir( vol, dir, path)
-struct vol	*vol;
-struct dir	*dir;
-struct path     *path;
-{
-    struct dir	*cdir, *edir;
-    int		upathlen;
-    char        *name;
-    char        *upath;
-    struct stat *st;
-    int         deleted;
-    cnid_t      id;
-
-    upath = path->u_name;
-    st    = &path->st;
-    upathlen = strlen(upath);
-
-    id = get_id(vol, NULL, st, dir->d_did, upath, upathlen);
-    if (id == 0) {
-        return NULL;
-    }
-    if (!path->m_name && !(path->m_name = utompath(vol, upath, id , utf8_encoding()))) {
-        return NULL;
-    }
-    name  = path->m_name;    
-    if ((cdir = dirnew(name, upath)) == NULL) {
-        LOG(log_error, logtype_afpd, "adddir: malloc: %s", strerror(errno) );
-        return NULL;
-    }
-
-    cdir->d_did = id;
-
-    if ((edir = dirinsert( vol, cdir ))) {
-        /* it's not possible with LASTDID
-           for CNID:
-           - someone else have moved the directory.
-           - it's a symlink inside the share.
-           - it's an ID reused, the old directory was deleted but not
-             the cnid record and the server've reused the inode for 
-             the new dir.
-           for HASH (we should get ride of HASH) 
-           - someone else have moved the directory.
-           - it's an ID reused as above
-           - it's a hash duplicate and we are in big trouble
-        */
-        deleted = (edir->d_m_name == NULL);
-        dirfreename(edir);
-        edir->d_m_name = cdir->d_m_name;
-        edir->d_u_name = cdir->d_u_name;
-        free(cdir);
-        cdir = edir;
-        if (!cdir->d_parent || (cdir->d_parent == dir && !deleted))
-            return cdir;
-        /* the old was not in the same folder */
-        if (!deleted)
-            dirchildremove(cdir->d_parent, cdir);
-    }
-
-    /* parent/child directories */
-    cdir->d_parent = dir;
-    dirchildadd(dir, cdir);
-    return( cdir );
-}
 /*
  * Struct to save directory reading context in. Used to prevent
  * O(n^2) searches on a directory.
@@ -162,16 +97,16 @@ static int enumerate_loop(struct dirent *de, char *mname _U_, void *data)
 */
 char *check_dirent(const struct vol *vol, char *name)
 {
-
     if (!strcmp(name, "..") || !strcmp(name, "."))
         return NULL;
 
-    if (!vol->validupath(vol, name))
+    if (!vol->vfs->vfs_validupath(vol, name))
         return NULL;
 
     /* check for vetoed filenames */
     if (veto_file(vol->v_veto, name))
         return NULL;
+
 #if 0
     char *m_name = NULL;
 
@@ -220,16 +155,16 @@ for_each_dirent(const struct vol *vol, char *name, dir_loop fn, void *data)
 #define REPLY_PARAM_MAXLEN (4 + 104 + 1 + MACFILELEN + 4 + 2 + 255 + 1)
 
 /* ----------------------------- */
-static int enumerate(obj, ibuf, ibuflen, rbuf, rbuflen, ext )
-AFPObj       *obj _U_;
-char	     *ibuf, *rbuf;
-unsigned int ibuflen _U_, *rbuflen;
-int     ext;
+static int enumerate(AFPObj *obj _U_, char *ibuf, size_t ibuflen _U_, 
+    char *rbuf, 
+    size_t *rbuflen, 
+    int ext)
 {
     static struct savedir	sd = { 0, 0, 0, NULL, NULL, 0 };
     struct vol			*vol;
     struct dir			*dir;
-    int				did, ret, esz, len, first = 1;
+    int				did, ret, len, first = 1;
+    size_t			esz;
     char                        *data, *start;
     u_int16_t			vid, fbitmap, dbitmap, reqcnt, actcnt = 0;
     u_int16_t			temp16;
@@ -331,6 +266,9 @@ int     ext;
         return path_error(o_path, AFPERR_NODIR );
     }
 
+    LOG(log_debug, logtype_afpd, "enumerate(vid:%u, did:%u, name:'%s', f/d:%04x/%04x, rc:%u, i:%u, max:%u)",
+        ntohs(vid), ntohl(did), o_path->u_name, fbitmap, dbitmap, reqcnt, sindex, maxsz);
+
     data = rbuf + 3 * sizeof( u_int16_t );
     sz = 3 * sizeof( u_int16_t );	/* fbitmap, dbitmap, reqcount */
 
@@ -342,7 +280,7 @@ int     ext;
     if ( sindex == 1 || curdir->d_did != sd.sd_did || vid != sd.sd_vid ) {
         sd.sd_last = sd.sd_buf;
         /* if dir was in the cache we don't have the inode */
-        if (( !o_path->st_valid && stat( ".", &o_path->st ) < 0 ) ||
+        if (( !o_path->st_valid && lstat( ".", &o_path->st ) < 0 ) ||
               (ret = for_each_dirent(vol, ".", enumerate_loop, (void *)&sd)) < 0) 
         {
             switch (errno) {
@@ -356,8 +294,7 @@ int     ext;
                 return AFPERR_NODIR;
             }
         }
-        curdir->ctime  = o_path->st.st_ctime; /* play safe */
-        curdir->offcnt = ret;
+        setdiroffcnt(curdir, &o_path->st,  ret);
         *sd.sd_last = 0;
 
         sd.sd_last = sd.sd_buf;
@@ -404,6 +341,7 @@ int     ext;
             sd.sd_last += len + 1;
             continue;
         }
+        memset(&s_path, 0, sizeof(s_path));
         s_path.u_name = sd.sd_last;
         if (of_stat( &s_path) < 0 ) {
             /*
@@ -432,7 +370,7 @@ int     ext;
             if ( dbitmap == 0 ) {
                 continue;
             }
-            dir = dirsearch_byname(curdir, s_path.u_name);
+            dir = dirsearch_byname(vol, curdir, s_path.u_name);
             if (!dir && NULL == (dir = adddir( vol, curdir, &s_path) ) ) {
                     return AFPERR_MISC;
                 }
@@ -516,28 +454,25 @@ int     ext;
 }
 
 /* ----------------------------- */
-int afp_enumerate(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj       *obj;
-char	     *ibuf, *rbuf;
-unsigned int ibuflen, *rbuflen;
+int afp_enumerate(AFPObj *obj, char *ibuf, size_t ibuflen, 
+    char *rbuf, 
+    size_t *rbuflen)
 {
     return enumerate(obj, ibuf,ibuflen ,rbuf,rbuflen , 0);
 }
 
 /* ----------------------------- */
-int afp_enumerate_ext(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj       *obj;
-char	     *ibuf, *rbuf;
-unsigned int ibuflen, *rbuflen;
+int afp_enumerate_ext(AFPObj *obj, char *ibuf, size_t ibuflen, 
+    char *rbuf, 
+    size_t *rbuflen)
 {
     return enumerate(obj, ibuf,ibuflen ,rbuf,rbuflen , 1);
 }
 
 /* ----------------------------- */
-int afp_enumerate_ext2(obj, ibuf, ibuflen, rbuf, rbuflen )
-AFPObj       *obj;
-char	     *ibuf, *rbuf;
-unsigned int ibuflen, *rbuflen;
+int afp_enumerate_ext2(AFPObj *obj, char *ibuf, size_t ibuflen, 
+    char *rbuf, 
+    size_t *rbuflen)
 {
     return enumerate(obj, ibuf,ibuflen ,rbuf,rbuflen , 2);
 }

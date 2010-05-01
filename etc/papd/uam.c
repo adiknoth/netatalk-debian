@@ -1,5 +1,5 @@
 /*
- * $Id: uam.c,v 1.9.6.4.2.1 2005/09/27 10:40:41 didg Exp $
+ * $Id: uam.c,v 1.11 2009/10/15 11:39:48 didg Exp $
  *
  * Copyright (c) 1999 Adrian Sun (asun@zoology.washington.edu)
  * All Rights Reserved.  See COPYRIGHT.
@@ -184,7 +184,7 @@ void uam_unregister(const int type, const char *name)
 
 /* Crap to support uams which call this afpd function */
 int uam_afpserver_option(void *private _U_, const int what _U_, void *option _U_,
-                         int *len _U_)
+                         size_t *len _U_)
 {
 	return(0);
 }

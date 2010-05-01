@@ -38,8 +38,8 @@ target_triplet = @target@
 subdir = contrib/shell_utils
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(srcdir)/afpd-mtab.pl.in $(srcdir)/apple_cp.in \
-	$(srcdir)/apple_mv.in $(srcdir)/apple_rm.in \
-	$(srcdir)/asip-status.pl.in $(srcdir)/cleanappledouble.pl.in
+	$(srcdir)/apple_dump.in $(srcdir)/apple_mv.in \
+	$(srcdir)/apple_rm.in $(srcdir)/asip-status.pl.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
 	$(top_srcdir)/macros/cnid-backend.m4 \
@@ -59,13 +59,14 @@ am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
 	$(top_srcdir)/macros/ssl-check.m4 \
 	$(top_srcdir)/macros/summary.m4 \
 	$(top_srcdir)/macros/tcp-wrappers.m4 \
-	$(top_srcdir)/macros/util.m4 $(top_srcdir)/configure.in
+	$(top_srcdir)/macros/util.m4 $(top_srcdir)/macros/webmin.m4 \
+	$(top_srcdir)/configure.in
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
-CONFIG_CLEAN_FILES = afpd-mtab.pl apple_cp apple_mv apple_rm \
-	asip-status.pl cleanappledouble.pl
+CONFIG_CLEAN_FILES = afpd-mtab.pl apple_cp apple_dump apple_mv \
+	apple_rm asip-status.pl
 am__installdirs = "$(DESTDIR)$(bindir)"
 binSCRIPT_INSTALL = $(INSTALL_SCRIPT)
 SCRIPTS = $(bin_SCRIPTS)
@@ -129,6 +130,7 @@ KLDFLAGS = @KLDFLAGS@
 KRB5_CONFIG = @KRB5_CONFIG@
 LDFLAGS = @LDFLAGS@
 LIBADD_DL = @LIBADD_DL@
+LIBATALK_ACLS = @LIBATALK_ACLS@
 LIBGCRYPT_CFLAGS = @LIBGCRYPT_CFLAGS@
 LIBGCRYPT_CONFIG = @LIBGCRYPT_CONFIG@
 LIBGCRYPT_LIBS = @LIBGCRYPT_LIBS@
@@ -150,8 +152,13 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PAMDIR = @PAMDIR@
+PAM_ACCOUNT = @PAM_ACCOUNT@
+PAM_AUTH = @PAM_AUTH@
 PAM_CFLAGS = @PAM_CFLAGS@
+PAM_DIRECTIVE = @PAM_DIRECTIVE@
 PAM_LIBS = @PAM_LIBS@
+PAM_PASSWORD = @PAM_PASSWORD@
+PAM_SESSION = @PAM_SESSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
 PKGCONFDIR = @PKGCONFDIR@
@@ -170,6 +177,11 @@ SSL_LIBS = @SSL_LIBS@
 STRIP = @STRIP@
 UAMS_PATH = @UAMS_PATH@
 VERSION = @VERSION@
+WEBMIN_PASS = @WEBMIN_PASS@
+WEBMIN_PATH = @WEBMIN_PATH@
+WEBMIN_PORT = @WEBMIN_PORT@
+WEBMIN_USER = @WEBMIN_USER@
+WEBMIN_VERSION = @WEBMIN_VERSION@
 WRAP_LIBS = @WRAP_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
@@ -231,15 +243,15 @@ pkgconfdir = @PKGCONFDIR@
 GENERATED_FILES = lp2pap.sh
 TEMPLATE_FILES = lp2pap.sh.tmpl
 PERLSCRIPTS = \
-	afpd-mtab.pl			\
-	apple_cp apple_mv apple_rm	\
-	cleanappledouble.pl		\
-	asip-status.pl
+	afpd-mtab.pl \
+	apple_cp apple_mv apple_rm  \
+	asip-status.pl \
+	apple_dump
 
 SUFFIXES = .tmpl .
 CLEANFILES = $(GENERATED_FILES)
 bin_SCRIPTS = $(PERLSCRIPTS) $(GENERATED_FILES)
-EXTRA_DIST = $(PERLSCRIPTS) $(TEMPLATE_FILES)
+EXTRA_DIST = $(TEMPLATE_FILES)
 all: all-am
 
 .SUFFIXES:
@@ -253,9 +265,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  contrib/shell_utils/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  contrib/shell_utils/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  contrib/shell_utils/Makefile
+	  $(AUTOMAKE) --foreign  contrib/shell_utils/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -277,13 +289,13 @@ afpd-mtab.pl: $(top_builddir)/config.status $(srcdir)/afpd-mtab.pl.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 apple_cp: $(top_builddir)/config.status $(srcdir)/apple_cp.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+apple_dump: $(top_builddir)/config.status $(srcdir)/apple_dump.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 apple_mv: $(top_builddir)/config.status $(srcdir)/apple_mv.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 apple_rm: $(top_builddir)/config.status $(srcdir)/apple_rm.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 asip-status.pl: $(top_builddir)/config.status $(srcdir)/asip-status.pl.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
-cleanappledouble.pl: $(top_builddir)/config.status $(srcdir)/cleanappledouble.pl.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 install-binSCRIPTS: $(bin_SCRIPTS)
 	@$(NORMAL_INSTALL)

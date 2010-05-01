@@ -1,5 +1,5 @@
 /*
- * $Id: uams_guest.c,v 1.12.6.2.2.1 2005/09/27 10:40:41 didg Exp $
+ * $Id: uams_guest.c,v 1.18 2009/11/08 01:07:17 didg Exp $
  *
  * (c) 2001 (see COPYING)
  */
@@ -8,7 +8,6 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
-#ifndef ATACC
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -39,12 +38,14 @@ char *strchr (), *strrchr ();
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 #endif /* MIN */
 
-extern void append(void *, const char *, int);
+/*XXX in etc/papd/file.h */
+struct papfile;
+extern UAM_MODULE_EXPORT void append(struct papfile *, const char *, int);
 
 /* login and login_ext are almost the same */
 static int noauth_login(void *obj, struct passwd **uam_pwd,
-			char *ibuf _U_, int ibuflen _U_, 
-			char *rbuf _U_, int *rbuflen)
+			char *ibuf _U_, size_t ibuflen _U_, 
+			char *rbuf _U_, size_t *rbuflen)
 {
     struct passwd *pwent;
     char *guest, *username;
@@ -79,17 +80,15 @@ static int noauth_login(void *obj, struct passwd **uam_pwd,
 }
 
 static int noauth_login_ext(void *obj, char *uname _U_, struct passwd **uam_pwd,
-                     char *ibuf, int ibuflen,
-                     char *rbuf, int *rbuflen)
+                     char *ibuf, size_t ibuflen,
+                     char *rbuf, size_t *rbuflen)
 {
         return ( noauth_login (obj, uam_pwd, ibuf, ibuflen, rbuf, rbuflen));
 }
 
 
 /* Printer NoAuthUAM Login */
-int noauth_printer(start, stop, username, out)
-	char	*start, *stop, *username;
-	struct papfile	*out;
+static int noauth_printer(char *start, char *stop, char *username, struct papfile *out)
 {
     char	*data, *p, *q;
     static const char *loginok = "0\r";
@@ -150,7 +149,7 @@ static int uam_setup(const char *path)
   return 0;
 }
 
-static void uam_cleanup()
+static void uam_cleanup(void)
 {
   uam_unregister(UAM_SERVER_LOGIN, "No User Authent");
   uam_unregister(UAM_SERVER_PRINTAUTH, "NoAuthUAM");
@@ -161,4 +160,3 @@ UAM_MODULE_EXPORT struct uam_export uams_guest = {
   UAM_MODULE_VERSION,
   uam_setup, uam_cleanup
 };
-#endif

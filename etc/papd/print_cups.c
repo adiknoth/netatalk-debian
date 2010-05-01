@@ -1,5 +1,5 @@
 /*
- * $Id: print_cups.c,v 1.1.2.1.2.3 2008/11/14 10:04:52 didg Exp $
+ * $Id: print_cups.c,v 1.6 2010/01/26 20:43:11 didg Exp $
  *
  * Copyright 2004 Bjoern Fernhomberg.
  *
@@ -60,13 +60,13 @@ static const char* cups_status_msg[] = {
 };
 
 /* Local functions */
-static int 	convert_to_mac_name ( char *encoding, char * inptr, char * outptr, size_t outlen);
+static int 	convert_to_mac_name ( const char *encoding, char * inptr, char * outptr, size_t outlen);
 static size_t	to_ascii ( char *inbuf, char **outbuf);
 static int 	cups_mangle_printer_name ( struct printer *pr, struct printer *printers);
 static void     cups_free_printer ( struct printer *pr);
 
 
-char * cups_get_language ()
+const char * cups_get_language (void)
 {
         cups_lang_t *language;
 
@@ -392,7 +392,7 @@ cups_autoadd_printers ( struct printer	*defprinter, struct printer *printers)
 
 		/* convert from CUPS to local encoding */
                 convert_string_allocate( add_charset(cupsLangEncoding(language)), CH_UNIX, 
-                                         dests[i].name, strlen(dests[i].name), &pr->p_u_name);
+                                         dests[i].name, -1, &pr->p_u_name);
 
 		/* convert CUPS name to Mac charset */
 		if ( convert_to_mac_name ( cupsLangEncoding(language), dests[i].name, name, sizeof(name)) <= 0)
@@ -523,7 +523,7 @@ to_ascii ( char  *inptr, char **outptr)
  * Returns: -1 on failure, length of name on success; outpr contains name in MacRoman
  */
 
-static int convert_to_mac_name ( char * encoding, char * inptr, char * outptr, size_t outlen)
+static int convert_to_mac_name ( const char * encoding, char * inptr, char * outptr, size_t outlen)
 {
 	char   	*outbuf;
 	char	*soptr;
@@ -533,7 +533,7 @@ static int convert_to_mac_name ( char * encoding, char * inptr, char * outptr, s
 
 	/* Change the encoding */
 	if ((charset_t)-1 != (chCups = add_charset(encoding))) {
-		name_len = convert_string_allocate( chCups, CH_MAC, inptr, strlen(inptr), &outbuf);
+		name_len = convert_string_allocate( chCups, CH_MAC, inptr, -1, &outbuf);
 	}
 
 	if (name_len == 0 || name_len == (size_t)-1) {
