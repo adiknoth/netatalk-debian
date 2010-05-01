@@ -1,3 +1,19 @@
+netatalk (2.0.5-4) UNRELEASED; urgency=low
+
+  * Use only official CDBS (drop local snippets): All improvements now
+    adopted upstream.
+  * Use source format 3.0 (quilt), and stop including patchsys-quilt.mk.
+  * Refer to FSF website (not postal address) in rules file.
+  * Bump copyright years in header of in rules file.
+  * Drop locally implemented DEB_MAINTAINER_MODE in rules file: Now
+    adopted upstream.
+  * Rewrite copyright file using draft DEP5 rev. 135. Adds new owners
+    and licenses, and some files lacking proper licensing are revealed.
+  * Refresh patches with quilt options --no-timestamps --no-index -pab.
+  * Tighten build-dependency on cdbs.
+
+ -- Jonas Smedegaard <dr@jones.dk>  Sat, 01 May 2010 07:22:57 +0200
+
 netatalk (2.0.5-3) unstable; urgency=medium
 
   * Fix replace/drop bogus and/or obsolete configure options:
