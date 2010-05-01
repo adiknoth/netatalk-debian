@@ -17,11 +17,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-DEB_AUTO_UPDATE_ACLOCAL = 1.11
-DEB_AUTO_UPDATE_AUTOMAKE = 1.11
-DEB_AUTO_UPDATE_AUTOHEADER = 2.65
-DEB_AUTO_UPDATE_AUTOCONF = 2.65
-DEB_AUTO_UPDATE_LIBTOOL = post
 include /usr/share/cdbs/1/rules/upstream-tarball.mk
 include /usr/share/cdbs/1/rules/utils.mk
 include /usr/share/cdbs/1/rules/debhelper.mk
@@ -34,22 +29,6 @@ DEB_UPSTREAM_TARBALL_MD5 = 27d4b8dca55801fe7d194bf6b34852f4
 db_stable = 4.2
 db_testing = 4.7
 db_current = 4.8
-
-autotools-files = Makefile.in aclocal.m4 compile config.guess config.h.in config.sub configure depcomp install-sh ltmain.sh missing mkinstalldirs
-autotools-bogusfiles = AUTHORS ChangeLog INSTALL
-automakedirs = bin bin/adv1tov2 bin/aecho bin/afile bin/afppasswd bin/cnid bin/getzones bin/megatron bin/nbp bin/pap bin/psorder bin/uniconv
-automakedirs += config contrib contrib/a2boot contrib/macusers contrib/nu contrib/printing contrib/shell_utils contrib/timelord
-automakedirs += distrib distrib/config distrib/initscripts distrib/m4 doc
-automakedirs += etc etc/afpd etc/atalkd etc/cnid_dbd etc/papd etc/psf etc/uams etc/uams/uams_krb4 include include/atalk
-automakedirs += libatalk libatalk/adouble libatalk/asp libatalk/atp libatalk/cnid libatalk/cnid/cdb libatalk/cnid/db3
-automakedirs += libatalk/cnid/dbd libatalk/cnid/hash libatalk/cnid/last libatalk/cnid/mtab libatalk/cnid/tdb libatalk/compat
-automakedirs += libatalk/dsi libatalk/nbp libatalk/netddp libatalk/tdb libatalk/unicode libatalk/unicode/charsets libatalk/util
-automakedirs += macros man man/man1 man/man3 man/man4 man/man5 man/man8
-automakedirs += sys sys/generic sys/generic/sys sys/netatalk sys/netbsd sys/netbsd/netatalk sys/solaris sys/sunos sys/ultrix
-autoshellfiles = afpd-mtab.pl apple_cp apple_mv apple_rm asip-status.pl cleanappledouble.pl
-upstreamtmpfiles = $(autotools-files) $(automakedirs:%=%/Makefile.in) $(autoshellfiles:%=contrib/shell_utils/%)
-
-DEB_ACLOCAL_ARGS = -I macros
 
 # Override defaults for old-style update-rc.d
 #  * Start and stop at priority 50 (FIXME: explain reasoning)
@@ -90,24 +69,6 @@ else
 DEB_CONFIGURE_EXTRA_FLAGS += --without-ssl-dir
 uamlist = uams_dhx2.so,uams_clrtxt.so
 endif
-
-# Put aside upstream-shipped autotools before build but after licensecheck
-pre-build:: debian/stamp-upstreamtmpstuff
-debian/stamp-upstreamtmpstuff:
-	for file in $(upstreamtmpfiles); do \
-		[ ! -e $$file ] || [ -e $$file.upstream ] || cp -af $$file $$file.upstream; \
-	done
-	touch $@
-
-# Revert upstream-shipped autotools that was put aside during build
-clean::
-	for file in $(autotools-bogusfiles); do \
-		[ -s $$file ] || rm -f $$file; \
-	done
-	for file in $(upstreamtmpfiles); do \
-		[ ! -e $$file.upstream ] || mv -v -f $$file.upstream $$file; \
-	done
-	rm -f debian/stamp-upstreamtmpstuff
 
 # Refuse GPL build with openssl build-dependencies included
 post-patches::
