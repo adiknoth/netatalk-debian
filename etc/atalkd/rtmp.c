@@ -1,5 +1,5 @@
 /*
- * $Id: rtmp.c,v 1.12.8.1.2.1 2008/11/14 10:04:52 didg Exp $
+ * $Id: rtmp.c,v 1.17 2009/12/08 03:21:16 didg Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved. See COPYRIGHT.
@@ -43,8 +43,7 @@
 #include "route.h"
 #include "main.h"
 
-void rtmp_delzonemap(rtmp)
-    struct rtmptab *rtmp;
+void rtmp_delzonemap(struct rtmptab *rtmp)
 {
     struct list		*lz, *flz, *lr, *flr;
     struct ziptab	*zt;
@@ -97,9 +96,7 @@ void rtmp_delzonemap(rtmp)
 /*
  * Complete configuration for phase 1 interface using RTMP information.
  */
-static int rtmp_config( rh, iface )
-    struct rtmp_head	*rh;
-    struct interface	*iface;
+static int rtmp_config( struct rtmp_head *rh, struct interface *iface)
 {
     extern int		stabletimer;
     int cc;
@@ -162,8 +159,7 @@ static int rtmp_config( rh, iface )
  * Delete rtmp from the per-interface in-use table, remove all
  * zone references, and remove the route from the kernel.
  */
-static void rtmp_delinuse( rtmp )
-    struct rtmptab	*rtmp;
+static void rtmp_delinuse(struct rtmptab *rtmp)
 {
     struct rtmptab	*irt;
 
@@ -197,8 +193,7 @@ static void rtmp_delinuse( rtmp )
 /*
  * Add rtmp to the per-interface in-use table.  No verification is done...
  */
-static void rtmp_addinuse( rtmp )
-    struct rtmptab	*rtmp;
+static void rtmp_addinuse( struct rtmptab *rtmp)
 {
     struct rtmptab	*irt;
 
@@ -225,8 +220,7 @@ static void rtmp_addinuse( rtmp )
  * at this point?  What do we do if we get several copies of a route in
  * an RTMP packet?
  */
-static int rtmp_copyzones( to, from )
-    struct rtmptab	*to, *from;
+static int rtmp_copyzones( struct rtmptab *to,struct rtmptab *from)
 {
     struct list		*lz, *lr;
 
@@ -256,8 +250,7 @@ static int rtmp_copyzones( to, from )
  * Remove rtmp from the in-use table and the per-gate table.
  * Free any associated space.
  */
-void rtmp_free( rtmp )
-    struct rtmptab	*rtmp;
+void rtmp_free( struct rtmptab *rtmp)
 {
     struct gate		*gate;
 
@@ -294,8 +287,7 @@ void rtmp_free( rtmp )
  * Find a replacement for "replace".  If we can't find a replacement,
  * return 1.  If we do find a replacement, return 0. -1 on error.
  */
-int rtmp_replace( replace )
-    struct rtmptab	*replace;
+int rtmp_replace(struct rtmptab *replace)
 {
     struct interface	*iface;
     struct gate		*gate;
@@ -339,8 +331,7 @@ int rtmp_replace( replace )
 }
 
 
-static int rtmp_new( rtmp )
-    struct rtmptab	*rtmp;
+static int rtmp_new(struct rtmptab *rtmp)
 {
     struct interface	*i;
     struct rtmptab	*r;
@@ -403,16 +394,13 @@ static int rtmp_new( rtmp )
 }
 
 
-int rtmp_packet( ap, from, data, len )
-    struct atport	*ap;
-    struct sockaddr_at	*from;
-    char		*data;
-    int			len;
+int rtmp_packet(struct atport *ap, struct sockaddr_at *from, char *data, int len)
 {
     struct rtmp_head	rh;
     struct rtmp_tuple	rt, xrt;
     struct gate		*gate;
     struct interface	*iface;
+    struct interface 	*iface2;
     struct rtmptab	*rtmp;
     char		*end, packet[ ATP_BUFSIZ ];
     int                 cc;
@@ -426,6 +414,21 @@ int rtmp_packet( ap, from, data, len )
 
     iface = ap->ap_iface;
 
+    /* linux 2.6 sends broadcast queries to the first available socket 
+       (in our case the last configured) 
+       try to find the right one.
+       Note: now a misconfigured or plugged router can broadcast
+       a wrong route
+    */
+    for ( iface2 = interfaces; iface2; iface2 = iface2->i_next ) {
+        if ( iface2->i_rt && from->sat_addr.s_net >= iface2->i_rt->rt_firstnet && 
+                from->sat_addr.s_net <= iface2->i_rt->rt_lastnet) 
+        {
+              iface = iface2;
+        }
+    }
+    /* end of linux 2.6 workaround */
+    
     /* ignore our own packets */
     if ( from->sat_addr.s_net == iface->i_addr.sat_addr.s_net &&
 	    from->sat_addr.s_node == iface->i_addr.sat_addr.s_node  ) {
@@ -564,13 +567,13 @@ int rtmp_packet( ap, from, data, len )
 	    }
 	}
 	if ( !gate ) {	/* new gateway */
-	    if (( gate = (struct gate *)malloc( sizeof( struct gate ))) == 0 ) {
+	    if (( gate = (struct gate *)malloc( sizeof( struct gate ))) == NULL ) {
 		LOG(log_error, logtype_atalkd, "rtmp_packet: malloc: %s", strerror(errno) );
 		return -1;
 	    }
 	    gate->g_next = iface->i_gate;
-	    gate->g_prev = 0;
-	    gate->g_rt = 0;
+	    gate->g_prev = NULL;
+	    gate->g_rt = NULL;
 	    gate->g_iface = iface;	/* need this? */
 	    gate->g_sat = *from;
 	    if ( iface->i_gate ) {
@@ -693,10 +696,10 @@ int rtmp_packet( ap, from, data, len )
 		 * we're not likely to be asked for the same tuple twice
 		 * in a row.
 		 */
-		if ( rtmp->rt_next != 0 ) {
+		if ( rtmp->rt_next != NULL ) {
 		    gate->g_rt->rt_prev->rt_next = gate->g_rt;
 		    gate->g_rt = rtmp->rt_next;
-		    rtmp->rt_next = 0;
+		    rtmp->rt_next = NULL;
 		}
 	    } else if (( rt.rt_dist & 0x7f ) + 1 > RTMPHOPS_MAX ) {
 		LOG(log_info, logtype_atalkd, "rtmp_packet bad hop count from %u.%u for %u",
@@ -721,7 +724,7 @@ int rtmp_packet( ap, from, data, len )
 		/*
 		 * Add rtmptab entry to end of list (leave head alone).
 		 */
-		if ( gate->g_rt == 0 ) {
+		if ( gate->g_rt == NULL ) {
 		    rtmp->rt_prev = rtmp;
 		    gate->g_rt = rtmp;
 		} else {
@@ -764,7 +767,7 @@ int rtmp_packet( ap, from, data, len )
 	 * Request and RDR.
 	 */
         if (((iface->i_flags & IFACE_ISROUTER) == 0) ||
-	    iface->i_rt->rt_zt == 0 ||
+	    iface->i_rt->rt_zt == NULL ||
 	    ( iface->i_flags & IFACE_CONFIG ) == 0 ) {
 	    return 0;
 	}
@@ -814,8 +817,7 @@ int rtmp_packet( ap, from, data, len )
     return 0;
 }
 
-int rtmp_request( iface )
-    struct interface	*iface;
+int rtmp_request( struct interface *iface)
 {
     struct sockaddr_at	sat;
     struct atport	*ap;
@@ -828,7 +830,7 @@ int rtmp_request( iface )
 	    break;
 	}
     }
-    if ( ap == 0 ) {
+    if ( ap == NULL ) {
 	LOG(log_error, logtype_atalkd, "rtmp_request can't find rtmp socket!" );
 	return -1;
     }
@@ -857,9 +859,7 @@ int rtmp_request( iface )
 }
 
 
-int looproute( iface, cmd )
-    struct interface	*iface;
-    unsigned int	cmd;
+int looproute(struct interface *iface, unsigned int cmd)
 {
     struct sockaddr_at	dst, loop;
 
@@ -912,9 +912,7 @@ int looproute( iface, cmd )
     return( 0 );
 }
 
-int gateroute( command, rtmp )
-    unsigned int	command;
-    struct rtmptab	*rtmp;
+int gateroute(unsigned int command, struct rtmptab *rtmp)
 {
     struct sockaddr_at	dst, gate;
     unsigned short	net;
@@ -990,8 +988,8 @@ newrt(const struct interface *iface)
 {
     struct rtmptab	*rtmp;
 
-    if (( rtmp = (struct rtmptab *)calloc(1, sizeof(struct rtmptab))) == 0 ) {
-	return( 0 );
+    if (( rtmp = (struct rtmptab *)calloc(1, sizeof(struct rtmptab))) == NULL ) {
+	return( NULL );
     }
 
     rtmp->rt_iface = iface;

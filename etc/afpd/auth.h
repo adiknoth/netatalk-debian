@@ -1,5 +1,5 @@
 /*
- * $Id: auth.h,v 1.5.8.1 2005/01/11 20:58:42 didg Exp $
+ * $Id: auth.h,v 1.9 2009/10/15 10:43:13 didg Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -26,7 +26,8 @@ struct afp_versions {
 /* for GetUserInfo */
 #define USERIBIT_USER  (1 << 0)
 #define USERIBIT_GROUP (1 << 1)
-#define USERIBIT_ALL   (USERIBIT_USER | USERIBIT_GROUP)
+#define USERIBIT_UUID  (1 << 2)
+#define USERIBIT_ALL   (USERIBIT_USER | USERIBIT_GROUP | USERIBIT_UUID)
 
 extern uid_t    uuid;
 #if defined( sun ) && !defined( __svr4__ ) || defined( ultrix )
@@ -37,14 +38,14 @@ extern gid_t	*groups;
 extern int	ngroups;
 
 /* FP functions */
-extern int	afp_login __P((AFPObj *, char *, int, char *, int *));
-extern int	afp_login_ext __P((AFPObj *, char *, unsigned int, char *, unsigned int *));
-extern int	afp_logincont __P((AFPObj *, char *, int, char *, int *));
-extern int	afp_changepw __P((AFPObj *, char *, int, char *, int *));
-extern int	afp_logout __P((AFPObj *, char *, int, char *, int *));
-extern int      afp_getuserinfo __P((AFPObj *, char *, int, char *, int *));
-extern int      afp_getsession __P((AFPObj *, char *, unsigned int, char *, unsigned int *));
-extern int      afp_disconnect __P((AFPObj *, char *, int, char *, int *));
-extern int      afp_zzz __P((AFPObj *, char *, unsigned int, char *, unsigned int *));
+int afp_login (AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size_t *rbuflen);
+int afp_login_ext (AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size_t *rbuflen);
+int afp_logincont (AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size_t *rbuflen);
+int afp_changepw (AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size_t *rbuflen);
+int afp_logout (AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size_t *rbuflen);
+int afp_getuserinfo (AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size_t *rbuflen);
+int afp_getsession (AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size_t *rbuflen);
+int afp_disconnect (AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size_t *rbuflen);
+int afp_zzz (AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size_t *rbuflen);
 
 #endif /* auth.h */

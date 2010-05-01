@@ -55,7 +55,7 @@ typedef u_int16_t AFPUserBytes;
 #define AFPSRVRINFO_SRVRDIR      (1<<8)  /* supports directories service */ 
 
 #define AFPSRVRINFO_SRVUTF8      (1<<9)  /* supports UTF8 names AFP 3.1 */ 
-
+#define AFPSRVRINFO_UUID         (1<<10) /* supports UUIDs */
 #define AFPSRVRINFO_FASTBOZO	 (1<<15) /* fast copying */
 
 #define AFP_OK		0
@@ -165,7 +165,7 @@ typedef enum {
 #define AFP_GETFLDRPARAM	34
 #define AFP_SETFLDRPARAM	35
 #define AFP_CHANGEPW    	36
-
+#define AFP_GETUSERINFO     37
 #define AFP_GETSRVRMSG		38
 #define AFP_CREATEID		39
 #define AFP_DELETEID		40
@@ -203,4 +203,14 @@ typedef enum {
 #define AFP_SYNCDIR             78
 #define AFP_SYNCFORK            79
 #define AFP_ZZZ                 122
+
+/* version 3.2 */
+#define AFP_GETEXTATTR          69
+#define AFP_SETEXTATTR          70
+#define AFP_REMOVEATTR          71
+#define AFP_LISTEXTATTR         72
+#define AFP_GETACL              73
+#define AFP_SETACL              74
+#define AFP_ACCESS              75
+
 #endif

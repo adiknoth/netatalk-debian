@@ -3,11 +3,11 @@
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.74.3 <http://docbook.sf.net/>
 .\"      Date: 06 Sep 2004
-.\"    Manual: Netatalk 2.0.4
-.\"    Source: Netatalk 2.0.4
+.\"    Manual: Netatalk 2.1
+.\"    Source: Netatalk 2.1
 .\"  Language: English
 .\"
-.TH "PAPD\&.CONF" "5" "06 Sep 2004" "Netatalk 2\&.0\&.4" "Netatalk 2.0.4"
+.TH "PAPD\&.CONF" "5" "06 Sep 2004" "Netatalk 2.1" "Netatalk 2.1"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -43,7 +43,7 @@ printername may be just a name (\fBPrinter 1\fR), or it may be a full name in nb
 Systems using a BSD printing system should make use of a pipe to the printing command in question within the
 \fBpr\fR
 option (eg\&.
-\fBpr=|/usr/bin/lpr)\&.
+\fBpr=|/usr/bin/lpr\fR)\&.
 .PP
 When CUPS support is compiled in, then
 \fBcupsautoadd \fR
@@ -154,8 +154,7 @@ An alternative to the technique outlined above is to direct papd\'s output via a
 .PP
 The first spooler is known as HP 8100\&. It pipes the print job to
 \fB/usr/bin/lpr\fR
-for printing.
-PSSP authenticated printing is enabled, as is CAP\-style authenticated printing\&. Both methods support guest and cleartext authentication as specified by the \'\fBam\fR\' option\&. The PPD used is
+for printing\&. PSSP authenticated printing is enabled, as is CAP\-style authenticated printing\&. Both methods support guest and cleartext authentication as specified by the \'\fBam\fR\' option\&. The PPD used is
 /etc/atalk/ppds/hp8100\&.ppd\&.
 .sp
 .if n \{\
@@ -168,10 +167,12 @@ HP 8100:\e
    :ca=/tmp/print:\e
    :am=uams_guest\&.so,uams_pam\&.so:\e
    :pd=/etc/atalk/ppds/hp8100\&.ppd:
+      
 .fi
 .if n \{\
 .RE
 .\}
+.sp
 
 .PP
 Starting with Netatalk 2\&.0 direct CUPS integration is available\&. In this case, defining only a queue name as

@@ -1,5 +1,5 @@
 /*
- * $Id: dsi_attn.c,v 1.5.6.1 2003/10/17 00:01:14 didg Exp $
+ * $Id: dsi_attn.c,v 1.8 2009/10/25 06:13:11 didg Exp $
  *
  * Copyright (c) 1997 Adrian Sun (asun@zoology.washington.edu)
  * All rights reserved. See COPYRIGHT.
@@ -31,13 +31,15 @@ int dsi_attention(DSI *dsi, AFPUserBytes flags)
 {
   /* header + AFPUserBytes */
   char block[DSI_BLOCKSIZ + sizeof(AFPUserBytes)];
-  sigset_t oldset;
   u_int32_t len, nlen;
   u_int16_t id;
 
   if (dsi->asleep)
       return 1;
-      
+
+  if (dsi->in_write) {
+      return -1;
+  }      
   id = htons(dsi_serverID(dsi));
   flags = htons(flags);
   len = MIN(sizeof(flags), dsi->attn_quantum);
@@ -53,9 +55,5 @@ int dsi_attention(DSI *dsi, AFPUserBytes flags)
   /* reserved = 0 */
 
   /* send an attention */
-  sigprocmask(SIG_BLOCK, &dsi->sigblockset, &oldset);
-  len = dsi_stream_write(dsi, block, DSI_BLOCKSIZ + len, 0);
-  sigprocmask(SIG_SETMASK, &oldset, NULL);
-
-  return len;
+  return dsi_stream_write(dsi, block, DSI_BLOCKSIZ + len, DSI_NOWAIT);
 }

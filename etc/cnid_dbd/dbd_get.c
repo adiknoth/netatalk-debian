@@ -1,5 +1,5 @@
 /*
- * $Id: dbd_get.c,v 1.1.4.5 2004/01/21 21:28:42 lenneis Exp $
+ * $Id: dbd_get.c,v 1.4 2009/05/06 11:54:24 franklahm Exp $
  *
  * Copyright (C) Joerg Lenneis 2003
  * All Rights Reserved.  See COPYING.
@@ -24,7 +24,7 @@
 
 /* Return CNID for a given did/name. */
 
-int dbd_get(struct cnid_dbd_rqst *rqst, struct cnid_dbd_rply *rply)
+int dbd_get(DBD *dbd, struct cnid_dbd_rqst *rqst, struct cnid_dbd_rply *rply)
 {
     char start[CNID_DID_LEN + MAXPATHLEN + 1], *buf;
     DBT key, data;
@@ -43,26 +43,24 @@ int dbd_get(struct cnid_dbd_rqst *rqst, struct cnid_dbd_rply *rply)
     key.data = start;
     key.size = CNID_DID_LEN + rqst->namelen + 1;
 
-    if ((rc = dbif_get(DBIF_IDX_DIDNAME, &key, &data, 0)) < 0) {
+    if ((rc = dbif_get(dbd, DBIF_IDX_DIDNAME, &key, &data, 0)) < 0) {
         LOG(log_error, logtype_cnid, "dbd_get: Unable to get CNID %u, name %s", ntohl(rqst->did), rqst->name);
         rply->result = CNID_DBD_RES_ERR_DB;
         return -1;
     }
 
     if (rc == 0) {
-#ifdef DEBUG
-	LOG(log_info, logtype_cnid, "cnid_get: CNID not found for did %u name %s",
+	LOG(log_debug, logtype_cnid, "cnid_get: CNID not found for did %u name %s",
 	    ntohl(rqst->did), rqst->name);
-#endif
-        rply->result = CNID_DBD_RES_NOTFOUND;
-        return 1;
+    rply->result = CNID_DBD_RES_NOTFOUND;
+    return 1;
     }
 
     memcpy(&rply->cnid, data.data, sizeof(rply->cnid));
-#ifdef DEBUG
-    LOG(log_info, logtype_cnid, "cnid_get: Returning CNID did %u name %s as %u",
+
+    LOG(log_debug, logtype_cnid, "cnid_get: Returning CNID did %u name %s as %u",
         ntohl(rqst->did), rqst->name, ntohl(rply->cnid));
-#endif
+
     rply->result = CNID_DBD_RES_OK;
     return 1;
 }

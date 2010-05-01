@@ -1,5 +1,5 @@
 /*
- * $Id: uams_dhx_pam.c,v 1.24.6.5.2.4 2008/12/03 19:28:23 didg Exp $
+ * $Id: uams_dhx_pam.c,v 1.33 2010/03/30 10:25:49 franklahm Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * Copyright (c) 1999 Adrian Sun (asun@u.washington.edu) 
@@ -184,11 +184,11 @@ static struct pam_conv PAM_conversation = {
 };
 
 
-static int dhx_setup(void *obj, char *ibuf, int ibuflen _U_, 
-		     char *rbuf, int *rbuflen)
+static int dhx_setup(void *obj, char *ibuf, size_t ibuflen _U_, 
+		     char *rbuf, size_t *rbuflen)
 {
     u_int16_t sessid;
-    int i;
+    size_t i;
     BIGNUM *bn, *gbn, *pbn;
     DH *dh;
 
@@ -320,12 +320,12 @@ pam_fail:
 
 /* -------------------------------- */
 static int login(void *obj, char *username, int ulen,  struct passwd **uam_pwd _U_,
-		     char *ibuf, int ibuflen,
-		     char *rbuf, int *rbuflen)
+		     char *ibuf, size_t ibuflen,
+		     char *rbuf, size_t *rbuflen)
 {
     if (( dhxpwd = uam_getname(obj, username, ulen)) == NULL ) {
         LOG(log_info, logtype_uams, "uams_dhx_pam.c: unknown username");
-	return AFPERR_PARAM;
+        return AFPERR_NOTAUTH;
     }
 
     PAM_username = username;
@@ -337,11 +337,11 @@ static int login(void *obj, char *username, int ulen,  struct passwd **uam_pwd _
 /* dhx login: things are done in a slightly bizarre order to avoid
  * having to clean things up if there's an error. */
 static int pam_login(void *obj, struct passwd **uam_pwd,
-		     char *ibuf, int ibuflen,
-		     char *rbuf, int *rbuflen)
+		     char *ibuf, size_t ibuflen,
+		     char *rbuf, size_t *rbuflen)
 {
     char *username;
-    int len, ulen;
+    size_t len, ulen;
 
     *rbuflen = 0;
 
@@ -371,8 +371,8 @@ static int pam_login(void *obj, struct passwd **uam_pwd,
 
 /* ----------------------------- */
 static int pam_login_ext(void *obj, char *uname, struct passwd **uam_pwd,
-		     char *ibuf, int ibuflen,
-		     char *rbuf, int *rbuflen)
+		     char *ibuf, size_t ibuflen,
+		     char *rbuf, size_t *rbuflen)
 {
     char *username;
     int len, ulen;
@@ -407,10 +407,10 @@ static int pam_login_ext(void *obj, char *uname, struct passwd **uam_pwd,
 /* -------------------------------- */
 
 static int pam_logincont(void *obj, struct passwd **uam_pwd,
-			 char *ibuf, int ibuflen _U_, 
-			 char *rbuf, int *rbuflen)
+			 char *ibuf, size_t ibuflen _U_, 
+			 char *rbuf, size_t *rbuflen)
 {
-    char *hostname;
+    const char *hostname;
     BIGNUM *bn1, *bn2, *bn3;
     u_int16_t sessid;
     int err, PAM_error;
@@ -554,7 +554,7 @@ logincont_err:
 }
 
 /* logout */
-static void pam_logout() {
+static void pam_logout(void) {
     pam_close_session(pamh, 0);
     pam_end(pamh, 0);
     pamh = NULL;
@@ -564,8 +564,8 @@ static void pam_logout() {
 /* change pw for dhx needs a couple passes to get everything all
  * right. basically, it's like the login/logincont sequence */
 static int pam_changepw(void *obj, char *username,
-			struct passwd *pwd _U_, char *ibuf, int ibuflen,
-			char *rbuf, int *rbuflen)
+			struct passwd *pwd _U_, char *ibuf, size_t ibuflen,
+			char *rbuf, size_t *rbuflen)
 {
     BIGNUM *bn1, *bn2, *bn3;
 
@@ -574,6 +574,10 @@ static int pam_changepw(void *obj, char *username,
     uid_t uid;
     u_int16_t sessid;
     int PAM_error;
+
+    if (ibuflen < sizeof(sessid)) {
+      return AFPERR_PARAM;
+    }
 
     /* grab the id */
     memcpy(&sessid, ibuf, sizeof(sessid));

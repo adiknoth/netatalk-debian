@@ -1,5 +1,5 @@
 /*
- * $Id: nbplkup.c,v 1.4.14.2.2.1 2005/01/31 19:50:35 didg Exp $
+ * $Id: nbplkup.c,v 1.9 2009/10/29 11:35:57 didg Exp $
  *
  * Copyright (c) 1990,1991 Regents of The University of Michigan.
  * All Rights Reserved.
@@ -41,16 +41,15 @@
 
 #include <atalk/unicode.h>
 
-char *Obj = "=";
-char *Type = "=";
-char *Zone = "*";
+static char *Obj = "=";
+static char *Type = "=";
+static char *Zone = "*";
 
-void Usage( av0 )
-    char	*av0;
+static void Usage(char *av0)
 {
     char	*p;
 
-    if (( p = strrchr( av0, '/' )) == 0 ) {
+    if (( p = strrchr( av0, '/' )) == NULL ) {
 	p = av0;
     } else {
 	p++;
@@ -60,9 +59,7 @@ void Usage( av0 )
     exit( 1 );
 }
 
-int main( ac, av )
-    int		ac;
-    char	**av;
+int main(int ac, char **av)
 {
     struct nbpnve	*nn;
     char		*name;
@@ -151,7 +148,7 @@ int main( ac, av )
 
     if ( ac - optind == 1 ) {
 	if ((size_t)(-1) == convert_string_allocate( CH_UNIX, chMac,
-                           av[ optind ], strlen(av[optind]), &convname))
+                           av[ optind ], -1, &convname))
             convname = av[ optind ];
 
 	if ( nbp_name( convname, &Obj, &Type, &Zone )) {

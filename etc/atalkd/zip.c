@@ -1,5 +1,5 @@
 /*
- * $Id: zip.c,v 1.11.8.2 2004/05/12 21:21:48 didg Exp $
+ * $Id: zip.c,v 1.15 2009/12/13 00:31:50 didg Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved. See COPYRIGHT.
@@ -48,9 +48,7 @@
 struct ziptab	*ziptab = NULL, *ziplast = NULL;
 
 
-static int zonecheck( rtmp, iface )
-    struct rtmptab	*rtmp;
-    struct interface	*iface;
+static int zonecheck(struct rtmptab *rtmp, struct interface *iface)
 {
     struct list		*l;
     struct ziptab	*czt, *zt;
@@ -68,7 +66,7 @@ static int zonecheck( rtmp, iface )
 		break;
 	    }
 	}
-	if ( l == 0 ) {
+	if ( l == NULL ) {
 	    LOG(log_error, logtype_atalkd, "zonecheck: %.*s not in zone list", czt->zt_len,
 		    czt->zt_name );
 	    return( -1 );	/* configured zone not found in net zones */
@@ -88,11 +86,7 @@ static int zonecheck( rtmp, iface )
 }
 
 
-int zip_packet( ap, from, data, len )
-    struct atport	*ap;
-    struct sockaddr_at	*from;
-    char		*data;
-    int			len;
+int zip_packet(struct atport *ap,struct sockaddr_at *from, char *data, int len)
 {
     struct ziphdr	zh;
     struct atphdr	ah;
@@ -156,7 +150,7 @@ int zip_packet( ap, from, data, len )
 			break;
 		    }
 		}
-		if ( rtmp == 0 ) {
+		if ( rtmp == NULL ) {
 		    continue;
 		}
 
@@ -305,10 +299,10 @@ int zip_packet( ap, from, data, len )
 		    /*
 		     * Update head to this rtmp entry.
 		     */
-		    if ( rtmp != 0 && gate->g_rt != rtmp ) {
+		    if ( rtmp != NULL && gate->g_rt != rtmp ) {
 			gate->g_rt->rt_prev->rt_next = gate->g_rt;
 			gate->g_rt = rtmp;
-			rtmp->rt_prev->rt_next = 0;
+			rtmp->rt_prev->rt_next = NULL;
 		    }
 		}
 
@@ -328,7 +322,7 @@ int zip_packet( ap, from, data, len )
 		 * We won't find any rtmp entry if the gateway is no longer
 		 * telling us about the entry.
 		 */
-		if ( rtmp == 0 ) {
+		if ( rtmp == NULL ) {
 		    LOG(log_info, logtype_atalkd, "zip skip reply %u from %u.%u (no rtmp)",
 			    ntohs( firstnet ), ntohs( from->sat_addr.s_net ),
 			    from->sat_addr.s_node );
@@ -366,7 +360,7 @@ int zip_packet( ap, from, data, len )
 
 	    if ( rtmp && rtmp->rt_flags & RTMPTAB_HASZONES ) {
 		/* XXX */
-		if ( rtmp->rt_gate == 0 &&
+		if ( rtmp->rt_gate == NULL &&
 			zonecheck( rtmp, gate->g_iface ) != 0 ) {
 		    LOG(log_error, logtype_atalkd, "zip_packet seed zonelist mismatch" );
 		    return -1;
@@ -414,7 +408,7 @@ int zip_packet( ap, from, data, len )
 			    from->sat_addr.s_node );
 		    return 1;
 		}
-		if ( rtmp->rt_iprev == 0 ) {
+		if ( rtmp->rt_iprev == NULL ) {
 		    LOG(log_info, logtype_atalkd,
 			    "zip ereply %u-%u from %u.%u (rtmp not in use)",
 			    ntohs( rtmp->rt_firstnet ),
@@ -424,10 +418,10 @@ int zip_packet( ap, from, data, len )
 		}
 
 		/* update head to *next* rtmp entry */
-		if ( rtmp->rt_next != 0 ) {
+		if ( rtmp->rt_next != NULL ) {
 		    gate->g_rt->rt_prev->rt_next = gate->g_rt;
 		    gate->g_rt = rtmp->rt_next;
-		    rtmp->rt_next = 0;
+		    rtmp->rt_next = NULL;
 		}
 	    }
 
@@ -484,7 +478,7 @@ int zip_packet( ap, from, data, len )
 		if ( n == zh.zh_count ) {
 		    rtmp->rt_flags |= RTMPTAB_HASZONES;
 		    /* XXX */
-		    if ( rtmp->rt_gate == 0 &&
+		    if ( rtmp->rt_gate == NULL &&
 			    zonecheck( rtmp, gate->g_iface ) != 0 ) {
 			LOG(log_error, logtype_atalkd, "zip_packet seed zonelist mismatch" );
 			return -1;
@@ -499,7 +493,7 @@ int zip_packet( ap, from, data, len )
 	     * Don't answer with bogus information.
 	     */
 	    if (((iface->i_flags & IFACE_ISROUTER) == 0) ||
-		iface->i_rt->rt_zt == 0 ||
+		iface->i_rt->rt_zt == NULL ||
 		( iface->i_flags & IFACE_CONFIG ) == 0 ) {
 		return 0;
 	    }
@@ -555,7 +549,7 @@ int zip_packet( ap, from, data, len )
 		    break;
 		}
 	    }
-	    if ( l == 0 ) {
+	    if ( l == NULL ) {
 		zt = (struct ziptab *)iface->i_rt->rt_zt->l_data;
 		zh.zh_flags |= ZIPGNI_INVALID;
 	    }
@@ -665,7 +659,7 @@ int zip_packet( ap, from, data, len )
 	     * interface structure, not in the zone table.  This allows us
 	     * to check that the net is giving us good zones.
 	     */
-	    if ( iface->i_flags & IFACE_SEED ) {
+	    if ( (iface->i_flags & IFACE_SEED) && iface->i_czt) {
 		if ( iface->i_czt->zt_len != *data ||
 			strndiacasecmp( iface->i_czt->zt_name,
 			data + 1, *data ) != 0 ) {
@@ -812,7 +806,7 @@ int zip_packet( ap, from, data, len )
 		return 0;
 	    }
 
-	    if ( iface->i_rt->rt_zt == 0 ) {
+	    if ( iface->i_rt->rt_zt == NULL ) {
 		return 0;
 	    }
 	    zt = (struct ziptab *)iface->i_rt->rt_zt->l_data;
@@ -840,7 +834,7 @@ int zip_packet( ap, from, data, len )
 		data += zt->zt_len;
 	    }
 
-	    *lastflag = ( zt == 0 );		/* Too clever? */
+	    *lastflag = ( zt == NULL );		/* Too clever? */
 	    break;
 
 	case ZIPOP_GETLOCALZONES :
@@ -866,7 +860,7 @@ int zip_packet( ap, from, data, len )
 		data += zt->zt_len;
 	    }
 
-	    *lastflag = ( l == 0 );
+	    *lastflag = ( l == NULL );
 	    break;
 
 	default :
@@ -898,8 +892,7 @@ int zip_packet( ap, from, data, len )
     return 0;
 }
 
-int zip_getnetinfo( iface )
-    struct interface	*iface;
+int zip_getnetinfo(struct interface *iface)
 {
     struct atport	*ap;
     struct ziphdr	zh;
@@ -914,7 +907,7 @@ int zip_getnetinfo( iface )
 	    break;
 	}
     }
-    if ( ap == 0 ) {
+    if ( ap == NULL ) {
 	LOG(log_error, logtype_atalkd, "zip_getnetinfo can't find zip socket!" );
 	return -1;
     }
@@ -955,10 +948,7 @@ int zip_getnetinfo( iface )
     return 0;
 }
 
-    struct ziptab *
-newzt( len, name )
-    const int		len;
-    const char	*name;
+struct ziptab *newzt(const int len, const char *name)
 {
     struct ziptab	*zt;
 
@@ -981,9 +971,7 @@ newzt( len, name )
  * Insert at the end.  Return 1 if a mapping already exists, 0 otherwise.
  * -1 on error.
  */
-static int add_list( head, data )
-    struct list	**head;
-    void	*data;
+static int add_list(struct list **head, void *data)
 {
     struct list	*l, *l2;
 
@@ -1012,10 +1000,7 @@ static int add_list( head, data )
     return( 0 );
 }
 
-int addzone( rt, len, zone )
-    struct rtmptab	*rt;
-    int			len;
-    char		*zone;
+int addzone(struct rtmptab *rt, int len, char *zone)
 {
     struct ziptab	*zt;
     int			cc, exists = 0;

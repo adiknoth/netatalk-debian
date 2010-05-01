@@ -2,12 +2,12 @@
 .\"     Title: AppleVolumes.default
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.74.3 <http://docbook.sf.net/>
-.\"      Date: 30 January 2009
-.\"    Manual: Netatalk 2.0.5
-.\"    Source: Netatalk 2.0.5
+.\"      Date: 22 Apr 2010
+.\"    Manual: Netatalk 2.1
+.\"    Source: Netatalk 2.1
 .\"  Language: English
 .\"
-.TH "APPLEVOLUMES\&.DEFAU" "5" "30 January 2009" "Netatalk 2.0.5" "Netatalk 2.0.5"
+.TH "APPLEVOLUMES\&.DEFAU" "5" "22 Apr 2010" "Netatalk 2.1" "Netatalk 2.1"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -19,22 +19,47 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-AppleVolumes.default \- Configuration file used by \fBafpd\fR(8) to determine the shares made available through Appletalk
+AppleVolumes.default, AppleVolumes.system, AppleVolumes \- Configuration file used by \fBafpd\fR(8) to determine the shares made available through AFP and specify file name extension mappings\&.
+.SH "SYNOPSIS"
+.HP \w'\fB:ETCDIR:/AppleVolumes\&.default\fR\fB\fR\fB:ETCDIR:/AppleVolumes\&.system\fR\fB\fR\fB~/AppleVolumes\fR\fB\fR\fB~/\&.AppleVolumes\fR\fB\fR\fB~/applevolumes\fR\fB\fR\fB~/\&.applevolumes\fR\fB\fR\ 'u
+\fB:ETCDIR:/AppleVolumes\&.default\fR\fB\fR
+.br
+\fB:ETCDIR:/AppleVolumes\&.system\fR\fB\fR
+.br
+\fB~/AppleVolumes\fR\fB\fR
+.br
+\fB~/\&.AppleVolumes\fR\fB\fR
+.br
+\fB~/applevolumes\fR\fB\fR
+.br
+\fB~/\&.applevolumes\fR\fB\fR
 .SH "DESCRIPTION"
 .PP
-:ETCDIR:/AppleVolumes\&.default
-is the configuration file used by
+
+:ETCDIR:/AppleVolumes\&.system
+and one of
+:ETCDIR:/AppleVolumes\&.default,
+~/AppleVolumes,
+~/\&.AppleVolumes,
+~/applevolumes, or
+~/\&.applevolumes
+are the configuration files used by
 \fBafpd\fR
-to determine what portions of the file system will be shared via Apple Filing Protocol, as well as their behaviour\&. Any line not prefixed with # is interpreted\&. Newline escaping is supported\&. The configuration lines are composed like:
+to determine what portions of the file system will be shared via Apple Filing Protocol, as well as their behaviour\&.
+.PP
+Any line not prefixed with # is interpreted\&. Newline escaping is supported\&. The configuration lines are composed like:
 .PP
 path
 \fI[ volume name ] [ options ]\fR
 .PP
+\&.extension
+\fI[ type [ creator ] ]\fR
+.PP
 The path name must be a fully qualified path name, or a path name using either the ~ shell shorthand or any of the substitution variables, which are listed below\&.
 .PP
-The volume name is the name that appears in the Chooser ot the "connect to server" dialog on Macintoshes to represent the appropriate share\&. If there are spaces in the name, it should be in quotes (i\&.e\&. "File Share")\&. The volume name may not exceed 27 characters in length, and cannot contain the
+The volume name is the name that appears in the Chooser ot the "connect to server" dialog on Macintoshes to represent the appropriate share\&. If volumename is unspecified, the last component of pathname is used\&. No two volumes may have the same name\&. If there are spaces in the name, it should be in quotes (i\&.e\&. "File Share")\&. The volume name cannot contain the
 \':\'
-character\&.
+character\&. The volume name is mangled if it is very long\&. Mac codepage volume name is limited to 27 characters\&. UTF8\-MAC volume name is limited to \-volnamelen parameter in afpd\&.conf
 .if n \{\
 .sp
 .\}
@@ -54,11 +79,7 @@ line\&. Though newline escaping is supported\&.
 .sp .5v
 .RE
 .PP
-The possible options and their meanings are:
-.PP
-adouble:\fI[v1|v2|osx]\fR
-.RS 4
-specify the format of the metadata files, which are used for saving Mac resource fork as well\&. Earlier versions used AppleDouble V1, the new default format is V2\&. Starting with Netatalk 2\&.0, the scheme MacOS X uses currently (10\&.3\&.x), is also supported
+The leading\-dot lines specify file name extension mappings\&. The extension \'\&.\' sets the default creator and type for otherwise untyped Unix files\&.
 .if n \{\
 .sp
 .\}
@@ -71,13 +92,53 @@ specify the format of the metadata files, which are used for saving Mac resource
 \fBNote\fR
 .ps -1
 .br
-Using
-\fBadouble:osx\fR
-is
-\fBnot\fR
-recommended for production use\&. Its only aim is to temporarely share eg\&. FAT32 formatted FireWire harddrives written on a Macintosh with afpd\&. Apple\'s metadata scheme lacks several essential features, so using it on the server\'s side will break both CNIDs and MacOS 9 compatibility
+.PP
+File name extension mapping is useful for Mac OS 9 and earlier\&. But it should not use for Mac OS X\&.
 .sp .5v
 .RE
+.PP
+It is possible to specify default options for all volumes with a
+\fI:DEFAULT: \fRline preceeding these volume definitions:
+.PP
+\fBExample.\ \&:DEFAULT: configuration line\fR
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+:DEFAULT: options:upriv,usedots dbpath:/var/dbd/AppleDB/$v dperm:0775 fperm:0664
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+The possible options and their meanings are:
+.PP
+adouble:\fI[v1|v2|osx]\fR
+.RS 4
+Specify the format of the metadata files, which are used for saving Mac resource fork as well\&. Earlier versions used AppleDouble V1, the new default format is V2\&. Starting with Netatalk 2\&.0, the scheme MacOS X 10\&.3\&.x uses, is also supported\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+\fBadouble:osx\fR
+\fBcannot\fR
+be treated normally any longer\&. Its only aim was to temporarely share eg\&. FAT32 formatted FireWire harddrives written on a Macintosh with afpd\&. Apple\'s metadata scheme lacks several essential features, so using it on the server\'s side will break both CNIDs and MacOS 9 compatibility\&. AppleDouble file of Mac OS X 10\&.6 is incompatible to V1 and V2\&.
+.sp .5v
+.RE
+.RE
+.PP
+volsizelimit:\fIsize in MiB\fR
+.RS 4
+Useful for TimeMachine: limits the reported volume size, thus preventing TM from using the whole real disk space for backup\&. Example: "volsizelimit:1000" would limit the reported disk space to 1 GB\&.
 .RE
 .PP
 allow:\fI[users/groups]\fR
@@ -90,14 +151,18 @@ deny:\fI[users/groups]\fR
 The deny option specifies users and groups who are not allowed access to the share\&. It follows the same format as the allow option\&.
 .RE
 .PP
-allowed_hosts:\fI[IPv4 host address/IPv4 netmask bits[, \&.\&.\&. ]]\fR
+allowed_hosts:\fI[IP host address/IP netmask bits[, \&.\&.\&. ]]\fR
 .RS 4
-Only listed hosts and networks are allowed, all others are rejected\&. Example: allowed_hosts:10\&.1\&.0\&.0/16,10\&.2\&.1\&.100
+Only listed hosts and networks are allowed, all others are rejected\&. The network address may be specified either in dotted\-decimal format for IPv4 or in hexadecimal format for IPv6\&.
+.sp
+Example: allowed_hosts:10\&.1\&.0\&.0/16,10\&.2\&.1\&.100,2001:0db8:1234::/48
 .RE
 .PP
-denied_hosts:\fI[IPv4 host address/IPv4 netmask bits[, \&.\&.\&.]]\fR
+denied_hosts:\fI[IP host address/IP netmask bits[, \&.\&.\&.]]\fR
 .RS 4
-Listed hosts and nets are rejected, all others are allowed\&. Example: denied_hosts: 192\&.168\&.100/24,10\&.1\&.1\&.1
+Listed hosts and nets are rejected, all others are allowed\&.
+.sp
+Example: denied_hosts: 192\&.168\&.100/24,10\&.1\&.1\&.1,2001:db8::1428:57ab
 .RE
 .PP
 cnidscheme:\fI[backend]\fR
@@ -108,6 +173,53 @@ set the CNID backend to be used for the volume, default is [:DEFAULT_CNID_SCHEME
 dbpath:\fI[path]\fR
 .RS 4
 Sets the database information to be stored in path\&. You have to specifiy a writable location, even if the volume is read only\&.
+.RE
+.PP
+cnidserver:\fI[fqdn|IP[:port]]\fR
+.RS 4
+Query this servername or IP address (default:\fIlocalhost\fR) and port (default:
+\fI4700\fR) for CNIDs\&. Only used with CNID backend "\fIdbd\fR"\&. This option here overrides any setting from
+afpd\&.conf:\fBcnidserver\fR\&.
+.RE
+.PP
+ea:\fI[none|auto|sys|ad]\fR
+.RS 4
+Specify how Extended Attributes
+are stored\&.
+\fBauto\fR
+is the default\&.
+.PP
+auto
+.RS 4
+Try
+\fBsys\fR
+(by setting an EA on the shared directory itself), fallback to
+\fBad\fR\&. Requires writeable volume for perfoming test\&.
+\fBoptions:ro\fR
+overwrites
+\fBauto\fR
+with
+\fBnone\fR\&. Use explicit
+\fBea:sys|ad\fR
+for read\-only volumes where appropiate\&.
+.RE
+.PP
+sys
+.RS 4
+Use filesystem Extended Attributes\&.
+.RE
+.PP
+ad
+.RS 4
+Use files in
+\fI\&.AppleDouble\fR
+directories\&.
+.RE
+.PP
+none
+.RS 4
+No Extended Attributes support\&.
+.RE
 .RE
 .PP
 maccharset:\fI[charset]\fR
@@ -121,6 +233,13 @@ afpd\&.conf\&.
 options:\fI[option]\fR
 .RS 4
 This allows multiple options to be specified in a comma delimited format\&. The available options are:
+.PP
+acls
+.RS 4
+Enable ACLs on this volume\&. Requires a
+\fINFSv4 ACLs\fR
+compatible filesystem (e\&.g\&. ZFS) and an ACL API compatible to *Solaris\&. In other words: this requires Solaris, Opensolaris or a derived distribution\&.
+.RE
 .PP
 tm
 .RS 4
@@ -147,7 +266,10 @@ ro
 .RS 4
 Specifies the share as being read only for all users\&. The \&.AppleDB directory has to be writeable, you can use the
 \fB\-dbpath\fR
-option to relocate it\&.
+option to relocate it\&. Overwrites
+\fBea:auto\fR
+with
+\fBea:none\fR
 .RE
 .PP
 root_preexec_close
@@ -173,7 +295,7 @@ password:\fI[password]\fR
 This option allows you to set a volume password, which can be a maximum of 8 characters long (using ASCII strongly recommended at the time of this writing)\&.
 .RE
 .PP
-perm|fperm|dperm:[mode]
+perm|fperm|dperm:\fI[mode]\fR
 .RS 4
 Add(or) with the client requested permissions:
 \fBperm\fR
@@ -195,6 +317,11 @@ is for directories only\&. Use with
 .if n \{\
 .RE
 .\}
+.RE
+.PP
+umask:\fI[mode]\fR
+.RS 4
+set perm mask\&.
 .RE
 .PP
 preexec:\fI[command]\fR
@@ -326,8 +453,6 @@ $$
 prints dollar sign ($)
 .RE
 .PP
-When using variable substitution in the volume name, always keep in mind, not to exceed the 27 characters limit
-.PP
 \fBExample.\ \&Using variable substitution when defining volumes\fR
 .PP
 .if n \{\
@@ -451,7 +576,7 @@ You should consider converting old style volumes to the new UTF\-8/AD2 format\&.
 \fINote\fR: Using above example options will allow you to downgrade to 1\&.x netatalk again\&.
 .PP
 \fINote\fR: Some 1\&.x NLS files used non standard mappings, e\&.g\&.
-maccode\&.iso8859\-1\&.adapted\&. This is not supported anymore\&. You\'ll have to copy the contents of those volumes files to a Mac and then back to the netatalk server, preferably to an UTF\-8 volume\&.
+maccode\&.iso8859\-1\&.adapted\&. Three 1\&.x CAP double\-byte maccharsets are incompatible to netatalk 2\&.x; "MAC_CHINESE_TRAD", "MAC_JAPANESE" and "MAC_KOREAN"\&. These are not supported anymore\&. You\'ll have to copy the contents of those volumes files to a Mac and then back to the netatalk server, preferably to an UTF\-8 volume\&.
 .SH "ADVANCED OPTIONS"
 .PP
 The following options should only be used after serious consideration\&. Be sure you fully understood the, sometimes complex, consequences, before using them\&.
@@ -477,11 +602,9 @@ options:[\fBoption\fR]
 .RS 4
 This allows multiple options to be specified in a comma delimited format\&. The available options are:
 .PP
-cachecnid
+caseinsensitive
 .RS 4
-If set
-\fBafpd\fR
-uses the ID information stored in AppleDouble V2 header files to reduce database load\&. Don\'t set this option if the volume is modified by non AFP clients (NFS/SMB/local)\&. Defaults to off\&.
+The underlying filesystem is case insensitive (only tested with JFS in OS2 mode)\&.
 .RE
 .PP
 crlf
@@ -495,6 +618,11 @@ dropbox
 .RS 4
 Allows a volume to be declared as being a "dropbox\&." Note that netatalk must be compiled with dropkludge support for this to function\&.
 \fIWarning\fR: This option is deprecated and might not work as expected\&.
+.RE
+.PP
+dropkludge
+.RS 4
+same as "dropbox"\&.
 .RE
 .PP
 mswindows
@@ -535,6 +663,13 @@ Try to avoid
 whenever possible\&.
 .RE
 .PP
+nocnidcache
+.RS 4
+If set
+\fBafpd\fR
+doesn\'t store the ID information in AppleDouble V2 header files\&. As these IDs are used for caching and as a database backup, this option normally shouldn\'t be set\&.
+.RE
+.PP
 nodev
 .RS 4
 always use 0 for device number, helps when the device number is not constant across a reboot, cluster, \&.\&.\&.
@@ -558,10 +693,37 @@ don\'t stat volume path when enumerating volumes list, useful for automounting o
 .PP
 prodos
 .RS 4
-Provides compatibility with Apple II clients\&.
+Provides compatibility with Apple II clients\&. (legacy)
 .RE
 .RE
+.SH "FILE NAME EXTENSION MAPPINGS"
+.PP
+\fBExample.\ \&Extension is jpg. Type is "JPEG". Creator is "ogle".\fR
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\&.jpg "JPEG" "ogle"
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+\fBExample.\ \&Extension is lzh. Type is "LHA ". Creator is not defined.\fR
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\&.lzh "LHA "
+.fi
+.if n \{\
+.RE
+.\}
 .SH "SEE ALSO"
 .PP
 \fBafpd.conf\fR(5),
-\fBafpd\fR(8)
+\fBafpd\fR(8),
+\fBafp_ldap.conf\fR(5),
+\fBafp_acls\fR(8)

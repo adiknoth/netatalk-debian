@@ -48,7 +48,8 @@ struct charset_functions charset_mac_hebrew =
 	mac_hebrew_pull,
 	mac_hebrew_push,
 	CHARSET_CLIENT | CHARSET_MULTIBYTE,
-	NULL, NULL, NULL
+	NULL,
+	NULL, NULL
 };
 
 

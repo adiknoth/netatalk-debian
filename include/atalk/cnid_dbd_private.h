@@ -10,7 +10,7 @@
 #include <atalk/adouble.h>
 #include <sys/param.h>
 
-#define CNID_META_DEFAULT_USOCK "/tmp/cnid_meta" 
+#include <atalk/cnid_private.h>
 
 #define CNID_DBD_OP_OPEN        0x01
 #define CNID_DBD_OP_CLOSE       0x02
@@ -23,6 +23,7 @@
 #define CNID_DBD_OP_MANGLE_ADD  0x09
 #define CNID_DBD_OP_MANGLE_GET  0x0a
 #define CNID_DBD_OP_GETSTAMP    0x0b
+#define CNID_DBD_OP_REBUILD_ADD 0x0c
 
 #define CNID_DBD_RES_OK            0x00
 #define CNID_DBD_RES_NOTFOUND      0x01
@@ -30,46 +31,12 @@
 #define CNID_DBD_RES_ERR_MAX       0x03
 #define CNID_DBD_RES_ERR_DUPLCNID  0x04
 
-#define CNID_DB_MAGIC   0x434E4944U  /* CNID */
-#define CNID_DATA_MAGIC 0x434E4945U  /* CNIE */
-
-#define CNID_OFS                 0
-#define CNID_LEN                 4
- 
-#define CNID_DEV_OFS             CNID_LEN
-#define CNID_DEV_LEN             8
- 
-#define CNID_INO_OFS             (CNID_DEV_OFS + CNID_DEV_LEN)
-#define CNID_INO_LEN             8
- 
-#define CNID_DEVINO_OFS          CNID_LEN
-#define CNID_DEVINO_LEN          (CNID_DEV_LEN +CNID_INO_LEN)
- 
-#define CNID_TYPE_OFS            (CNID_DEVINO_OFS +CNID_DEVINO_LEN)
-#define CNID_TYPE_LEN            4
- 
-#define CNID_DID_OFS             (CNID_TYPE_OFS +CNID_TYPE_LEN)
-#define CNID_DID_LEN             CNID_LEN
- 
-#define CNID_NAME_OFS            (CNID_DID_OFS + CNID_DID_LEN)
-#define CNID_HEADER_LEN          (CNID_NAME_OFS)
-
-#define CNID_START               17
-
-#define CNIDFLAG_ROOTINFO_RO     (1 << 0)
-#define CNIDFLAG_DB_RO           (1 << 1)
-
-/* the key is in the form of a did/name pair. in this case,
- * we use 0/RootInfo. */
-#define ROOTINFO_KEY    "\0\0\0\0"
-#define ROOTINFO_KEYLEN 4
-
 struct cnid_dbd_rqst {
     int     op;
     cnid_t  cnid;
     dev_t   dev;
     ino_t   ino;
-    int     type;
+    u_int32_t type;
     cnid_t  did;
     char   *name;
     size_t  namelen;
@@ -86,8 +53,12 @@ struct cnid_dbd_rply {
 typedef struct CNID_private {
     u_int32_t magic;
     char      db_dir[MAXPATHLEN + 1]; /* Database directory without /.AppleDB appended */
+    char      *cnidserver;
+    char      *cnidport;
     int       fd;		/* File descriptor to cnid_dbd */
     char      stamp[ADEDLEN_PRIVSYN]; /* db timestamp */
+    char      *client_stamp;
+    size_t    stamp_size;
     int       notfirst;   /* already open before */
     int       changed;  /* stamp differ */
 } CNID_private;

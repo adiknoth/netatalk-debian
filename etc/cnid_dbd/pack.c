@@ -1,5 +1,5 @@
 /*
- * $Id: pack.c,v 1.1.4.9.2.1 2005/09/27 10:40:41 didg Exp $
+ * $Id: pack.c,v 1.6 2009/10/13 22:55:37 didg Exp $
  *
  * Copyright (C) Joerg Lenneis 2003
  * All Rights Reserved.  See COPYING.
@@ -21,13 +21,6 @@
 
 #include <atalk/cnid_dbd_private.h>
 #include "pack.h"
-
-#ifdef DEBUG
-/*
- *  Auxiliary stuff for stringify_devino. See comments below.
- */
-static char hexchars[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
-#endif
 
 /* --------------- */
 /*
@@ -56,10 +49,7 @@ static void pack_devino(unsigned char *buf, dev_t dev, ino_t ino)
 }
 
 /* --------------- */
-int didname(dbp, pkey, pdata, skey)
-DB *dbp _U_;
-const DBT *pkey _U_, *pdata;
-DBT *skey;
+int didname(DB *dbp _U_, const DBT *pkey _U_, const DBT *pdata, DBT *skey)
 {
 int len;
  
@@ -74,10 +64,7 @@ int len;
 }
  
 /* --------------- */
-int devino(dbp, pkey, pdata, skey)
-DB *dbp _U_;
-const DBT *pkey _U_, *pdata;
-DBT *skey;
+int devino(DB *dbp _U_, const DBT *pkey _U_,  const DBT *pdata, DBT *skey)
 {
     memset(skey, 0, sizeof(DBT));
     skey->data = (char *)pdata->data + CNID_DEVINO_OFS;
@@ -111,43 +98,3 @@ unsigned char *pack_cnid_data(struct cnid_dbd_rqst *rqst)
     return start;
 }
 
-#ifdef DEBUG
-
-/*
- *  Whack 4 or 8 byte dev/ino numbers into something printable for DEBUG
- *  logging. This function must not be used more that once per printf() style
- *  invocation. This (or something improved) should probably migrate to
- *  libatalk logging. Checking for printf() %ll support would be an alternative.
- */
-
-char *stringify_devino(dev_t dev, ino_t ino)
-{
-    static char rbuf[CNID_DEV_LEN * 2 + 1 + CNID_INO_LEN * 2 + 1] = {0};
-    char buf[CNID_DEV_LEN + CNID_INO_LEN];
-    char *c1;
-    char *c2;
-    char *middle;
-    char *end;
-    int   ci;
-
-    pack_devino(buf, dev, ino);
-    
-    middle = buf + CNID_DEV_LEN;
-    end = buf + CNID_DEV_LEN + CNID_INO_LEN;
-    c1  = buf;
-    c2  = rbuf;  
-    
-    while (c1 < end) {
-	if (c1 == middle) {
-	    *c2 = '/';
-	    c2++;
-	}    
-	ci = *c1;
-	c2[0] = hexchars[(ci & 0xf0) >> 4];
-	c2[1] = hexchars[ci & 0x0f];
-	c1++;
-	c2 += 2;
-    }
-    return rbuf;
-}
-#endif

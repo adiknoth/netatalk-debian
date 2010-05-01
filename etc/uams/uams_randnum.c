@@ -1,5 +1,5 @@
 /* 
- * $Id: uams_randnum.c,v 1.12.6.4.2.2 2008/11/25 15:16:33 didg Exp $
+ * $Id: uams_randnum.c,v 1.21 2010/03/30 10:25:49 franklahm Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * Copyright (c) 1999 Adrian Sun (asun@u.washington.edu) 
@@ -300,16 +300,17 @@ static int randpass(const struct passwd *pwd, const char *file,
 /* randnum sends an 8-byte number and uses the user's password to
  * check against the encrypted reply. */
 static int rand_login(void *obj, char *username, int ulen, struct passwd **uam_pwd _U_,
-                        char *ibuf _U_, int ibuflen _U_,
-                        char *rbuf, int *rbuflen)
+                        char *ibuf _U_, size_t ibuflen _U_,
+                        char *rbuf, size_t *rbuflen)
 {
 
   char *passwdfile;
   u_int16_t sessid;
-  int len, err;
+  size_t len;
+  int err;
  
   if (( randpwd = uam_getname(obj, username, ulen)) == NULL )
-    return AFPERR_PARAM; /* unknown user */
+    return AFPERR_NOTAUTH; /* unknown user */
   
   LOG(log_info, logtype_uams, "randnum/rand2num login: %s", username);
   if (uam_checkuser(randpwd) < 0)
@@ -346,8 +347,8 @@ static int rand_login(void *obj, char *username, int ulen, struct passwd **uam_p
 /* check encrypted reply. we actually setup the encryption stuff
  * here as the first part of randnum and rand2num are identical. */
 static int randnum_logincont(void *obj, struct passwd **uam_pwd,
-			     char *ibuf, int ibuflen _U_, 
-			     char *rbuf _U_, int *rbuflen)
+			     char *ibuf, size_t ibuflen _U_, 
+			     char *rbuf _U_, size_t *rbuflen)
 {
   u_int16_t sessid;
 
@@ -385,8 +386,8 @@ static int randnum_logincont(void *obj, struct passwd **uam_pwd,
  *    and sends it back as part of the reply.
  */
 static int rand2num_logincont(void *obj, struct passwd **uam_pwd,
-			      char *ibuf, int ibuflen _U_, 
-			      char *rbuf, int *rbuflen)
+			      char *ibuf, size_t ibuflen _U_, 
+			      char *rbuf, size_t *rbuflen)
 {
   u_int16_t sessid;
   unsigned int i;
@@ -435,10 +436,11 @@ static int rand2num_logincont(void *obj, struct passwd **uam_pwd,
  */
 static int randnum_changepw(void *obj, const char *username _U_, 
 			    struct passwd *pwd, char *ibuf,
-			    int ibuflen _U_, char *rbuf _U_, int *rbuflen _U_)
+			    size_t ibuflen _U_, char *rbuf _U_, size_t *rbuflen _U_)
 {
     char *passwdfile;
-    int err, len;
+    int err;
+    size_t len;
 
     if (uam_checkuser(pwd) < 0)
       return AFPERR_ACCESS;
@@ -474,7 +476,7 @@ static int randnum_changepw(void *obj, const char *username _U_,
 #endif /* USE_CRACKLIB */
 
     if (!err) 
-      err = randpass(pwd, passwdfile, ibuf + PASSWDLEN, sizeof(seskey), 1);
+        err = randpass(pwd, passwdfile, (unsigned char *)ibuf + PASSWDLEN, sizeof(seskey), 1);
 
     /* zero out some fields */
     memset(&seskeysched, 0, sizeof(seskeysched));
@@ -490,11 +492,11 @@ static int randnum_changepw(void *obj, const char *username _U_,
 
 /* randnum login */
 static int randnum_login(void *obj, struct passwd **uam_pwd,
-                        char *ibuf, int ibuflen,
-                        char *rbuf, int *rbuflen)
+                        char *ibuf, size_t ibuflen,
+                        char *rbuf, size_t *rbuflen)
 {
     char *username;
-    int len, ulen;
+    size_t len, ulen;
 
     *rbuflen = 0;
 
@@ -502,7 +504,7 @@ static int randnum_login(void *obj, struct passwd **uam_pwd,
                              (void *) &username, &ulen) < 0)
         return AFPERR_MISC;
 
-    if (ibuflen <= 1) {
+    if (ibuflen < 2) {
         return( AFPERR_PARAM );
     }
 
@@ -525,11 +527,11 @@ static int randnum_login(void *obj, struct passwd **uam_pwd,
 
 /* randnum login ext */
 static int randnum_login_ext(void *obj, char *uname, struct passwd **uam_pwd,
-                        char *ibuf, int ibuflen,
-                        char *rbuf, int *rbuflen)
+                        char *ibuf, size_t ibuflen,
+                        char *rbuf, size_t *rbuflen)
 {
     char       *username;
-    int        len, ulen;
+    size_t     len, ulen;
     u_int16_t  temp16;
 
     *rbuflen = 0;

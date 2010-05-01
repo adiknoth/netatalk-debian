@@ -1,5 +1,5 @@
 /*
- * $Id: globals.h,v 1.18.2.2.2.5.2.1 2008/11/25 15:16:33 didg Exp $
+ * $Id: globals.h,v 1.33 2010/03/29 15:22:57 franklahm Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -27,6 +27,7 @@
 #include <atalk/uam.h>
 
 #define MACFILELEN 31
+#define MAXUSERLEN 256
 
 #define OPTION_DEBUG         (1 << 0)
 #define OPTION_USERVOLFIRST  (1 << 1)
@@ -35,6 +36,7 @@
 #define OPTION_CUSTOMICON    (1 << 4)
 #define OPTION_NOSLP         (1 << 5)
 #define OPTION_ANNOUNCESSH   (1 << 6)
+#define OPTION_UUID          (1 << 7)
 
 #ifdef FORCE_UIDGID
 /* set up a structure for this */
@@ -54,19 +56,21 @@ struct afp_volume_name {
 };
 
 struct afp_options {
-    int connections, port, transports, tickleval, timeout, server_notif, flags;
+    int connections, transports, tickleval, timeout, server_notif, flags;
     unsigned char passwdbits, passwdminlen, loginmaxfail;
     u_int32_t server_quantum;
-    char hostname[MAXHOSTNAMELEN + 1], *server, *ipaddr, *configfile;
+    char hostname[MAXHOSTNAMELEN + 1], *server, *ipaddr, *port, *configfile;
     struct at_addr ddpaddr;
     char *uampath, *fqdn;
     char *pidfile;
+    char *sigconffile;
     struct afp_volume_name defaultvol, systemvol, uservol;
+    int  closevol;
 
     char *guest, *loginmesg, *keyfile, *passwdfile;
     char *uamlist;
     char *authprintdir;
-    char *signature;
+    unsigned char signature[16];
     char *k5service, *k5realm, *k5keytab;
     char *unixcodepage,*maccodepage;
     charset_t maccharset, unixcharset; 
@@ -76,16 +80,20 @@ struct afp_options {
 #ifdef ADMIN_GRP
     gid_t admingid;
 #endif /* ADMIN_GRP */
+    int    volnamelen;
+
+    /* default value for winbind authentication */
+    char *ntdomain, *ntseparator;
 };
 
 #define AFPOBJ_TMPSIZ (MAXPATHLEN)
-typedef struct AFPObj {
+typedef struct _AFPObj {
     int proto;
     unsigned long servernum;
     void *handle, *config;
     struct afp_options options;
     char *Obj, *Type, *Zone;
-    char username[MACFILELEN + 1];
+    char username[MAXUSERLEN];
     void (*logout)(void), (*exit)(int);
     int (*reply)(void *, int);
     int (*attention)(void *, AFPUserBytes);
@@ -94,12 +102,19 @@ typedef struct AFPObj {
     char oldtmp[AFPOBJ_TMPSIZ + 1], newtmp[AFPOBJ_TMPSIZ + 1];
     void *uam_cookie; /* cookie for uams */
     struct session_info  sinfo;
+    uid_t uid; 	/* client running user id */
 
 #ifdef FORCE_UIDGID
     int                 force_uid;
     uidgidset		uidgid;
 #endif
 } AFPObj;
+
+/* typedef for AFP functions handlers */
+typedef int (*AFPCmd)(AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size_t *rbuflen);
+
+/* afp_dsi.c */
+extern AFPObj *AFPobj;
 
 extern int		afp_version;
 extern int		afp_errno;
@@ -108,28 +123,29 @@ extern struct dir	*curdir;
 extern char		getwdbuf[];
 
 /* FIXME CNID */
-extern char             Cnid_srv[MAXHOSTNAMELEN + 1];
-extern int              Cnid_port;
+extern const char *Cnid_srv;
+extern const char *Cnid_port;
 
-extern int  get_afp_errno   __P((const int param));
-extern void afp_options_init __P((struct afp_options *));
-extern int afp_options_parse __P((int, char **, struct afp_options *));
-extern int afp_options_parseline __P((char *, struct afp_options *));
-extern void afp_options_free __P((struct afp_options *,
-                                      const struct afp_options *));
-extern void setmessage __P((const char *));
-extern void readmessage __P((AFPObj *));
+extern int  get_afp_errno   (const int param);
+extern void afp_options_init (struct afp_options *);
+extern int afp_options_parse (int, char **, struct afp_options *);
+extern int afp_options_parseline (char *, struct afp_options *);
+extern void afp_options_free (struct afp_options *,
+                                      const struct afp_options *);
+extern void setmessage (const char *);
+extern void readmessage (AFPObj *);
 
 /* gettok.c */
-extern void initline   __P((int, char *));
-extern int  parseline  __P((int, char *));
+extern void initline   (int, char *);
+extern int  parseline  (int, char *);
 
 /* afp_util.c */
-const char *AfpNum2name __P((int ));
+extern const char *AfpNum2name (int );
+extern const char *AfpErr2name(int err);
 
 #ifndef NO_DDP
-extern void afp_over_asp __P((AFPObj *));
+extern void afp_over_asp (AFPObj *);
 #endif /* NO_DDP */
-extern void afp_over_dsi __P((AFPObj *));
+extern void afp_over_dsi (AFPObj *);
 
 #endif /* globals.h */

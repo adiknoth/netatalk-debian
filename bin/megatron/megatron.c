@@ -1,5 +1,5 @@
 /*
- * $Id: megatron.c,v 1.9.10.1 2005/09/27 10:40:40 didg Exp $
+ * $Id: megatron.c,v 1.14 2010/01/27 21:27:53 didg Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -24,9 +24,9 @@
 #include "macbin.h"
 #include "nad.h"
 
-char		forkbuf[8192];
 char		*forkname[] = { "data", "resource" };
-char		*name[] = { "unhex",
+static char	forkbuf[8192];
+static char	*name[] = { "unhex",
 			    "unbin",
 			    "unsingle",
 			    "macbinary",
@@ -36,10 +36,7 @@ char		*name[] = { "unhex",
 			    "binheader",
 			    "megatron" };
 
-int from_open( un, file, fh, flags )
-    int			un, flags;
-    char		*file;
-    struct FHeader	*fh;
+static int from_open(int un, char *file, struct FHeader *fh, int flags)
 {
     switch ( un ) {
 	case MEGATRON :
@@ -64,11 +61,7 @@ int from_open( un, file, fh, flags )
     }
 }
 
-int from_read( un, fork, buf, len )
-    int			un;
-    int			fork;
-    char		*buf;
-    int			len;
+static ssize_t from_read(int un, int fork, char *buf, size_t len)
 {
     switch ( un ) {
 	case MEGATRON :
@@ -91,8 +84,7 @@ int from_read( un, fork, buf, len )
     }
 }
 
-int from_close( un )
-    int			un;
+static int from_close(int un)
 {
     switch ( un ) {
 	case MEGATRON :
@@ -115,10 +107,7 @@ int from_close( un )
     }
 }
 
-int to_open( to, file, fh, flags )
-    int			to, flags;
-    char		*file;
-    struct FHeader	*fh;
+static int to_open(int to, char *file, struct FHeader *fh, int flags)
 {
     switch ( to ) {
 	case MEGATRON :
@@ -138,10 +127,7 @@ int to_open( to, file, fh, flags )
     }
 }
 
-int to_write( to, fork, bufc )
-    int			to;
-    int			fork;
-    int			bufc;
+static ssize_t to_write(int to, int fork, size_t bufc)
 {
     switch ( to ) {
 	case MEGATRON :
@@ -161,9 +147,7 @@ int to_write( to, fork, bufc )
     }
 }
 
-int to_close( to, keepflag )
-    int			to;
-    int			keepflag;
+static int to_close(int to, int keepflag)
 {
     switch ( to ) {
 	case MEGATRON :
@@ -183,15 +167,13 @@ int to_close( to, keepflag )
     }
 }
 
-int megatron( path, module, newname, flags )
-    char	*path, *newname;
-    int		module, flags;
+static int megatron( char *path, int module, char *newname, int flags)
 {
     struct stat		st;
     struct FHeader	fh;
-    int			bufc;
+    ssize_t		bufc;
     int			fork;
-    unsigned int	forkred;
+    size_t 		forkred;
 
 /*
  * If the source file is not stdin, make sure it exists and
@@ -293,9 +275,7 @@ int megatron( path, module, newname, flags )
     return( from_close( module ));
 }
 
-int main( argc, argv )
-    int		argc;
-    char	**argv;
+int main(int argc, char **argv)
 {
     int		rc, c;
     int		rv = 0;
@@ -305,7 +285,7 @@ int main( argc, argv )
     char	*progname, newname[ADEDLEN_NAME + 1];
 
     progname = strrchr( argv[ 0 ], '/' );
-    if (( progname == NULL ) || ( progname == '\0' )) {
+    if (( progname == NULL ) || ( *progname == '\0' )) {
 	progname = argv[ 0 ];
     } else progname++;
 

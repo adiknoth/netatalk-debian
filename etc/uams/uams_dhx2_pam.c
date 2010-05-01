@@ -1,5 +1,5 @@
 /*
- * $Id: uams_dhx2_pam.c,v 1.5.2.3 2009/01/15 03:58:05 didg Exp $
+ * $Id: uams_dhx2_pam.c,v 1.12 2010/03/30 10:25:49 franklahm Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * Copyright (c) 1999 Adrian Sun (asun@u.washington.edu)
@@ -85,9 +85,9 @@ dh_params_generate (gcry_mpi_t *ret_p, gcry_mpi_t *ret_g, unsigned int bits) {
     /* Version check should be the very first call because it
        makes sure that important subsystems are intialized. */
     if (!gcry_check_version (GCRYPT_VERSION)) {
-        LOG(log_info, logtype_uams, "PAM DHX2: libgcrypt versions mismatch. Need: %u", GCRYPT_VERSION);
-	result = AFPERR_MISC;
-	goto error;
+        LOG(log_error, logtype_uams, "PAM DHX2: libgcrypt versions mismatch. Need: %s", GCRYPT_VERSION);
+        result = AFPERR_MISC;
+        goto error;
     }
 
     if (bits < 256)
@@ -253,8 +253,8 @@ static struct pam_conv PAM_conversation = {
 };
 
 
-static int dhx2_setup(void *obj, char *ibuf _U_, int ibuflen _U_,
-		      char *rbuf, int *rbuflen)
+static int dhx2_setup(void *obj, char *ibuf _U_, size_t ibuflen _U_,
+		      char *rbuf, size_t *rbuflen)
 {
     int ret;
     size_t nwritten;
@@ -338,12 +338,12 @@ error:				/* We exit here anyway */
 
 /* -------------------------------- */
 static int login(void *obj, char *username, int ulen,  struct passwd **uam_pwd _U_,
-                 char *ibuf, int ibuflen,
-                 char *rbuf, int *rbuflen)
+                 char *ibuf, size_t ibuflen,
+                 char *rbuf, size_t *rbuflen)
 {
     if (( dhxpwd = uam_getname(obj, username, ulen)) == NULL ) {
         LOG(log_info, logtype_uams, "DHX2: unknown username");
-        return AFPERR_PARAM;
+        return AFPERR_NOTAUTH;
     }
 
     PAM_username = username;
@@ -355,11 +355,11 @@ static int login(void *obj, char *username, int ulen,  struct passwd **uam_pwd _
 /* dhx login: things are done in a slightly bizarre order to avoid
  * having to clean things up if there's an error. */
 static int pam_login(void *obj, struct passwd **uam_pwd,
-                     char *ibuf, int ibuflen,
-                     char *rbuf, int *rbuflen)
+                     char *ibuf, size_t ibuflen,
+                     char *rbuf, size_t *rbuflen)
 {
     char *username;
-    int len, ulen;
+    size_t len, ulen;
 
     *rbuflen = 0;
 
@@ -389,11 +389,11 @@ static int pam_login(void *obj, struct passwd **uam_pwd,
 
 /* ----------------------------- */
 static int pam_login_ext(void *obj, char *uname, struct passwd **uam_pwd,
-                         char *ibuf, int ibuflen,
-                         char *rbuf, int *rbuflen)
+                         char *ibuf, size_t ibuflen,
+                         char *rbuf, size_t *rbuflen)
 {
     char *username;
-    int len, ulen;
+    size_t len, ulen;
     u_int16_t  temp16;
 
     *rbuflen = 0;
@@ -424,7 +424,7 @@ static int pam_login_ext(void *obj, char *uname, struct passwd **uam_pwd,
 
 /* -------------------------------- */
 
-static int logincont1(void *obj _U_, char *ibuf, int ibuflen, char *rbuf, int *rbuflen)
+static int logincont1(void *obj _U_, char *ibuf, size_t ibuflen, char *rbuf, size_t *rbuflen)
 {
     int ret;
     size_t nwritten;
@@ -561,12 +561,12 @@ exit:
 }
 
 static int logincont2(void *obj, struct passwd **uam_pwd,
-		      char *ibuf, int ibuflen,
-		      char *rbuf _U_, int *rbuflen)
+		      char *ibuf, size_t ibuflen,
+		      char *rbuf _U_, size_t *rbuflen)
 {
     int ret;
     int PAM_error;
-    char *hostname = NULL;
+    const char *hostname = NULL;
     gcry_mpi_t retServerNonce;
     gcry_cipher_hd_t ctx;
     gcry_error_t ctxerror;
@@ -575,7 +575,7 @@ static int logincont2(void *obj, struct passwd **uam_pwd,
 
     /* Packet size should be: Session ID + ServerNonce + Passwd buffer (evantually +10 extra bytes, see Apples Docs) */
     if ((ibuflen != 2 + 16 + 256) && (ibuflen != 2 + 16 + 256 + 10)) {
-        LOG(log_error, logtype_uams, "DHX2: Paket length not correct: %d. Should be 274 or 284.", ibuflen);
+        LOG(log_error, logtype_uams, "DHX2: Paket length not correct: %u. Should be 274 or 284.", ibuflen);
         ret = AFPERR_PARAM;
         goto error_noctx;
     }
@@ -622,8 +622,6 @@ static int logincont2(void *obj, struct passwd **uam_pwd,
         goto error_ctx;
     }
     ibuf += 16;
-
-    LOG(log_info, logtype_uams, "DHX2: logincont2 alive!");
 
     /* ---- Start authentication with PAM --- */
 
@@ -699,8 +697,8 @@ error_noctx:
 }
 
 static int pam_logincont(void *obj, struct passwd **uam_pwd,
-                         char *ibuf, int ibuflen,
-                         char *rbuf, int *rbuflen)
+                         char *ibuf, size_t ibuflen,
+                         char *rbuf, size_t *rbuflen)
 {
     u_int16_t retID;
     int ret;
@@ -720,7 +718,7 @@ static int pam_logincont(void *obj, struct passwd **uam_pwd,
 
 
 /* logout */
-static void pam_logout() {
+static void pam_logout(void) {
     pam_close_session(pamh, 0);
     pam_end(pamh, 0);
     pamh = NULL;
@@ -730,7 +728,7 @@ static void pam_logout() {
  * --- Change pwd stuff --- */
 
 static int changepw_1(void *obj, char *uname,
-		      char *ibuf, int ibuflen, char *rbuf, int *rbuflen)
+		      char *ibuf, size_t ibuflen, char *rbuf, size_t *rbuflen)
 {
     *rbuflen = 0;
 
@@ -740,20 +738,20 @@ static int changepw_1(void *obj, char *uname,
 }
 
 static int changepw_2(void *obj, 
-		      char *ibuf, int ibuflen, char *rbuf, int *rbuflen)
+		      char *ibuf, size_t ibuflen, char *rbuf, size_t *rbuflen)
 {
     return( logincont1(obj, ibuf, ibuflen, rbuf, rbuflen) );
 }
 
 static int changepw_3(void *obj _U_,
-		      char *ibuf, int ibuflen _U_, 
-		      char *rbuf _U_, int *rbuflen _U_)
+		      char *ibuf, size_t ibuflen _U_, 
+		      char *rbuf _U_, size_t *rbuflen _U_)
 {
     int ret;
     int PAM_error;
     uid_t uid;
     pam_handle_t *lpamh;
-    char *hostname = NULL;
+    const char *hostname = NULL;
     gcry_mpi_t retServerNonce;
     gcry_cipher_hd_t ctx;
     gcry_error_t ctxerror;
@@ -869,8 +867,8 @@ error_noctx:
 }
 
 static int dhx2_changepw(void *obj _U_, char *uname,
-			 struct passwd *pwd _U_, char *ibuf, int ibuflen _U_,
-			 char *rbuf _U_, int *rbuflen _U_)
+			 struct passwd *pwd _U_, char *ibuf, size_t ibuflen _U_,
+			 char *rbuf _U_, size_t *rbuflen _U_)
 {
     /* We use this to serialize the three incoming FPChangePassword calls */
     static int dhx2_changepw_status = 1;

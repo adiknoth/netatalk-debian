@@ -1,5 +1,5 @@
 /*
- * $Id: hqx.c,v 1.12.4.1.4.2 2005/09/27 10:40:40 didg Exp $
+ * $Id: hqx.c,v 1.18 2010/01/27 21:27:53 didg Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -30,6 +30,7 @@
 #include "megatron.h"
 #include "nad.h"
 #include "hqx.h"
+#include "updcrc.h"
 
 #define HEXOUTPUT	0
 
@@ -65,22 +66,11 @@
 #define BHH_CRCSIZ		2
 #define BHH_HEADSIZ		21
 
-u_short		updcrc();
-
-/*	Forward declarations.
- */
-int skip_junk(int line);
-int hqx_close(int keepflag);
-int hqx_header_read(struct FHeader *fh);
-int hqx_header_write(struct FHeader *fh);
-int hqx_7tobin(char *outbuf, int datalen);
-int hqx7_fill(u_char *hqx7_ptr);
-
 #if HEXOUTPUT
 FILE		*rawhex, *expandhex;
 #endif /* HEXOUTPUT */
 
-struct hqx_file_data {
+static struct hqx_file_data {
     u_int32_t		forklen[ NUMFORKS ];
     u_short		forkcrc[ NUMFORKS ];
     char		path[ MAXPATHLEN + 1];
@@ -89,10 +79,10 @@ struct hqx_file_data {
 } 		hqx;
 
 extern char	*forkname[];
-u_char		hqx7_buf[8192];
-u_char		*hqx7_first;
-u_char		*hqx7_last;
-int		first_flag;
+static u_char	hqx7_buf[8192];
+static u_char	*hqx7_first;
+static u_char	*hqx7_last;
+static int	first_flag;
 
 /* 
 hqx_open must be called first.  pass it a filename that is supposed
@@ -101,10 +91,7 @@ somewhat initialized; hqx_fd is set.  skip_junk is called from
 here; skip_junk leaves hqx7_first and hqx7_last set.
  */
 
-int hqx_open( hqxfile, flags, fh, options )
-    char		*hqxfile;
-    int			flags, options;
-    struct FHeader	*fh;
+int hqx_open(char *hqxfile, int flags, struct FHeader *fh, int options)
 {
     int			maxlen;
 
@@ -166,8 +153,7 @@ int hqx_open( hqxfile, flags, fh, options )
  * Otherwise, a value of -1 is returned.
  */
 
-int hqx_close( keepflag )
-    int			keepflag;
+int hqx_close(int keepflag)
 {
     if ( keepflag == KEEP ) {
 	return( close( hqx.filed ));
@@ -188,14 +174,11 @@ int hqx_close( keepflag )
  * return zero and no more than that.
  */
 
-int hqx_read( fork, buffer, length )
-    int			fork;
-    char		*buffer;
-    int			length;
+ssize_t hqx_read(int fork, char *buffer, size_t length)
 {
     u_short		storedcrc;
-    int			readlen;
-    int			cc;
+    size_t		readlen;
+    size_t		cc;
 
 #if DEBUG >= 3
     {
@@ -207,9 +190,9 @@ int hqx_read( fork, buffer, length )
     fprintf( stderr, "hqx_read: remaining length is %d\n", hqx.forklen[fork] );
 #endif /* DEBUG >= 3 */
 
-    if (hqx.forklen[fork] > length) {
-	fprintf(stderr, "This should never happen, dude! length %d, fork length == %u\n", length, hqx.forklen[fork]);
-	return hqx.forklen[fork];
+    if (hqx.forklen[fork] > 0x7FFFFFFF) {
+	fprintf(stderr, "This should never happen, dude!, fork length == %u\n", hqx.forklen[fork]);
+	return -1;
     }
 
     if ( hqx.forklen[ fork ] == 0 ) {
@@ -258,8 +241,7 @@ int hqx_read( fork, buffer, length )
  * to fill the hqx_header fields.
  */
 
-int hqx_header_read( fh )
-    struct FHeader	*fh;
+int hqx_header_read(struct FHeader *fh)
 {
     char		*headerbuf, *headerptr;
     u_int32_t		time_seconds;
@@ -287,7 +269,7 @@ int hqx_header_read( fh )
 #endif /* HEXOUTPUT */
 
     if (( headerbuf = 
-	    (char *)malloc( (unsigned int)( namelen + BHH_HEADSIZ ))) == 0 ) {
+	    (char *)malloc( (unsigned int)( namelen + BHH_HEADSIZ ))) == NULL ) {
 	return( -1 );
     }
     if ( hqx_7tobin( headerbuf, ( namelen + BHH_HEADSIZ )) == 0 ) {
@@ -392,8 +374,7 @@ int hqx_header_read( fh )
  * hqx_header_write.
  */
 
-int hqx_header_write( fh )
-    struct FHeader	*fh _U_;
+int hqx_header_write(struct FHeader *fh _U_)
 {
     return( -1 );
 }
@@ -405,11 +386,10 @@ int hqx_header_write( fh )
  * it sets the pointers to the hqx7 buffer up to point to the valid data.
  */
 
-int hqx7_fill( hqx7_ptr )
-    u_char		*hqx7_ptr;
+ssize_t hqx7_fill(u_char *hqx7_ptr)
 {
-    int			cc;
-    int			cs;
+    ssize_t		cc;
+    size_t		cs;
 
     cs = hqx7_ptr - hqx7_buf;
     if ( cs >= sizeof( hqx7_buf )) return( -1 );
@@ -433,7 +413,7 @@ character that should be skipped, namely '\n', '\r'.  0xFD signals ':'.
 0xFC signals a whitespace character.
 */
 
-u_char hqxlookup[] = {
+static const u_char hqxlookup[] = {
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
     0xFF, 0xFC, 0xFE, 0xFF, 0xFF, 0xFE, 0xFF, 0xFF,
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
@@ -476,8 +456,7 @@ u_char hqxlookup[] = {
  * OTHER when looking for any subsequent line.
  */
 
-int skip_junk( line )
-int			line;
+int skip_junk(int line)
 {
     int			found = NOWAY;
     int			stopflag;
@@ -578,9 +557,7 @@ int			line;
  * file is reached.
  */
 
-int hqx_7tobin( outbuf, datalen ) 
-    char		*outbuf;
-    int			datalen;
+size_t hqx_7tobin( char *outbuf, size_t datalen)
 {
     static u_char	hqx8[3];
     static int		hqx8i;

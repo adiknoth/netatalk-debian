@@ -1,5 +1,5 @@
 /*
- * $Id: cnid_cdb_add.c,v 1.1.4.6.2.3 2008/11/25 15:16:34 didg Exp $
+ * $Id: cnid_cdb_add.c,v 1.8 2009/11/20 17:22:11 didg Exp $
  *
  * Copyright (c) 1999. Adrian Sun (asun@zoology.washington.edu)
  * All Rights Reserved. See COPYRIGHT.
@@ -43,7 +43,7 @@ static void make_devino_data(unsigned char *buf, dev_t dev, ino_t ino)
     buf[CNID_DEV_LEN + CNID_INO_LEN - 8] = ino;    
 }
 
-unsigned char *make_cnid_data(const struct stat *st,const cnid_t did,
+unsigned char *make_cnid_data(u_int32_t flags, const struct stat *st, const cnid_t did,
                      const char *name, const size_t len)
 {
     static unsigned char start[CNID_HEADER_LEN + MAXPATHLEN + 1];
@@ -53,7 +53,7 @@ unsigned char *make_cnid_data(const struct stat *st,const cnid_t did,
     if (len > MAXPATHLEN)
         return NULL;
 
-    make_devino_data(buf, st->st_dev, st->st_ino);
+    make_devino_data(buf, !(flags & CNID_FLAG_NODEV)?st->st_dev:0, st->st_ino);
     buf += CNID_DEVINO_LEN;
 
     i = S_ISDIR(st->st_mode)?1:0;
@@ -72,7 +72,7 @@ unsigned char *make_cnid_data(const struct stat *st,const cnid_t did,
 }    
 
 /* --------------- */
-int db_stamp(void *buffer, size_t size)
+static int db_stamp(void *buffer, size_t size)
 {
 time_t t;
     memset(buffer, 0, size);
@@ -186,7 +186,7 @@ cnid_t cnid_cdb_add(struct _cnid_db *cdb, const struct stat *st,
     /* ... Return id if it is valid, or if Rootinfo is read-only. */
     if (id || (db->flags & CNIDFLAG_DB_RO)) {
 #ifdef DEBUG
-        LOG(log_info, logtype_default, "cnid_add: Looked up did %u, name %s as %u", ntohl(did), name, ntohl(id));
+        LOG(log_debug9, logtype_default, "cnid_add: Looked up did %u, name %s as %u", ntohl(did), name, ntohl(id));
 #endif
         return id;
     }
@@ -195,7 +195,7 @@ cnid_t cnid_cdb_add(struct _cnid_db *cdb, const struct stat *st,
     memset(&key, 0, sizeof(key));
     memset(&data, 0, sizeof(data));
 
-    if ((data.data = make_cnid_data(st, did, name, len)) == NULL) {
+    if ((data.data = make_cnid_data(cdb->flags, st, did, name, len)) == NULL) {
         LOG(log_error, logtype_default, "cnid_add: Path name is too long");
         errno = CNID_ERR_PATH;
         return CNID_INVALID;
@@ -237,7 +237,7 @@ cnid_t cnid_cdb_add(struct _cnid_db *cdb, const struct stat *st,
     }
 
 #ifdef DEBUG
-    LOG(log_info, logtype_default, "cnid_add: Returned CNID for did %u, name %s as %u", ntohl(did), name, ntohl(hint));
+    LOG(log_debug9, logtype_default, "cnid_add: Returned CNID for did %u, name %s as %u", ntohl(did), name, ntohl(hint));
 #endif
 
     return hint;
@@ -286,7 +286,7 @@ int cnid_cdb_getstamp(struct _cnid_db *cdb, void *buffer, const size_t len)
 
     memcpy(buffer, (char*)data.data + CNID_DEV_OFS, len);
 #ifdef DEBUG
-    LOG(log_info, logtype_cnid, "cnid_getstamp: Returning stamp");
+    LOG(log_debug9, logtype_cnid, "cnid_getstamp: Returning stamp");
 #endif
    return 0;
 }

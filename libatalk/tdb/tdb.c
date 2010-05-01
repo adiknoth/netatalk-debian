@@ -47,7 +47,7 @@
 #include <config.h>
 #endif
 
-#define _XOPEN_SOURCE 500
+#define _XOPEN_SOURCE 600
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -1975,16 +1975,19 @@ int tdb_chainunlock(TDB_CONTEXT *tdb, TDB_DATA key)
 	return tdb_unlock(tdb, BUCKET(tdb_hash(&key)), F_WRLCK);
 }
 
-int tdb_chainlock_read(TDB_CONTEXT *tdb, TDB_DATA key)
+#if 0
+static int tdb_chainlock_read(TDB_CONTEXT *tdb, TDB_DATA key)
 {
 	return tdb_lock(tdb, BUCKET(tdb_hash(&key)), F_RDLCK);
 }
+#endif
 
-int tdb_chainunlock_read(TDB_CONTEXT *tdb, TDB_DATA key)
+#if 0
+static int tdb_chainunlock_read(TDB_CONTEXT *tdb, TDB_DATA key)
 {
 	return tdb_unlock(tdb, BUCKET(tdb_hash(&key)), F_RDLCK);
 }
-
+#endif
 
 /* register a loging function */
 void tdb_logging_function(TDB_CONTEXT *tdb, void (*fn)(TDB_CONTEXT *, int , const char *, ...))

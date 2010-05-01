@@ -1,5 +1,5 @@
 /*
- * $Id: nbpunrgstr.c,v 1.5.14.1 2004/06/09 01:07:17 bfernhomberg Exp $
+ * $Id: nbpunrgstr.c,v 1.10 2009/10/29 11:35:58 didg Exp $
  *
  * Copyright (c) 1990,1991 Regents of The University of Michigan.
  * All Rights Reserved.
@@ -41,12 +41,11 @@
 
 #include <atalk/unicode.h>
 
-void Usage( av0 )
-    char	*av0;
+static void Usage(char *av0)
 {
     char	*p;
 
-    if (( p = strrchr( av0, '/' )) == 0 ) {
+    if (( p = strrchr( av0, '/' )) == NULL ) {
 	p = av0;
     } else {
 	p++;
@@ -56,12 +55,10 @@ void Usage( av0 )
     exit( 1 );
 }
 
-int main( ac, av )
-    int		ac;
-    char	**av;
+int main(int ac, char **av)
 {
-    char		*Obj = 0, *Type = 0, *Zone = 0;
-    char		*convname = 0;
+    char		*Obj = NULL, *Type = NULL, *Zone = NULL;
+    char		*convname = NULL;
     struct at_addr      addr;
     int                 c;
     charset_t		chMac = CH_MAC;
@@ -97,7 +94,7 @@ int main( ac, av )
 
     /* Convert the name */
     if ((size_t)(-1) == convert_string_allocate(CH_UNIX, chMac, 
-                        av[optind], strlen(av[optind]), &convname))
+                        av[optind], -1, &convname))
         convname = av[optind]; 
 
     /*

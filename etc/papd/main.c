@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.18.6.2.2.7 2009/02/03 08:25:00 didg Exp $
+ * $Id: main.c,v 1.31 2009/10/29 13:38:15 didg Exp $
  *
  * Copyright (c) 1990,1995 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -104,11 +104,8 @@ static void papd_exit(const int i)
   exit(i);
 }
 
-#if !defined( ibm032 ) && !defined( _IBMR2 )
-    void
-#endif /* ! ibm032 && ! _IBMR2 */
-die( n )
-    int			n;
+static void
+die(int n)
 {
     struct printer	*pr;
     struct at_addr	addr;
@@ -136,15 +133,13 @@ die( n )
     papd_exit( n );
 }
 
-#if !defined( ibm032 ) && !defined( _IBMR2 )
-    void
-#endif /* ! ibm032 && ! _IBMR2 */
-reap()
+static void
+reap(int sig _U_)
 {
     int		status;
     int		pid;
 
-    while (( pid = wait3( &status, WNOHANG, 0 )) > 0 ) {
+    while (( pid = wait3( &status, WNOHANG, NULL )) > 0 ) {
 	if ( WIFEXITED( status )) {
 	    if ( WEXITSTATUS( status )) {
 		LOG(log_error, logtype_papd, "child %d exited with %d", pid,
@@ -164,11 +159,9 @@ reap()
     return;
 }
 
-char		rbuf[ 255 + 1 + 8 ];
+static char rbuf[ 255 + 1 + 8 ];
 
-int main( ac, av )
-    int		ac;
-    char	**av;
+int main(int ac, char **av)
 {
     extern char         *optarg;
 
@@ -188,7 +181,7 @@ int main( ac, av )
 	perror( "gethostname" );
 	exit( 1 );
     }
-    if (( p = strchr( hostname, '.' )) != 0 ) {
+    if (( p = strchr( hostname, '.' )) != NULL ) {
 	*p = '\0';
     }
     if (( defprinter.p_name = (char *)malloc( strlen( hostname ) + 1 ))
@@ -298,7 +291,7 @@ int main( ac, av )
 	}
 
 	if (!(pr->p_flags & P_CUPS)) {
-		if ((size_t)-1 != convert_string_allocate(CH_UNIX, CH_MAC, pr->p_name, strlen(pr->p_name), &atname)) {
+		if ((size_t)-1 != convert_string_allocate(CH_UNIX, CH_MAC, pr->p_name, -1, &atname)) {
 			pr->p_u_name = pr->p_name;
 			pr->p_name = atname;
 		}
@@ -329,7 +322,7 @@ int main( ac, av )
     sv.sa_handler = die;
     sigemptyset( &sv.sa_mask );
     sv.sa_flags = SA_RESTART;
-    if ( sigaction( SIGTERM, &sv, 0 ) < 0 ) {
+    if ( sigaction( SIGTERM, &sv, NULL ) < 0 ) {
 	LOG(log_error, logtype_papd, "sigaction: %s", strerror(errno) );
 	papd_exit( 1 );
     }
@@ -337,7 +330,7 @@ int main( ac, av )
     sv.sa_handler = reap;
     sigemptyset( &sv.sa_mask );
     sv.sa_flags = SA_RESTART;
-    if ( sigaction( SIGCHLD, &sv, 0 ) < 0 ) {
+    if ( sigaction( SIGCHLD, &sv, NULL ) < 0 ) {
 	LOG(log_error, logtype_papd, "sigaction: %s", strerror(errno) );
 	papd_exit( 1 );
     }
@@ -355,7 +348,7 @@ int main( ac, av )
 	for ( pr = printers; pr; pr = pr->p_next ) {
 	    FD_SET( atp_fileno( pr->p_atp ), &fdset );
 	}
-	if (( c = select( FD_SETSIZE, &fdset, 0, 0, 0 )) < 0 ) {
+	if (( c = select( FD_SETSIZE, &fdset, NULL, NULL, NULL )) < 0 ) {
 	    if ( errno == EINTR ) {
 		continue;
 	    }
@@ -411,7 +404,7 @@ int main( ac, av )
 		    * 0xffff to indicate we're busy
 		    */
 #ifdef DEBUG
-                    LOG(log_debug, logtype_papd, "CUPS: PAP_OPEN");
+                    LOG(log_debug9, logtype_papd, "CUPS: PAP_OPEN");
 #endif
 		    if ( (pr->p_flags & P_SPOOLED) && (cups_get_printer_status ( pr ) == 0)) {
                         LOG(log_error, logtype_papd, "CUPS_PAP_OPEN: %s is not accepting jobs",
@@ -485,12 +478,12 @@ int main( ac, av )
 			sv.sa_handler = SIG_DFL;
 			sigemptyset( &sv.sa_mask );
 			sv.sa_flags = SA_RESTART;
-			if ( sigaction( SIGTERM, &sv, 0 ) < 0 ) {
+			if ( sigaction( SIGTERM, &sv, NULL ) < 0 ) {
 			    LOG(log_error, logtype_papd, "sigaction: %s", strerror(errno) );
 			    exit( 1 );
 			}
 			
-			if ( sigaction( SIGCHLD, &sv, 0 ) < 0 ) {
+			if ( sigaction( SIGCHLD, &sv, NULL ) < 0 ) {
 			    LOG(log_error, logtype_papd, "sigaction: %s", strerror(errno) );
 			    exit( 1 );
                         }
@@ -567,9 +560,7 @@ int main( ac, av )
  * We assume buf is big enough for 255 bytes of data and a length byte.
  */
 
-int getstatus( pr, buf )
-    struct printer	*pr;
-    char		*buf;
+int getstatus(struct printer *pr, char *buf)
 {
 
 #ifdef HAVE_CUPS
@@ -612,13 +603,12 @@ int getstatus( pr, buf )
 #endif /* HAVE_CUPS */
 }
 
-char	*pgetstr();
+char	*pgetstr(char *id, char **area);
 char	*getpname(char **area, int bufsize);
 
 #define PF_CONFBUFFER	1024
 
-static void getprinters( cf )
-    char	*cf;
+static void getprinters( char *cf)
 {
     char		buf[ PF_CONFBUFFER ], area[ PF_CONFBUFFER ], *a, *p, *name, *type, *zone;
     struct printer	*pr;
@@ -804,8 +794,7 @@ static void getprinters( cf )
     }
 }
 
-int rprintcap( pr )
-    struct printer	*pr;
+int rprintcap( struct printer *pr)
 {
 
 #ifdef HAVE_CUPS

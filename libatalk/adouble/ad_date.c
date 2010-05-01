@@ -1,5 +1,5 @@
 /*
- * $Id: ad_date.c,v 1.3.14.3 2004/03/11 02:02:05 didg Exp $
+ * $Id: ad_date.c,v 1.5 2006/09/29 09:39:16 didg Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -19,6 +19,10 @@ int ad_setdate(const struct adouble *ad,
     date = AD_DATE_FROM_UNIX(date);
 
   if (ad->ad_version == AD_VERSION1) {
+
+    if (!ad_getentryoff(ad, ADEID_FILEI))
+        return -1;
+
     if (dateoff > AD_DATE_BACKUP)
       return -1;
     memcpy(ad_entry(ad, ADEID_FILEI) + dateoff, &date, sizeof(date));
@@ -46,6 +50,8 @@ int ad_getdate(const struct adouble *ad,
   if (ad->ad_version == AD_VERSION1) {
     if (dateoff > AD_DATE_BACKUP)
       return -1;
+    if (!ad_getentryoff(ad, ADEID_FILEI))
+        return -1;
     memcpy(date, ad_entry(ad, ADEID_FILEI) + dateoff, sizeof(u_int32_t));
 
   } else if (ad->ad_version == AD_VERSION2) {

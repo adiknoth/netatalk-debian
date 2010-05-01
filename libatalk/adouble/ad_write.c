@@ -1,5 +1,5 @@
 /*
- * $Id: ad_write.c,v 1.7.6.3 2003/10/17 00:01:13 didg Exp $
+ * $Id: ad_write.c,v 1.11 2010/03/30 12:55:26 franklahm Exp $
  *
  * Copyright (c) 1990,1995 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -47,36 +47,36 @@ ssize_t adf_pwrite(struct ad_fd *ad_fd, const void *buf, size_t count, off_t off
 }
 
 /* end is always 0 */
-ssize_t ad_write( ad, eid, off, end, buf, buflen )
-    struct adouble	*ad;
-    const u_int32_t	eid;
-    off_t               off;
-    const int		end;
-    const char		*buf;
-    const size_t	buflen;
+ssize_t ad_write(struct adouble *ad, const u_int32_t eid, off_t off, const int end, const char *buf, const size_t buflen)
 {
     struct stat		st;
     ssize_t		cc;
+
+    if (ad_data_fileno(ad) == -2) {
+        /* It's a symlink */
+        errno = EACCES;
+        return -1;
+    }
     
     if ( eid == ADEID_DFORK ) {
 	if ( end ) {
-	    if ( fstat( ad->ad_df.adf_fd, &st ) < 0 ) {
+	    if ( fstat( ad_data_fileno(ad), &st ) < 0 ) {
 		return( -1 );
 	    }
 	    off = st.st_size - off;
 	}
-	cc = adf_pwrite(&ad->ad_df, buf, buflen, off);
+	cc = adf_pwrite(&ad->ad_data_fork, buf, buflen, off);
     } else if ( eid == ADEID_RFORK ) {
         off_t    r_off;
 
 	if ( end ) {
-	    if ( fstat( ad->ad_df.adf_fd, &st ) < 0 ) {
+	    if ( fstat( ad_data_fileno(ad), &st ) < 0 ) {
 		return( -1 );
 	    }
 	    off = st.st_size - off -ad_getentryoff(ad, eid);
 	}
 	r_off = ad_getentryoff(ad, eid) + off;
-	cc = adf_pwrite(&ad->ad_hf, buf, buflen, r_off);
+	cc = adf_pwrite(&ad->ad_resource_fork, buf, buflen, r_off);
 
 	/* sync up our internal buffer  FIXME always false? */
 	if (r_off < ad_getentryoff(ad, ADEID_RFORK)) {
@@ -151,11 +151,9 @@ char            c = 0;
 }
 
 /* ------------------------ */
-int ad_rtruncate( ad, size )
-    struct adouble	*ad;
-    const off_t  	size;
+int ad_rtruncate( struct adouble *ad, const off_t size)
 {
-    if ( sys_ftruncate( ad->ad_hf.adf_fd,
+    if ( sys_ftruncate( ad_reso_fileno(ad),
 	    size + ad->ad_eid[ ADEID_RFORK ].ade_off ) < 0 ) {
 	return -1;
     }
@@ -164,11 +162,9 @@ int ad_rtruncate( ad, size )
     return 0;
 }
 
-int ad_dtruncate(ad, size)
-    struct adouble	*ad;
-    const off_t 	size;
+int ad_dtruncate(struct adouble *ad, const off_t size)
 {
-    if (sys_ftruncate(ad->ad_df.adf_fd, size) < 0) {
+    if (sys_ftruncate(ad_data_fileno(ad), size) < 0) {
       return -1;
     }
     return 0;

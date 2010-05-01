@@ -1,5 +1,5 @@
 /*
- * $Id: directory.h,v 1.13.2.4.2.2.2.2 2009/09/07 11:35:04 franklahm Exp $
+ * $Id: directory.h,v 1.34 2010/03/12 15:16:49 franklahm Exp $
  *
  * Copyright (c) 1990,1991 Regents of The University of Michigan.
  * All Rights Reserved.
@@ -38,87 +38,21 @@
 #include <sys/sysmacros.h>
 #endif
 
+#include <atalk/directory.h>
+
 #include "globals.h"
 #include "volume.h"
 
-/* the did tree is now a red-black tree while the parent/child
- * tree is a circular doubly-linked list. how exciting. */
-struct dir {
-    struct dir	*d_left, *d_right, *d_back; /* for red-black tree */
-    int		d_color;
-    struct dir  *d_parent, *d_child; /* parent-child */
-    struct dir  *d_prev, *d_next;    /* siblings */
-    void        *d_ofork;            /* oforks using this directory. */
-    u_int32_t   d_did;
-    int	        d_flags;
-
-    time_t      ctime;                /* inode ctime */
-    u_int32_t   offcnt;               /* offspring count */
-
-    char	*d_m_name;            /* mac name */
-    char        *d_u_name;            /* unix name */
-};
-
-struct path {
-    int         m_type;             /* mac name type (long name, unicode */
-    char	*m_name;            /* mac name */
-    char        *u_name;            /* unix name */
-    struct dir  *d_dir;             /* */
-    int         st_valid;           /* does st_errno and st set */
-    int         st_errno;
-    struct stat st;
-};
-
-#ifndef ATACC
-static inline int path_isadir(struct path *o_path)
-{
-    return o_path->d_dir != NULL;
-#if 0
-    return o_path->m_name == '\0' || /* we are in a it */
-           !o_path->st_valid ||      /* in cache but we can't chdir in it */ 
-           (!o_path->st_errno && S_ISDIR(o_path->st.st_mode)); /* not in cache an can't chdir */
-#endif
-}
-#else
-extern int path_isadir(struct path *o_path);
-#endif
-
-/* child addition/removal macros */
-#define dirchildadd(a, b) do { \
-	if (!(a)->d_child) \
-		(a)->d_child = (b); \
-	else { \
-		(b)->d_next = (a)->d_child; \
-		(b)->d_prev = (b)->d_next->d_prev; \
-		(b)->d_next->d_prev = (b); \
-		(b)->d_prev->d_next = (b); \
-	} \
-} while (0)
-
-#define dirchildremove(a,b) do { \
-	if ((a)->d_child == (b)) \
-		(a)->d_child = ((b) == (b)->d_next) ? NULL : (b)->d_next; \
-	(b)->d_next->d_prev = (b)->d_prev; \
-	(b)->d_prev->d_next = (b)->d_next; \
-        (b)->d_next = (b)->d_prev = (b); \
-} while (0)
-
 #define DIRTREE_COLOR_RED    0
 #define DIRTREE_COLOR_BLACK  1
-
-/* setgid directories */
-#ifndef DIRBITS
-# ifdef AFS
-#  define DIRBITS 0
-# else /* AFS */
-#  define DIRBITS S_ISGID
-# endif /* AFS */
-#endif /* DIRBITS */
 
 #define DIRF_FSMASK	(3<<0)
 #define DIRF_NOFS	(0<<0)
 #define DIRF_AFS	(1<<0)
 #define DIRF_UFS	(2<<0)
+
+#define DIRF_OFFCNT     (1<<4)	/* offsprings count is valid */
+#define DIRF_CNID	(1<<5)  /* renumerate id */
 
 #define AFPDIR_READ	(1<<0)
 
@@ -138,11 +72,6 @@ extern int path_isadir(struct path *o_path);
 #define DIRPBIT_ACCESS	12
 #define DIRPBIT_PDINFO  13         /* ProDOS Info */
 #define DIRPBIT_UNIXPR  15
-
-/* directory attribute bits (see file.h for other bits) */
-#define ATTRBIT_EXPFOLDER   (1 << 1) /* shared point */
-#define ATTRBIT_MOUNTED     (1 << 3) /* mounted share point by non-admin */
-#define ATTRBIT_INEXPFOLDER (1 << 4) /* folder in a shared area */
 
 #define FILDIRBIT_ISDIR        (1 << 7) /* is a directory */
 #define FILDIRBIT_ISFILE       (0)      /* is a file */
@@ -184,58 +113,63 @@ struct maccess {
 #define	AR_UWRITE	(1<<2)
 #define	AR_UOWN		(1<<7)
 
-extern struct dir       *dirnew __P((const char *, const char *));
-extern void             dirfreename __P((struct dir *));
-extern void             dirfree __P((struct dir *));
-extern struct dir	*dirsearch __P((const struct vol *, u_int32_t));
-extern struct dir	*dirlookup __P((const struct vol *, u_int32_t));
-extern struct dir       *dirsearch_byname __P((struct dir *,const char *));
+extern struct dir       *dirnew (const char *, const char *);
+extern void             dirfreename (struct dir *);
+extern void             dirfree (struct dir *);
+extern struct dir	*dirsearch (const struct vol *, u_int32_t);
+extern struct dir	*dirlookup (struct vol *, u_int32_t);
+extern struct dir       *dirsearch_byname (const struct vol *, struct dir *,char *);
 
-extern struct dir	*adddir __P((struct vol *, struct dir *, 
-                                               struct path *));
+extern struct dir	*adddir (struct vol *, struct dir *, 
+                                               struct path *);
 
-extern struct dir       *dirinsert __P((struct vol *, struct dir *));
-extern int              movecwd __P((const struct vol *, struct dir *));
-extern int              deletecurdir __P((const struct vol *, char *));
-extern struct path      *cname __P((const struct vol *, struct dir *,
-                             char **));
-extern mode_t           mtoumode __P((struct maccess *));
-extern void             utommode __P((struct stat *, struct maccess *));
-extern int getdirparams __P((const struct vol *, u_int16_t, struct path *,
-                                 struct dir *, char *, int *));
-extern int setdirparams __P((const struct vol *, struct path *, u_int16_t, char *));
-extern int renamedir __P((const struct vol *, char *, char *, struct dir *,
-                              struct dir *, char *));
-extern int path_error __P((struct path *, int error));
+extern int              movecwd (struct vol *, struct dir *);
+extern int              deletecurdir (struct vol *);
+extern struct path      *cname (struct vol *, struct dir *,
+                             char **);
+extern mode_t           mtoumode (struct maccess *);
+extern void             utommode (struct stat *, struct maccess *);
+extern int getdirparams (const struct vol *, u_int16_t, struct path *,
+                                 struct dir *, char *, size_t *);
+extern int setdirparams (struct vol *, struct path *, u_int16_t, char *);
+extern int renamedir(const struct vol *, int, char *, char *, struct dir *,
+                     struct dir *, char *);
+extern int path_error (struct path *, int error);
+
+extern void setdiroffcnt (struct dir *dir, struct stat *st,  u_int32_t count);
+extern int dirreenumerate (struct dir *dir, struct stat *st);
 
 typedef int (*dir_loop)(struct dirent *, char *, void *);
 
-extern int  for_each_dirent __P((const struct vol *, char *, dir_loop , void *));
+extern int  for_each_dirent (const struct vol *, char *, dir_loop , void *);
 
-extern int  check_access __P((char *name , int mode));
-extern int file_access   __P((struct path *path, int mode));
+extern int  check_access (char *name , int mode);
+extern int file_access   (struct path *path, int mode);
 
-extern int netatalk_unlink __P((const char *name));
+extern int netatalk_unlink (const char *name);
 
+extern int caseenumerate (const struct vol *, struct path *, struct dir *);
+
+extern hash_t *dirhash (void);
 /* from enumerate.c */
-extern char *check_dirent __P((const struct vol *, char *));
+extern char *check_dirent (const struct vol *, char *);
 
 /* FP functions */
-extern int	afp_createdir __P((AFPObj *, char *, int, char *, int *));
-extern int      afp_opendir __P((AFPObj *, char *, int, char *, int *));
-extern int	afp_setdirparams __P((AFPObj *, char *, int, char *, int *));
-extern int      afp_closedir __P((AFPObj *, char *, int, char *, int *));
-extern int	afp_mapid __P((AFPObj *, char *, int, char *, int *));
-extern int	afp_mapname __P((AFPObj *, char *, int, char *, int *));
-extern int	afp_syncdir __P((AFPObj *, char *, int, char *, int *));
+int afp_createdir (AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size_t *rbuflen);
+int afp_opendir (AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size_t *rbuflen);
+int afp_setdirparams (AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size_t *rbuflen);
+int afp_closedir (AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size_t *rbuflen);
+int afp_mapid (AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size_t *rbuflen);
+int afp_mapname (AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size_t *rbuflen);
+int afp_syncdir (AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size_t *rbuflen);
 
 /* from enumerate.c */
-extern int	afp_enumerate __P((AFPObj *, char *, unsigned int, char *, unsigned int *));
-extern int	afp_enumerate_ext __P((AFPObj *, char *, unsigned int, char *, unsigned int *));
-extern int	afp_enumerate_ext2 __P((AFPObj *, char *, unsigned int, char *, unsigned int *));
+int afp_enumerate (AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size_t *rbuflen);
+int afp_enumerate_ext (AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size_t *rbuflen);
+int afp_enumerate_ext2 (AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size_t *rbuflen);
 
 /* from catsearch.c */
-extern int	afp_catsearch __P((AFPObj *, char *, int, char *, int *));
-extern int	afp_catsearch_ext __P((AFPObj *, char *, int, char *, int *));
+int afp_catsearch (AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size_t *rbuflen);
+int afp_catsearch_ext (AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size_t *rbuflen);
 
 #endif

@@ -1,5 +1,5 @@
 /*
- * $Id: switch.h,v 1.2 2001/06/20 18:33:04 rufustfirefly Exp $
+ * $Id: switch.h,v 1.4 2009/10/15 10:43:13 didg Exp $
  *
  * Copyright (c) 1990,1991 Regents of The University of Michigan.
  * All Rights Reserved.
@@ -26,7 +26,15 @@
 #ifndef AFPD_SWITCH_H
 #define AFPD_SWITCH_H 1
 
-extern int	(**afp_switch)();
-extern int	(*postauth_switch[])();
+extern AFPCmd	*afp_switch;
+extern AFPCmd	postauth_switch[];
+
+/* switch.c */
+#define UAM_AFPSERVER_PREAUTH  (0)
+#define UAM_AFPSERVER_POSTAUTH (1 << 0)
+
+extern int uam_afpserver_action (const int /*id*/, const int /*switch*/, 
+				     AFPCmd new_table, AFPCmd *old);
+
 
 #endif

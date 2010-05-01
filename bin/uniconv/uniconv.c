@@ -146,11 +146,11 @@ static char *convert_name(char *name, struct stat *st, cnid_t cur_did)
 	size_t outlen = 0;
 	unsigned char *p,*q;
 	int require_conversion = 0;
-        u_int16_t    flags = conv_flags;
+    u_int16_t    flags = conv_flags;
 	cnid_t id;
 
-	p = name;
-	q = buffer;
+	p = (unsigned char *)name;
+	q = (unsigned char *)buffer;
 
 	/* optimize for ascii case */
 	while (*p != 0) {
@@ -168,17 +168,17 @@ static char *convert_name(char *name, struct stat *st, cnid_t cur_did)
 	}
 
 	/* convert charsets */
-	q=buffer;
-	p=name;
+	q=(unsigned char *)buffer;
+	p=(unsigned char *)name;
 
-	outlen = convert_charset(ch_from, ch_to, ch_mac, p, strlen(p), q, sizeof(buffer) -2, &flags);
+	outlen = convert_charset(ch_from, ch_to, ch_mac, (char *)p, strlen((char *)p), (char *)q, sizeof(buffer) -2, &flags);
 	if ((size_t)-1 == outlen) {
   	   if ( ch_to == CH_UTF8) {
 		/* maybe name is already in UTF8? */
 		flags = conv_flags;
-		q = (char*) buffer;
-		p = name;
-		outlen = convert_charset(ch_to, ch_to, ch_mac, p, strlen(p), q, sizeof(buffer) -2, &flags);
+		q = (unsigned char *)buffer;
+		p = (unsigned char *)name;
+		outlen = convert_charset(ch_to, ch_to, ch_mac, (char *)p, strlen((char *)p), (char *)q, sizeof(buffer) -2, &flags);
 		if ((size_t)-1 == outlen) {
 			/* it's not UTF8... */
         		fprintf(stderr, "ERROR: conversion from '%s' to '%s' for '%s' in DID %u failed!!!\n", 
@@ -386,7 +386,7 @@ static int init(char* path)
 {
 	DIR* startdir;
 
-        if (NULL == (cdb = cnid_open (path, 0, cnid_type, 0)) ) {
+    if (NULL == (cdb = cnid_open (path, 0, cnid_type, 0, NULL, NULL)) ) {
                 fprintf (stderr, "ERROR: cannot open CNID database in '%s'\n", path);
                 fprintf (stderr, "ERROR: check the logs for reasons, aborting\n");
 		return -1;
@@ -411,12 +411,12 @@ static void usage( char * name )
     exit( 1 );
 }
 
-static void print_version ()
+static void print_version (void)
 {
     fprintf( stderr, "uniconv - Netatalk %s\n", VERSION );
 }
 
-static void help ()
+static void help (void)
 {
     fprintf (stdout, "\nuniconv, a tool to convert between various Netatalk volume encodings\n");
     fprintf (stdout, "\nUsage:  uniconv [-ndv] -c cnid -f fromcode -t tocode [-m maccode] path\n\n");

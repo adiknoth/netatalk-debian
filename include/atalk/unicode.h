@@ -1,4 +1,3 @@
-
 #ifndef _ATALK_UNICODE_H
 #define _ATALK_UNICODE_H 1
 
@@ -25,41 +24,44 @@
 
 /* generic iconv conversion structure */
 typedef struct {
-        size_t (*direct)(void *cd, char **inbuf, size_t *inbytesleft,
-                         char **outbuf, size_t *outbytesleft);
-        size_t (*pull)(void *cd, char **inbuf, size_t *inbytesleft,
-                       char **outbuf, size_t *outbytesleft);
-        size_t (*push)(void *cd, char **inbuf, size_t *inbytesleft,
-                       char **outbuf, size_t *outbytesleft);
-        void *cd_direct, *cd_pull, *cd_push;
-        char *from_name, *to_name;
+    size_t (*direct)(void *cd, char **inbuf, size_t *inbytesleft,
+                     char **outbuf, size_t *outbytesleft);
+    size_t (*pull)(void *cd, char **inbuf, size_t *inbytesleft,
+                   char **outbuf, size_t *outbytesleft);
+    size_t (*push)(void *cd, char **inbuf, size_t *inbytesleft,
+                   char **outbuf, size_t *outbytesleft);
+    void *cd_direct, *cd_pull, *cd_push;
+    char *from_name, *to_name;
 } *atalk_iconv_t;
 
-#define CHARSET_CLIENT 1
-#define CHARSET_VOLUME 2
+#define CHARSET_CLIENT      1
+#define CHARSET_VOLUME      2
 #define CHARSET_PRECOMPOSED 4
 #define CHARSET_DECOMPOSED  8
 #define CHARSET_MULTIBYTE   16
 #define CHARSET_WIDECHAR    32
-#define CHARSET_ICONV	    64
+#define CHARSET_ICONV       64
 
-#define IGNORE_CHAR	'_'
+#define IGNORE_CHAR '_'
 
 /* conversion flags */
-#define CONV_IGNORE		(1<<0) /* return the first convertable characters. */
-#define CONV_ESCAPEHEX		(1<<1) /* escape unconvertable chars with :[UCS2HEX] */
-#define CONV_ESCAPEDOTS		(1<<2) /* escape leading dots with :2600 */
-#define CONV_UNESCAPEHEX 	(1<<3) 
-#define CONV_TOUPPER		(1<<4) /* convert to UPPERcase */
-#define CONV_TOLOWER		(1<<5) /* convert to lowercase */
-#define CONV_PRECOMPOSE		(1<<6) /* precompose */
-#define CONV_DECOMPOSE		(1<<7) /* precompose */
-#define CONV_FORCE		(1<<8) /* force convertion */
-#define CONV__EILSEQ		(1<<9) /* ignore EILSEQ, replace with IGNORE_CHAR (try USC2) */
+#define CONV_IGNORE         (1<<0) /* return the first convertable characters. */
+#define CONV_ESCAPEHEX      (1<<1) /* escape unconvertable chars with :[UCS2HEX], */
+                                   /* also escape '/'. Escape ':' if also CONV_ALLOW_COLON, */
+                                   /* else ':' raises EILSEQ */
+#define CONV_ESCAPEDOTS     (1<<2) /* escape leading dots with :2600 */
+#define CONV_UNESCAPEHEX    (1<<3)
+#define CONV_TOUPPER        (1<<4) /* convert to UPPERcase */
+#define CONV_TOLOWER        (1<<5) /* convert to lowercase */
+#define CONV_PRECOMPOSE     (1<<6) /* precompose */
+#define CONV_DECOMPOSE      (1<<7) /* precompose */
+#define CONV_FORCE          (1<<8) /* force convertion */
+#define CONV__EILSEQ        (1<<9) /* ignore EILSEQ, replace with IGNORE_CHAR (try USC2) */
+#define CONV_ALLOW_COLON   (1<<10) /* Allow ':' in name. Needed for Extended Attributes */
 
 /* conversion return flags */
-#define CONV_REQMANGLE	(1<<14) /* mangling of returned name is required */
-#define CONV_REQESCAPE	(1<<15) /* espace unconvertable chars with :[UCS2HEX] */
+#define CONV_REQMANGLE  (1<<14) /* mangling of returned name is required */
+#define CONV_REQESCAPE  (1<<15) /* espace unconvertable chars with :[UCS2HEX] */
 
 /* this defines the charset types used in samba */
 typedef enum {CH_UCS2=0, CH_UTF8=1, CH_MAC=2, CH_UNIX=3, CH_UTF8_MAC=4} charset_t;
@@ -69,78 +71,78 @@ typedef enum {CH_UCS2=0, CH_UTF8=1, CH_MAC=2, CH_UNIX=3, CH_UTF8_MAC=4} charset_
 /*
  *   for each charset we have a function that pulls from that charset to
  *     a ucs2 buffer, and a function that pushes to a ucs2 buffer
- *     */
+ */
 
 struct charset_functions {
-        const char *name;
-	const long kTextEncoding;
-        size_t (*pull)(void *, char **inbuf, size_t *inbytesleft,
-                                   char **outbuf, size_t *outbytesleft);
-        size_t (*push)(void *, char **inbuf, size_t *inbytesleft,
-                                   char **outbuf, size_t *outbytesleft);
-	u_int32_t flags;
-        const char *iname;
-        struct charset_functions *prev, *next;
+    const char *name;
+    const long kTextEncoding;
+    size_t (*pull)(void *, char **inbuf, size_t *inbytesleft,
+                   char **outbuf, size_t *outbytesleft);
+    size_t (*push)(void *, char **inbuf, size_t *inbytesleft,
+                   char **outbuf, size_t *outbytesleft);
+    u_int32_t flags;
+    const char *iname;
+    struct charset_functions *prev, *next;
 };
 
 /* from iconv.c */
-extern atalk_iconv_t 	atalk_iconv_open __P((const char *, const char *));
-extern size_t 		atalk_iconv __P((atalk_iconv_t, const char **, size_t *, char **, size_t *));
-extern int 		atalk_iconv_close __P((atalk_iconv_t));
-extern struct charset_functions *find_charset_functions __P((const char *));
-extern int 		atalk_register_charset __P((struct charset_functions *));
+extern atalk_iconv_t atalk_iconv_open (const char *, const char *);
+extern size_t atalk_iconv (atalk_iconv_t, const char **, size_t *, char **, size_t *);
+extern int atalk_iconv_close (atalk_iconv_t);
+extern struct charset_functions *find_charset_functions (const char *);
+extern int atalk_register_charset (struct charset_functions *);
 
 /* from util_unistr.c */
-extern ucs2_t 	toupper_w  __P((ucs2_t));
-extern ucs2_t 	tolower_w  __P((ucs2_t));
-extern int 	strupper_w __P((ucs2_t *));
-extern int 	strlower_w __P((ucs2_t *));
-extern int 	islower_w  __P((ucs2_t));
-extern int 	islower_w  __P((ucs2_t));
-extern size_t 	strlen_w   __P((const ucs2_t *));
-extern size_t 	strnlen_w  __P((const ucs2_t *, size_t));
-extern ucs2_t* 	strchr_w   __P((const ucs2_t *, ucs2_t));
-extern int 	strcmp_w   __P((const ucs2_t *, const ucs2_t *));
-extern int 	strncmp_w  __P((const ucs2_t *, const ucs2_t *, size_t));
-extern int      strcasecmp_w  __P((const ucs2_t *, const ucs2_t *));
-extern int	strncasecmp_w __P((const ucs2_t *, const ucs2_t *, size_t));
-extern ucs2_t   *strcasestr_w __P((const ucs2_t *, const ucs2_t *));
-extern ucs2_t 	*strndup_w __P((const ucs2_t *, size_t));
-extern ucs2_t  	*strdup_w  __P((const ucs2_t *));
-extern ucs2_t 	*strncpy_w __P((ucs2_t *, const ucs2_t *, const size_t));
-extern ucs2_t 	*strncat_w __P((ucs2_t *, const ucs2_t *, const size_t));
-extern ucs2_t 	*strcat_w  __P((ucs2_t *, const ucs2_t *));
-extern size_t 	precompose_w __P((ucs2_t *, size_t, ucs2_t *,size_t *));
-extern size_t 	decompose_w  __P((ucs2_t *, size_t, ucs2_t *,size_t *));
-extern size_t 	utf8_charlen __P(( char* ));
-extern size_t 	utf8_strlen_validate __P(( char *));
+extern ucs2_t   toupper_w  (ucs2_t);
+extern ucs2_t   tolower_w  (ucs2_t);
+extern int      strupper_w (ucs2_t *);
+extern int      strlower_w (ucs2_t *);
+extern int      islower_w  (ucs2_t);
+extern int      isupper_w  (ucs2_t);
+extern size_t   strlen_w   (const ucs2_t *);
+extern size_t   strnlen_w  (const ucs2_t *, size_t);
+extern ucs2_t*  strchr_w   (const ucs2_t *, ucs2_t);
+extern ucs2_t   *strcasechr_w (const ucs2_t *s, ucs2_t c);
+extern int      strcmp_w   (const ucs2_t *, const ucs2_t *);
+extern int      strncmp_w  (const ucs2_t *, const ucs2_t *, size_t);
+extern int      strcasecmp_w  (const ucs2_t *, const ucs2_t *);
+extern int      strncasecmp_w (const ucs2_t *, const ucs2_t *, size_t);
+extern ucs2_t   *strstr_w (const ucs2_t *s, const ucs2_t *ins);
+extern ucs2_t   *strcasestr_w (const ucs2_t *, const ucs2_t *);
+extern ucs2_t   *strndup_w (const ucs2_t *, size_t);
+extern ucs2_t   *strdup_w  (const ucs2_t *);
+extern ucs2_t   *strncpy_w (ucs2_t *, const ucs2_t *, const size_t);
+extern ucs2_t   *strncat_w (ucs2_t *, const ucs2_t *, const size_t);
+extern ucs2_t   *strcat_w  (ucs2_t *, const ucs2_t *);
+extern size_t   precompose_w (ucs2_t *, size_t, ucs2_t *,size_t *);
+extern size_t   decompose_w  (ucs2_t *, size_t, ucs2_t *,size_t *);
+extern size_t   utf8_charlen ( char* );
+extern size_t   utf8_strlen_validate ( char *);
 
 /* from charcnv.c */
-extern void 	init_iconv __P((void));
-extern size_t 	convert_string __P((charset_t, charset_t, void const *, size_t, void *, size_t));
-extern size_t	convert_string_allocate __P((charset_t, charset_t, void const *, size_t, char **));
-extern size_t 	utf8_strupper __P((const char *, size_t, char *, size_t));
-extern size_t 	utf8_strlower __P((const char *, size_t, char *, size_t));
-extern size_t 	unix_strupper __P((const char *, size_t, char *, size_t));
-extern size_t 	unix_strlower __P((const char *, size_t, char *, size_t));
-extern size_t 	charset_strupper __P((charset_t, const char *, size_t, char *, size_t));
-extern size_t 	charset_strlower __P((charset_t, const char *, size_t, char *, size_t));
+extern void     init_iconv (void);
+extern size_t   convert_string (charset_t, charset_t, void const *, size_t, void *, size_t);
+extern size_t   convert_string_allocate (charset_t, charset_t, void const *, size_t, char **);
+extern size_t   utf8_strupper (const char *, size_t, char *, size_t);
+extern size_t   utf8_strlower (const char *, size_t, char *, size_t);
+extern size_t   unix_strupper (const char *, size_t, char *, size_t);
+extern size_t   unix_strlower (const char *, size_t, char *, size_t);
+extern size_t   charset_strupper (charset_t, const char *, size_t, char *, size_t);
+extern size_t   charset_strlower (charset_t, const char *, size_t, char *, size_t);
 
-extern size_t 	charset_to_ucs2_allocate __P((charset_t, ucs2_t **dest, const char *src));
-extern size_t 	charset_to_utf8_allocate __P((charset_t, char **dest, const char *src));
-extern size_t	ucs2_to_charset_allocate __P((charset_t, char **dest, const ucs2_t *src));
-extern size_t 	utf8_to_charset_allocate __P((charset_t, char **dest, const char *src));
-extern size_t	ucs2_to_charset __P((charset_t, const ucs2_t *src, char *dest, size_t));
+extern size_t   charset_to_ucs2_allocate (charset_t, ucs2_t **dest, const char *src);
+extern size_t   charset_to_utf8_allocate (charset_t, char **dest, const char *src);
+extern size_t   ucs2_to_charset_allocate (charset_t, char **dest, const ucs2_t *src);
+extern size_t   utf8_to_charset_allocate (charset_t, char **dest, const char *src);
+extern size_t   ucs2_to_charset (charset_t, const ucs2_t *src, char *dest, size_t);
 
-extern size_t 	convert_charset __P((charset_t, charset_t, charset_t, char *, size_t, char *, size_t, u_int16_t *));
+extern size_t   convert_charset (charset_t, charset_t, charset_t, const char *, size_t, char *, size_t, u_int16_t *);
 
-extern size_t 	charset_precompose __P(( charset_t, char *, size_t, char *, size_t));
-extern size_t 	charset_decompose  __P(( charset_t, char *, size_t, char *, size_t));
-extern size_t 	utf8_precompose __P(( char *, size_t, char *, size_t));
-extern size_t 	utf8_decompose  __P(( char *, size_t, char *, size_t));
+extern size_t   charset_precompose ( charset_t, char *, size_t, char *, size_t);
+extern size_t   charset_decompose  ( charset_t, char *, size_t, char *, size_t);
+extern size_t   utf8_precompose ( char *, size_t, char *, size_t);
+extern size_t   utf8_decompose  ( char *, size_t, char *, size_t);
 
-extern charset_t add_charset __P((char* name));
+extern charset_t add_charset (const char* name);
 
-
-
-#endif
+#endif  /* _ATALK_UNICODE_H */

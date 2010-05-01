@@ -1,5 +1,5 @@
 /*
- * $Id: adv1tov2.c,v 1.3.14.3.2.1 2005/02/10 01:23:05 didg Exp $
+ * $Id: adv1tov2.c,v 1.5 2009/10/14 01:38:28 didg Exp $
  * v1tov2: given a root directory, run down and convert all the
  * files/directories into appledouble v2.
  */
@@ -76,7 +76,7 @@ char *fullpathname(const char *name)
 #define MAXDESCEND 0xFFFF
 /* recursively descend subdirectories. 
  * oh the stack space we use up! */
-void descend(DIR *dp)
+static void descend(DIR *dp)
 {
   DIR *dpnew;
   struct dirent *de;

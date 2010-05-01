@@ -2,12 +2,12 @@
 .\"     Title: afpd
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.74.3 <http://docbook.sf.net/>
-.\"      Date: 06 Jan 2004
-.\"    Manual: Netatalk 2.0.4
-.\"    Source: Netatalk 2.0.4
+.\"      Date: 21 Apr 2010
+.\"    Manual: Netatalk 2.1
+.\"    Source: Netatalk 2.1
 .\"  Language: English
 .\"
-.TH "AFPD" "8" "06 Jan 2004" "Netatalk 2\&.0\&.4" "Netatalk 2.0.4"
+.TH "AFPD" "8" "21 Apr 2010" "Netatalk 2.1" "Netatalk 2.1"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -19,23 +19,32 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-afpd \- AppleTalk Filing Protocol daemon
+afpd \- Apple Filing Protocol daemon
 .SH "SYNOPSIS"
-.HP \w'\fBafpd\fR\fB\fR\ 'u
-\fBafpd\fR\fB\fR [\-duptDTvI] [\-f\ \fIdefaultvolumes\fR] [\-s\ \fIsystemvolumes\fR] [\-n\ \fInbpname\fR] [\-c\ \fImaxconnections\fR] [\-g\ \fIguest\fR] [\-P\ \fIpidfile\fR] [\-S\ \fIport\fR] [\-L\ \fImessage\fR] [\-F\ \fIconfig\fR] [\-U\ \fIuamsv\fR] [\-m\ \fIumask\fR]
+.HP \w'\fBafpd\fR\fB\fR\fBafpd\fR\fB\fR\ 'u
+\fBafpd\fR\fB\fR [\-duptDTI] [\-f\ \fIdefaultvolumes\fR] [\-s\ \fIsystemvolumes\fR] [\-n\ \fInbpname\fR] [\-c\ \fImaxconnections\fR] [\-g\ \fIguest\fR] [\-P\ \fIpidfile\fR] [\-S\ \fIport\fR] [\-L\ \fImessage\fR] [\-F\ \fIconfigfile\fR] [\-U\ \fIuams\fR] [\-m\ \fIumask\fR]
+.br
+\fBafpd\fR\fB\fR \-v | \-V | \-h 
 .SH "DESCRIPTION"
 .PP
 \fBafpd\fR
-provides an AppleTalk Filing Protocol (AFP) interface to the Unix file system\&. It is normally started at boot time from /etc/rc\&.
+provides an Apple Filing Protocol (AFP) interface to the Unix file system\&. It is normally started at boot time from /etc/rc\&.
+.PP
+:ETCDIR:/afpd\&.conf
+is the configuration file used by
+\fBafpd\fR
+to determine the behavior and configuration of the different virtual file servers that it provides\&.
 .PP
 The list of volumes offered to the user is generated from
 :ETCDIR:/AppleVolumes\&.system
 and one of
 :ETCDIR:/AppleVolumes\&.default,
-~/AppleVolumes, or
-~/\&.AppleVolumes\&. The
+~/AppleVolumes,
+~/\&.AppleVolumes,
+~/applevolumes, or
+~/\&.applevolumes\&. The
 AppleVolumes
-files is used to specify volumes to mount and file name extension mappings\&. It is formatted as follows, one specification per line: pathname [ volumename ] \&.extension [ type [ creator ] ] If volumename is unspecified, the last component of pathname is used\&. No two volumes may have the same name\&. If type is unspecified \'????\' is used\&. If creator is unspecified \'UNIX\' is used\&. The extension \'\&.\' sets the default creator and type for otherwise untyped Unix files\&. Blank lines and lines beginning with `#\' are ignored\&.
+files is used to specify volumes to mount and file name extension mappings\&.
 .PP
 .SH "OPTIONS"
 .PP
@@ -81,12 +90,22 @@ afpd\&.conf\&.)
 Print version information and exit\&.
 .RE
 .PP
+\-V
+.RS 4
+Print verbose information and exit\&.
+.RE
+.PP
+\-h
+.RS 4
+Print help and exit\&.
+.RE
+.PP
 \-I
 .RS 4
 Use a platform specific icon\&. (Equivalent to
 \fB\-icon\fR
 in
-afpd\&.conf\&.)
+afpd\&.conf\&.) (Recent Mac OS don\'t display it\&.)
 .RE
 .PP
 \-f \fIdefaultvolumes\fR
@@ -193,6 +212,20 @@ Sending a
 to afpd will cause it to reload its configuration files\&.
 .RE
 .PP
+SIGINT
+.RS 4
+Sending a
+\fBSIGINT\fR
+to a child
+\fBafpd\fR
+enables
+\fImax_debug\fR
+logging for this process\&. The log is sent to fhe file
+/tmp/afpd\&.PID\&.XXXXXX\&. Sending another
+\fBSIGINT\fR
+will terminate the process\&.
+.RE
+.PP
 SIGUSR1
 .RS 4
 The
@@ -205,9 +238,7 @@ SIGUSR2
 The
 \fBafpd\fR
 process will look in the message directory configured at build time for a file named message\&.pid\&. For each one found, a the contents will be sent as a message to the associated AFP client\&. The file is removed after the message is sent\&. This should only be sent to a child
-\fBafpd\fR\&. Warning: If the \-\-with\-message\-dir option was not used, this will kill the
-\fBafpd\fR
-process
+\fBafpd\fR\&.
 .sp
 To shut down a user\'s
 \fBafpd\fR
@@ -222,6 +253,11 @@ signal and wait for it to die on its own\&.
 .RE
 .SH "FILES"
 .PP
+:ETCDIR:/afpd\&.conf
+.RS 4
+configuration file used by afpd
+.RE
+.PP
 :ETCDIR:/AppleVolumes\&.default
 .RS 4
 list of default volumes to mount
@@ -232,9 +268,14 @@ list of default volumes to mount
 list of volumes to offer all users
 .RE
 .PP
-~/AppleVolumes
+~/AppleVolumes, ~/\&.AppleVolumes, ~/applevolumes, ~/\&.applevolumes
 .RS 4
 user\'s list of volumes to mount
+.RE
+.PP
+:ETCDIR:/afp_signature\&.conf
+.RS 4
+list of server signature
 .RE
 .PP
 :ETCDIR:/netatalk/msg/message\&.pid
@@ -248,4 +289,5 @@ contains messages to be sent to users\&.
 \fBhosts_access\fR(5),
 \fBafpd.conf\fR(5),
 \fBAppleVolumes.default\fR(5),
-\fBAppleVolumes.system\fR(5)\&.
+\fBafp_signature.conf\fR(5),
+\fBdbd\fR(1)\&.

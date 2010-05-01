@@ -1,5 +1,5 @@
 /*
- * $Id: auth.c,v 1.6.8.2.2.3 2009/02/03 08:25:00 didg Exp $
+ * $Id: auth.c,v 1.9 2009/10/13 22:55:37 didg Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -126,7 +126,7 @@ int auth_load(const char *path, const char *list)
 }
 
 /* get rid of all of the uams */
-void auth_unload()
+void auth_unload(void)
 {
   struct uam_mod *mod, *prev, *start = &uam_modules;
 

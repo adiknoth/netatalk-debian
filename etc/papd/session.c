@@ -1,5 +1,5 @@
 /*
- * $Id: session.c,v 1.14.8.1.2.2 2008/11/14 10:04:52 didg Exp $
+ * $Id: session.c,v 1.20 2009/10/16 01:10:59 didg Exp $
  *
  * Copyright (c) 1990,1994 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -35,8 +35,8 @@ int ps(struct papfile *infile, struct papfile *outfile, struct sockaddr_at *sat)
 
 extern unsigned char	connid, quantum, oquantum;
 
-char		buf[ PAP_MAXQUANTUM ][ 4 + PAP_MAXDATA ];
-struct iovec	niov[ PAP_MAXQUANTUM ] = {
+static char		buf[ PAP_MAXQUANTUM ][ 4 + PAP_MAXDATA ];
+static struct iovec	niov[ PAP_MAXQUANTUM ] = {
     { buf[ 0 ],	0 },
     { buf[ 1 ],	0 },
     { buf[ 2 ],	0 },
@@ -46,25 +46,13 @@ struct iovec	niov[ PAP_MAXQUANTUM ] = {
     { buf[ 6 ],	0 },
     { buf[ 7 ],	0 },
 };
-struct iovec	iov[ PAP_MAXQUANTUM ] = {
-    { buf[ 0 ] + 4,	0 },
-    { buf[ 1 ] + 4,	0 },
-    { buf[ 2 ] + 4,	0 },
-    { buf[ 3 ] + 4,	0 },
-    { buf[ 4 ] + 4,	0 },
-    { buf[ 5 ] + 4,	0 },
-    { buf[ 6 ] + 4,	0 },
-    { buf[ 7 ] + 4,	0 },
-};
 
 /*
  * Accept files until the client closes the connection.
  * Read lines of a file, until the client sends eof, after
  * which we'll send eof also.
  */
-int session( atp, sat )
-    ATP			atp;
-    struct sockaddr_at	*sat;
+int session(ATP atp, struct sockaddr_at *sat)
 {
     struct timeval	tv;
     struct atp_block	atpb;
@@ -79,14 +67,14 @@ int session( atp, sat )
     infile.pf_state = PF_BOT;
     infile.pf_bufsize = 0;
     infile.pf_datalen = 0;
-    infile.pf_buf = 0;
-    infile.pf_data = 0;
+    infile.pf_buf = NULL;
+    infile.pf_data = NULL;
 
     outfile.pf_state = PF_BOT;
     outfile.pf_bufsize = 0;
     outfile.pf_datalen = 0;
-    outfile.pf_buf = 0;
-    outfile.pf_data = 0;
+    outfile.pf_buf = NULL;
+    outfile.pf_data = NULL;
 
     /*
      * Ask for data.
@@ -120,7 +108,7 @@ int session( atp, sat )
 	FD_SET( atp_fileno( atp ), &fds );
 
 	do { /* do list until success or an unrecoverable error occurs */
-	  if (( cc = select( FD_SETSIZE, &fds, 0, 0, &tv )) < 0 )
+	  if (( cc = select( FD_SETSIZE, &fds, NULL, NULL, &tv )) < 0 )
 	      LOG(log_error, logtype_papd, "select: %s", strerror(errno) ); /* log all errors */
 	} while (( cc < 0 ) && (errno == 4));
 

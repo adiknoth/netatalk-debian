@@ -26,7 +26,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <dirent.h>
 #include <errno.h>
 #include <ctype.h>
 #include <string.h>
@@ -50,6 +49,8 @@
 #ifdef CNID_DB
 #include <atalk/cnid.h>
 #endif /* CNID_DB */
+#include <atalk/util.h>
+
 #include "desktop.h"
 #include "directory.h"
 #include "file.h"
@@ -112,13 +113,12 @@ struct dsitem {
 	struct dir *dir; /* Structure describing this directory */
 	int pidx;        /* Parent's dsitem structure index. */
 	int checked;     /* Have we checked this directory ? */
+	int path_len;
 	char *path;      /* absolute UNIX path to this directory */
 };
  
 
 #define DS_BSIZE 128
-static u_int32_t cur_pos = 0;    /* Saved position index (ID) - used to remember "position" across FPCatSearch calls */
-static DIR *dirpos = NULL; /* UNIX structure describing currently opened directory. */
 static int save_cidx = -1; /* Saved index of currently scanned directory. */
 
 static struct dsitem *dstack = NULL; /* Directory stack data... */
@@ -131,7 +131,7 @@ static struct scrit c1, c2;          /* search criteria */
 static int addstack(char *uname, struct dir *dir, int pidx)
 {
 	struct dsitem *ds;
-	int           l;
+	size_t         l, u;
 
 	/* check if we have some space on stack... */
 	if (dsidx >= dssize) {
@@ -145,22 +145,26 @@ static int addstack(char *uname, struct dir *dir, int pidx)
 	ds = dstack + dsidx++;
 	ds->dir = dir;
 	ds->pidx = pidx;
-	if (pidx >= 0) {
-	    l = strlen(dstack[pidx].path);
-	    if (!(ds->path = malloc(l + strlen(uname) + 2) ))
-			return -1;
-		strcpy(ds->path, dstack[pidx].path);
-		strcat(ds->path, "/");
-		strcat(ds->path, uname);
-	}
-
 	ds->checked = 0;
-
+	if (pidx >= 0) {
+	    l = dstack[pidx].path_len;
+	    u = strlen(uname) +1;
+	    if (!(ds->path = malloc(l + u + 1) ))
+			return -1;
+		memcpy(ds->path, dstack[pidx].path, l);
+		ds->path[l] = '/';
+		memcpy(&ds->path[l+1], uname, u);
+		ds->path_len = l +u;
+	}
+	else {
+	    ds->path = strdup(uname);
+		ds->path_len = strlen(uname);
+	}
 	return 0;
 }
 
 /* Removes checked items from top of directory stack. Returns index of the first unchecked elements or -1. */
-static int reducestack()
+static int reducestack(void)
 {
 	int r;
 	if (save_cidx != -1) {
@@ -180,7 +184,7 @@ static int reducestack()
 } 
 
 /* Clears directory stack. */
-static void clearstack() 
+static void clearstack(void) 
 {
 	save_cidx = -1;
 	while (dsidx > 0) {
@@ -211,7 +215,7 @@ static struct adouble *adl_lkup(struct vol *vol, struct path *path, struct adoub
 		adp = &ad;
 	} 
 
-    if ( ad_metadata( path->u_name, ((isdir)?ADFLAGS_DIR:0), adp) < 0 ) {
+    if ( ad_metadata( path->u_name, ((isdir) ? ADFLAGS_DIR : 0), adp) < 0 ) {
         adp = NULL; /* FIXME without resource fork adl_lkup will be call again */
     }
     
@@ -233,13 +237,13 @@ static struct finderinfo *unpack_buffer(struct finderinfo *finfo, char *buffer)
 
 /* -------------------- */
 static struct finderinfo *
-unpack_finderinfo(struct vol *vol, struct path *path, struct adouble **adp, struct finderinfo *finfo)
+unpack_finderinfo(struct vol *vol, struct path *path, struct adouble **adp, struct finderinfo *finfo, int islnk)
 {
 	packed_finder  buf;
 	void           *ptr;
 	
     *adp = adl_lkup(vol, path, *adp);
-	ptr = get_finderinfo(vol, path->u_name, *adp, &buf);
+	ptr = get_finderinfo(vol, path->u_name, *adp, &buf,islnk);
 	return unpack_buffer(finfo, ptr);
 }
 
@@ -261,6 +265,8 @@ static int crit_check(struct vol *vol, struct path *path) {
 	u_int32_t ac_date, ab_date;
 	static char convbuf[514]; /* for convert_charset dest_len parameter +2 */
 	size_t len;
+    int islnk;
+    islnk=S_ISLNK(path->st.st_mode);
 
 	if (S_ISDIR(path->st.st_mode)) {
 		if (!c1.dbitmap)
@@ -286,6 +292,8 @@ static int crit_check(struct vol *vol, struct path *path) {
         		/* FIXME */
         		return 0;
         	}
+        	/* save the id for getfilparm */
+        	path->id = id;
         	if (!(path->m_name = utompath(vol, path->u_name, id , utf8_encoding()))) {
         		return 0;
         	}
@@ -300,7 +308,7 @@ static int crit_check(struct vol *vol, struct path *path) {
 
 	/* Check for filename */
 	if ((c1.rbitmap & (1<<DIRPBIT_LNAME))) { 
-		if ( (size_t)(-1) == (len = convert_string(vol->v_maccharset, CH_UCS2, path->m_name, strlen(path->m_name), convbuf, 512)) )
+		if ( (size_t)(-1) == (len = convert_string(vol->v_maccharset, CH_UCS2, path->m_name, -1, convbuf, 512)) )
 			goto crit_check_ret;
 
 		if ((c1.rbitmap & (1<<CATPBIT_PARTIAL))) {
@@ -373,7 +381,7 @@ static int crit_check(struct vol *vol, struct path *path) {
 
         /* Check file type ID */
 	if ((c1.rbitmap & (1<<DIRPBIT_FINFO)) && c2.finfo.f_type != 0) {
-	    finfo = unpack_finderinfo(vol, path, &adp, &finderinfo);
+	    finfo = unpack_finderinfo(vol, path, &adp, &finderinfo,islnk);
 		if (finfo->f_type != c1.finfo.f_type)
 			goto crit_check_ret;
 	}
@@ -381,7 +389,7 @@ static int crit_check(struct vol *vol, struct path *path) {
 	/* Check creator ID */
 	if ((c1.rbitmap & (1<<DIRPBIT_FINFO)) && c2.finfo.creator != 0) {
 		if (!finfo) {
-			finfo = unpack_finderinfo(vol, path, &adp, &finderinfo);
+			finfo = unpack_finderinfo(vol, path, &adp, &finderinfo,islnk);
 		}
 		if (finfo->creator != c1.finfo.creator)
 			goto crit_check_ret;
@@ -390,7 +398,7 @@ static int crit_check(struct vol *vol, struct path *path) {
 	/* Check finder info attributes */
 	if ((c1.rbitmap & (1<<DIRPBIT_FINFO)) && c2.finfo.attrs != 0) {
 		if (!finfo) {
-			finfo = unpack_finderinfo(vol, path, &adp, &finderinfo);
+			finfo = unpack_finderinfo(vol, path, &adp, &finderinfo,islnk);
 		}
 
 		if ((finfo->attrs & c2.finfo.attrs) != c1.finfo.attrs)
@@ -400,7 +408,7 @@ static int crit_check(struct vol *vol, struct path *path) {
 	/* Check label */
 	if ((c1.rbitmap & (1<<DIRPBIT_FINFO)) && c2.finfo.label != 0) {
 		if (!finfo) {
-			finfo = unpack_finderinfo(vol, path, &adp, &finderinfo);
+			finfo = unpack_finderinfo(vol, path, &adp, &finderinfo,islnk);
 		}
 		if ((finfo->label & c2.finfo.label) != c1.finfo.label)
 			goto crit_check_ret;
@@ -411,7 +419,7 @@ static int crit_check(struct vol *vol, struct path *path) {
 	result |= 1;
 crit_check_ret:
 	if (adp != NULL)
-		ad_close(adp, ADFLAGS_HF);
+		ad_close_metadata(adp);
 	return result;
 }  
 
@@ -420,7 +428,8 @@ static int rslt_add ( struct vol *vol, struct path *path, char **buf, int ext)
 {
 
 	char 		*p = *buf;
-	int 		ret, tbuf =0;
+	int 		ret;
+	size_t		tbuf =0;
 	u_int16_t	resultsize;
 	int 		isdir = S_ISDIR(path->st.st_mode); 
 
@@ -441,7 +450,7 @@ static int rslt_add ( struct vol *vol, struct path *path, char **buf, int ext)
         ret = getdirparams(vol, c1.dbitmap, path, path->d_dir, p , &tbuf ); 
 	}
 	else {
-	    /* FIXME slow if we need the file ID, we already know it */
+	    /* FIXME slow if we need the file ID, we already know it, done ? */
 		ret = getfilparams ( vol, c1.fbitmap, path, path->d_dir, p, &tbuf);
 	}
 
@@ -479,22 +488,24 @@ static int rslt_add ( struct vol *vol, struct path *path, char **buf, int ext)
  * rbuf - output buffer
  * rbuflen - output buffer length
  */
-#define NUM_ROUNDS 100
+#define NUM_ROUNDS 200
 static int catsearch(struct vol *vol, struct dir *dir,  
 		     int rmatches, u_int32_t *pos, char *rbuf, u_int32_t *nrecs, int *rsize, int ext)
 {
+    static u_int32_t cur_pos;    /* Saved position index (ID) - used to remember "position" across FPCatSearch calls */
+    static DIR *dirpos; 		 /* UNIX structure describing currently opened directory. */
 	int cidx, r;
 	struct dirent *entry;
 	int result = AFP_OK;
 	int ccr;
     struct path path;
-	char *orig_dir = NULL;
-	int orig_dir_len = 128;
 	char *vpath = vol->v_path;
 	char *rrbuf = rbuf;
     time_t start_time;
     int num_rounds = NUM_ROUNDS;
     int cached;
+    int cwd = -1;
+    int error;
         
 	if (*pos != 0 && *pos != cur_pos) {
 		result = AFPERR_CATCHNG;
@@ -503,8 +514,6 @@ static int catsearch(struct vol *vol, struct dir *dir,
 
 	/* FIXME: Category "offspring count ! */
 
-	/* So we are beginning... */
-    start_time = time(NULL);
 
 	/* We need to initialize all mandatory structures/variables and change working directory appropriate... */
 	if (*pos == 0) {
@@ -514,32 +523,32 @@ static int catsearch(struct vol *vol, struct dir *dir,
 			dirpos = NULL;
 		} 
 		
-		if (addstack("", dir, -1) == -1) {
+		if (addstack(vpath, dir, -1) == -1) {
 			result = AFPERR_MISC;
 			goto catsearch_end;
 		}
-		dstack[0].path = strdup(vpath);
 		/* FIXME: Sometimes DID is given by client ! (correct this one above !) */
 	}
 
 	/* Save current path */
-	orig_dir = (char*)malloc(orig_dir_len);
-	while (getcwd(orig_dir, orig_dir_len-1)==NULL) {
-		if (errno != ERANGE) {
-			result = AFPERR_MISC;
-			goto catsearch_end;
-		}
-		orig_dir_len += 128; 
-		orig_dir = realloc(orig_dir, orig_dir_len);
-	} /* while() */
+    if ((cwd = open(".", O_RDONLY)) < 0) {
+        result = AFPERR_MISC;
+        goto catsearch_end;
+    }
 	
+	/* So we are beginning... */
+    start_time = time(NULL);
+
 	while ((cidx = reducestack()) != -1) {
 		cached = 1;
-		if (dirpos == NULL) {
-			dirpos = opendir(dstack[cidx].path);
+
+		error = lchdir(dstack[cidx].path);
+
+		if (!error && dirpos == NULL) {
+			dirpos = opendir(".");
 			cached = (dstack[cidx].dir->d_child != NULL);
 		}
-		if (dirpos == NULL) {
+		if (error || dirpos == NULL) {
 			switch (errno) {
 			case EACCES:
 				dstack[cidx].checked = 1;
@@ -556,17 +565,14 @@ static int catsearch(struct vol *vol, struct dir *dir,
 			} /* switch (errno) */
 			goto catsearch_end;
 		}
-		/* FIXME error in chdir, what do we do? */
-		chdir(dstack[cidx].path);
 		
-
 		while ((entry=readdir(dirpos)) != NULL) {
 			(*pos)++;
 
 			if (!check_dirent(vol, entry->d_name))
 			   continue;
 
-			path.m_name = NULL;
+			memset(&path, 0, sizeof(path));
 			path.u_name = entry->d_name;
 			if (of_stat(&path) != 0) {
 				switch (errno) {
@@ -589,7 +595,7 @@ static int catsearch(struct vol *vol, struct dir *dir,
 				   ALL dirsearch_byname will fail.
 				*/
 				if (cached)
-            		path.d_dir = dirsearch_byname(dstack[cidx].dir, path.u_name);
+            		path.d_dir = dirsearch_byname(vol, dstack[cidx].dir, path.u_name);
             	else
             		path.d_dir = NULL;
             	if (!path.d_dir) {
@@ -652,16 +658,18 @@ catsearch_pause:
 
 catsearch_end: /* Exiting catsearch: error condition */
 	*rsize = rrbuf - rbuf;
-	if (orig_dir != NULL) {
-		chdir(orig_dir);
-		free(orig_dir);
-	}
+    if (cwd != -1) {
+        if ((fchdir(cwd)) != 0) {
+            LOG(log_debug, logtype_afpd, "error chdiring back: %s", strerror(errno));        
+        }
+        close(cwd);
+    }
 	return result;
 } /* catsearch() */
 
 /* -------------------------- */
-int catsearch_afp(AFPObj *obj _U_, char *ibuf, int ibuflen,
-                  char *rbuf, int *rbuflen, int ext)
+static int catsearch_afp(AFPObj *obj _U_, char *ibuf, size_t ibuflen,
+                  char *rbuf, size_t *rbuflen, int ext)
 {
     struct vol *vol;
     u_int16_t   vid;
@@ -733,8 +741,8 @@ int catsearch_afp(AFPObj *obj _U_, char *ibuf, int ibuflen,
     }
 
     /* Parse file specifications */
-    spec1 = ibuf;
-    spec2 = ibuf + spec_len + 2;
+    spec1 = (unsigned char*)ibuf;
+    spec2 = (unsigned char*)ibuf + spec_len + 2;
 
     spec1 += 2; 
     spec2 += 2; 
@@ -824,7 +832,7 @@ int catsearch_afp(AFPObj *obj _U_, char *ibuf, int ibuflen,
         /* Get the long filename */	
 		memcpy(tmppath, bspec1 + spec1[1] + 1, (bspec1 + spec1[1])[0]);
 		tmppath[(bspec1 + spec1[1])[0]]= 0;
-		len = convert_string ( vol->v_maccharset, CH_UCS2, tmppath, strlen(tmppath), c1.lname, sizeof(c1.lname));
+		len = convert_string ( vol->v_maccharset, CH_UCS2, tmppath, -1, c1.lname, sizeof(c1.lname));
         if (len == (size_t)(-1))
             return AFPERR_PARAM;
 
@@ -882,15 +890,15 @@ int catsearch_afp(AFPObj *obj _U_, char *ibuf, int ibuflen,
 } /* catsearch_afp */
 
 /* -------------------------- */
-int afp_catsearch (AFPObj *obj, char *ibuf, int ibuflen,
-                  char *rbuf, int *rbuflen)
+int afp_catsearch (AFPObj *obj, char *ibuf, size_t ibuflen,
+                  char *rbuf, size_t *rbuflen)
 {
 	return catsearch_afp( obj, ibuf, ibuflen, rbuf, rbuflen, 0);
 }
 
 
-int afp_catsearch_ext (AFPObj *obj, char *ibuf, int ibuflen,
-                  char *rbuf, int *rbuflen)
+int afp_catsearch_ext (AFPObj *obj, char *ibuf, size_t ibuflen,
+                  char *rbuf, size_t *rbuflen)
 {
 	return catsearch_afp( obj, ibuf, ibuflen, rbuf, rbuflen, 1);
 }

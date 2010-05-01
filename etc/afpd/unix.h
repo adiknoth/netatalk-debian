@@ -1,5 +1,5 @@
 /*
- * $Id: unix.h,v 1.12.2.1.2.6.2.3 2005/06/02 12:49:41 didg Exp $
+ * $Id: unix.h,v 1.23 2010/04/12 14:28:47 franklahm Exp $
  */
 
 #ifndef AFPD_UNIX_H
@@ -44,7 +44,9 @@ typedef int	mode_t;
 #include <sys/mnttab.h>
 #endif /* __svr4__ || HAVE_SYS_MNTTAB_H */
 
-
+#if defined(__DragonFly__)
+#define dqblk ufs_dqblk
+#endif
 
 #if defined(HAVE_SYS_MOUNT_H) || defined(BSD4_4) || \
     defined(linux) || defined(ultrix)
@@ -65,8 +67,8 @@ typedef int	mode_t;
 #if defined(linux) || defined(ultrix) || defined(HAVE_QUOTA_H)
 #ifndef NEED_QUOTACTL_WRAPPER
 /*#include <sys/quota.h>*/
-/*long quotactl __P((int, const char *, unsigned int, caddr_t)); */
-/* extern long quotactl __P((int, const char *, long, caddr_t)); */
+/*long quotactl (int, const char *, unsigned int, caddr_t); */
+/* extern long quotactl (int, const char *, long, caddr_t); */
 
 #else /* ! NEED_QUOTACTL_WRAPPER */
 #include <asm/types.h>
@@ -200,35 +202,30 @@ struct dqblk_v1 {
   time_t dqb_itime;
 };
 
-extern long quotactl __P ((unsigned int, const char *, int, caddr_t));
+extern long quotactl (unsigned int, const char *, int, caddr_t);
 
 
 
 #endif /* linux */
 
-extern int getnfsquota __P((struct vol *, const int, const u_int32_t,
-                                struct dqblk *));
+extern int getnfsquota (struct vol *, const int, const u_int32_t,
+                                struct dqblk *);
 
-extern int uquota_getvolspace __P((struct vol *, VolSpace *, VolSpace *,
-                                       const u_int32_t));
+extern int uquota_getvolspace (struct vol *, VolSpace *, VolSpace *,
+                                       const u_int32_t);
 #endif /* NO_QUOTA_SUPPORT */
 
 extern struct afp_options default_options;
 
-extern int gmem            __P((const gid_t));
-extern int setdeskmode      __P((const mode_t));
-extern int setdirunixmode   __P((const struct vol *, const char *, mode_t));
-extern int setdirmode       __P((const struct vol *, const char *, mode_t));
-extern int setdeskowner     __P((const uid_t, const gid_t));
-extern int setdirowner      __P((const struct vol *, const char *, const uid_t, const gid_t));
-extern int setfilmode       __P((char *, mode_t , struct stat *));
-extern int setfilunixmode   __P((const struct vol *, struct path*, const mode_t));
-extern int setfilowner      __P((const struct vol *, const uid_t, const gid_t, struct path*));
-extern int unix_rename      __P((const char *oldpath, const char *newpath));
-extern int dir_rx_set       __P((mode_t mode));
-
-extern void accessmode      __P((char *, struct maccess *, struct dir *, struct stat *));
-extern char *fullpathname   __P((const char *));
+extern int gmem            (const gid_t);
+extern int setdeskmode      (const mode_t);
+extern int setdirunixmode   (const struct vol *, const char *, mode_t);
+extern int setdirmode       (const struct vol *, const char *, mode_t);
+extern int setdeskowner     (const uid_t, const gid_t);
+extern int setdirowner      (const struct vol *, const char *, const uid_t, const gid_t);
+extern int setfilunixmode   (const struct vol *, struct path*, const mode_t);
+extern int setfilowner      (const struct vol *, const uid_t, const gid_t, struct path*);
+extern void accessmode      (char *, struct maccess *, struct dir *, struct stat *);
 
 #ifdef AFS	
     #define accessmode afsmode

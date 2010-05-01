@@ -1,5 +1,5 @@
 /*
- * $Id: dsi_cmdreply.c,v 1.3.14.1 2004/05/04 14:26:14 didg Exp $
+ * $Id: dsi_cmdreply.c,v 1.5 2009/10/25 06:13:11 didg Exp $
  *
  * Copyright (c) 1997 Adrian Sun (asun@zoology.washington.edu)
  * All rights reserved. See COPYRIGHT.
@@ -25,9 +25,5 @@ int ret;
   dsi->header.dsi_code = htonl(err);
 
   ret = dsi_stream_send(dsi, dsi->data, dsi->datalen);
-  if (dsi->sigblocked)  {
-      sigprocmask(SIG_SETMASK, &dsi->oldset, NULL);
-      dsi->sigblocked = 0;
-  }
   return ret;
 }

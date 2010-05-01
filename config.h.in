@@ -9,29 +9,20 @@
 /* Define if AFS should be used */
 #undef AFS
 
+/* Does extattr API work */
+#undef BROKEN_EXTATTR
+
 /* BSD compatiblity macro */
 #undef BSD4_4
 
 /* Define if CNID Concurrent BDB backend should be compiled. */
 #undef CNID_BACKEND_CDB
 
-/* Define if CNID transactional BDB backend should be compiled. */
-#undef CNID_BACKEND_DB3
-
 /* Define if CNID Database Daemon backend should be compiled. */
 #undef CNID_BACKEND_DBD
 
-/* Define if CNID Database Daemon backend has transaction support */
-#undef CNID_BACKEND_DBD_TXN
-
-/* Define if CNID HASH scheme backend should be compiled. */
-#undef CNID_BACKEND_HASH
-
 /* Define if CNID LAST scheme backend should be compiled. */
 #undef CNID_BACKEND_LAST
-
-/* Define if CNID MTAB scheme backend should be compiled. */
-#undef CNID_BACKEND_MTAB
 
 /* Define if CNID TDB scheme backend should be compiled. */
 #undef CNID_BACKEND_TDB
@@ -54,14 +45,14 @@
 /* Define if debugging information should be included */
 #undef DEBUG1
 
+/* Define if you want to disable SIGALRM timers and DSI tickles */
+#undef DEBUGGING
+
 /* Default CNID scheme to be used */
 #undef DEFAULT_CNID_SCHEME
 
 /* Define if system (fcntl) locking should be disabled */
 #undef DISABLE_LOCKING
-
-/* Define if the logger should not be used */
-#undef DISABLE_LOGGER
 
 /* Define if shell check should be disabled */
 #undef DISABLE_SHELLCHECK
@@ -100,8 +91,41 @@
 /* Define to 1 if you have the `access' function. */
 #undef HAVE_ACCESS
 
+/* Define to 1 if you have the `add_proplist_entry' function. */
+#undef HAVE_ADD_PROPLIST_ENTRY
+
 /* set if struct at_addr is called atalk_addr */
 #undef HAVE_ATALK_ADDR
+
+/* Define to 1 if you have the `attropen' function. */
+#undef HAVE_ATTROPEN
+
+/* Define to 1 if you have the `attr_get' function. */
+#undef HAVE_ATTR_GET
+
+/* Define to 1 if you have the `attr_getf' function. */
+#undef HAVE_ATTR_GETF
+
+/* Define to 1 if you have the `attr_list' function. */
+#undef HAVE_ATTR_LIST
+
+/* Define to 1 if you have the `attr_listf' function. */
+#undef HAVE_ATTR_LISTF
+
+/* Define to 1 if you have the `attr_remove' function. */
+#undef HAVE_ATTR_REMOVE
+
+/* Define to 1 if you have the `attr_removef' function. */
+#undef HAVE_ATTR_REMOVEF
+
+/* Define to 1 if you have the `attr_set' function. */
+#undef HAVE_ATTR_SET
+
+/* Define to 1 if you have the `attr_setf' function. */
+#undef HAVE_ATTR_SETF
+
+/* Define to 1 if you have the <attr/xattr.h> header file. */
+#undef HAVE_ATTR_XATTR_H
 
 /* Define to 1 if you have the `backtrace_symbols' function. */
 #undef HAVE_BACKTRACE_SYMBOLS
@@ -133,9 +157,15 @@
 /* Define if sys_nerr declaration exists */
 #undef HAVE_DECL_SYS_NERR
 
+/* Define to 1 if you have the `delproplist' function. */
+#undef HAVE_DELPROPLIST
+
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
    */
 #undef HAVE_DIRENT_H
+
+/* Define to 1 if you have the `dirfd' function. */
+#undef HAVE_DIRFD
 
 /* Define to 1 if you have the `dlclose' function. */
 #undef HAVE_DLCLOSE
@@ -164,6 +194,42 @@
 /* Define to 1 if you have the <errno.h> header file. */
 #undef HAVE_ERRNO_H
 
+/* Define to 1 if you have the `extattr_delete_fd' function. */
+#undef HAVE_EXTATTR_DELETE_FD
+
+/* Define to 1 if you have the `extattr_delete_file' function. */
+#undef HAVE_EXTATTR_DELETE_FILE
+
+/* Define to 1 if you have the `extattr_delete_link' function. */
+#undef HAVE_EXTATTR_DELETE_LINK
+
+/* Define to 1 if you have the `extattr_get_fd' function. */
+#undef HAVE_EXTATTR_GET_FD
+
+/* Define to 1 if you have the `extattr_get_file' function. */
+#undef HAVE_EXTATTR_GET_FILE
+
+/* Define to 1 if you have the `extattr_get_link' function. */
+#undef HAVE_EXTATTR_GET_LINK
+
+/* Define to 1 if you have the `extattr_list_fd' function. */
+#undef HAVE_EXTATTR_LIST_FD
+
+/* Define to 1 if you have the `extattr_list_file' function. */
+#undef HAVE_EXTATTR_LIST_FILE
+
+/* Define to 1 if you have the `extattr_list_link' function. */
+#undef HAVE_EXTATTR_LIST_LINK
+
+/* Define to 1 if you have the `extattr_set_fd' function. */
+#undef HAVE_EXTATTR_SET_FD
+
+/* Define to 1 if you have the `extattr_set_file' function. */
+#undef HAVE_EXTATTR_SET_FILE
+
+/* Define to 1 if you have the `extattr_set_link' function. */
+#undef HAVE_EXTATTR_SET_LINK
+
 /* Define to 1 if you have the `fchmod' function. */
 #undef HAVE_FCHMOD
 
@@ -173,11 +239,47 @@
 /* Define to 1 if you have the <fcntl.h> header file. */
 #undef HAVE_FCNTL_H
 
+/* Define to 1 if you have the `fdelproplist' function. */
+#undef HAVE_FDELPROPLIST
+
+/* Define to 1 if you have the `fgetea' function. */
+#undef HAVE_FGETEA
+
+/* Define to 1 if you have the `fgetproplist' function. */
+#undef HAVE_FGETPROPLIST
+
+/* Define to 1 if you have the `fgetxattr' function. */
+#undef HAVE_FGETXATTR
+
+/* Define to 1 if you have the `flistea' function. */
+#undef HAVE_FLISTEA
+
+/* Define to 1 if you have the `flistxattr' function. */
+#undef HAVE_FLISTXATTR
+
+/* Define to 1 if you have the `fremoveea' function. */
+#undef HAVE_FREMOVEEA
+
+/* Define to 1 if you have the `fremovexattr' function. */
+#undef HAVE_FREMOVEXATTR
+
+/* Define to 1 if you have the `fsetea' function. */
+#undef HAVE_FSETEA
+
+/* Define to 1 if you have the `fsetproplist' function. */
+#undef HAVE_FSETPROPLIST
+
+/* Define to 1 if you have the `fsetxattr' function. */
+#undef HAVE_FSETXATTR
+
 /* Define if memcpy is buggy */
 #undef HAVE_GCC_MEMCPY_BUG
 
 /* Define to 1 if you have the `getcwd' function. */
 #undef HAVE_GETCWD
+
+/* Define to 1 if you have the `getea' function. */
+#undef HAVE_GETEA
 
 /* Define to 1 if you have the `gethostname' function. */
 #undef HAVE_GETHOSTNAME
@@ -185,11 +287,20 @@
 /* Define to 1 if you have the `getpagesize' function. */
 #undef HAVE_GETPAGESIZE
 
+/* Define to 1 if you have the `getproplist' function. */
+#undef HAVE_GETPROPLIST
+
 /* Define to 1 if you have the `gettimeofday' function. */
 #undef HAVE_GETTIMEOFDAY
 
 /* Define to 1 if you have the `getusershell' function. */
 #undef HAVE_GETUSERSHELL
+
+/* Define to 1 if you have the `getxattr' function. */
+#undef HAVE_GETXATTR
+
+/* Define to 1 if you have the `get_proplist_entry' function. */
+#undef HAVE_GET_PROPLIST_ENTRY
 
 /* Whether to enable GSSAPI support */
 #undef HAVE_GSSAPI
@@ -217,6 +328,12 @@
 
 /* LARGEFILE support */
 #undef HAVE_LARGEFILE_SUPPORT
+
+/* Define to 1 if you have the `lgetea' function. */
+#undef HAVE_LGETEA
+
+/* Define to 1 if you have the `lgetxattr' function. */
+#undef HAVE_LGETXATTR
 
 /* Define to 1 if you have the `crypt' library (-lcrypt). */
 #undef HAVE_LIBCRYPT
@@ -263,6 +380,18 @@
 /* Define to 1 if you have the <linux/xqm.h> header file. */
 #undef HAVE_LINUX_XQM_H
 
+/* Define to 1 if you have the `listea' function. */
+#undef HAVE_LISTEA
+
+/* Define to 1 if you have the `listxattr' function. */
+#undef HAVE_LISTXATTR
+
+/* Define to 1 if you have the `llistea' function. */
+#undef HAVE_LLISTEA
+
+/* Define to 1 if you have the `llistxattr' function. */
+#undef HAVE_LLISTXATTR
+
 /* Define to 1 if you have the <locale.h> header file. */
 #undef HAVE_LOCALE_H
 
@@ -271,6 +400,18 @@
 
 /* Define if long long is a valid data type */
 #undef HAVE_LONG_LONG
+
+/* Define to 1 if you have the `lremoveea' function. */
+#undef HAVE_LREMOVEEA
+
+/* Define to 1 if you have the `lremovexattr' function. */
+#undef HAVE_LREMOVEXATTR
+
+/* Define to 1 if you have the `lsetea' function. */
+#undef HAVE_LSETEA
+
+/* Define to 1 if you have the `lsetxattr' function. */
+#undef HAVE_LSETXATTR
 
 /* Define to 1 if you have the `memcpy' function. */
 #undef HAVE_MEMCPY
@@ -302,6 +443,9 @@
 /* Define to 1 if you have the <netdb.h> header file. */
 #undef HAVE_NETDB_H
 
+/* Enable ACL code */
+#undef HAVE_NFSv4_ACLS
+
 /* Define to 1 if you have the `nl_langinfo' function. */
 #undef HAVE_NL_LANGINFO
 
@@ -311,11 +455,20 @@
 /* Define to 1 if you have the `pread' function. */
 #undef HAVE_PREAD
 
+/* Define to 1 if you have the `pselect' function. */
+#undef HAVE_PSELECT
+
 /* Define to 1 if you have the `pwrite' function. */
 #undef HAVE_PWRITE
 
 /* Define if quad_t is a valid data type */
 #undef HAVE_QUAD_T
+
+/* Define to 1 if you have the `removeea' function. */
+#undef HAVE_REMOVEEA
+
+/* Define to 1 if you have the `removexattr' function. */
+#undef HAVE_REMOVEXATTR
 
 /* Define to 1 if you have the `rmdir' function. */
 #undef HAVE_RMDIR
@@ -338,17 +491,29 @@
 /* Whether sendfile() is available */
 #undef HAVE_SENDFILE
 
+/* Define to 1 if you have the `setea' function. */
+#undef HAVE_SETEA
+
 /* Define to 1 if you have the `setlinebuf' function. */
 #undef HAVE_SETLINEBUF
 
 /* Define to 1 if you have the `setlocale' function. */
 #undef HAVE_SETLOCALE
 
+/* Define to 1 if you have the `setproplist' function. */
+#undef HAVE_SETPROPLIST
+
+/* Define to 1 if you have the `setxattr' function. */
+#undef HAVE_SETXATTR
+
 /* Define to 1 if you have the <sgtty.h> header file. */
 #undef HAVE_SGTTY_H
 
 /* Define if you have the shl_load function. */
 #undef HAVE_SHL_LOAD
+
+/* Define to 1 if you have the `sizeof_proplist_entry' function. */
+#undef HAVE_SIZEOF_PROPLIST_ENTRY
 
 /* Define to 1 if you have the `snprintf' function. */
 #undef HAVE_SNPRINTF
@@ -417,15 +582,24 @@
 /* Define to 1 if you have the <syslog.h> header file. */
 #undef HAVE_SYSLOG_H
 
+/* Define to 1 if you have the <sys/attributes.h> header file. */
+#undef HAVE_SYS_ATTRIBUTES_H
+
 /* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.
    */
 #undef HAVE_SYS_DIR_H
+
+/* Define to 1 if you have the <sys/ea.h> header file. */
+#undef HAVE_SYS_EA_H
 
 /* Define if sys_errlist declaration exists */
 #undef HAVE_SYS_ERRLIST
 
 /* Define to 1 if you have the <sys/errno.h> header file. */
 #undef HAVE_SYS_ERRNO_H
+
+/* Define to 1 if you have the <sys/extattr.h> header file. */
+#undef HAVE_SYS_EXTATTR_H
 
 /* Define to 1 if you have the <sys/fcntl.h> header file. */
 #undef HAVE_SYS_FCNTL_H
@@ -478,6 +652,9 @@
 
 /* Define to 1 if you have <sys/wait.h> that is POSIX.1 compatible. */
 #undef HAVE_SYS_WAIT_H
+
+/* Define to 1 if you have the <sys/xattr.h> header file. */
+#undef HAVE_SYS_XATTR_H
 
 /* Define to 1 if you have the <termios.h> header file. */
 #undef HAVE_TERMIOS_H
@@ -534,9 +711,6 @@
 /* Whether (linux) sendfile() is broken */
 #undef LINUX_BROKEN_SENDFILE_API
 
-/* Path to the log file */
-#undef LOGFILEPATH
-
 /* Define if compiling for MacOS X Server */
 #undef MACOSX_SERVER
 
@@ -551,11 +725,14 @@
 /* Define if dlsym() requires a leading underscore in symbol names. */
 #undef NEED_USCORE
 
-/* Define if OS is FreeBSD */
+/* Define if OS is NetBSD */
 #undef NETBSD
 
 /* Define if DDP should be disabled */
 #undef NO_DDP
+
+/* Define to 1 if your C compiler doesn't accept -c and -o together. */
+#undef NO_MINUS_C_MINUS_O
 
 /* Define if Quota support should be disabled */
 #undef NO_QUOTA_SUPPORT
@@ -565,6 +742,9 @@
 
 /* Define if the OpenSSL DHX modules should be built */
 #undef OPENSSL_DHX
+
+/* errno returned by open with O_NOFOLLOW */
+#undef OPEN_NOFOLLOW_ERRNO
 
 /* Name of package */
 #undef PACKAGE
@@ -583,6 +763,9 @@
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
+
+/* Whether the realpath function allows NULL */
+#undef REALPATH_TAKES_NULL
 
 /* Define as the return type of signal handlers (`int' or `void'). */
 #undef RETSIGTYPE
@@ -644,8 +827,17 @@
 /* Whether sendfile should be used */
 #undef WITH_SENDFILE
 
+/* xattr functions have additional options */
+#undef XATTR_ADD_OPT
+
+/* AT file source */
+#undef _ATFILE_SOURCE
+
 /* _FILE_OFFSET_BITS (for LARGEFILE support) */
 #undef _FILE_OFFSET_BITS
+
+/* Whether to use GNU libc extensions */
+#undef _GNU_SOURCE
 
 /* Compatibility macro */
 #undef _ISOC9X_SOURCE

@@ -1,5 +1,5 @@
 /*
- * $Id: uams_passwd.c,v 1.19.2.1.2.9.2.2 2006/12/03 16:23:08 didg Exp $
+ * $Id: uams_passwd.c,v 1.31 2010/03/30 12:44:35 franklahm Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * Copyright (c) 1999 Adrian Sun (asun@u.washington.edu) 
@@ -68,14 +68,16 @@ char *strchr (), *strrchr ();
 #include <sia.h>
 #include <siad.h>
 
-static char *clientname;
+static const char *clientname;
 #endif /* TRU64 */
 
-extern void append(void *, const char *, int);
+/*XXX in etc/papd/file.h */
+struct papfile;
+extern UAM_MODULE_EXPORT void append(struct papfile *, const char *, int);
 
 static int pwd_login(void *obj, char *username, int ulen, struct passwd **uam_pwd,
-                        char *ibuf, int ibuflen,
-                        char *rbuf _U_, int *rbuflen _U_)
+                        char *ibuf, size_t ibuflen,
+                        char *rbuf _U_, size_t *rbuflen _U_)
 {
     char  *p;
     struct passwd *pwd;
@@ -96,7 +98,7 @@ static int pwd_login(void *obj, char *username, int ulen, struct passwd **uam_pw
     ibuf[ PASSWDLEN ] = '\0';
 
     if (( pwd = uam_getname(obj, username, ulen)) == NULL ) {
-        return AFPERR_PARAM;
+        return AFPERR_NOTAUTH;
     }
 
     LOG(log_info, logtype_uams, "cleartext login: %s", username);
@@ -156,11 +158,11 @@ static int pwd_login(void *obj, char *username, int ulen, struct passwd **uam_pw
 
 /* cleartxt login */
 static int passwd_login(void *obj, struct passwd **uam_pwd,
-                        char *ibuf, int ibuflen,
-                        char *rbuf, int *rbuflen)
+                        char *ibuf, size_t ibuflen,
+                        char *rbuf, size_t *rbuflen)
 {
     char *username;
-    int len, ulen;
+    size_t len, ulen;
 
     *rbuflen = 0;
 
@@ -168,7 +170,7 @@ static int passwd_login(void *obj, struct passwd **uam_pwd,
                              (void *) &username, &ulen) < 0)
         return AFPERR_MISC;
 
-    if (ibuflen <= 1) {
+    if (ibuflen < 2) {
         return( AFPERR_PARAM );
     }
 
@@ -197,11 +199,11 @@ static int passwd_login(void *obj, struct passwd **uam_pwd,
     len bytes unicode name
 */
 static int passwd_login_ext(void *obj, char *uname, struct passwd **uam_pwd,
-                        char *ibuf, int ibuflen,
-                        char *rbuf, int *rbuflen)
+                        char *ibuf, size_t ibuflen,
+                        char *rbuf, size_t *rbuflen)
 {
     char       *username;
-    int        len, ulen;
+    size_t     len, ulen;
     u_int16_t  temp16;
 
     *rbuflen = 0;
@@ -228,7 +230,7 @@ static int passwd_login_ext(void *obj, char *uname, struct passwd **uam_pwd,
 /* change passwd */
 static int passwd_changepw(void *obj, char *username,
                            struct passwd *pwd, char *ibuf,
-                           int ibuflen, char *rbuf, int *rbuflen)
+                           size_t ibuflen, char *rbuf, size_t *rbuflen)
 {
 #ifdef SHADOWPW
     struct spwd *sp;
@@ -271,9 +273,7 @@ static int passwd_changepw(void *obj, char *username,
 
 
 /* Printer ClearTxtUAM login */
-static int passwd_printer(start, stop, username, out)
-char	*start, *stop, *username;
-struct papfile	*out;
+static int passwd_printer(char	*start, char *stop, char *username, struct papfile *out)
 {
     struct passwd *pwd;
 #ifdef SHADOWPW
@@ -378,19 +378,6 @@ struct papfile	*out;
     return(0);
 }
 
-#ifdef ATACC
-int uam_setup(const char *path)
-{
-    if (uam_register_fn(UAM_SERVER_LOGIN_EXT, path, "Cleartxt Passwrd",
-                     passwd_login, NULL, NULL, passwd_login_ext) < 0)
-        return -1;
-    if (uam_register_fn(UAM_SERVER_PRINTAUTH, path, "ClearTxtUAM",
-                     passwd_printer) < 0)
-        return -1;
-
-    return 0;
-}
-#else 
 static int uam_setup(const char *path)
 {
     if (uam_register(UAM_SERVER_LOGIN_EXT, path, "Cleartxt Passwrd",
@@ -402,8 +389,6 @@ static int uam_setup(const char *path)
 
     return 0;
 }
-
-#endif
 
 static void uam_cleanup(void)
 {

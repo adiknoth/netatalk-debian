@@ -1,5 +1,5 @@
 /*
- * $Id: afp_asp.c,v 1.18.6.6.2.2 2008/11/25 15:16:31 didg Exp $
+ * $Id: afp_asp.c,v 1.29 2010/03/09 06:55:12 franklahm Exp $
  *
  * Copyright (c) 1997 Adrian Sun (asun@zoology.washington.edu)
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
@@ -43,8 +43,6 @@
 #include "uid.h"
 #endif /* FORCE_UIDGID */
 
-extern struct oforks	*writtenfork;
-
 static AFPObj *child;
 
 static void afp_authprint_remove(AFPObj *);
@@ -53,6 +51,10 @@ static void afp_asp_close(AFPObj *obj)
 {
     ASP asp = obj->handle;
 
+    if (seteuid( obj->uid ) < 0) {
+        LOG(log_error, logtype_afpd, "can't seteuid back %s", strerror(errno));
+        exit(EXITERR_SYS);
+    }
     close_all_vol();
     if (obj->options.authprintdir) afp_authprint_remove(obj);
 
@@ -79,7 +81,7 @@ static void afp_authprint_remove(AFPObj *obj)
 
     memset( addr_filename_buff, 0, 256 );
 
-    if(stat(addr_filename, &cap_st) == 0) {
+    if(lstat(addr_filename, &cap_st) == 0) {
 	if( S_ISREG(cap_st.st_mode) ) {
 	    int len;
 	    int capfd = open( addr_filename, O_RDONLY );
@@ -145,7 +147,7 @@ static void afp_asp_die(const int sig)
 /* -----------------------------
  * SIGUSR1
  */
-static void afp_asp_timedown()
+static void afp_asp_timedown(int sig _U_)
 {
     struct sigaction	sv;
     struct itimerval	it;
@@ -158,7 +160,7 @@ static void afp_asp_timedown()
     it.it_interval.tv_usec = 0;
     it.it_value.tv_sec = 300;
     it.it_value.tv_usec = 0;
-    if ( setitimer( ITIMER_REAL, &it, 0 ) < 0 ) {
+    if ( setitimer( ITIMER_REAL, &it, NULL ) < 0 ) {
         LOG(log_error, logtype_afpd, "afp_timedown: setitimer: %s", strerror(errno) );
         afp_asp_die(EXITERR_SYS);
     }
@@ -169,7 +171,7 @@ static void afp_asp_timedown()
     sigaddset(&sv.sa_mask, SIGHUP);
     sigaddset(&sv.sa_mask, SIGTERM);
     sv.sa_flags = SA_RESTART;
-    if ( sigaction( SIGALRM, &sv, 0 ) < 0 ) {
+    if ( sigaction( SIGALRM, &sv, NULL ) < 0 ) {
         LOG(log_error, logtype_afpd, "afp_timedown: sigaction: %s", strerror(errno) );
         afp_asp_die(EXITERR_SYS);
     }
@@ -178,7 +180,7 @@ static void afp_asp_timedown()
     sv.sa_handler = SIG_IGN;
     sigemptyset( &sv.sa_mask );
     sv.sa_flags = SA_RESTART;
-    if ( sigaction( SIGUSR1, &sv, 0 ) < 0 ) {
+    if ( sigaction( SIGUSR1, &sv, NULL ) < 0 ) {
         LOG(log_error, logtype_afpd, "afp_timedown: sigaction SIGUSR1: %s", strerror(errno) );
         afp_asp_die(EXITERR_SYS);
     }
@@ -189,7 +191,7 @@ static void afp_asp_timedown()
 */
 extern volatile int reload_request;
 
-static void afp_asp_reload()
+static void afp_asp_reload(int sig _U_)
 {
     reload_request = 1;
 }
@@ -213,6 +215,7 @@ void afp_over_asp(AFPObj *obj)
     int ccnt = 0;
 #endif    
 
+    AFPobj = obj;
     obj->exit = afp_asp_die;
     obj->reply = (int (*)()) asp_cmdreply;
     obj->attention = (int (*)(void *, AFPUserBytes)) asp_attention;
@@ -233,7 +236,7 @@ void afp_over_asp(AFPObj *obj)
     sigaddset(&action.sa_mask, SIGUSR2);
 #endif    
     action.sa_flags = SA_RESTART;
-    if ( sigaction( SIGHUP, &action, 0 ) < 0 ) {
+    if ( sigaction( SIGHUP, &action, NULL ) < 0 ) {
         LOG(log_error, logtype_afpd, "afp_over_asp: sigaction: %s", strerror(errno) );
         afp_asp_die(EXITERR_SYS);
     }
@@ -247,7 +250,7 @@ void afp_over_asp(AFPObj *obj)
     sigaddset(&action.sa_mask, SIGUSR2);
 #endif    
     action.sa_flags = SA_RESTART;
-    if ( sigaction( SIGTERM, &action, 0 ) < 0 ) {
+    if ( sigaction( SIGTERM, &action, NULL ) < 0 ) {
         LOG(log_error, logtype_afpd, "afp_over_asp: sigaction: %s", strerror(errno) );
         afp_asp_die(EXITERR_SYS);
     }
@@ -260,7 +263,7 @@ void afp_over_asp(AFPObj *obj)
     sigaddset(&action.sa_mask, SIGUSR1);
     sigaddset(&action.sa_mask, SIGHUP);
     action.sa_flags = SA_RESTART;
-    if ( sigaction( SIGUSR2, &action, 0) < 0 ) {
+    if ( sigaction( SIGUSR2, &action, NULL) < 0 ) {
         LOG(log_error, logtype_afpd, "afp_over_asp: sigaction: %s", strerror(errno) );
         afp_asp_die(EXITERR_SYS);
     }
@@ -275,7 +278,7 @@ void afp_over_asp(AFPObj *obj)
     sigaddset(&action.sa_mask, SIGUSR2);
 #endif    
     action.sa_flags = SA_RESTART;
-    if ( sigaction( SIGUSR1, &action, 0 ) < 0 ) {
+    if ( sigaction( SIGUSR1, &action, NULL ) < 0 ) {
         LOG(log_error, logtype_afpd, "afp_over_asp: sigaction: %s", strerror(errno) );
         afp_asp_die(EXITERR_SYS);
     }

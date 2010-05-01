@@ -1,5 +1,5 @@
 /*
- * $Id: endian.h,v 1.7.12.2 2009/01/10 20:14:29 didg Exp $
+ * $Id: endian.h,v 1.9 2009/01/06 20:05:00 morgana Exp $
  *
  * Copyright (c) 1990,1991 Regents of The University of Michigan.
  * All Rights Reserved. See COPYRIGHT.

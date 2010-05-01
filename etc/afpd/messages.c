@@ -1,5 +1,5 @@
 /*
- * $Id: messages.c,v 1.16.6.1.2.7.2.1 2005/09/27 10:40:41 didg Exp $
+ * $Id: messages.c,v 1.23 2009/11/24 15:44:40 didg Exp $
  *
  * Copyright (c) 1997 Adrian Sun (asun@zoology.washington.edu)
  * All Rights Reserved.  See COPYRIGHT.
@@ -35,8 +35,7 @@ void setmessage(const char *message)
     strlcpy(servermesg, message, MAXMESGSIZE);
 }
 
-void readmessage(obj)
-AFPObj *obj;
+void readmessage(AFPObj *obj)
 {
     /* Read server message from file defined as SERVERTEXT */
 #ifdef SERVERTEXT
@@ -60,12 +59,12 @@ AFPObj *obj;
     sprintf(filename, "%s/message.%d", SERVERTEXT, getpid());
 
 #ifdef DEBUG
-    LOG(log_debug, logtype_afpd, "Reading file %s ", filename);
-#endif /* DEBUG */
+    LOG(log_debug9, logtype_afpd, "Reading file %s ", filename);
+#endif 
 
     message=fopen(filename, "r");
     if (message==NULL) {
-        LOG(log_info, logtype_afpd, "Unable to open file %s", filename);
+        /* try without the process id */
         sprintf(filename, "%s/message", SERVERTEXT);
         message=fopen(filename, "r");
     }
@@ -96,6 +95,7 @@ AFPObj *obj;
         /* Drop privs again, failing this is very bad */
         if (seteuid(euid) < 0) {
             LOG(log_error, logtype_afpd, "Could not switch back to uid %d: %s", euid, strerror(errno));
+            exit(EXITERR_SYS);
         }
 
         if (rc < 0) {
@@ -103,20 +103,17 @@ AFPObj *obj;
         }
 #ifdef DEBUG
         else {
-            LOG(log_info, logtype_afpd, "Deleted %s", filename);
+            LOG(log_debug9, logtype_afpd, "Deleted %s", filename);
         }
 
-        LOG(log_info, logtype_afpd, "Set server message to \"%s\"", servermesg);
-#endif /* DEBUG */
+        LOG(log_debug9, logtype_afpd, "Set server message to \"%s\"", servermesg);
+#endif
     }
     free(filename);
 #endif /* SERVERTEXT */
 }
 
-int afp_getsrvrmesg(obj, ibuf, ibuflen, rbuf, rbuflen)
-AFPObj *obj;
-char *ibuf, *rbuf;
-int ibuflen _U_, *rbuflen;
+int afp_getsrvrmesg(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf, size_t *rbuflen)
 {
     char *message;
     u_int16_t type, bitmap;
@@ -132,12 +129,20 @@ int ibuflen _U_, *rbuflen;
     memcpy(&type, ibuf + 2, sizeof(type));
     memcpy(&bitmap, ibuf + 4, sizeof(bitmap));
 
+    message = servermesg;
     switch (ntohs(type)) {
     case AFPMESG_LOGIN: /* login */
-        message = obj->options.loginmesg;
+        /* at least TIGER loses server messages
+         * if it receives a server msg attention before
+         * it has asked the login msg...
+         * Workaround: concatenate the two if any, ugly.
+         */
+        if (*message && *obj->options.loginmesg) {
+            strlcat(message, " - ", MAXMESGSIZE);
+        }
+        strlcat(message, obj->options.loginmesg, MAXMESGSIZE);
         break;
     case AFPMESG_SERVER: /* server */
-        message = servermesg;
         break;
     default:
         return AFPERR_BITMAP;
@@ -185,6 +190,6 @@ int ibuflen _U_, *rbuflen;
 	*rbuflen += 1;
     }
     *rbuflen += outlen;
-
+    *message = 0;
     return AFP_OK;
 }

@@ -58,18 +58,29 @@ am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
 	$(top_srcdir)/macros/ssl-check.m4 \
 	$(top_srcdir)/macros/summary.m4 \
 	$(top_srcdir)/macros/tcp-wrappers.m4 \
-	$(top_srcdir)/macros/util.m4 $(top_srcdir)/configure.in
+	$(top_srcdir)/macros/util.m4 $(top_srcdir)/macros/webmin.m4 \
+	$(top_srcdir)/configure.in
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
-libcnid_cdb_la_LIBADD =
-am_libcnid_cdb_la_OBJECTS = cnid_cdb_add.lo cnid_cdb_close.lo \
-	cnid_cdb_delete.lo cnid_cdb_get.lo cnid_cdb_lookup.lo \
-	cnid_cdb_open.lo cnid_cdb_resolve.lo cnid_cdb_update.lo
+libcnid_cdb_la_DEPENDENCIES =
+am_libcnid_cdb_la_OBJECTS = libcnid_cdb_la-cnid_cdb_add.lo \
+	libcnid_cdb_la-cnid_cdb_close.lo \
+	libcnid_cdb_la-cnid_cdb_delete.lo \
+	libcnid_cdb_la-cnid_cdb_get.lo \
+	libcnid_cdb_la-cnid_cdb_lookup.lo \
+	libcnid_cdb_la-cnid_cdb_open.lo \
+	libcnid_cdb_la-cnid_cdb_resolve.lo \
+	libcnid_cdb_la-cnid_cdb_update.lo \
+	libcnid_cdb_la-cnid_cdb_rebuild_add.lo
 libcnid_cdb_la_OBJECTS = $(am_libcnid_cdb_la_OBJECTS)
+libcnid_cdb_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libcnid_cdb_la_CFLAGS) \
+	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+@USE_CDB_BACKEND_TRUE@am_libcnid_cdb_la_rpath =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -103,7 +114,7 @@ BDB_LIBS = @BDB_LIBS@
 BDB_PATH = @BDB_PATH@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
-CFLAGS = @CFLAGS@ @BDB_CFLAGS@
+CFLAGS = @CFLAGS@
 COMPILE_64BIT_KMODULE = @COMPILE_64BIT_KMODULE@
 COMPILE_KERNEL_GCC = @COMPILE_KERNEL_GCC@
 CPP = @CPP@
@@ -145,11 +156,12 @@ KLDFLAGS = @KLDFLAGS@
 KRB5_CONFIG = @KRB5_CONFIG@
 LDFLAGS = @LDFLAGS@
 LIBADD_DL = @LIBADD_DL@
+LIBATALK_ACLS = @LIBATALK_ACLS@
 LIBGCRYPT_CFLAGS = @LIBGCRYPT_CFLAGS@
 LIBGCRYPT_CONFIG = @LIBGCRYPT_CONFIG@
 LIBGCRYPT_LIBS = @LIBGCRYPT_LIBS@
 LIBOBJS = @LIBOBJS@
-LIBS = @LIBS@ @BDB_LIBS@
+LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
@@ -166,8 +178,13 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PAMDIR = @PAMDIR@
+PAM_ACCOUNT = @PAM_ACCOUNT@
+PAM_AUTH = @PAM_AUTH@
 PAM_CFLAGS = @PAM_CFLAGS@
+PAM_DIRECTIVE = @PAM_DIRECTIVE@
 PAM_LIBS = @PAM_LIBS@
+PAM_PASSWORD = @PAM_PASSWORD@
+PAM_SESSION = @PAM_SESSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
 PKGCONFDIR = @PKGCONFDIR@
@@ -186,6 +203,11 @@ SSL_LIBS = @SSL_LIBS@
 STRIP = @STRIP@
 UAMS_PATH = @UAMS_PATH@
 VERSION = @VERSION@
+WEBMIN_PASS = @WEBMIN_PASS@
+WEBMIN_PATH = @WEBMIN_PATH@
+WEBMIN_PORT = @WEBMIN_PORT@
+WEBMIN_USER = @WEBMIN_USER@
+WEBMIN_VERSION = @WEBMIN_VERSION@
 WRAP_LIBS = @WRAP_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
@@ -243,17 +265,20 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-noinst_LTLIBRARIES = libcnid_cdb.la
 libcnid_cdb_la_SOURCES = cnid_cdb_add.c \
-		         cnid_cdb_close.c \
+		     cnid_cdb_close.c \
 			 cnid_cdb_delete.c \
 			 cnid_cdb_get.c \
 			 cnid_cdb_lookup.c \
 			 cnid_cdb_open.c \
 			 cnid_cdb_resolve.c \
 			 cnid_cdb_update.c \
+			 cnid_cdb_rebuild_add.c \
 			 cnid_cdb.h
 
+libcnid_cdb_la_CFLAGS = @BDB_CFLAGS@
+libcnid_cdb_la_LIBADD = @BDB_LIBS@
+@USE_CDB_BACKEND_TRUE@noinst_LTLIBRARIES = libcnid_cdb.la
 noinst_HEADERS = cnid_cdb_meta.h cnid_cdb_private.h 
 EXTRA_DIST = README cnid_cdb_meta.c cnid_cdb_nextid.c
 all: all-am
@@ -269,9 +294,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  libatalk/cnid/cdb/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  libatalk/cnid/cdb/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  libatalk/cnid/cdb/Makefile
+	  $(AUTOMAKE) --foreign  libatalk/cnid/cdb/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -299,7 +324,7 @@ clean-noinstLTLIBRARIES:
 	  rm -f "$${dir}/so_locations"; \
 	done
 libcnid_cdb.la: $(libcnid_cdb_la_OBJECTS) $(libcnid_cdb_la_DEPENDENCIES) 
-	$(LINK)  $(libcnid_cdb_la_OBJECTS) $(libcnid_cdb_la_LIBADD) $(LIBS)
+	$(libcnid_cdb_la_LINK) $(am_libcnid_cdb_la_rpath) $(libcnid_cdb_la_OBJECTS) $(libcnid_cdb_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -307,14 +332,15 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cnid_cdb_add.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cnid_cdb_close.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cnid_cdb_delete.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cnid_cdb_get.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cnid_cdb_lookup.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cnid_cdb_open.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cnid_cdb_resolve.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cnid_cdb_update.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcnid_cdb_la-cnid_cdb_add.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcnid_cdb_la-cnid_cdb_close.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcnid_cdb_la-cnid_cdb_delete.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcnid_cdb_la-cnid_cdb_get.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcnid_cdb_la-cnid_cdb_lookup.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcnid_cdb_la-cnid_cdb_open.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcnid_cdb_la-cnid_cdb_rebuild_add.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcnid_cdb_la-cnid_cdb_resolve.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcnid_cdb_la-cnid_cdb_update.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -336,6 +362,69 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
+
+libcnid_cdb_la-cnid_cdb_add.lo: cnid_cdb_add.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcnid_cdb_la_CFLAGS) $(CFLAGS) -MT libcnid_cdb_la-cnid_cdb_add.lo -MD -MP -MF $(DEPDIR)/libcnid_cdb_la-cnid_cdb_add.Tpo -c -o libcnid_cdb_la-cnid_cdb_add.lo `test -f 'cnid_cdb_add.c' || echo '$(srcdir)/'`cnid_cdb_add.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcnid_cdb_la-cnid_cdb_add.Tpo $(DEPDIR)/libcnid_cdb_la-cnid_cdb_add.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cnid_cdb_add.c' object='libcnid_cdb_la-cnid_cdb_add.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcnid_cdb_la_CFLAGS) $(CFLAGS) -c -o libcnid_cdb_la-cnid_cdb_add.lo `test -f 'cnid_cdb_add.c' || echo '$(srcdir)/'`cnid_cdb_add.c
+
+libcnid_cdb_la-cnid_cdb_close.lo: cnid_cdb_close.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcnid_cdb_la_CFLAGS) $(CFLAGS) -MT libcnid_cdb_la-cnid_cdb_close.lo -MD -MP -MF $(DEPDIR)/libcnid_cdb_la-cnid_cdb_close.Tpo -c -o libcnid_cdb_la-cnid_cdb_close.lo `test -f 'cnid_cdb_close.c' || echo '$(srcdir)/'`cnid_cdb_close.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcnid_cdb_la-cnid_cdb_close.Tpo $(DEPDIR)/libcnid_cdb_la-cnid_cdb_close.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cnid_cdb_close.c' object='libcnid_cdb_la-cnid_cdb_close.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcnid_cdb_la_CFLAGS) $(CFLAGS) -c -o libcnid_cdb_la-cnid_cdb_close.lo `test -f 'cnid_cdb_close.c' || echo '$(srcdir)/'`cnid_cdb_close.c
+
+libcnid_cdb_la-cnid_cdb_delete.lo: cnid_cdb_delete.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcnid_cdb_la_CFLAGS) $(CFLAGS) -MT libcnid_cdb_la-cnid_cdb_delete.lo -MD -MP -MF $(DEPDIR)/libcnid_cdb_la-cnid_cdb_delete.Tpo -c -o libcnid_cdb_la-cnid_cdb_delete.lo `test -f 'cnid_cdb_delete.c' || echo '$(srcdir)/'`cnid_cdb_delete.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcnid_cdb_la-cnid_cdb_delete.Tpo $(DEPDIR)/libcnid_cdb_la-cnid_cdb_delete.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cnid_cdb_delete.c' object='libcnid_cdb_la-cnid_cdb_delete.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcnid_cdb_la_CFLAGS) $(CFLAGS) -c -o libcnid_cdb_la-cnid_cdb_delete.lo `test -f 'cnid_cdb_delete.c' || echo '$(srcdir)/'`cnid_cdb_delete.c
+
+libcnid_cdb_la-cnid_cdb_get.lo: cnid_cdb_get.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcnid_cdb_la_CFLAGS) $(CFLAGS) -MT libcnid_cdb_la-cnid_cdb_get.lo -MD -MP -MF $(DEPDIR)/libcnid_cdb_la-cnid_cdb_get.Tpo -c -o libcnid_cdb_la-cnid_cdb_get.lo `test -f 'cnid_cdb_get.c' || echo '$(srcdir)/'`cnid_cdb_get.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcnid_cdb_la-cnid_cdb_get.Tpo $(DEPDIR)/libcnid_cdb_la-cnid_cdb_get.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cnid_cdb_get.c' object='libcnid_cdb_la-cnid_cdb_get.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcnid_cdb_la_CFLAGS) $(CFLAGS) -c -o libcnid_cdb_la-cnid_cdb_get.lo `test -f 'cnid_cdb_get.c' || echo '$(srcdir)/'`cnid_cdb_get.c
+
+libcnid_cdb_la-cnid_cdb_lookup.lo: cnid_cdb_lookup.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcnid_cdb_la_CFLAGS) $(CFLAGS) -MT libcnid_cdb_la-cnid_cdb_lookup.lo -MD -MP -MF $(DEPDIR)/libcnid_cdb_la-cnid_cdb_lookup.Tpo -c -o libcnid_cdb_la-cnid_cdb_lookup.lo `test -f 'cnid_cdb_lookup.c' || echo '$(srcdir)/'`cnid_cdb_lookup.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcnid_cdb_la-cnid_cdb_lookup.Tpo $(DEPDIR)/libcnid_cdb_la-cnid_cdb_lookup.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cnid_cdb_lookup.c' object='libcnid_cdb_la-cnid_cdb_lookup.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcnid_cdb_la_CFLAGS) $(CFLAGS) -c -o libcnid_cdb_la-cnid_cdb_lookup.lo `test -f 'cnid_cdb_lookup.c' || echo '$(srcdir)/'`cnid_cdb_lookup.c
+
+libcnid_cdb_la-cnid_cdb_open.lo: cnid_cdb_open.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcnid_cdb_la_CFLAGS) $(CFLAGS) -MT libcnid_cdb_la-cnid_cdb_open.lo -MD -MP -MF $(DEPDIR)/libcnid_cdb_la-cnid_cdb_open.Tpo -c -o libcnid_cdb_la-cnid_cdb_open.lo `test -f 'cnid_cdb_open.c' || echo '$(srcdir)/'`cnid_cdb_open.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcnid_cdb_la-cnid_cdb_open.Tpo $(DEPDIR)/libcnid_cdb_la-cnid_cdb_open.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cnid_cdb_open.c' object='libcnid_cdb_la-cnid_cdb_open.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcnid_cdb_la_CFLAGS) $(CFLAGS) -c -o libcnid_cdb_la-cnid_cdb_open.lo `test -f 'cnid_cdb_open.c' || echo '$(srcdir)/'`cnid_cdb_open.c
+
+libcnid_cdb_la-cnid_cdb_resolve.lo: cnid_cdb_resolve.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcnid_cdb_la_CFLAGS) $(CFLAGS) -MT libcnid_cdb_la-cnid_cdb_resolve.lo -MD -MP -MF $(DEPDIR)/libcnid_cdb_la-cnid_cdb_resolve.Tpo -c -o libcnid_cdb_la-cnid_cdb_resolve.lo `test -f 'cnid_cdb_resolve.c' || echo '$(srcdir)/'`cnid_cdb_resolve.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcnid_cdb_la-cnid_cdb_resolve.Tpo $(DEPDIR)/libcnid_cdb_la-cnid_cdb_resolve.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cnid_cdb_resolve.c' object='libcnid_cdb_la-cnid_cdb_resolve.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcnid_cdb_la_CFLAGS) $(CFLAGS) -c -o libcnid_cdb_la-cnid_cdb_resolve.lo `test -f 'cnid_cdb_resolve.c' || echo '$(srcdir)/'`cnid_cdb_resolve.c
+
+libcnid_cdb_la-cnid_cdb_update.lo: cnid_cdb_update.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcnid_cdb_la_CFLAGS) $(CFLAGS) -MT libcnid_cdb_la-cnid_cdb_update.lo -MD -MP -MF $(DEPDIR)/libcnid_cdb_la-cnid_cdb_update.Tpo -c -o libcnid_cdb_la-cnid_cdb_update.lo `test -f 'cnid_cdb_update.c' || echo '$(srcdir)/'`cnid_cdb_update.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcnid_cdb_la-cnid_cdb_update.Tpo $(DEPDIR)/libcnid_cdb_la-cnid_cdb_update.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cnid_cdb_update.c' object='libcnid_cdb_la-cnid_cdb_update.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcnid_cdb_la_CFLAGS) $(CFLAGS) -c -o libcnid_cdb_la-cnid_cdb_update.lo `test -f 'cnid_cdb_update.c' || echo '$(srcdir)/'`cnid_cdb_update.c
+
+libcnid_cdb_la-cnid_cdb_rebuild_add.lo: cnid_cdb_rebuild_add.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcnid_cdb_la_CFLAGS) $(CFLAGS) -MT libcnid_cdb_la-cnid_cdb_rebuild_add.lo -MD -MP -MF $(DEPDIR)/libcnid_cdb_la-cnid_cdb_rebuild_add.Tpo -c -o libcnid_cdb_la-cnid_cdb_rebuild_add.lo `test -f 'cnid_cdb_rebuild_add.c' || echo '$(srcdir)/'`cnid_cdb_rebuild_add.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcnid_cdb_la-cnid_cdb_rebuild_add.Tpo $(DEPDIR)/libcnid_cdb_la-cnid_cdb_rebuild_add.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cnid_cdb_rebuild_add.c' object='libcnid_cdb_la-cnid_cdb_rebuild_add.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcnid_cdb_la_CFLAGS) $(CFLAGS) -c -o libcnid_cdb_la-cnid_cdb_rebuild_add.lo `test -f 'cnid_cdb_rebuild_add.c' || echo '$(srcdir)/'`cnid_cdb_rebuild_add.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

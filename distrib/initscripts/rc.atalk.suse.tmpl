@@ -11,7 +11,7 @@
 # Required-Stop:
 # Default-Start:  3 5
 # Default-Stop:
-# Description:    Appletalk TCP/IP daemons
+# Description:    AFP over TCP and legacy Appletalk daemons
 ### END INIT INFO
 
 test -f /etc/rc.config && {
@@ -58,7 +58,7 @@ atalk_startup() {
 
     if [ x"${CNID_METAD_RUN}" = x"yes" -a -x :SBINDIR:/cnid_metad ] ; then
 	    echo -n "  Starting cnid_metad:"
-	    startproc :SBINDIR:/cnid_metad
+        startproc :SBINDIR:/cnid_metad $CNID_CONFIG
     fi
 
     if [ x"${AFPD_RUN}" = x"yes" -a -x :SBINDIR:/afpd ] ; then

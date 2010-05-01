@@ -1,5 +1,5 @@
 /*
- * $Id: ad_private.h,v 1.5.8.1 2008/11/25 15:16:34 didg Exp $
+ * $Id: ad_private.h,v 1.6 2008/12/03 18:35:44 didg Exp $
  */
 
 #ifndef LIBATALK_ADOUBLE_AD_PRIVATE_H

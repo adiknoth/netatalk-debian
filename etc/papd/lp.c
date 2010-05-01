@@ -1,5 +1,5 @@
 /*
- * $Id: lp.c,v 1.14.8.4.2.9 2009/07/20 09:03:54 franklahm Exp $
+ * $Id: lp.c,v 1.33 2009/10/29 13:38:15 didg Exp $
  *
  * Copyright (c) 1990,1994 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -92,11 +92,11 @@ int lp_disconn_inet( int );
 int lp_conn_unix();
 int lp_disconn_unix( int );
 
-char	hostname[ MAXHOSTNAMELEN ];
+static char hostname[ MAXHOSTNAMELEN ];
 
 extern struct sockaddr_at *sat;
 
-struct lp {
+static struct lp {
     int			lp_flags;
     FILE		*lp_stream;
     int			lp_seq;
@@ -127,7 +127,7 @@ static void convert_octal (char *string, charset_t dest)
     char temp[4];
     long int ch;
 
-    q=p=string;
+    q=p=(unsigned char *)string;
     while ( *p != '\0' ) {
         ch = 0;
         if ( *p == '\\' ) {
@@ -164,7 +164,7 @@ static void translate(charset_t from, charset_t dest, char **option)
     if (*option != NULL) {
         convert_octal(*option, from);
         if (from) {
-             if ((size_t) -1 != (convert_string_allocate(from, dest, *option, strlen(*option), &translated)) ) {
+             if ((size_t) -1 != (convert_string_allocate(from, dest, *option, -1, &translated)) ) {
                  free (*option);
                  *option = translated;
              }
@@ -188,19 +188,19 @@ static void lp_setup_comments (charset_t dest)
 
     if (lp.lp_job) {
 #ifdef DEBUG1
-        LOG(log_debug, logtype_papd, "job: %s", lp.lp_job );
+        LOG(log_debug9, logtype_papd, "job: %s", lp.lp_job );
 #endif
         translate(from, dest, &lp.lp_job);
     }
     if (lp.lp_created_for) {
 #ifdef DEBUG1
-        LOG(log_debug, logtype_papd, "for: %s", lp.lp_created_for );
+        LOG(log_debug9, logtype_papd, "for: %s", lp.lp_created_for );
 #endif
         translate(from, dest, &lp.lp_created_for);
     }
     if (lp.lp_person) {
 #ifdef DEBUG1
-       LOG(log_debug, logtype_papd, "person: %s", lp.lp_person );
+       LOG(log_debug9, logtype_papd, "person: %s", lp.lp_person );
 #endif
        translate(from, dest, &lp.lp_person);
     }
@@ -208,6 +208,8 @@ static void lp_setup_comments (charset_t dest)
 
 #define is_var(a, b) (strncmp((a), (b), 2) == 0)
 
+#if 0
+/* removed, it's not used and a pain to get it right from a security POV */
 static size_t quote(char *dest, char *src, const size_t bsize, size_t len)
 {
 size_t used = 0;
@@ -233,7 +235,6 @@ size_t used = 0;
     }
     return used;
 }
-
 
 static char* pipexlate(char *src)
 {
@@ -302,10 +303,9 @@ static char* pipexlate(char *src)
     }
     return destbuf;
 }
+#endif
 
-
-void lp_person( person )
-    char	*person;
+void lp_person(char *person)
 {
     if ( lp.lp_person != NULL ) {
 	free( lp.lp_person );
@@ -318,7 +318,7 @@ void lp_person( person )
 }
 
 #ifdef ABS_PRINT
-int lp_pagecost()
+int lp_pagecost(void)
 {
     char	cost[ 22 ];
     char	balance[ 22 ];
@@ -335,8 +335,7 @@ int lp_pagecost()
 }
 #endif /* ABS_PRINT */
 
-void lp_host( host )
-    char	*host;
+void lp_host( char *host)
 {
     if ( lp.lp_host != NULL ) {
 	free( lp.lp_host );
@@ -354,8 +353,7 @@ void lp_host( host )
  * This should be added.
  */
 
-void lp_job( job )
-    char	*job;
+void lp_job(char *job)
 {
     if ( lp.lp_job != NULL ) {
 	free( lp.lp_job );
@@ -363,13 +361,12 @@ void lp_job( job )
 
     lp.lp_job = strdup(job);
 #ifdef DEBUG
-    LOG(log_debug, logtype_papd, "job: %s", lp.lp_job );
+    LOG(log_debug9, logtype_papd, "job: %s", lp.lp_job );
 #endif
     
 }
 
-void lp_for ( lpfor )
-	char	*lpfor;
+void lp_for (char *lpfor)
 {
     if ( lp.lp_created_for != NULL ) {
 	free( lp.lp_created_for );
@@ -379,9 +376,7 @@ void lp_for ( lpfor )
 }
 
 
-static int lp_init( out, sat )
-    struct papfile	*out;
-    struct sockaddr_at	*sat;
+static int lp_init(struct papfile *out, struct sockaddr_at *sat)
 {
     int		authenticated = 0;
 #ifndef HAVE_CUPS
@@ -544,16 +539,14 @@ static int lp_init( out, sat )
     return( 0 );
 }
 
-int lp_open( out, sat )
-    struct papfile	*out;
-    struct sockaddr_at	*sat;
+int lp_open(struct papfile *out, struct sockaddr_at *sat)
 {
     char	name[ MAXPATHLEN ];
     int		fd;
     struct passwd	*pwent;
 
 #ifdef DEBUG
-    LOG (log_debug, logtype_papd, "lp_open");
+    LOG (log_debug9, logtype_papd, "lp_open");
 #endif
 
     if ( lp.lp_flags & LP_JOBPENDING ) {
@@ -639,14 +632,14 @@ int lp_open( out, sat )
 	    return( -1 );
 	}
 #ifdef DEBUG        
-        LOG(log_debug, logtype_papd, "lp_open: opened %s", name );
+        LOG(log_debug9, logtype_papd, "lp_open: opened %s", name );
 #endif	
     }
     lp.lp_flags |= LP_OPEN;
     return( 0 );
 }
 
-int lp_close()
+int lp_close(void)
 {
     if (( lp.lp_flags & LP_INIT ) == 0 || ( lp.lp_flags & LP_OPEN ) == 0 ) {
 	return 0;
@@ -660,10 +653,7 @@ int lp_close()
 
 
 
-int lp_write(in, buf, len )
-    struct papfile *in;
-    char	*buf;
-    size_t	len;
+int lp_write(struct papfile *in, char *buf, size_t len)
 {
 #define BUFSIZE 32768
     static char tempbuf[BUFSIZE];
@@ -695,7 +685,7 @@ int lp_write(in, buf, len )
             tbuf = tempbuf2;
             last_line_translated = 1;
 #ifdef DEBUG
-            LOG(log_debug, logtype_papd, "lp_write: %s", tbuf );
+            LOG(log_debug9, logtype_papd, "lp_write: %s", tbuf );
 #endif
         }
         else {
@@ -716,7 +706,7 @@ int lp_write(in, buf, len )
      * %%EndComment triggers writing to file */
     if (( lp.lp_flags & LP_OPEN ) == 0 ) {
 #ifdef DEBUG
-        LOG(log_debug, logtype_papd, "lp_write: writing to temporary buffer" );
+        LOG(log_debug9, logtype_papd, "lp_write: writing to temporary buffer" );
 #endif
     	if ((bufpos+len) > BUFSIZE) {
             LOG(log_error, logtype_papd, "lp_write: temporary buffer too small" );
@@ -746,7 +736,7 @@ int lp_write(in, buf, len )
     return( 0 );
 }
 
-int lp_cancel()
+int lp_cancel(void)
 {
     char	name[ MAXPATHLEN ];
     char	letter;
@@ -775,7 +765,7 @@ int lp_cancel()
  *
  * XXX piped?
  */
-int lp_print()
+int lp_print(void)
 {
 #ifndef HAVE_CUPS
     char		buf[ MAXPATHLEN ];
@@ -899,7 +889,7 @@ int lp_disconn_unix( int fd )
     return( close( fd ));
 }
 
-int lp_conn_unix()
+int lp_conn_unix(void)
 {
     int			s;
     struct sockaddr_un	saun;
@@ -926,7 +916,7 @@ int lp_disconn_inet( int fd )
     return( close( fd ));
 }
 
-int lp_conn_inet()
+int lp_conn_inet(void)
 {
     int			privfd, port = IPPORT_RESERVED - 1;
     struct sockaddr_in	sin;
@@ -970,8 +960,7 @@ int lp_conn_inet()
     return( privfd );
 }
 
-int lp_rmjob( job )
-    int		job;
+int lp_rmjob( int job)
 {
     char	buf[ 1024 ];
     int		n, s;
@@ -1010,8 +999,7 @@ char	*tag_files = "files: ";
 char	*tag_size = "size: ";
 char	*tag_status = "status: ";
 
-int lp_queue( out )
-    struct papfile	*out;
+int lp_queue( struct papfile *out)
 {
     char			buf[ 1024 ], *start, *stop, *p, *q;
     int				linelength, crlflength;

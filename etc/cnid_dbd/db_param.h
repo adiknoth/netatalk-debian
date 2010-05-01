@@ -1,5 +1,5 @@
 /*
- * $Id: db_param.h,v 1.1.4.4.2.1 2004/12/21 13:36:12 didg Exp $
+ * $Id: db_param.h,v 1.6 2009/12/21 07:32:01 franklahm Exp $
  *
  * Copyright (C) Joerg Lenneis 2003
  * All Rights Reserved.  See COPYING.
@@ -11,20 +11,24 @@
 #include <sys/param.h>
 #include <sys/cdefs.h>
 
+enum identity {
+    METAD,
+    CNID_DBD
+};
 
 struct db_param {
-    int check;
+    char *dir;
     int logfile_autoremove;
-    int cachesize;
-    int nosync;
-    int flush_frequency;
+    int cachesize;              /* in KB */
     int flush_interval;
+    int flush_frequency;
     char usock_file[MAXPATHLEN + 1];    
     int fd_table_size;
     int idle_timeout;
+    int max_vols;
 };
 
-extern struct db_param *      db_param_read  __P((char *));
+extern struct db_param *      db_param_read  (char *, enum identity);
 
 
 #endif /* CNID_DBD_DB_PARAM_H */

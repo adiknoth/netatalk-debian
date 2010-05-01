@@ -60,7 +60,8 @@ am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
 	$(top_srcdir)/macros/ssl-check.m4 \
 	$(top_srcdir)/macros/summary.m4 \
 	$(top_srcdir)/macros/tcp-wrappers.m4 \
-	$(top_srcdir)/macros/util.m4 $(top_srcdir)/configure.in
+	$(top_srcdir)/macros/util.m4 $(top_srcdir)/macros/webmin.m4 \
+	$(top_srcdir)/configure.in
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -118,13 +119,7 @@ BDB_LIBS = @BDB_LIBS@
 BDB_PATH = @BDB_PATH@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
-CFLAGS = \
-	-I$(top_srcdir)/include -I$(top_srcdir)/sys \
-	@CFLAGS@ @CUPS_CFLAGS@\
-	-D_PATH_PAPDCONF=\"$(pkgconfdir)/papd.conf\" \
-	-D_PATH_PAPDUAMPATH=\"$(UAMS_PATH)/\" \
- 	-DSPOOLDIR=\"$(spooldir)/\"
-
+CFLAGS = @CFLAGS@
 COMPILE_64BIT_KMODULE = @COMPILE_64BIT_KMODULE@
 COMPILE_KERNEL_GCC = @COMPILE_KERNEL_GCC@
 CPP = @CPP@
@@ -166,6 +161,7 @@ KLDFLAGS = @KLDFLAGS@
 KRB5_CONFIG = @KRB5_CONFIG@
 LDFLAGS = @LDFLAGS@
 LIBADD_DL = @LIBADD_DL@
+LIBATALK_ACLS = @LIBATALK_ACLS@
 LIBGCRYPT_CFLAGS = @LIBGCRYPT_CFLAGS@
 LIBGCRYPT_CONFIG = @LIBGCRYPT_CONFIG@
 LIBGCRYPT_LIBS = @LIBGCRYPT_LIBS@
@@ -187,8 +183,13 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PAMDIR = @PAMDIR@
+PAM_ACCOUNT = @PAM_ACCOUNT@
+PAM_AUTH = @PAM_AUTH@
 PAM_CFLAGS = @PAM_CFLAGS@
+PAM_DIRECTIVE = @PAM_DIRECTIVE@
 PAM_LIBS = @PAM_LIBS@
+PAM_PASSWORD = @PAM_PASSWORD@
+PAM_SESSION = @PAM_SESSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
 PKGCONFDIR = @PKGCONFDIR@
@@ -207,6 +208,11 @@ SSL_LIBS = @SSL_LIBS@
 STRIP = @STRIP@
 UAMS_PATH = @UAMS_PATH@
 VERSION = @VERSION@
+WEBMIN_PASS = @WEBMIN_PASS@
+WEBMIN_PATH = @WEBMIN_PATH@
+WEBMIN_PORT = @WEBMIN_PORT@
+WEBMIN_USER = @WEBMIN_USER@
+WEBMIN_VERSION = @WEBMIN_VERSION@
 WRAP_LIBS = @WRAP_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
@@ -272,7 +278,7 @@ papd_SOURCES = main.c printcap.c session.c file.c comment.c lp.c ppd.c \
 papd_LDADD = $(top_builddir)/libatalk/libatalk.la @CUPS_LIBS@ @LIBADD_DL@
 papd_LDFLAGS = -export-dynamic @CUPS_LDFLAGS@
 showppd_SOURCES = showppd.c ppd.c
-showppd_CFLAGS = @CFLAGS@ -DSHOWPPD
+showppd_CFLAGS = -DSHOWPPD
 showppd_LDADD = $(top_builddir)/libatalk/libatalk.la
 noinst_HEADERS = \
 	comment.h	\
@@ -284,6 +290,13 @@ noinst_HEADERS = \
 	session.h	\
 	print_cups.h	\
 	uam_auth.h
+
+AM_CFLAGS = \
+	-I$(top_srcdir)/include -I$(top_srcdir)/sys \
+	@CUPS_CFLAGS@\
+	-D_PATH_PAPDCONF=\"$(pkgconfdir)/papd.conf\" \
+	-D_PATH_PAPDUAMPATH=\"$(UAMS_PATH)/\" \
+	-DSPOOLDIR=\"$(spooldir)/\"
 
 all: all-am
 
@@ -298,9 +311,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  etc/papd/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  etc/papd/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  etc/papd/Makefile
+	  $(AUTOMAKE) --foreign  etc/papd/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \

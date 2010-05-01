@@ -1,4 +1,4 @@
-dnl $Id: gssapi-check.m4,v 1.1.2.5 2004/06/18 07:57:19 bfernhomberg Exp $
+dnl $Id: gssapi-check.m4,v 1.3 2005/04/28 20:50:05 bfernhomberg Exp $
 dnl Autoconf macro to check for kerberos
 
 AC_DEFUN([NETATALK_GSSAPI_CHECK], 

@@ -2,12 +2,12 @@
 .\"     Title: afpd.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.74.3 <http://docbook.sf.net/>
-.\"      Date: 1 Feb 2009
-.\"    Manual: Netatalk 2.0.4
-.\"    Source: Netatalk 2.0.4
+.\"      Date: 23 December 2009
+.\"    Manual: Netatalk 2.1
+.\"    Source: Netatalk 2.1
 .\"  Language: English
 .\"
-.TH "AFPD\&.CONF" "5" "1 Feb 2009" "Netatalk 2\&.0\&.4" "Netatalk 2.0.4"
+.TH "AFPD\&.CONF" "5" "23 December 2009" "Netatalk 2.1" "Netatalk 2.1"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -126,9 +126,14 @@ Sets the default path for UAMs for this server (default is :ETCDIR:/uams)\&.
 .RS 4
 These are required if the server supports the Kerberos 5 authentication UAM\&.
 .RE
+.PP
+\-ntdomain, \-ntseparator
+.RS 4
+Use for eg\&. winbind authentication, prepends both strings before the username from login and then tries to authenticate with the result through the availabel and active UAM authentication modules\&.
+.RE
 .SH "CODEPAGE OPTIONS"
 .PP
-With OS X Apple introduced the AFP3 protocol\&. One of the big changes was, that AFP3 uses Unicode names encoded as UTF\-8 decomposed\&. Previous AFP/OS versions used codepages like MacRoman, MacCentralEurope, etc\&.
+With OS X Apple introduced the AFP3 protocol\&. One of the big changes was, that AFP3 uses Unicode names encoded as Decomposed UTF\-8 (UTF8\-MAC)\&. Previous AFP/OS versions used codepages like MacRoman, MacCentralEurope, etc\&.
 .PP
 To be able to serve AFP3 and older clients at the same time,
 \fBafpd\fR
@@ -140,7 +145,7 @@ option\&. The default is MacRoman, which should be fine for most western users\&
 .PP
 As
 \fBafpd\fR
-needs to interact with unix operating system as well, it need\'s to be able to convert from UTF\-8/MacCodepage to the unix codepage\&. By default
+needs to interact with unix operating system as well, it need\'s to be able to convert from UTF8\-MAC/MacCodepage to the unix codepage\&. By default
 \fBafpd\fR
 uses the systems LOCALE, or ASCII if your system doesn\'t support locales\&. You can set the unix codepage using the
 \fB\-unixcodepage\fR
@@ -191,23 +196,23 @@ Enables or disables AFP\-over\-Appletalk\&. If
 \fB\-proxy\fR
 is specified, you must instead use
 \fB\-uamlist ""\fR
-to prevent DDP connections from working\&.
+to prevent DDP connections from working\&. (default is \-noddp)
 .RE
 .PP
 \-[no]tcp
 .RS 4
-Enables or disables AFP\-over\-TCP
+Enables or disables AFP\-over\-TCP (default is \-tcp)
 .RE
 .PP
 \-transall
 .RS 4
-Make both available (default)
+Make both available
 .RE
 .SH "TRANSPORT OPTIONS"
 .PP
 \-advertise_ssh
 .RS 4
-Allows Mac OS X clients (10\&.3\&.3 or above) to automagically establish a tunneled AFP connection through SSH\&. If this option is set, the server\'s answers to client\'s FPGetSrvrInfo requests contain an additional entry\&. It depends on both client\'s settings and a correctly configured and running
+Allows Mac OS X clients (10\&.3\&.3\-10\&.4) to automagically establish a tunneled AFP connection through SSH\&. If this option is set, the server\'s answers to client\'s FPGetSrvrInfo requests contain an additional entry\&. It depends on both client\'s settings and a correctly configured and running
 \fBsshd\fR(8)
 on the server to let things work\&.
 .if n \{\
@@ -237,14 +242,38 @@ Specifies the DDP address of the server\&. The default is to auto\-assign an add
 Specifies a fully\-qualified domain name, with an optional port\&. This is discarded if the server cannot resolve it\&. This option is not honored by AppleShare clients <= 3\&.8\&.3\&. This option is disabled by default\&. Use with caution as this will involve a second name resolution step on the client side\&. Also note that afpd will advertise this name:port combination but not automatically listen to it\&.
 .RE
 .PP
+\-hostname\fI [name]\fR
+.RS 4
+Use this instead of the result from calling hostname for dertermening which IP address to advertise, therfore the hostname is resolved to an IP which is the advertised\&. This is NOT used for listening and it is also overwritten by
+\fB\-ipaddr\fR\&.
+.RE
+.PP
 \-ipaddr \fI[ip address]\fR
 .RS 4
 Specifies the IP address that the server should advertise
 \fBand\fR
-listens to (the default is the first IP address of the system)\&. This option also allows to use one machine to advertise the AFP\-over\-TCP/IP settings of another machine via NBP
+listens to\&. The default is advertise the first IP address of the system, but to listen for any incoming request\&. The network address may be specified either in dotted\-decimal format for IPv4 or in hexadecimal format for IPv6\&. This option also allows to use one machine to advertise the AFP\-over\-TCP/IP settings of another machine via NBP
 when used together with the
 \fB\-proxy\fR
 option\&.
+.PP \fBExample.\ \&IP/hostname example configuration\fR fluxxus \fB\-hostname\fR afp\&.apple\&.com \fB\-ipaddr\fR 127\&.0\&.0\&.1 \fB\-fqdn\fR www\&.microsoft\&.comResult:.TS
+allbox tab(:);
+l
+l
+l.
+T{
+(UTF8) Server name: fluxxus
+T}
+T{
+Listening and advertised network address:
+                    127\&.0\&.0\&.1
+T}
+T{
+Advertised network address:
+                    www\&.microsoft\&.com
+T}
+.TE
+.sp 1
 .RE
 .PP
 \-port \fI[port number]\fR
@@ -261,13 +290,13 @@ server as well, set
 .PP
 \-server_quantum \fI[number]\fR
 .RS 4
-This specifies the DSI server quantum\&. The minimum value is 303840 (0x4A2E0)\&. The maximum value is 0xFFFFFFFFF\&. If you specify a value that is out of range, the default value will be set (which is the minimum)\&. Do not change this value unless you\'re absolutely sure, what you\'re doing
+This specifies the DSI server quantum\&. The default value is 303840\&. The maximum value is 0xFFFFFFFFF, the minimum is 32000\&. If you specify a value that is out of range, the default value will be set\&. Do not change this value unless you\'re absolutely sure, what you\'re doing
 .RE
 .PP
-\-noslp
+\-slp
 .RS 4
-Do not register this server using the Service Location Protocol (if SLP
-support was compiled in)\&. This is useful if you are running multiple servers and want one to be hidden, perhaps because it is advertised elsewhere, ie\&. by a SLP Directory Agent\&.
+Register this server using the Service Location Protocol (if SLP
+support was compiled in)\&.
 .RE
 .SH "MISCELLANEOUS OPTIONS"
 .PP
@@ -313,14 +342,19 @@ With this switch enabled, afpd won\'t advertise that it is capable of server not
 \fBNote\fR
 .ps -1
 .br
-Do not use this option any longer as Netatalk 2\&.0 correctly supports server notifications, allowing connected clients to update folder listings in case another client changed the contents\&.
+Do not use this option any longer as Netatalk 2\&.x correctly supports server notifications, allowing connected clients to update folder listings in case another client changed the contents\&.
 .sp .5v
 .RE
 .RE
 .PP
+\-closevol
+.RS 4
+Immediately unmount volumes removed from AppleVolumes files on SIGHUP sent to the afp master process\&.
+.RE
+.PP
 \-cnidserver \fI[ipaddress:port]\fR
 .RS 4
-Specifies the IP address and port of a cnid_metad server, required for CNID dbd backend\&. Defaults to localhost:4700\&.
+Specifies the IP address and port of a cnid_metad server, required for CNID dbd backend\&. Defaults to localhost:4700\&. The network address may be specified either in dotted\-decimal format for IPv4 or in hexadecimal format for IPv6\&.
 .RE
 .PP
 \-guestname \fI[name]\fR
@@ -328,9 +362,9 @@ Specifies the IP address and port of a cnid_metad server, required for CNID dbd 
 Specifies the user that guests should use (default is "nobody")\&. The name should be quoted\&.
 .RE
 .PP
-\-icon
+\-[no]icon
 .RS 4
-Use the platform\-specific icon
+[Dont\'t] Use the platform\-specific icon\&. Recent Mac OS don\'t display it any longer\&.
 .RE
 .PP
 \-loginmesg \fI[message]\fR
@@ -352,9 +386,11 @@ AFP 3\&.x waits
 hours before disconnecting clients in sleep mode\&. Default is 10 hours\&.
 .RE
 .PP
-\-signature { user:<text> | host }
+\-signature { user:<text> | auto }
 .RS 4
-Specify a server signature\&. This option is useful while running multiple independent instances of afpd on one machine (eg\&. in clustered environments, to provide fault isolation etc\&.)\&. "host" signature type allows afpd generating signature automatically (based on machine primary IP address)\&. "user" signature type allows administrator to set up a signature string manually\&. The maximum length is 16 characters
+Specify a server signature\&. This option is useful while running multiple independent instances of afpd on one machine (eg\&. in clustered environments, to provide fault isolation etc\&.)\&. Default is "auto"\&. "auto" signature type allows afpd generating signature and saving it to
+:ETCDIR:/afp_signature\&.conf
+automatically (based on random number)\&. "host" signature type switches back to "auto" because it is obsoleted\&. "user" signature type allows administrator to set up a signature string manually\&. The maximum length is 16 characters\&.
 .PP
 \fBExample.\ \&Three server definitions using 2 different server signatures\fR
 .sp
@@ -373,7 +409,50 @@ third \-signature user:ADMINS
 
 First two servers will appear as one logical AFP service to the clients \- if user logs in to first one and then connects to second one, session will be automatically redirected to the first one\&. But if client connects to first and then to third, will be asked for password twice and will see resources of both servers\&. Traditional method of signature generation causes two independent afpd instances to have the same signature and thus cause clients to be redirected automatically to server (s)he logged in first\&.
 .RE
+.PP
+\-volnamelen \fI[number] \fR
+.RS 4
+Max length of UTF8\-MAC volume name for Mac OS X\&. Note that Hangul is especially sensitive to this\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+73:  limit of Mac OS X 10\&.1
+80:  limit for Mac OS X 10\&.4/10\&.5 (default)
+123: limit for Mac OS X 10\&.6
+255: limit of spec
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Mac OS 9 and earlier are not influenced by this, because Maccharset volume name is always limitted to 27 bytes\&.
+.RE
 .SH "LOGGING OPTIONS"
+.PP
+\-setuplog "\fI<logtype> <loglevel> [<filename>]\fR"
+.RS 4
+Specify that any message of a loglevel up to the given
+\fBloglevel\fR
+should be logged to the given file\&. If the filename is ommited the loglevel applies to messages passed to syslog\&.
+.sp
+By default (no explicit
+\fB\-setuplog\fR
+and no buildtime configure flag
+\fB\-\-with\-logfile\fR) afpd logs to syslog with a default logging setup equivalent to
+\fB"\-setuplog default log_info\fR"\&.
+.sp
+If build with
+\fB\-\-with\-logfile\fR
+(default logfile
+\fI/var/log/netatalk\&.log\fR) or
+\fB\-\-with\-logfile=somefile\fR
+afpd defaults to a setup that is equivalent to "\fB\-setuplog default log_info [\fR\fB\fInetatalk\&.log|somefile]\fR\fR"\&.
+.sp
+logtypes: Default, AFPDaemon, Logger, UAMSDaemon
+.sp
+loglevels: LOG_SEVERE, LOG_ERROR, LOG_WARN, LOG_NOTE, LOG_INFO, LOG_DEBUG, LOG_DEBUG6, LOG_DEBUG7, LOG_DEBUG8, LOG_DEBUG9, LOG_MAXDEBUG
 .if n \{\
 .sp
 .\}
@@ -386,42 +465,65 @@ First two servers will appear as one logical AFP service to the clients \- if us
 \fBNote\fR
 .ps -1
 .br
-.PP
-Extended logging capabilities are only available if Netatalk was built using
-\fB\-\-with\-logfile\fR\&. As of Netatalk 2\&.0, the default is
-\fB\-\-without\-logfile\fR
-since the logger code is partially broken and needs a complete rewrite (the
-\fB\-setuplog\fR
-option might not work as expected)\&. If Netatalk was built without logger support then the daemons log to syslog\&.
+The config is case\-ignoring
 .sp .5v
 .RE
 .PP
-\-[un]setuplog "\fI<logtype> <loglevel> [<filename>]\fR"
-.RS 4
-Specify that the given loglevel should be applied to log messages of the given logtype and that these messages should be logged to the given file\&. If the filename is ommited the loglevel applies to messages passed to syslog\&. Each logtype may have a loglevel applied to syslog and a loglevel applied to a single file\&. Latter
-\fB\-setuplog\fR
-settings will override earlier ones of the same logtype (file or syslog)\&.
-.sp
-logtypes: Default, Core, Logger, CNID, AFP
-.sp
-Daemon loglevels: LOG_SEVERE, LOG_ERROR, LOG_WARN, LOG_NOTE, LOG_INFO, LOG_DEBUG, LOG_DEBUG6, LOG_DEBUG7, LOG_DEBUG8, LOG_DEBUG9, LOG_MAXDEBUG
-.PP
-\fBExample.\ \&Some ways to change afpd's logging behaviour via -[un]setuplog\fR
-Example:
+\fBExample.\ \&Useful default config\fR
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-setuplog "logger log_maxdebug /var/log/netatalk\-logger\&.log" 
-\-setuplog "afpdaemon log_maxdebug /var/log/netatalk\-afp\&.log" 
-\-unsetuplog "default level file" 
-\-setuplog "default log_maxdebug"
+\-setuplog "default log_info /var/log/afpd\&.log"
 .fi
 .if n \{\
 .RE
 .\}
-
+.PP
+\fBExample.\ \&Debugging config\fR
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-setuplog "default log_maxdebug /var/log/afpd\&.log"
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+\fBExample.\ \&afpd logging to different files\fR
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-setuplog "default log_info /var/log/afpd\&.log"
+\-setuplog "UAMSDaemon log_maxdebug /var/log/uams\&.log"
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-unsetuplog "\fI<logtype> [<filename>]\fR"
+.RS 4
+Note that for
+\fBunsetuplog\fR
+specifying any string as filename is sufficient for the config parser to distinguish between requests to disable syslog logging or file\-logging\&.
+.PP
+\fBExample.\ \&Disable afpd logging set at build-time from configure\fR
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-unsetuplog "default \-"
+.fi
+.if n \{\
+.RE
+.\}
 .RE
 .SH "DEBUG OPTIONS"
 .PP
@@ -468,7 +570,7 @@ Specify the number of tickles to send before timing out a connection\&. The defa
 .RS 4
 .\}
 .nf
-\- \-transall \-uamlist uams_clrtxt\&.so,uams_dhx\&.so,uams_dhx2\&.so,uams_guest\&.so,uams_gss\&.so \e 
+\- \-transall \-uamlist uams_dhx\&.so,uams_dhx2\&.so,uams_guest\&.so,uams_gss\&.so \e 
 \-k5service afpserver \-k5keytab /path/to/afpserver\&.keytab \e 
 \-k5realm YOUR\&.REALM \-fqdn your\&.fqdn\&.namel:548
 .fi
@@ -493,4 +595,5 @@ Specify the number of tickles to send before timing out a connection\&. The defa
 .PP
 \fBafpd\fR(8),
 \fBafppasswd\fR(1),
-\fBAppleVolumes.default\fR(5)
+\fBAppleVolumes.default\fR(5),
+\fBafp_signature.conf\fR(5)

@@ -2,12 +2,12 @@
 .\"     Title: netatalk.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.74.3 <http://docbook.sf.net/>
-.\"      Date: 24 June 2004
-.\"    Manual: Netatalk 2.0.4
-.\"    Source: Netatalk 2.0.4
+.\"      Date: 9 Jun 2009
+.\"    Manual: Netatalk 2.1
+.\"    Source: Netatalk 2.1
 .\"  Language: English
 .\"
-.TH "NETATALK\&.CONF" "5" "24 June 2004" "Netatalk 2\&.0\&.4" "Netatalk 2.0.4"
+.TH "NETATALK\&.CONF" "5" "9 Jun 2009" "Netatalk 2.1" "Netatalk 2.1"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -23,7 +23,7 @@ netatalk.conf \- Configuration file used by netatalk(8) to determine its general
 .SH "DESCRIPTION"
 .PP
 \fB:ETCDIR:/netatalk\&.conf\fR
-is the configuration file used by afpd to determine what portions of the file system will be shared via Appletalk, as well as their behaviors\&.
+is the configuration file used by afpd to determine what portions of the file system will be shared via AFP, as well as their behaviors\&.
 .PP
 Any line not prefixed with
 \fB#\fR
@@ -61,6 +61,12 @@ Sets the default UAMs for afpd (and papd, if printer authentication is compiled 
 \fBCNID_METAD_RUN\fR
 .RS 4
 Enables the cnid_metad daemon if set to "yes"\&. This should be enabled if you are going to use the dbd CNID backend\&.
+.RE
+.PP
+\fBCNID_CONFIG\fR
+.RS 4
+Configuration options for cnid_metad\&. See:
+\fBcnid_metad\fR(8)
 .RE
 .PP
 \fBATALK_BGROUND\fR

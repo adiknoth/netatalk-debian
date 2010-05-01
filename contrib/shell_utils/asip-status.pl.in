@@ -14,7 +14,7 @@
 #
 # todo: log in as guest & get a list of shares
 #
-# $Id: asip-status.pl.in,v 1.1.2.1 2004/06/09 01:43:09 bfernhomberg Exp $
+# $Id: asip-status.pl.in,v 1.2 2005/04/28 20:49:36 bfernhomberg Exp $
 #
 
 use strict;

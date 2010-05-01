@@ -1,4 +1,4 @@
-dnl $Id: tcp-wrappers.m4,v 1.1.4.4.2.1 2008/08/11 17:39:22 didg Exp $
+dnl $Id: tcp-wrappers.m4,v 1.4 2008/08/11 20:44:03 didg Exp $
 
 AC_DEFUN([NETATALK_TCP_WRAPPERS], [
 	check=maybe

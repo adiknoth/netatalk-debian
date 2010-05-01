@@ -54,7 +54,8 @@ am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
 	$(top_srcdir)/macros/ssl-check.m4 \
 	$(top_srcdir)/macros/summary.m4 \
 	$(top_srcdir)/macros/tcp-wrappers.m4 \
-	$(top_srcdir)/macros/util.m4 $(top_srcdir)/configure.in
+	$(top_srcdir)/macros/util.m4 $(top_srcdir)/macros/webmin.m4 \
+	$(top_srcdir)/configure.in
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -123,6 +124,7 @@ KLDFLAGS = @KLDFLAGS@
 KRB5_CONFIG = @KRB5_CONFIG@
 LDFLAGS = @LDFLAGS@
 LIBADD_DL = @LIBADD_DL@
+LIBATALK_ACLS = @LIBATALK_ACLS@
 LIBGCRYPT_CFLAGS = @LIBGCRYPT_CFLAGS@
 LIBGCRYPT_CONFIG = @LIBGCRYPT_CONFIG@
 LIBGCRYPT_LIBS = @LIBGCRYPT_LIBS@
@@ -144,8 +146,13 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PAMDIR = @PAMDIR@
+PAM_ACCOUNT = @PAM_ACCOUNT@
+PAM_AUTH = @PAM_AUTH@
 PAM_CFLAGS = @PAM_CFLAGS@
+PAM_DIRECTIVE = @PAM_DIRECTIVE@
 PAM_LIBS = @PAM_LIBS@
+PAM_PASSWORD = @PAM_PASSWORD@
+PAM_SESSION = @PAM_SESSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
 PKGCONFDIR = @PKGCONFDIR@
@@ -164,6 +171,11 @@ SSL_LIBS = @SSL_LIBS@
 STRIP = @STRIP@
 UAMS_PATH = @UAMS_PATH@
 VERSION = @VERSION@
+WEBMIN_PASS = @WEBMIN_PASS@
+WEBMIN_PATH = @WEBMIN_PATH@
+WEBMIN_PORT = @WEBMIN_PORT@
+WEBMIN_USER = @WEBMIN_USER@
+WEBMIN_VERSION = @WEBMIN_VERSION@
 WRAP_LIBS = @WRAP_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
@@ -251,54 +263,54 @@ TEMPLATES = \
 	rc.atalk.gentoo.tmpl		\
 	rc.atalk.debian.tmpl
 
-CLEANFILES = $(GENERATED_FILES) atalk afpd atalkd papd timelord
+CLEANFILES = $(GENERATED_FILES) $(sysv_SCRIPTS) afpd atalkd cnid_metad papd timelord
 EXTRA_DIST = $(TEMPLATES) rc.atalk.cobalt
 
 #
 # checking for "cobalt" style sysv scripts:
 #
-@USE_COBALT_TRUE@sysvdir = /etc/rc.d/init.d
+@USE_COBALT_TRUE@sysvdir = $(DESTDIR)/etc/rc.d/init.d
 
 #
 # checking for "Debian" style sysv scripts:
 #
-@USE_DEBIAN_TRUE@sysvdir = /etc/init.d
+@USE_DEBIAN_TRUE@sysvdir = $(DESTDIR)/etc/init.d
 
 #
 # checking for "Gentoo" style sysv scripts:
 #
-@USE_GENTOO_TRUE@sysvdir = /etc/init.d
+@USE_GENTOO_TRUE@sysvdir = $(DESTDIR)/etc/init.d
 
 #
 # checking for NetBSD init scripts
 #
-@USE_NETBSD_TRUE@sysvdir = /etc/rc.d
+@USE_NETBSD_TRUE@sysvdir = $(DESTDIR)/etc/rc.d
 
 #
 # checking for "redhat" style sysv scripts:
 #
-@USE_REDHAT_TRUE@sysvdir = /etc/rc.d/init.d
+@USE_REDHAT_TRUE@sysvdir = $(DESTDIR)/etc/rc.d/init.d
 
 #
 # checking for Solaris init scripts
 #
-@USE_SOLARIS_TRUE@sysvdir = /etc/init.d
+@USE_SOLARIS_TRUE@sysvdir = $(DESTDIR)/etc/init.d
 
 #
 # checking for "SuSE" style sysv scripts:
 #
-@USE_SUSE_TRUE@sysvdir = /etc/init.d
+@USE_SUSE_TRUE@sysvdir = $(DESTDIR)/etc/init.d
 
 #
 # checking for "tru64" style sysv scripts:
 #
-@USE_TRU64_TRUE@sysvdir = /sbin/init.d
+@USE_TRU64_TRUE@sysvdir = $(DESTDIR)/etc/init.d
 @USE_COBALT_TRUE@sysv_SCRIPTS = atalk
-@USE_DEBIAN_TRUE@sysv_SCRIPTS = atalk
+@USE_DEBIAN_TRUE@sysv_SCRIPTS = netatalk
 @USE_GENTOO_TRUE@sysv_SCRIPTS = atalk
-@USE_NETBSD_TRUE@sysv_SCRIPTS = afpd atalkd papd timelord
+@USE_NETBSD_TRUE@sysv_SCRIPTS = afpd atalkd cnid_metad papd timelord
 @USE_REDHAT_TRUE@sysv_SCRIPTS = atalk
-@USE_SOLARIS_TRUE@sysv_SCRIPTS = atalk
+@USE_SOLARIS_TRUE@sysv_SCRIPTS = netatalk
 @USE_SUSE_TRUE@sysv_SCRIPTS = atalk
 @USE_TRU64_TRUE@sysv_SCRIPTS = atalk
 all: all-am
@@ -314,9 +326,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  distrib/initscripts/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  distrib/initscripts/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  distrib/initscripts/Makefile
+	  $(AUTOMAKE) --foreign  distrib/initscripts/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -515,31 +527,31 @@ uninstall-am: uninstall-sysvSCRIPTS
 
 uninstall: uninstall-startup
 
-@USE_REDHAT_TRUE@atalk: rc.atalk.redhat
-@USE_REDHAT_TRUE@	cp -f rc.atalk.redhat atalk
-@USE_REDHAT_TRUE@	chmod a+x atalk
+@USE_REDHAT_TRUE@$(sysv_SCRIPTS): rc.atalk.redhat
+@USE_REDHAT_TRUE@	cp -f rc.atalk.redhat $(sysv_SCRIPTS)
+@USE_REDHAT_TRUE@	chmod a+x $(sysv_SCRIPTS)
 
 @USE_REDHAT_TRUE@install-data-hook:
-@USE_REDHAT_TRUE@	-chkconfig --add atalk
+@USE_REDHAT_TRUE@	-chkconfig --add $(sysv_SCRIPTS)
 
 @USE_REDHAT_TRUE@uninstall-startup:
-@USE_REDHAT_TRUE@	-chkconfig --del atalk
-@USE_REDHAT_TRUE@	rm -f /etc/rc.d/init.d/atalk
+@USE_REDHAT_TRUE@	-chkconfig --del $(sysv_SCRIPTS)
+@USE_REDHAT_TRUE@	rm -f $(sysvdir)/$(sysv_SCRIPTS)
 
-@USE_SUSE_TRUE@atalk: rc.atalk.suse
-@USE_SUSE_TRUE@	cp -f rc.atalk.suse atalk
-@USE_SUSE_TRUE@	chmod a+x atalk
+@USE_SUSE_TRUE@$(sysv_SCRIPTS): rc.atalk.suse
+@USE_SUSE_TRUE@	cp -f rc.atalk.suse $(sysv_SCRIPTS)
+@USE_SUSE_TRUE@	chmod a+x $(sysv_SCRIPTS)
 
 @USE_SUSE_TRUE@install-data-hook:
-@USE_SUSE_TRUE@	-insserv atalk
+@USE_SUSE_TRUE@	-insserv $(sysv_SCRIPTS)
 
 @USE_SUSE_TRUE@uninstall-startup:
-@USE_SUSE_TRUE@	-insserv -d atalk
-@USE_SUSE_TRUE@	rm -f /etc/init.d/atalk
+@USE_SUSE_TRUE@	-insserv -d $(sysv_SCRIPTS)
+@USE_SUSE_TRUE@	rm -f $(sysvdir)/$(sysv_SCRIPTS)
 
-@USE_COBALT_TRUE@atalk: rc.atalk.cobalt
-@USE_COBALT_TRUE@	cp -f rc.atalk.cobalt atalk
-@USE_COBALT_TRUE@	chmod a+x atalk
+@USE_COBALT_TRUE@$(sysv_SCRIPTS): rc.atalk.cobalt
+@USE_COBALT_TRUE@	cp -f rc.atalk.cobalt $(sysv_SCRIPTS)
+@USE_COBALT_TRUE@	chmod a+x $(sysv_SCRIPTS)
 
 @USE_COBALT_TRUE@install-data-hook:
 
@@ -547,9 +559,9 @@ uninstall: uninstall-startup
 
 @USE_COBALT_TRUE@uninstall-startup: uninstall-am
 
-@USE_TRU64_TRUE@atalk: rc.atalk.tru64
-@USE_TRU64_TRUE@	cp -f rc.atalk.tru64 atalk
-@USE_TRU64_TRUE@	chmod a+x atalk
+@USE_TRU64_TRUE@$(sysv_SCRIPTS): rc.atalk.tru64
+@USE_TRU64_TRUE@	cp -f rc.atalk.tru64 $(sysv_SCRIPTS)
+@USE_TRU64_TRUE@	chmod a+x $(sysv_SCRIPTS)
 
 @USE_TRU64_TRUE@install-data-hook:
 
@@ -559,8 +571,13 @@ uninstall: uninstall-startup
 
 @USE_NETBSD_TRUE@afpd: rc.afpd.netbsd
 @USE_NETBSD_TRUE@	cp -f $< $@
+@USE_NETBSD_TRUE@	chmod a+x $@
 
 @USE_NETBSD_TRUE@atalkd: rc.atalkd.netbsd
+@USE_NETBSD_TRUE@	cp -f $< $@
+@USE_NETBSD_TRUE@	chmod a+x $@
+
+@USE_NETBSD_TRUE@cnid_metad: rc.cnid_metad.netbsd
 @USE_NETBSD_TRUE@	cp -f $< $@
 @USE_NETBSD_TRUE@	chmod a+x $@
 
@@ -578,40 +595,42 @@ uninstall: uninstall-startup
 
 @USE_NETBSD_TRUE@uninstall-startup: uninstall-am
 
-@USE_SOLARIS_TRUE@atalk: rc.atalk.sysv
+@USE_SOLARIS_TRUE@$(sysv_SCRIPTS): rc.atalk.sysv
 @USE_SOLARIS_TRUE@	cp -f rc.atalk.sysv $@
 @USE_SOLARIS_TRUE@	chmod a+x $@
 
 @USE_SOLARIS_TRUE@install-data-hook:
-@USE_SOLARIS_TRUE@	rm -f /etc/rc2.d/S90atalk
-@USE_SOLARIS_TRUE@	-ln -s ../init.d/atalk /etc/rc2.d/S90atalk
-@USE_SOLARIS_TRUE@	rm -f /etc/rc0.d/K04atalk
-@USE_SOLARIS_TRUE@	-ln -s ../init.d/atalk /etc/rc0.d/K04atalk
+@USE_SOLARIS_TRUE@	rm -f $(DESTDIR)/etc/rc2.d/S90$(sysv_SCRIPTS)
+@USE_SOLARIS_TRUE@	-ln -s ../init.d/$(sysv_SCRIPTS) $(DESTDIR)/etc/rc2.d/S90$(sysv_SCRIPTS)
+@USE_SOLARIS_TRUE@	rm -f $(DESTDIR)/etc/rc0.d/K04$(sysv_SCRIPTS)
+@USE_SOLARIS_TRUE@	-ln -s ../init.d/$(sysv_SCRIPTS) $(DESTDIR)/etc/rc0.d/K04$(sysv_SCRIPTS)
 
 @USE_SOLARIS_TRUE@uninstall-startup:
-@USE_SOLARIS_TRUE@	rm -f /etc/init.d/atalk /etc/rc2.d/S90atalk /etc/rc0.d/K04atalk
+@USE_SOLARIS_TRUE@	rm -f $(sysvdir)/$(sysv_SCRIPTS) \
+@USE_SOLARIS_TRUE@		$(DESTDIR)/etc/rc2.d/S90$(sysv_SCRIPTS) \
+@USE_SOLARIS_TRUE@		$(DESTDIR)/etc/rc0.d/K04$(sysv_SCRIPTS)
 
-@USE_GENTOO_TRUE@atalk: rc.atalk.gentoo
-@USE_GENTOO_TRUE@	cp -f rc.atalk.gentoo atalk
-@USE_GENTOO_TRUE@	chmod a+x atalk
+@USE_GENTOO_TRUE@$(sysv_SCRIPTS): rc.atalk.gentoo
+@USE_GENTOO_TRUE@	cp -f rc.atalk.gentoo $(sysv_SCRIPTS)
+@USE_GENTOO_TRUE@	chmod a+x $(sysv_SCRIPTS)
 
 @USE_GENTOO_TRUE@install-data-hook:
-@USE_GENTOO_TRUE@	-rc-update add atalk default
+@USE_GENTOO_TRUE@	-rc-update add $(sysv_SCRIPTS) default
 
 @USE_GENTOO_TRUE@uninstall-startup:
-@USE_GENTOO_TRUE@	-rc-update del atalk default
-@USE_GENTOO_TRUE@	rm -f /etc/init.d/atalk
+@USE_GENTOO_TRUE@	-rc-update del $(sysv_SCRIPTS) default
+@USE_GENTOO_TRUE@	rm -f $(sysvdir)/$(sysv_SCRIPTS)
 
-@USE_DEBIAN_TRUE@atalk: rc.atalk.debian
-@USE_DEBIAN_TRUE@	cp -f rc.atalk.debian atalk
-@USE_DEBIAN_TRUE@	chmod a+x atalk
+@USE_DEBIAN_TRUE@$(sysv_SCRIPTS): rc.atalk.debian
+@USE_DEBIAN_TRUE@	cp -f rc.atalk.debian $(sysv_SCRIPTS)
+@USE_DEBIAN_TRUE@	chmod a+x $(sysv_SCRIPTS)
 
 @USE_DEBIAN_TRUE@install-data-hook:
-@USE_DEBIAN_TRUE@	update-rc.d atalk defaults 90 10
+#	update-rc.d $(sysv_SCRIPTS) defaults 90 10
 
 @USE_DEBIAN_TRUE@uninstall-startup:
-@USE_DEBIAN_TRUE@	rm -f /etc/init.d/atalk
-@USE_DEBIAN_TRUE@	update-rc.d atalk remove
+#	rm -f $(sysvdir)/$(sysv_SCRIPTS)
+#	update-rc.d netatalk remove
 
 #
 # defaults, no init scripts installed

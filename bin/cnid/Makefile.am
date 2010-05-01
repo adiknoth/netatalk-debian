@@ -1,18 +1,15 @@
 # Makefile.am for bin/cnid/
 
-EXTRA_DIST = cnid_maint.in cnid2_create.in
+EXTRA_DIST = cnid2_create.in
+noinst_HEADERS = ad.h
 
 if USE_BDB
-bin_SCRIPTS = cnid_maint cnid2_create
-bin_PROGRAMS = cnid_index
-else
-#bin_SCRIPTS = 
+bin_PROGRAMS = ad
+bin_SCRIPTS = cnid2_create
+
+ad_SOURCES = ad.c ad_util.c \
+	ad_ls.c \
+	ad_cp.c
+
+ad_LDADD = $(top_builddir)/libatalk/libatalk.la
 endif
-
-cnid_index_SOURCES = cnid_index.c 
-
-cnid_index_LDADD = $(top_builddir)/libatalk/libatalk.la       
-
-LIBS = @LIBS@ @BDB_LIBS@
- 
-CFLAGS = @CFLAGS@ @BDB_CFLAGS@ 

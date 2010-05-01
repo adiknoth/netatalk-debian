@@ -1,5 +1,5 @@
 /*
- * $Id: dsi_opensess.c,v 1.3.16.1 2005/09/12 16:10:20 didg Exp $
+ * $Id: dsi_opensess.c,v 1.4 2005/09/07 15:27:29 didg Exp $
  *
  * Copyright (c) 1997 Adrian Sun (asun@zoology.washington.edu)
  * All rights reserved. See COPYRIGHT.

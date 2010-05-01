@@ -1,5 +1,5 @@
 /*
- * $Id: multicast.c,v 1.11 2003/03/18 23:34:51 srittau Exp $
+ * $Id: multicast.c,v 1.13 2009/10/14 01:38:28 didg Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved. See COPYRIGHT.
@@ -41,6 +41,7 @@
 #include "rtmp.h"
 #include "zip.h"
 #include "main.h"
+#include "multicast.h"
 
 
 static const unsigned char	ethermulti[ 6 ] = {
@@ -330,9 +331,7 @@ int addmulti(const char *name, const unsigned char *data)
 }
 
 static u_int16_t
-atalk_cksum( data, len )
-    u_char	*data;
-    int		len;
+atalk_cksum( u_char *data, int len)
 {
     u_char	*end;
     u_int32_t	cksum = 0;
@@ -359,8 +358,7 @@ atalk_cksum( data, len )
  * alike.)
  */
 int
-zone_bcast( zt )
-     struct ziptab     *zt;
+zone_bcast( struct ziptab *zt)
 {
     u_char		uname[ 32 ];
     u_int16_t		cksum;

@@ -38,8 +38,8 @@ subdir = .
 DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/config.h.in \
 	$(top_srcdir)/configure $(top_srcdir)/sys/solaris/Makefile.in \
-	COPYING NEWS TODO config.guess config.sub depcomp install-sh \
-	ltmain.sh missing
+	COPYING NEWS TODO compile config.guess config.sub depcomp \
+	install-sh ltmain.sh missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
 	$(top_srcdir)/macros/cnid-backend.m4 \
@@ -59,7 +59,8 @@ am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
 	$(top_srcdir)/macros/ssl-check.m4 \
 	$(top_srcdir)/macros/summary.m4 \
 	$(top_srcdir)/macros/tcp-wrappers.m4 \
-	$(top_srcdir)/macros/util.m4 $(top_srcdir)/configure.in
+	$(top_srcdir)/macros/util.m4 $(top_srcdir)/macros/webmin.m4 \
+	$(top_srcdir)/configure.in
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
@@ -149,6 +150,7 @@ KLDFLAGS = @KLDFLAGS@
 KRB5_CONFIG = @KRB5_CONFIG@
 LDFLAGS = @LDFLAGS@
 LIBADD_DL = @LIBADD_DL@
+LIBATALK_ACLS = @LIBATALK_ACLS@
 LIBGCRYPT_CFLAGS = @LIBGCRYPT_CFLAGS@
 LIBGCRYPT_CONFIG = @LIBGCRYPT_CONFIG@
 LIBGCRYPT_LIBS = @LIBGCRYPT_LIBS@
@@ -170,8 +172,13 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PAMDIR = @PAMDIR@
+PAM_ACCOUNT = @PAM_ACCOUNT@
+PAM_AUTH = @PAM_AUTH@
 PAM_CFLAGS = @PAM_CFLAGS@
+PAM_DIRECTIVE = @PAM_DIRECTIVE@
 PAM_LIBS = @PAM_LIBS@
+PAM_PASSWORD = @PAM_PASSWORD@
+PAM_SESSION = @PAM_SESSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
 PKGCONFDIR = @PKGCONFDIR@
@@ -190,6 +197,11 @@ SSL_LIBS = @SSL_LIBS@
 STRIP = @STRIP@
 UAMS_PATH = @UAMS_PATH@
 VERSION = @VERSION@
+WEBMIN_PASS = @WEBMIN_PASS@
+WEBMIN_PATH = @WEBMIN_PATH@
+WEBMIN_PORT = @WEBMIN_PORT@
+WEBMIN_USER = @WEBMIN_USER@
+WEBMIN_VERSION = @WEBMIN_VERSION@
 WRAP_LIBS = @WRAP_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@

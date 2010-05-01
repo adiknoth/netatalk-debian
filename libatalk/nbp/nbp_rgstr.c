@@ -1,5 +1,5 @@
 /*
- * $Id: nbp_rgstr.c,v 1.4 2002/01/17 06:12:02 srittau Exp $
+ * $Id: nbp_rgstr.c,v 1.6 2009/10/14 02:24:05 didg Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved. See COPYRIGHT.
@@ -34,9 +34,7 @@
 #define SOCKLEN_T unsigned int
 #endif /* ! SOCKLEN_T */
 
-int nbp_rgstr( sat, obj, type, zone )
-    struct sockaddr_at	*sat;
-    const char		*obj, *type, *zone;
+int nbp_rgstr( struct sockaddr_at *sat, const char *obj, const char *type, const char *zone)
 {
     struct sockaddr_at	to;
     struct nbpnve	nn;
@@ -121,7 +119,7 @@ int nbp_rgstr( sat, obj, type, zone )
     FD_SET( s, &readfd );
     timeout.tv_sec = 2;
     timeout.tv_usec = 0;
-    if (( cc = select( s + 1, &readfd, 0, 0, &timeout )) < 0 ) {
+    if (( cc = select( s + 1, &readfd, NULL, NULL, &timeout )) < 0 ) {
         goto register_err;
     }
     if ( cc == 0 ) {

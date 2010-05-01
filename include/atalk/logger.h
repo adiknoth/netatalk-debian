@@ -1,6 +1,62 @@
-
 #ifndef _ATALK_LOGGER_H
 #define _ATALK_LOGGER_H 1
+
+/* 
+ * logger LOG Macro Usage
+ * ======================
+ *
+ * LOG(<logtype>, <loglevel>, "<string>"[, args]);
+ * 
+ *
+ * logger API Setup
+ * ================
+ * 
+ * Standard interface:
+ * -------------------
+ *
+ *    setuplog(char *confstring)
+ *    confstring = "<logtype> <loglevel> [<filename>]"
+ *
+ * Calling without <filename> configures basic logging to syslog. Specifying <filename>
+ * configures extended logging to <filename>.
+ * 
+ * You can later disable logging by calling
+ *
+ *    unsetuplog(char *confstring)
+ *    confstring = "<logtype> [<any_string>]"
+ *
+ * Calling without <any_string> disables syslog logging, calling with <any_string>
+ * disables file logging.
+ *
+ * <logtype>:
+ * you can setup a default with "Default". Any other logtype used in LOG will then
+ * use the default if not setup itself. This is probabyl the only thing you may
+ * want to use.
+ *
+ * Example:
+ * setuplog("default log_debug /var/log/debug.log");
+ * See also libatalk/util/test/logger_test.c
+ *
+ * "Legacy" interface:
+ * -------------------
+ *
+ * Some netatalk daemons (31.3.2009.: e.g. atalkd, papd) may not be converted to
+ * use the new API and might still call
+ *
+ *    syslog_setup(int loglevel, enum logtypes logtype, int display_options, int facility);
+ *
+ * directly. These daemons are therefore limited to syslog logging. Also their
+ * loglevel can't be changed at runtime.
+ *
+ *
+ * Note:
+ * dont get confused by log_init(). It only gets called if your app
+ * forgets to setup logging before calling LOG.
+ */
+
+
+#include <limits.h>
+#include <stdio.h>
 
 #include <atalk/boolean.h>
 
@@ -8,33 +64,25 @@
 #include "config.h"
 #endif
 
-#define MAXLOGSIZE 512
+/* logger is used by pam modules */
+#ifndef UAM_MODULE_EXPORT
+#define UAM_MODULE_EXPORT 
+#endif
 
 enum loglevels {
-  log_severe   = 0,
-  log_error    = 10,
-  log_warning  = 20,
-  log_note     = 30,
-  log_info     = 40,
-  log_debug    = 50,
-  log_debug6   = 60,
-  log_debug7   = 70,
-  log_debug8   = 80,
-  log_debug9   = 90,
-  log_maxdebug = 100
+    log_none,
+    log_severe,
+    log_error,
+    log_warning,
+    log_note,
+    log_info,
+    log_debug,
+    log_debug6,
+    log_debug7,
+    log_debug8,
+    log_debug9,
+    log_maxdebug
 };
-#define LOGLEVEL_STRING_IDENTIFIERS { \
-  "LOG_SEVERE",                       \
-  "LOG_ERROR",                        \
-  "LOG_WARN",                         \
-  "LOG_NOTE",                         \
-  "LOG_INFO",                         \
-  "LOG_DEBUG",                        \
-  "LOG_DEBUG6",                       \
-  "LOG_DEBUG7",                       \
-  "LOG_DEBUG8",                       \
-  "LOG_DEBUG9",                       \
-  "LOG_MAXDEBUG"}                        
 
 /* this is the enum specifying all availiable logtypes */
 enum logtypes {
@@ -46,26 +94,17 @@ enum logtypes {
   logtype_atalkd,
   logtype_papd,
   logtype_uams,
-
+  logtype_console,
   logtype_end_of_list_marker  /* don't put any logtypes after this */
 };
 
-/* these are the string identifiers corresponding to each logtype */
-#define LOGTYPE_STRING_IDENTIFIERS { \
-  "Default",                         \
-  "Core",                            \
-  "Logger",                          \
-  "CNID",                            \
-  "AFPDaemon",                       \
-  "ATalkDaemon",                     \
-  "PAPDaemon",                       \
-  "UAMSDaemon",                      \
-                                     \
-  "end_of_list_marker"}              \
 
 /* Display Option flags. */
 /* redefine these so they can don't interfeer with syslog */
 /* these can be used in standard logging too */
+#define logoption_nsrcinfo    0x04   /* don't log source info */
+/* the following do not work anymore, they're only provided in order to not
+ * break existing source code */
 #define logoption_pid         0x01   /* log the pid with each message */
 #define logoption_cons        0x02   /* log on the console if error logging */
 #define logoption_ndelay      0x08   /* don't delay open */
@@ -84,41 +123,102 @@ enum logtypes {
 #define logfacility_authpriv    (10<<3) /* security/auth messages (private) */
 #define logfacility_ftp         (11<<3) /* ftp daemon */
 
-/* Setup the log filename and the loglevel, and the type of log it is. */
-/* setup the internal variables used by the logger (called automatically) */
-void log_init();
+/* ========================================================================= 
+    Structure definitions
+   ========================================================================= */
 
-bool log_setup(char *filename, enum loglevels loglevel, enum logtypes logtype, 
-	       int display_options);
+/* Main log config */
+typedef struct {
+    bool           inited;                 /* file log config initialized ? */
+    bool           syslog_opened;          /* syslog opened ? */
+    bool           console;                /* if logging to console from a cli util */
+    char           processname[16];
+    int            syslog_facility;
+    int            syslog_display_options;
+} log_config_t;
 
-/* Setup the Level and type of log that will be logged to syslog. */
-void syslog_setup(enum loglevels loglevel, enum logtypes logtype, 
+/* This stores the config and options for one filelog type (e.g. logger, afpd etc.) */
+typedef struct {
+    bool           set;           /* set individually ? yes: changing default
+			                       * doesnt change it. no: it changes it.*/
+    bool           syslog;        /* This type logs to syslog */
+    int            fd;            /* logfiles fd */
+    enum loglevels level;         /* Log Level to put in this file */
+    int            display_options;
+} logtype_conf_t;
+
+
+/* ========================================================================= 
+    Global variables
+    ========================================================================= */
+
+/* Make config accessible for LOG macro */
+extern log_config_t log_config;
+
+extern UAM_MODULE_EXPORT logtype_conf_t type_configs[logtype_end_of_list_marker];
+
+/* =========================================================================
+    Global function decarations
+   ========================================================================= */
+
+/*  */
+void log_init(void);
+
+/* Setup the level and type of log that will be logged for file loggging */
+void log_setup(const char *filename, enum loglevels loglevel, enum logtypes logtype);
+
+/* Setup the level and type of log that will be logged to syslog. */
+void syslog_setup(int loglevel, enum logtypes logtype, 
 		  int display_options, int facility);
 
-/* void setuplog(char *logsource, char *logtype, char *loglevel, char *filename); */
-void setuplog(char *logtype, char *loglevel, char *filename);
+/* This gets called e.g. from afpd.conf parsing code with a string like: */
+/* "default log_maxdebug /var/log/afpd.log" */
+void setuplog(const char *logstr);
+
+/* This gets called e.g. from afpd.conf parsing code with a string like: */
+/* "default dummyname" */
+void unsetuplog(const char *logstr);
 
 /* finish up and close the logs */
-void log_close();
+void log_close(void);
 
 /* This function sets up the ProcessName */
-void set_processname(char *processname);
+void set_processname(const char *processname);
 
-/* Log a Message */
-void make_log_entry(enum loglevels loglevel, enum logtypes logtype, 
-             char *message, ...);
+/* LOG macro func no.1: log the message to file */
+UAM_MODULE_EXPORT  void make_log_entry(enum loglevels loglevel, enum logtypes logtype, const char *file, int line, char *message, ...);
 
-#ifndef DISABLE_LOGGER
-typedef void(*make_log_func)
-       (enum loglevels loglevel, enum logtypes logtype, char *message, ...);
-make_log_func set_log_location(char *srcfilename, int srclinenumber);
+/*
+ * How to write a LOG macro:
+ * http://c-faq.com/cpp/debugmacs.html
+ * 
+ * We choose the verbose form in favor of the obfuscated ones, its easier
+ * to parse for human beings and facilitates expanding the macro for
+ * inline checks for debug levels.
+ *
+ * How to properly enclose multistatement macros:
+ * http://en.wikipedia.org/wiki/C_macro#Multiple_statements
+ */
 
-void LoadProccessNameFromProc();
+#define LOG_MAX log_info
 
-#define LOG set_log_location(__FILE__, __LINE__)
-#else /* DISABLE_LOGGER */
-/* if the logger is disabled the rest is a bit futile */
-#define LOG make_log_entry
-#endif /* DISABLE_LOGGER */
+#ifdef NO_DEBUG
 
-#endif
+#define LOG(log_level, type, ...)                                       \
+    do {                                                                \
+        if (log_level <= LOG_MAX)                                       \
+            if (log_level <= type_configs[type].level)                  \
+                make_log_entry((log_level), (type), __FILE__, __LINE__,  __VA_ARGS__); \
+    } while(0)  
+
+#else  /* ! NO_DEBUG */
+
+#define LOG(log_level, type, ...)               \
+    do {                                                                \
+        if (log_level <= type_configs[type].level)                      \
+            make_log_entry((log_level), (type), __FILE__, __LINE__,  __VA_ARGS__); \
+    } while(0)
+
+#endif  /* NO_DEBUG */
+
+#endif /* _ATALK_LOGGER_H */
