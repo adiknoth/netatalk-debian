@@ -3,8 +3,6 @@ Date:   Mon Nov 30 13:32:24 2009 +0000
 
     in volparam bitmap only set bits defined in AFP version used by the client, cf debian bug #442228
 
-diff --git a/etc/afpd/volume.c b/etc/afpd/volume.c
-index cd5ccd2..7ba128d 100644
 --- a/etc/afpd/volume.c
 +++ b/etc/afpd/volume.c
 @@ -1,5 +1,5 @@
@@ -14,7 +12,7 @@ index cd5ccd2..7ba128d 100644
   *
   * Copyright (c) 1990,1993 Regents of The University of Michigan.
   * All Rights Reserved.  See COPYRIGHT.
-@@ -1389,10 +1389,6 @@ int		*buflen;
+@@ -1389,10 +1389,6 @@
          switch ( bit ) {
          case VOLPBIT_ATTR :
              ashort = 0;
@@ -25,7 +23,7 @@ index cd5ccd2..7ba128d 100644
              /* check for read-only.
               * NOTE: we don't actually set the read-only flag unless
               *       it's passed in that way as it's possible to mount
-@@ -1401,13 +1397,22 @@ int		*buflen;
+@@ -1401,13 +1397,22 @@
                      ((utime(vol->v_path, NULL) < 0) && (errno == EROFS))) {
                  ashort |= VOLPBIT_ATTR_RO;
              }

@@ -1,6 +1,6 @@
 --- a/bin/cnid/cnid_maint.in
 +++ b/bin/cnid/cnid_maint.in
-@@ -24,17 +24,17 @@
+@@ -26,17 +26,17 @@
  );
  
  ## Edit ME

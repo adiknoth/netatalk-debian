@@ -3,8 +3,6 @@ Date:   Sat Nov 14 10:25:24 2009 +0000
 
     struct sockaddr_in was not initialized to 0
 
-diff --git a/etc/cnid_dbd/usockfd.c b/etc/cnid_dbd/usockfd.c
-index ce8fb23..e52ad34 100644
 --- a/etc/cnid_dbd/usockfd.c
 +++ b/etc/cnid_dbd/usockfd.c
 @@ -1,5 +1,5 @@
@@ -14,7 +12,7 @@ index ce8fb23..e52ad34 100644
   *
   * Copyright (C) Joerg Lenneis 2003
   * All Rights Reserved.  See COPYING.
-@@ -82,7 +82,7 @@ int usockfd_create(char *usock_fn, mode_t mode, int backlog)
+@@ -82,7 +82,7 @@
  int tsockfd_create(char *host, u_int16_t ipport, int backlog)
  {
      int sockfd;

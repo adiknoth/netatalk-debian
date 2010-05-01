@@ -3,8 +3,6 @@ Date:   Thu Nov 26 10:41:43 2009 +0000
 
     Fix a symlink attack problem and a race condition in cnid_maint script. From SATOH Fumiyasu.
 
-diff --git a/bin/cnid/cnid_maint.in b/bin/cnid/cnid_maint.in
-index b622caf..c8bf467 100755
 --- a/bin/cnid/cnid_maint.in
 +++ b/bin/cnid/cnid_maint.in
 @@ -3,11 +3,12 @@
@@ -21,7 +19,7 @@ index b622caf..c8bf467 100755
  use vars qw(
      $APPLE_VOLUMES_FILE
      $STOP_CMD
-@@ -20,6 +21,7 @@ use vars qw(
+@@ -20,6 +21,7 @@
      $VERSION
      $START_NETATALK
      $LOCK_FILE
@@ -29,7 +27,7 @@ index b622caf..c8bf467 100755
      $HOLDING_LOCK
  );
  
-@@ -86,10 +88,13 @@ if (-f $LOCK_FILE) {
+@@ -86,10 +88,13 @@
          end();
  }
  
@@ -45,7 +43,7 @@ index b622caf..c8bf467 100755
  $HOLDING_LOCK = 1;
  
  # Check to see if the AppleVolumes.default file exists.  We will use this file
-@@ -314,8 +319,8 @@ sub end {
+@@ -314,8 +319,8 @@
                  }
          }
          if ($HOLDING_LOCK) {
