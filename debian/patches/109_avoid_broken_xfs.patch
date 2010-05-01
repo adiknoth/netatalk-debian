@@ -1,6 +1,6 @@
 --- a/configure.in
 +++ b/configure.in
-@@ -692,13 +692,14 @@
+@@ -702,13 +702,14 @@
  #		AC_MSG_RESULT([enabling quotactl wrapper])
  #	)
  

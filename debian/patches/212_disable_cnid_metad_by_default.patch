@@ -1,17 +1,17 @@
 --- a/config/netatalk.conf
 +++ b/config/netatalk.conf
-@@ -32,7 +32,7 @@
- # Set which daemons to run (papd is dependent upon atalkd):
- ATALKD_RUN=yes
+@@ -28,7 +28,7 @@
  PAPD_RUN=no
+ TIMELORD_RUN=no
+ A2BOOT_RUN=no
 -CNID_METAD_RUN=yes
 +CNID_METAD_RUN=no
  AFPD_RUN=yes
- TIMELORD_RUN=no
- A2BOOT_RUN=no
+ 
+ # Control whether the daemons are started in the background.
 --- a/distrib/initscripts/rc.atalk.debian.tmpl
 +++ b/distrib/initscripts/rc.atalk.debian.tmpl
-@@ -30,7 +30,7 @@
+@@ -28,7 +28,7 @@
  ATALK_ZONE=
  ATALK_NAME=`/bin/hostname --short`
  ATALK_BGROUND=no
