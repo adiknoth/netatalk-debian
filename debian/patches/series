@@ -1,5 +1,5 @@
 #107_afpd-zeroconf.patch
-109_avoid_broken_xfs.patch
+#109_avoid_broken_xfs.patch
 #112_fix_zeroconf_assertion.patch
 114_fix_macusers_ps_parsing.patch
 200_netatalk_conf_defaults.diff
