@@ -1,3 +1,11 @@
+netatalk (2.1-2) unstable; urgency=low
+
+  * Drop patch 212 (disable CNID metad by default): the CNID scheme used
+    by default since Netatalk 2.1, dbd, requires metad enabled.
+    Closes: bug#581773, thanks to Søren Grønning.
+
+ -- Jonas Smedegaard <dr@jones.dk>  Sat, 15 May 2010 21:09:28 +0200
+
 netatalk (2.1-1) unstable; urgency=low
 
   * New upstream release.
