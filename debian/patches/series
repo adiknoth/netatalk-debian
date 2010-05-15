@@ -6,6 +6,5 @@
 201_etc2ps_paths.diff
 202_psf_8_paths.diff
 205_applevolumes_default_homedir.diff
-212_disable_cnid_metad_by_default.patch
 213_CVE-2008-5718.patch
 #294_avoid_broken_xfs_autotools.patch
