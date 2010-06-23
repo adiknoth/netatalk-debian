@@ -1,3 +1,12 @@
+netatalk (2.1.2-1) unstable; urgency=low
+
+  * New upstream release.
+  * Refresh patch 205.
+  * Tighten reinstall-initscript-quirk: upstream no longer double-
+    expands DESTDIR.
+
+ -- Jonas Smedegaard <dr@jones.dk>  Wed, 23 Jun 2010 20:08:29 +0200
+
 netatalk (2.1-2) unstable; urgency=low
 
   * Drop patch 212 (disable CNID metad by default): the CNID scheme used
