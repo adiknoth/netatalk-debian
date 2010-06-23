@@ -79,10 +79,8 @@ binary-post-install/netatalk::
 	$(if $(findstring openssl,$(DEB_BUILD_OPTIONS)),,$(if $(shell objdump -x debian/netatalk/usr/lib/netatalk/* 2> /dev/null | sed -n '/NEEDED \+libssl\.so/p'),$(error OpenSSL dependencies found in GPL build!)))
 
 # Re-install initscript with debhelper to add pre- and postinst routines
-# TODO: Tighten quirks when upstream fix braindead double $(DESTDIR)
 install/netatalk::
-	mv $(DEB_DESTDIR)/$(DEB_DESTDIR)/etc/init.d/netatalk debian/netatalk.init
-	rmdir -p --ignore-fail-on-non-empty $(DEB_DESTDIR)/$(DEB_DESTDIR)/etc/init.d/
+	mv $(DEB_DESTDIR)/etc/init.d/netatalk debian/netatalk.init
 
 clean::
 	rm -f debian/netatalk.init
