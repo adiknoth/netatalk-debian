@@ -1,3 +1,9 @@
+netatalk (2.1.2-2) unstable; urgency=low
+
+  * Fix enable DEB_BUILD_HARDENING.
+
+ -- Jonas Smedegaard <dr@jones.dk>  Wed, 23 Jun 2010 22:49:52 +0200
+
 netatalk (2.1.2-1) unstable; urgency=low
 
   * New upstream release.
