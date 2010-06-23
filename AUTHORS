@@ -3,20 +3,17 @@ with their contributions. Cheers.
 
 Original Authors, pre-Sourceforge. 
 
-Thanks a bunch folks, wherever you are.
+Thanks a bunch folks, where ever you are.
 
 	Wesley Craig <wesley.craig@umich.edu>
 	Adrian Sun <asun@cobaltnet.com>
-	Steve Hirsch <shirsch@adelphia.net>: ProDOS II support/initial Randnum 
-	  support
+	Steve Hirsch: ProDOS II support/initial Randnum support
 	Robert Marinchick: initial rquota patch
 	Frank Morton: megatron information patch
 	Tim Carlson: Solaris testing
 	iNOUE Koichi: RPM for RedHat systems
 	Stefan Bethke: FreeBSD
 	Leland Wallace
-	Gerry Tomlinson <Gerry.Tomlinson@newcastle.ac.uk>:
-	  original afile/achfile/acleandir implementation
 
 Recent Contributors since Sourceforge
 
@@ -24,7 +21,7 @@ Sourceforge Administration:
 	Jeffrey Buchbinder <jeff@univrel.pr.uconn.edu>
 	Matthew Keller <kellermg@potsdam.edu>
 
-Developers: Version 1.4.99 - 2.0
+Developers: Version 1.4.99 - 1.5
 	Alain Richard <alain.richard@equation.fr>	
 	David R Bosso <dbosso@ltsc.ucsb.edu>
 	Joe Clarke <marcus@marcuscom.com>
@@ -40,33 +37,25 @@ Developers: Version 1.4.99 - 2.0
 	Steve Freitas <sflist@ihonk.com>
 	Uwe Hees <uwe.hees@rz-online.de>
 	Benjamin Heitmann <bheitman@ebios.de>
-	Bob Rogers <rogers@rgrjr.dyndns.org>
+	Bob Rogers <rogers-netatalk-devel@rgrjr.dyndns.org>
 	Burkhard Schmidt <bs@cpfs.mpg.de>
 	Glenn Trewitt <glenn@trewitt.org>
 	Olaf Hering <olh@suse.de>
 	Robert Cohen <robert.cohen@anu.edu.au>
 	Robert Stickel <rstickel@connex.com>
- 	Sumit Bose <sbose@hbv.de>
-	Brandon Warren <bwarren@u.washington.edu>
-	Dan Wilga <dwilga@mtholyoke.edu>
-	Rafal Lewczuk <rlewczuk@pronet.pl>
-	Didier Gautheron <dgautheron@magic.fr>
-	Joerg Lenneis <lenneis@wu-wien.ac.at>
-	Bjoern Fernhomberg <lists@fernhomberg.de>
+ 	Sumit <sbose@hbv.de>
 
 Webmin Module:
 	Matthew Keller <kellermg@potsdam.edu>
 
-Package Maintainers and Contributors:
-	Sebastian Rittau <srittau@debian.org> (Debian GNU/Linux)
-    Jonas Smedegaard <dr@jones.dk> (Debian GNU systems)
-	Joe Clarke <marcus@FreeBSD.org> (FreeBSD)
-	David Rankin <drankin@bohemians.lexington.ky.us> (NetBSD)
+Package Maintainers:
+	Sebastian Rittau <srittau@jroger.in-berlin.de> (RPM, Debian)
+	Joe Clarke <marcus@marcuscom.com> (FreeBSD)
 
 Sourceforge Website Maintainers:
 	Andrew Morgan <morgan@orst.edu>	
 
-Documentation: Version 1.4.99 - 2.0
+Documentation: Version 1.4.99 - 1.5
 	Steve Freitas <sflist@ihonk.com>
 	Karen A Swanberg <swanberg@tc.umn.edu>
 	Lance Levsen <l.levsen@printwest.com>
@@ -79,11 +68,8 @@ Documentation: Version 1.4.99 - 2.0
 	Rob Lineweaver <rbline@wm.edu>
 	Alistair Riddell <ali@gwc.org.uk>
 	Edmund Lam <epl@unimelb.edu.au>
-	Sebastian Rittau <srittau@jroger.in-berlin.de>
-	Chris Blake <Chris.Blake@anu.edu.au>
-	Thomas Kaiser <Thomas.Kaiser@phg-online.de>
 
-Bug Reports: Version 1.4.99 - 2.0
+Bug Reports: Version 1.4.99 - 1.5
 	Ryan Dooley <dooleyr@missouri.edu>
 	Don Jessup <DJessup@tricord.com>
 	Kevin M. Myer <kevin_myer@iu13.k12.pa.us>
@@ -114,7 +100,7 @@ Bug Reports: Version 1.4.99 - 2.0
 
 
 And thanks to everyone on the netatalk-devel and netatalk-docs
-lists. If you feel you should be listed here and aren't, please let 
-us know.
+lists. If you feel you should be listed here and aren't, please let me
+know, Lance Levsen, l.levsen@printwest.com
 
-Cheers!
+Cheers.

@@ -1,5 +1,5 @@
 /*
- * $Id: unix.c,v 1.61 2010/02/10 14:05:37 franklahm Exp $
+ * $Id: unix.c,v 1.61 2010-02-10 14:05:37 franklahm Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.

@@ -1,5 +1,5 @@
 /*
- * $Id: volume.h,v 1.17 2010/04/10 08:24:54 franklahm Exp $
+ * $Id: volume.h,v 1.17 2010-04-10 08:24:54 franklahm Exp $
  *
  * Copyright (c) 1990,1994 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.

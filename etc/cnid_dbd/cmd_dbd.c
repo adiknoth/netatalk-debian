@@ -1,5 +1,5 @@
 /* 
-   $Id: cmd_dbd.c,v 1.26 2010/04/20 16:46:20 hat001 Exp $
+   $Id: cmd_dbd.c,v 1.26 2010-04-20 16:46:20 hat001 Exp $
 
    Copyright (c) 2009 Frank Lahm <franklahm@gmail.com>
    

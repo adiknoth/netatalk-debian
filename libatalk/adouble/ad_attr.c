@@ -1,5 +1,5 @@
 /*
- * $Id: ad_attr.c,v 1.14 2010/01/06 14:05:15 franklahm Exp $
+ * $Id: ad_attr.c,v 1.14 2010-01-06 14:05:15 franklahm Exp $
  */
 
 #ifdef HAVE_CONFIG_H

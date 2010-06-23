@@ -1,5 +1,5 @@
 /*
- * $Id: afp_dsi.c,v 1.53 2010/03/30 12:55:26 franklahm Exp $
+ * $Id: afp_dsi.c,v 1.53 2010-03-30 12:55:26 franklahm Exp $
  *
  * Copyright (c) 1999 Adrian Sun (asun@zoology.washington.edu)
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
@@ -73,10 +73,14 @@ static void afp_dsi_close(AFPObj *obj)
      * as uid 0, that's the wrong user for volume's prexec_close scripts if any,
      * restore our login user
      */
-    if (seteuid( obj->uid ) < 0) {
-        LOG(log_error, logtype_afpd, "can't seteuid back %s", strerror(errno));
-        exit(EXITERR_SYS);
+    if (geteuid() != obj->uid) {
+        if (seteuid( obj->uid ) < 0) {
+            LOG(log_error, logtype_afpd, "can't seteuid(%u) back %s: uid: %u, euid: %u", 
+                obj->uid, strerror(errno), getuid(), geteuid());
+            exit(EXITERR_SYS);
+        }
     }
+
     close_all_vol();
     if (obj->logout)
         (*obj->logout)();

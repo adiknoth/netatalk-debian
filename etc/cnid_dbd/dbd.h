@@ -1,5 +1,5 @@
 /*
- * $Id: dbd.h,v 1.7 2009/11/25 14:59:15 franklahm Exp $
+ * $Id: dbd.h,v 1.7 2009-11-25 14:59:15 franklahm Exp $
  *
  * Copyright (C) Joerg Lenneis 2003
  * Copyright (C) Frank Lahm 2009

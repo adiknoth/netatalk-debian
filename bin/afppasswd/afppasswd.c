@@ -1,5 +1,5 @@
 /* 
- * $Id: afppasswd.c,v 1.19 2005/04/28 20:49:19 bfernhomberg Exp $
+ * $Id: afppasswd.c,v 1.19 2005-04-28 20:49:19 bfernhomberg Exp $
  *
  * Copyright 1999 (c) Adrian Sun (asun@u.washington.edu)
  * All Rights Reserved. See COPYRIGHT.

@@ -1,5 +1,5 @@
 /* 
-   $Id: ad_ls.c,v 1.4 2009/10/14 01:38:28 didg Exp $
+   $Id: ad_ls.c,v 1.4 2009-10-14 01:38:28 didg Exp $
 
    Copyright (c) 2009 Frank Lahm <franklahm@gmail.com>
    

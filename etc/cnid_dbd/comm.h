@@ -1,5 +1,5 @@
 /*
- * $Id: comm.h,v 1.5 2009/10/19 08:09:07 didg Exp $
+ * $Id: comm.h,v 1.5 2009-10-19 08:09:07 didg Exp $
  *
  * Copyright (C) Joerg Lenneis 2003
  * All Rights Reserved.  See COPYING.

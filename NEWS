@@ -1,3 +1,30 @@
+Changes in 2.1.2
+================
+
+* FIX: afpd: fix for possible crash in case more then one server is
+       configured in afpd.conf.
+* FIX: afpd: ExtendedAttributes in FreeBSD
+* FIX: afpd: sharing home folders corrupted the per volume umask.
+* UPD: afpd: umask for home folders is no longer taken from startup umask.
+* UPD: afpd: dont and permissions with parent folder when creating new
+       directories on "upriv" volumes.
+* UPD: afpd: use 'afpserver@fqdn' instead of 'afpserver/fqdn@realm'.
+       Prevents a crash in older GNU GSSAPI libs on eg. CentOS 5.x.
+ 
+Changes in 2.1.1
+================
+
+* UPD: fallback to a temporary in memory tdb CNID database if the volume
+       database can't be opened now works with the default backend "dbd" too.
+* FIX: afpd: afp_ldap.conf was missing from tarball. This only effected
+       [Open]Solaris.
+* FIX: afpd: Check if options->server is set in set_signature, preventing
+       SIGSEGV.
+* FIX: afpd: server signature wasn't initialized in some cases
+* FIX: DESTDIR support: DESTDIR was expanded twice
+* FIX: Fix for compilation error if header files of an older Netatalk
+       version are installed.
+
 Changes in 2.1-release
 ======================
 

@@ -1,6 +1,4 @@
 /*
- * $Id: status.c,v 1.31 2010/03/29 15:22:57 franklahm Exp $
- *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
  */
@@ -551,7 +549,7 @@ void status_init(AFPConfig *aspconfig, AFPConfig *dsiconfig,
 /* If cannot open conf file, use one-time signature.                  */
 /* If -signature user:xxxxx, use it.                                  */
 
-void set_signature(char *opt, struct afp_options *options) {
+void set_signature(struct afp_options *options) {
     char *usersign;
     int fd, i;
     struct stat tmpstat;
@@ -560,28 +558,30 @@ void set_signature(char *opt, struct afp_options *options) {
     char buf[1024], *p;
     FILE *fp, *randomp;
     size_t len;
+    char *server_tmp;
     
-    if (strcmp(opt, "auto") == 0) {
+    server_tmp = (options->server ? options->server : options->hostname);
+    if (strcmp(options->signatureopt, "auto") == 0) {
         goto server_signature_auto;   /* default */
-    } else if (strcmp(opt, "host") == 0) {
-        LOG(log_warning, logtype_afpd, "WARNING: option \"-signature host\" is obsoleted. Switching back to auto.", opt);
+    } else if (strcmp(options->signatureopt, "host") == 0) {
+        LOG(log_warning, logtype_afpd, "WARNING: option \"-signature host\" is obsoleted. Switching back to auto.", options->signatureopt);
         goto server_signature_auto;   /* same as auto */
-    } else if (strncmp(opt, "user", 4) == 0) {
+    } else if (strncmp(options->signatureopt, "user", 4) == 0) {
         goto server_signature_user;   /*  user string */
     } else {
-        LOG(log_error, logtype_afpd, "ERROR: option \"-signature %s\" is not valid. Switching back to auto.", opt);
+        LOG(log_error, logtype_afpd, "ERROR: option \"-signature %s\" is not valid. Switching back to auto.", options->signatureopt);
         goto server_signature_auto;   /* switch back to auto*/
     }
     
 server_signature_user:
     
     /* Signature type is user string */
-    len = strlen(opt);
+    len = strlen(options->signatureopt);
     if (len <= 5) {
-        LOG(log_warning, logtype_afpd, "WARNING: option \"-signature %s\" is not valid. Switching back to auto.", opt);
+        LOG(log_warning, logtype_afpd, "WARNING: option \"-signature %s\" is not valid. Switching back to auto.", options->signatureopt);
         goto server_signature_auto;
     }
-    usersign = opt + 5;
+    usersign = options->signatureopt + 5;
     len = len - 5;
     if (len > 16) {
         LOG(log_warning, logtype_afpd, "WARNING: signature user string %s is very long !",  usersign);
@@ -615,12 +615,12 @@ server_signature_auto:
                     if ((servername_conf = strtok( p, " \t" )) == NULL)
                         continue;                         /* syntax error: invalid servername */
                 }
-                p = index(p, '\0');
+                p = strchr(p, '\0');
                 p++;
                 if (*p == '\0')
                     continue;                             /* syntax error: missing signature */
                 
-                if (strcmp(options->server, servername_conf))
+                if (strcmp(server_tmp, servername_conf))
                     continue;                             /* another servername */
                 
                 while (p && isblank(*p))
@@ -684,7 +684,7 @@ server_signature_random:
         }
         LOG(log_note, logtype_afpd,
             "generate %s's signature %02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X from /dev/urandom",
-            options->server,
+            server_tmp,
             (options->signature)[ 0], (options->signature)[ 1],
             (options->signature)[ 2], (options->signature)[ 3],
             (options->signature)[ 4], (options->signature)[ 5],
@@ -695,13 +695,13 @@ server_signature_random:
             (options->signature)[14], (options->signature)[15]);
         
     } else {                                   /* genarate from random() because cannot open /dev/urandom */
-        srandom((unsigned int)time(NULL) + (unsigned int)options + (unsigned int)options->server);
+        srandom((unsigned int)time(NULL) + (unsigned int)options + (unsigned int)server_tmp);
         for (i=0 ; i<16 ; i++) {
             (options->signature)[i] = random() & 0xFF;
         }
         LOG(log_note, logtype_afpd,
             "generate %s's signature %02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X from random()",
-            options->server,
+            server_tmp,
             (options->signature)[ 0], (options->signature)[ 1],
             (options->signature)[ 2], (options->signature)[ 3],
             (options->signature)[ 4], (options->signature)[ 5],
@@ -723,7 +723,7 @@ server_signature_random:
     }
     
     if (fp) {
-        fprintf(fp, "\"%s\"\t", options->server);
+        fprintf(fp, "\"%s\"\t", server_tmp);
         for (i=0 ; i<16 ; i++) {
             fprintf(fp, "%02X", (options->signature)[i]);
         }
@@ -736,7 +736,7 @@ server_signature_done:
     /* retrun */
     LOG(log_info, logtype_afpd,
         " \"%s\"'s signature is  %02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
-        options->server,
+        server_tmp,
         (options->signature)[ 0], (options->signature)[ 1],
         (options->signature)[ 2], (options->signature)[ 3],
         (options->signature)[ 4], (options->signature)[ 5],

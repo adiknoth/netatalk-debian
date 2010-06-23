@@ -1,5 +1,5 @@
 /*
- * $Id: file.c,v 1.12 2009/10/14 02:24:05 didg Exp $
+ * $Id: file.c,v 1.12 2009-10-14 02:24:05 didg Exp $
  *
  * Copyright (c) 1990,1994 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.

@@ -1,5 +1,5 @@
 /*
- * $Id: dsi_init.c,v 1.10 2009/11/05 14:38:08 franklahm Exp $
+ * $Id: dsi_init.c,v 1.10 2009-11-05 14:38:08 franklahm Exp $
  *
  * Copyright (c) 1997 Adrian Sun (asun@zoology.washington.edu)
  * All rights reserved. See COPYRIGHT.

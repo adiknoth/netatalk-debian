@@ -1,5 +1,5 @@
 /*
-  $Id: ldap.c,v 1.7 2010/04/23 11:37:06 franklahm Exp $
+  $Id: ldap.c,v 1.7 2010-04-23 11:37:06 franklahm Exp $
   Copyright (c) 2008,2009 Frank Lahm <franklahm@gmail.com>
 
   This program is free software; you can redistribute it and/or modify

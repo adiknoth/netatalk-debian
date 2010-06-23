@@ -1,5 +1,5 @@
 /*
- * $Id: server_child.c,v 1.12 2010/01/21 14:14:49 didg Exp $
+ * $Id: server_child.c,v 1.12 2010-01-21 14:14:49 didg Exp $
  *
  * Copyright (c) 1997 Adrian Sun (asun@zoology.washington.edu)
  * All rights reserved. See COPYRIGHT.

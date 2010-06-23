@@ -1,5 +1,5 @@
 /*
- * $Id: cnid_cdb_private.h,v 1.7 2009/11/20 17:22:11 didg Exp $
+ * $Id: cnid_cdb_private.h,v 1.7 2009-11-20 17:22:11 didg Exp $
  */
 
 #ifndef LIBATALK_CDB_PRIVATE_H

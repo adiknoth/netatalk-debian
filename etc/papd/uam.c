@@ -1,5 +1,5 @@
 /*
- * $Id: uam.c,v 1.11 2009/10/15 11:39:48 didg Exp $
+ * $Id: uam.c,v 1.11 2009-10-15 11:39:48 didg Exp $
  *
  * Copyright (c) 1999 Adrian Sun (asun@zoology.washington.edu)
  * All Rights Reserved.  See COPYRIGHT.

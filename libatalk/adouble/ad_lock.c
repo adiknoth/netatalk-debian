@@ -1,5 +1,5 @@
 /* 
- * $Id: ad_lock.c,v 1.20 2010/03/30 12:55:26 franklahm Exp $
+ * $Id: ad_lock.c,v 1.20 2010-03-30 12:55:26 franklahm Exp $
  *
  * Copyright (c) 1998,1999 Adrian Sun (asun@zoology.washington.edu)
  * All Rights Reserved. See COPYRIGHT for more information.

@@ -1,5 +1,5 @@
 /*
- * $Id: asp_getreq.c,v 1.3 2001/06/29 14:14:46 rufustfirefly Exp $
+ * $Id: asp_getreq.c,v 1.3 2001-06-29 14:14:46 rufustfirefly Exp $
  *
  * Copyright (c) 1990,1991 Regents of The University of Michigan.
  * All Rights Reserved.

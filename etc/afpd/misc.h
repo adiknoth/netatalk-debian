@@ -1,5 +1,5 @@
 /*
- * $Id: misc.h,v 1.5 2009/10/15 10:43:13 didg Exp $
+ * $Id: misc.h,v 1.5 2009-10-15 10:43:13 didg Exp $
  */
 
 #ifndef AFPD_MISC_H

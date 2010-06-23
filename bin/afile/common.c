@@ -1,5 +1,5 @@
 /*
- * $Id: common.c,v 1.3 2001/06/29 14:14:46 rufustfirefly Exp $
+ * $Id: common.c,v 1.3 2001-06-29 14:14:46 rufustfirefly Exp $
  *
     common functions, defines, and structures for afile, achfile, and acleandir
 

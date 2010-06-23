@@ -1,5 +1,5 @@
 /*
- * $Id: unix.h,v 1.23 2010/04/12 14:28:47 franklahm Exp $
+ * $Id: unix.h,v 1.23 2010-04-12 14:28:47 franklahm Exp $
  */
 
 #ifndef AFPD_UNIX_H

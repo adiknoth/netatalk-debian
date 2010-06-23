@@ -1,6 +1,6 @@
 
 /* 
- * $Id: cnid_init.c,v 1.3 2009/10/13 22:55:37 didg Exp $
+ * $Id: cnid_init.c,v 1.3 2009-10-13 22:55:37 didg Exp $
  *
  * Copyright (c) 2003 the Netatalk Team
  * Copyright (c) 2003 Rafal Lewczuk <rlewczuk@pronet.pl>

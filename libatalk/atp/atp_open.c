@@ -1,5 +1,5 @@
 /*
- * $Id: atp_open.c,v 1.5 2001/08/15 02:17:57 srittau Exp $
+ * $Id: atp_open.c,v 1.5 2001-08-15 02:17:57 srittau Exp $
  *
  * Copyright (c) 1990,1991 Regents of The University of Michigan.
  * All Rights Reserved.

@@ -1,5 +1,5 @@
 /*
- * $Id: db_param.c,v 1.9 2009/11/23 19:04:14 franklahm Exp $
+ * $Id: db_param.c,v 1.9 2009-11-23 19:04:14 franklahm Exp $
  *
  * Copyright (C) Joerg Lenneis 2003
  * Copyright (c) Frank Lahm 2009

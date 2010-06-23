@@ -1,5 +1,5 @@
 /*
- * $Id: cnid_tdb_get.c,v 1.4 2009/11/20 17:37:14 didg Exp $
+ * $Id: cnid_tdb_get.c,v 1.4 2009-11-20 17:37:14 didg Exp $
  */
 
 #ifdef HAVE_CONFIG_H

@@ -1,5 +1,5 @@
 /*
- * $Id: dsi_private.h,v 1.4 2009/11/05 14:38:08 franklahm Exp $
+ * $Id: dsi_private.h,v 1.4 2009-11-05 14:38:08 franklahm Exp $
  *
  * Copyright (c) 1997 Adrian Sun (asun@zoology.washington.edu)
  * All rights reserved. See COPYRIGHT.

@@ -1,5 +1,5 @@
 /*
- * $Id: route.h,v 1.3 2009/10/13 22:55:37 didg Exp $
+ * $Id: route.h,v 1.3 2009-10-13 22:55:37 didg Exp $
  */
 
 #ifndef ATALKD_ROUTE_H

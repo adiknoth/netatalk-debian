@@ -1,5 +1,5 @@
 /*
- * $Id: config.c,v 1.20 2009/10/29 11:35:58 didg Exp $
+ * $Id: config.c,v 1.20 2009-10-29 11:35:58 didg Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved. See COPYRIGHT.

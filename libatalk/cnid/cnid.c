@@ -1,5 +1,5 @@
 /* 
- * $Id: cnid.c,v 1.13 2010/03/31 09:47:32 franklahm Exp $
+ * $Id: cnid.c,v 1.13 2010-03-31 09:47:32 franklahm Exp $
  *
  * Copyright (c) 2003 the Netatalk Team
  * Copyright (c) 2003 Rafal Lewczuk <rlewczuk@pronet.pl>

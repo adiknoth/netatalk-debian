@@ -1,5 +1,5 @@
 /* 
- * $Id: netddp_open.c,v 1.9 2005/04/28 20:50:02 bfernhomberg Exp $
+ * $Id: netddp_open.c,v 1.9 2005-04-28 20:50:02 bfernhomberg Exp $
  *
  * Copyright (c) 1999 Adrian Sun (asun@zoology.washington.edu)
  * Copyright (c) 1990,1991 Regents of The University of Michigan.

@@ -1,5 +1,5 @@
 /*
- * $Id: at_control.c,v 1.2 2001/06/29 14:14:47 rufustfirefly Exp $
+ * $Id: at_control.c,v 1.2 2001-06-29 14:14:47 rufustfirefly Exp $
  *
  * Copyright (c) 1990,1991 Regents of The University of Michigan.
  * All Rights Reserved.

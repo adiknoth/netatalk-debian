@@ -1,5 +1,5 @@
 /*
- * $Id: dbd_update.c,v 1.7 2009/07/12 09:21:34 franklahm Exp $
+ * $Id: dbd_update.c,v 1.7 2009-07-12 09:21:34 franklahm Exp $
  *
  * Copyright (C) Joerg Lenneis 2003
  * All Rights Reserved.  See COPYING.

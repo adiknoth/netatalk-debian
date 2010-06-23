@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-# $Id: add_netatalk_printer,v 1.7 2003/02/23 03:16:34 srittau Exp $
+# $Id: add_netatalk_printer,v 1.7 2003-02-23 03:16:34 srittau Exp $
 #
 # A lovely script to add netatalk printers 
 #

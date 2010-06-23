@@ -1,5 +1,5 @@
 /*
- * $Id: ad_read.c,v 1.10 2010/02/10 14:05:37 franklahm Exp $
+ * $Id: ad_read.c,v 1.10 2010-02-10 14:05:37 franklahm Exp $
  *
  * Copyright (c) 1990,1991 Regents of The University of Michigan.
  * All Rights Reserved.

@@ -1,5 +1,5 @@
 /*
-  $Id: acls.c,v 1.9 2010/03/08 19:49:59 franklahm Exp $
+  $Id: acls.c,v 1.9 2010-03-08 19:49:59 franklahm Exp $
   Copyright (c) 2008,2009 Frank Lahm <franklahm@gmail.com>
 
   This program is free software; you can redistribute it and/or modify

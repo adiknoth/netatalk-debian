@@ -1,5 +1,5 @@
 /*
- * $Id: server_ipc.c,v 1.4 2010/01/21 14:14:49 didg Exp $
+ * $Id: server_ipc.c,v 1.4 2010-01-21 14:14:49 didg Exp $
  *
  * All rights reserved. See COPYRIGHT.
  *
