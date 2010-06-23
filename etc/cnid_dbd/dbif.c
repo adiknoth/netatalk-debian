@@ -1,5 +1,5 @@
 /*
- * $Id: dbif.c,v 1.20 2010/01/19 14:57:11 franklahm Exp $
+ * $Id: dbif.c,v 1.20 2010-01-19 14:57:11 franklahm Exp $
  *
  * Copyright (C) Joerg Lenneis 2003
  * Copyright (C) Frank Lahm 2009

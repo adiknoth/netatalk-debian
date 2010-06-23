@@ -1,5 +1,5 @@
 /*
- * $Id: cnid_cdb_add.c,v 1.8 2009/11/20 17:22:11 didg Exp $
+ * $Id: cnid_cdb_add.c,v 1.8 2009-11-20 17:22:11 didg Exp $
  *
  * Copyright (c) 1999. Adrian Sun (asun@zoology.washington.edu)
  * All Rights Reserved. See COPYRIGHT.

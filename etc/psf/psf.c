@@ -1,5 +1,5 @@
 /*
- * $Id: psf.c,v 1.13 2009/10/16 01:50:50 didg Exp $
+ * $Id: psf.c,v 1.13 2009-10-16 01:50:50 didg Exp $
  *
  * Copyright (c) 1990,1995 Regents of The University of Michigan.
  * All Rights Reserved. See COPYRIGHT.

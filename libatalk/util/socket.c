@@ -1,5 +1,5 @@
 /*
-   $Id: socket.c,v 1.6 2010/01/05 19:05:52 franklahm Exp $
+   $Id: socket.c,v 1.6 2010-01-05 19:05:52 franklahm Exp $
    Copyright (c) 2009 Frank Lahm <franklahm@gmail.com>
 
    This program is free software; you can redistribute it and/or modify

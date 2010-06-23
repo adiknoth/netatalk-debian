@@ -1,5 +1,5 @@
 /*
- * $Id: cnid_tdb_delete.c,v 1.4 2009/11/20 19:25:05 didg Exp $
+ * $Id: cnid_tdb_delete.c,v 1.4 2009-11-20 19:25:05 didg Exp $
  *
  * Copyright (c) 1999. Adrian Sun (asun@zoology.washington.edu)
  * All Rights Reserved. See COPYRIGHT.

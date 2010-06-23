@@ -1,5 +1,5 @@
 /*
- * $Id: asp_tickle.c,v 1.7 2002/12/04 10:59:37 didg Exp $
+ * $Id: asp_tickle.c,v 1.7 2002-12-04 10:59:37 didg Exp $
  */
 
 #ifdef HAVE_CONFIG_H

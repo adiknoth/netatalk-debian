@@ -1,5 +1,5 @@
 /*
- * $Id: ddp_output.c,v 1.4 2002/01/04 04:45:49 sibaz Exp $
+ * $Id: ddp_output.c,v 1.4 2002-01-04 04:45:49 sibaz Exp $
  *
  * Copyright (c) 1990,1991 Regents of The University of Michigan.
  * All Rights Reserved. See COPYRIGHT.

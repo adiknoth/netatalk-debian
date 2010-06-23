@@ -1,5 +1,5 @@
 /*
- * $Id: unix.c,v 1.11 2010/04/18 16:14:51 hat001 Exp $
+ * $Id: unix.c,v 1.11 2010-04-18 16:14:51 hat001 Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.

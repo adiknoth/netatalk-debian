@@ -1,5 +1,5 @@
 /*
-  $Id: ea.c,v 1.22 2010/04/18 11:11:17 franklahm Exp $
+  $Id: ea.c,v 1.22 2010-04-18 11:11:17 franklahm Exp $
   Copyright (c) 2009 Frank Lahm <franklahm@gmail.com>
 
   This program is free software; you can redistribute it and/or modify

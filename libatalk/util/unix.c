@@ -1,5 +1,5 @@
 /*
-  $Id: unix.c,v 1.6 2010/02/28 22:29:16 didg Exp $
+  $Id: unix.c,v 1.6 2010-02-28 22:29:16 didg Exp $
   Copyright (c) 2010 Frank Lahm <franklahm@gmail.com>
 
   This program is free software; you can redistribute it and/or modify

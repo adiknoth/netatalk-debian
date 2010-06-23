@@ -1,5 +1,5 @@
 /*
- * $Id: pack.h,v 1.5 2009/05/04 09:09:43 franklahm Exp $
+ * $Id: pack.h,v 1.5 2009-05-04 09:09:43 franklahm Exp $
  *
  * Copyright (C) Joerg Lenneis 2003
  * All Rights Reserved.  See COPYING.

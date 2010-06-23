@@ -1,5 +1,5 @@
 /*
- * $Id: dsi_read.c,v 1.7 2009/10/25 06:13:11 didg Exp $
+ * $Id: dsi_read.c,v 1.7 2009-10-25 06:13:11 didg Exp $
  *
  * Copyright (c) 1997 Adrian Sun (asun@zoology.washington.edu)
  * All rights reserved. See COPYRIGHT.

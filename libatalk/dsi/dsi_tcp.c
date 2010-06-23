@@ -1,5 +1,5 @@
 /*
- * $Id: dsi_tcp.c,v 1.25 2009/12/08 22:34:37 didg Exp $
+ * $Id: dsi_tcp.c,v 1.25 2009-12-08 22:34:37 didg Exp $
  *
  * Copyright (c) 1997, 1998 Adrian Sun (asun@zoology.washington.edu)
  * All rights reserved. See COPYRIGHT.

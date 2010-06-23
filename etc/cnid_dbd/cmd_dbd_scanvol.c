@@ -1,5 +1,5 @@
 /*
-  $Id: cmd_dbd_scanvol.c,v 1.21 2010/04/11 07:01:23 franklahm Exp $
+  $Id: cmd_dbd_scanvol.c,v 1.21 2010-04-11 07:01:23 franklahm Exp $
 
   Copyright (c) 2009 Frank Lahm <franklahm@gmail.com>
 

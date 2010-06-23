@@ -1,5 +1,5 @@
 /*
-  $Id: ldap_config.c,v 1.4 2009/11/28 11:10:37 franklahm Exp $
+  $Id: ldap_config.c,v 1.4 2009-11-28 11:10:37 franklahm Exp $
   Copyright (c) 2009 Frank Lahm <franklahm@gmail.com>
 
   This program is free software; you can redistribute it and/or modify

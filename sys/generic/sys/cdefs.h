@@ -1,5 +1,5 @@
 /*
- * $Id: cdefs.h,v 1.4 2001/08/15 15:29:14 srittau Exp $
+ * $Id: cdefs.h,v 1.4 2001-08-15 15:29:14 srittau Exp $
  */
 
 #ifndef _SYS_CDEFS_H

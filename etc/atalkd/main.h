@@ -1,5 +1,5 @@
 /*
- * $Id: main.h,v 1.6 2009/10/14 01:38:28 didg Exp $
+ * $Id: main.h,v 1.6 2009-10-14 01:38:28 didg Exp $
  */
 
 #ifndef ATALKD_MAIN_H

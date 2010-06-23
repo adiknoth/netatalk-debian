@@ -1,5 +1,5 @@
 /*
- * $Id: mangle.h,v 1.7 2009/10/13 22:55:37 didg Exp $
+ * $Id: mangle.h,v 1.7 2009-10-13 22:55:37 didg Exp $
  *
  */
 

@@ -1,5 +1,5 @@
 /*
- * $Id: afile.c,v 1.7 2009/10/14 01:38:28 didg Exp $
+ * $Id: afile.c,v 1.7 2009-10-14 01:38:28 didg Exp $
  *
     afile - determine the MacOS creator/type of files
 

@@ -1,5 +1,5 @@
 /*
- * $Id: at.h,v 1.6 2008/12/18 17:31:31 morgana Exp $
+ * $Id: at.h,v 1.6 2008-12-18 17:31:31 morgana Exp $
  *
  * Copyright (c) 1990,1991 Regents of The University of Michigan.
  *

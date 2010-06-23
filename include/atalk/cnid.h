@@ -1,5 +1,5 @@
 /* 
- * $Id: cnid.h,v 1.15 2010/03/31 09:47:32 franklahm Exp $
+ * $Id: cnid.h,v 1.15 2010-03-31 09:47:32 franklahm Exp $
  *
  * Copyright (c) 2003 the Netatalk Team
  * Copyright (c) 2003 Rafal Lewczuk <rlewczuk@pronet.pl>
@@ -138,7 +138,7 @@ void cnid_close(struct _cnid_db *db);
 
 /*
  * $Log: cnid.h,v $
- * Revision 1.15  2010/03/31 09:47:32  franklahm
+ * Revision 1.15  2010-03-31 09:47:32  franklahm
  * clustering support: new per volume option cnidserver
  *
  * Revision 1.14  2009/11/28 13:09:25  didg

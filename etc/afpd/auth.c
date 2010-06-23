@@ -1,5 +1,5 @@
 /*
- * $Id: auth.c,v 1.71 2009/11/30 15:30:47 franklahm Exp $
+ * $Id: auth.c,v 1.71 2009-11-30 15:30:47 franklahm Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.

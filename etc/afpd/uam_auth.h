@@ -1,5 +1,5 @@
 /*
- * $Id: uam_auth.h,v 1.7 2009/10/22 12:35:38 franklahm Exp $
+ * $Id: uam_auth.h,v 1.7 2009-10-22 12:35:38 franklahm Exp $
  *
  * Copyright (c) 1999 Adrian Sun (asun@zoology.washington.edu)
  * All Rights Reserved.  See COPYRIGHT.

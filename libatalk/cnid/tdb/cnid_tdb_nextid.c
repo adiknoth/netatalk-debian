@@ -1,5 +1,5 @@
 /*
- * $Id: cnid_tdb_nextid.c,v 1.2 2005/04/28 20:50:02 bfernhomberg Exp $
+ * $Id: cnid_tdb_nextid.c,v 1.2 2005-04-28 20:50:02 bfernhomberg Exp $
  */
 
 #ifdef HAVE_CONFIG_H

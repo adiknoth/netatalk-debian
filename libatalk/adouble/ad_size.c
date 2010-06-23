@@ -1,5 +1,5 @@
 /*
- * $Id: ad_size.c,v 1.8 2010/02/26 14:13:16 didg Exp $
+ * $Id: ad_size.c,v 1.8 2010-02-26 14:13:16 didg Exp $
  *
  * Copyright (c) 1997 Adrian Sun (asun@zoology.washington.edu)
  * All rights reserved. See COPYRIGHT.

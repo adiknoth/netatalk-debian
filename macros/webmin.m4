@@ -1,4 +1,4 @@
-dnl $Id: webmin.m4,v 1.1 2009/10/22 08:36:30 franklahm Exp $
+dnl $Id: webmin.m4,v 1.1 2009-10-22 08:36:30 franklahm Exp $
 dnl Autoconf macro to install webmin + netatalk webmin module
 
 AC_DEFUN([NETATALK_WEBMIN],[

@@ -1,5 +1,5 @@
 /*
- * $Id: at_sun.c,v 1.2 2001/08/06 13:39:30 rufustfirefly Exp $
+ * $Id: at_sun.c,v 1.2 2001-08-06 13:39:30 rufustfirefly Exp $
  */
 
 #include <sys/param.h>

@@ -1,5 +1,5 @@
 /*
- * $Id: multicast.c,v 1.13 2009/10/14 01:38:28 didg Exp $
+ * $Id: multicast.c,v 1.13 2009-10-14 01:38:28 didg Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved. See COPYRIGHT.

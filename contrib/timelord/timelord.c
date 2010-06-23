@@ -1,5 +1,5 @@
 /*
- * $Id: timelord.c,v 1.8 2005/04/28 20:49:36 bfernhomberg Exp $
+ * $Id: timelord.c,v 1.8 2005-04-28 20:49:36 bfernhomberg Exp $
  *
  * Copyright (c) 1990,1992 Regents of The University of Michigan.
  * All Rights Reserved. See COPYRIGHT.

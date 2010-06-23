@@ -1,4 +1,4 @@
-/* $Id: dlpi.c,v 1.2 2002/01/17 06:13:02 srittau Exp $
+/* $Id: dlpi.c,v 1.2 2002-01-17 06:13:02 srittau Exp $
  */
 
 #include <config.h>

@@ -269,47 +269,47 @@ EXTRA_DIST = $(TEMPLATES) rc.atalk.cobalt
 #
 # checking for "cobalt" style sysv scripts:
 #
-@USE_COBALT_TRUE@sysvdir = $(DESTDIR)/etc/rc.d/init.d
+@USE_COBALT_TRUE@sysvdir = /etc/rc.d/init.d
 
 #
 # checking for "Debian" style sysv scripts:
 #
-@USE_DEBIAN_TRUE@sysvdir = $(DESTDIR)/etc/init.d
+@USE_DEBIAN_TRUE@sysvdir = /etc/init.d
 
 #
 # checking for "Gentoo" style sysv scripts:
 #
-@USE_GENTOO_TRUE@sysvdir = $(DESTDIR)/etc/init.d
+@USE_GENTOO_TRUE@sysvdir = /etc/init.d
 
 #
 # checking for NetBSD init scripts
 #
-@USE_NETBSD_TRUE@sysvdir = $(DESTDIR)/etc/rc.d
+@USE_NETBSD_TRUE@sysvdir = /etc/rc.d
 
 #
 # checking for "redhat" style sysv scripts:
 #
-@USE_REDHAT_TRUE@sysvdir = $(DESTDIR)/etc/rc.d/init.d
+@USE_REDHAT_TRUE@sysvdir = /etc/rc.d/init.d
 
 #
 # checking for Solaris init scripts
 #
-@USE_SOLARIS_TRUE@sysvdir = $(DESTDIR)/etc/init.d
+@USE_SOLARIS_TRUE@sysvdir = /etc/init.d
 
 #
 # checking for "SuSE" style sysv scripts:
 #
-@USE_SUSE_TRUE@sysvdir = $(DESTDIR)/etc/init.d
+@USE_SUSE_TRUE@sysvdir = /etc/init.d
 
 #
 # checking for "tru64" style sysv scripts:
 #
-@USE_TRU64_TRUE@sysvdir = $(DESTDIR)/etc/init.d
+@USE_TRU64_TRUE@sysvdir = /etc/init.d
 @USE_COBALT_TRUE@sysv_SCRIPTS = atalk
 @USE_DEBIAN_TRUE@sysv_SCRIPTS = netatalk
 @USE_GENTOO_TRUE@sysv_SCRIPTS = atalk
 @USE_NETBSD_TRUE@sysv_SCRIPTS = afpd atalkd cnid_metad papd timelord
-@USE_REDHAT_TRUE@sysv_SCRIPTS = atalk
+@USE_REDHAT_TRUE@sysv_SCRIPTS = netatalk
 @USE_SOLARIS_TRUE@sysv_SCRIPTS = netatalk
 @USE_SUSE_TRUE@sysv_SCRIPTS = atalk
 @USE_TRU64_TRUE@sysv_SCRIPTS = atalk
@@ -536,7 +536,7 @@ uninstall: uninstall-startup
 
 @USE_REDHAT_TRUE@uninstall-startup:
 @USE_REDHAT_TRUE@	-chkconfig --del $(sysv_SCRIPTS)
-@USE_REDHAT_TRUE@	rm -f $(sysvdir)/$(sysv_SCRIPTS)
+@USE_REDHAT_TRUE@	rm -f $(DESTDIR)$(sysvdir)/$(sysv_SCRIPTS)
 
 @USE_SUSE_TRUE@$(sysv_SCRIPTS): rc.atalk.suse
 @USE_SUSE_TRUE@	cp -f rc.atalk.suse $(sysv_SCRIPTS)
@@ -547,7 +547,7 @@ uninstall: uninstall-startup
 
 @USE_SUSE_TRUE@uninstall-startup:
 @USE_SUSE_TRUE@	-insserv -d $(sysv_SCRIPTS)
-@USE_SUSE_TRUE@	rm -f $(sysvdir)/$(sysv_SCRIPTS)
+@USE_SUSE_TRUE@	rm -f $(DESTDIR)$(sysvdir)/$(sysv_SCRIPTS)
 
 @USE_COBALT_TRUE@$(sysv_SCRIPTS): rc.atalk.cobalt
 @USE_COBALT_TRUE@	cp -f rc.atalk.cobalt $(sysv_SCRIPTS)
@@ -606,7 +606,7 @@ uninstall: uninstall-startup
 @USE_SOLARIS_TRUE@	-ln -s ../init.d/$(sysv_SCRIPTS) $(DESTDIR)/etc/rc0.d/K04$(sysv_SCRIPTS)
 
 @USE_SOLARIS_TRUE@uninstall-startup:
-@USE_SOLARIS_TRUE@	rm -f $(sysvdir)/$(sysv_SCRIPTS) \
+@USE_SOLARIS_TRUE@	rm -f $(DESTDIR)$(sysvdir)/$(sysv_SCRIPTS) \
 @USE_SOLARIS_TRUE@		$(DESTDIR)/etc/rc2.d/S90$(sysv_SCRIPTS) \
 @USE_SOLARIS_TRUE@		$(DESTDIR)/etc/rc0.d/K04$(sysv_SCRIPTS)
 
@@ -619,7 +619,7 @@ uninstall: uninstall-startup
 
 @USE_GENTOO_TRUE@uninstall-startup:
 @USE_GENTOO_TRUE@	-rc-update del $(sysv_SCRIPTS) default
-@USE_GENTOO_TRUE@	rm -f $(sysvdir)/$(sysv_SCRIPTS)
+@USE_GENTOO_TRUE@	rm -f $(DESTDIR)$(sysvdir)/$(sysv_SCRIPTS)
 
 @USE_DEBIAN_TRUE@$(sysv_SCRIPTS): rc.atalk.debian
 @USE_DEBIAN_TRUE@	cp -f rc.atalk.debian $(sysv_SCRIPTS)
@@ -629,7 +629,7 @@ uninstall: uninstall-startup
 #	update-rc.d $(sysv_SCRIPTS) defaults 90 10
 
 @USE_DEBIAN_TRUE@uninstall-startup:
-#	rm -f $(sysvdir)/$(sysv_SCRIPTS)
+#	rm -f $(DESTDIR)$(sysvdir)/$(sysv_SCRIPTS)
 #	update-rc.d netatalk remove
 
 #

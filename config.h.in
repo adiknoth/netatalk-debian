@@ -350,6 +350,9 @@
 /* Define if the DHX2 modules should be built with libgcrypt */
 #undef HAVE_LIBGCRYPT
 
+/* Define to 1 if you have the `gss' library (-lgss). */
+#undef HAVE_LIBGSS
+
 /* Define to 1 if you have the `gssapi' library (-lgssapi). */
 #undef HAVE_LIBGSSAPI
 

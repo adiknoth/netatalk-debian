@@ -1,5 +1,5 @@
 /*
- * $Id: hqx.h,v 1.3 2010/01/27 21:27:53 didg Exp $
+ * $Id: hqx.h,v 1.3 2010-01-27 21:27:53 didg Exp $
  */
 
 #ifndef _HQX_H

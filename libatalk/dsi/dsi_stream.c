@@ -1,5 +1,5 @@
 /*
- * $Id: dsi_stream.c,v 1.20 2009/10/26 12:35:56 franklahm Exp $
+ * $Id: dsi_stream.c,v 1.20 2009-10-26 12:35:56 franklahm Exp $
  *
  * Copyright (c) 1998 Adrian Sun (asun@zoology.washington.edu)
  * All rights reserved. See COPYRIGHT.

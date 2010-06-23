@@ -1,5 +1,5 @@
 /*
- * $Id: pack.c,v 1.6 2009/10/13 22:55:37 didg Exp $
+ * $Id: pack.c,v 1.6 2009-10-13 22:55:37 didg Exp $
  *
  * Copyright (C) Joerg Lenneis 2003
  * All Rights Reserved.  See COPYING.

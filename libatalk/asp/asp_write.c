@@ -1,5 +1,5 @@
 /*
- * $Id: asp_write.c,v 1.4 2009/10/22 12:35:39 franklahm Exp $
+ * $Id: asp_write.c,v 1.4 2009-10-22 12:35:39 franklahm Exp $
  *
  * Copyright (c) 1990,1991 Regents of The University of Michigan.
  * All Rights Reserved.

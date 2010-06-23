@@ -1,6 +1,4 @@
 /*
- * $Id: volume.c,v 1.127 2010/04/16 18:28:45 franklahm Exp $
- *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
  */
@@ -1127,6 +1125,9 @@ static int readvolfile(AFPObj *obj, struct afp_volume_name *p1, char *p2, int us
     /* Enable some default options for all volumes */
     save_options[VOLOPT_FLAGS].i_value |= AFPVOL_CACHE;
     save_options[VOLOPT_EA_VFS].i_value = AFPVOL_EA_AUTO;
+    LOG(log_maxdebug, logtype_afpd, "readvolfile: seeding default umask: %04o",
+        obj->options.umask);
+    save_options[VOLOPT_UMASK].i_value = obj->options.umask;
 
     while ( myfgets( buf, sizeof( buf ), fp ) != NULL ) {
         initline( strlen( buf ), buf );
@@ -1167,10 +1168,6 @@ static int readvolfile(AFPObj *obj, struct afp_volume_name *p1, char *p2, int us
                 strcat( tmp, "/" );
                 strcat( tmp, p );
             }
-            /* Tag a user's home directory with their umask.  Note, this will
-             * be overwritten if the user actually specifies a umask: option
-             * for a '~' volume. */
-            save_options[VOLOPT_UMASK].i_value = obj->options.save_mask;
             /* fall through */
 
         case '/' :
@@ -1836,10 +1833,11 @@ static int volume_openDB(struct vol *volume)
 
     if (volume->v_cnidscheme == NULL) {
         volume->v_cnidscheme = strdup(DEFAULT_CNID_SCHEME);
-        LOG(log_info, logtype_afpd, "Volume %s use CNID scheme %s.", volume->v_path, volume->v_cnidscheme);
+        LOG(log_info, logtype_afpd, "Volume %s use CNID scheme %s.",
+            volume->v_path, volume->v_cnidscheme);
     }
 
-    LOG(log_info, logtype_afpd, "%s:%s",
+    LOG(log_info, logtype_afpd, "CNID server %s:%s",
         volume->v_cnidserver ? volume->v_cnidserver : Cnid_srv,
         volume->v_cnidport ? volume->v_cnidport : Cnid_port);
     
@@ -1851,15 +1849,20 @@ static int volume_openDB(struct vol *volume)
                               volume->v_cnidport ? volume->v_cnidport : Cnid_port);
 
     if (!volume->v_cdb) {
+        LOG(log_error, logtype_afpd, "Can't open volume \"%s\" CNID backend \"%s\" ",
+            volume->v_path, volume->v_cnidscheme);
         flags |= CNID_FLAG_MEMORY;
-        LOG(log_error, logtype_afpd, "Reopen volume %s using in memory temporary CNID DB.", volume->v_path);
+        LOG(log_error, logtype_afpd, "Reopen volume %s using in memory temporary CNID DB.",
+            volume->v_path);
         volume->v_cdb = cnid_open (volume->v_path, volume->v_umask, "tdb", flags, NULL, NULL);
 #ifdef SERVERTEXT
         /* kill ourself with SIGUSR2 aka msg pending */
         if (volume->v_cdb) {
-            setmessage("Something wrong with the volume's DB ... FIXME with a better msg");
+            setmessage("Something wrong with the volume's CNID DB, using temporary CNID DB instead."
+                       "Check server messages for details!");
             kill(getpid(), SIGUSR2);
-            /* XXX desactivate cachecnid ? */
+            /* deactivate cnid caching/storing in AppleDouble files */
+            volume->v_flags &= ~AFPVOL_CACHE;
         }
 #endif
     }

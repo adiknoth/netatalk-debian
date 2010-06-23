@@ -1,5 +1,5 @@
 /*
- * $Id: ad_date.c,v 1.5 2006/09/29 09:39:16 didg Exp $
+ * $Id: ad_date.c,v 1.5 2006-09-29 09:39:16 didg Exp $
  */
 
 #ifdef HAVE_CONFIG_H

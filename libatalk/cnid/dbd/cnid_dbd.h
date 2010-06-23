@@ -1,5 +1,5 @@
 /*
- * $Id: cnid_dbd.h,v 1.6 2010/03/31 09:47:32 franklahm Exp $
+ * $Id: cnid_dbd.h,v 1.6 2010-03-31 09:47:32 franklahm Exp $
  *
  * Copyright (C) Joerg Lenneis 2003
  * All Rights Reserved.  See COPYING.

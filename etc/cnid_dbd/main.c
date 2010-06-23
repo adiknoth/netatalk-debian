@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.16 2009/11/25 14:59:15 franklahm Exp $
+ * $Id: main.c,v 1.16 2009-11-25 14:59:15 franklahm Exp $
  *
  * Copyright (C) Joerg Lenneis 2003
  * Copyright (c) Frank Lahm 2009

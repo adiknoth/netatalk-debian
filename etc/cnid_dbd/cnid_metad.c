@@ -1,5 +1,5 @@
 /*
- * $Id: cnid_metad.c,v 1.22 2009/11/16 02:04:47 didg Exp $
+ * $Id: cnid_metad.c,v 1.22 2009-11-16 02:04:47 didg Exp $
  *
  * Copyright (C) Joerg Lenneis 2003
  * All Rights Reserved.  See COPYING.

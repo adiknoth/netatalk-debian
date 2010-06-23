@@ -248,7 +248,7 @@ GENFILES = afpd.conf AppleVolumes.default
 TMPLFILES = afpd.conf.tmpl AppleVolumes.default.tmpl
 CONFFILES = AppleVolumes.system atalkd.conf netatalk.conf papd.conf \
 	$(am__append_1)
-EXTRA_DIST = $(CONFFILES) $(TMPLFILES)
+EXTRA_DIST = $(CONFFILES) $(TMPLFILES) afp_ldap.conf
 CLEANFILES = $(GENFILES)
 pkgconfdir = @PKGCONFDIR@
 webminpath = @WEBMIN_PATH@

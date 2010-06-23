@@ -1,5 +1,5 @@
 /*
- * $Id: directory.h,v 1.3 2010/01/10 10:58:25 franklahm Exp $
+ * $Id: directory.h,v 1.3 2010-01-10 10:58:25 franklahm Exp $
  *
  * Copyright (c) 1990,1991 Regents of The University of Michigan.
  * All Rights Reserved.

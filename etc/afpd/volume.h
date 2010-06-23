@@ -1,5 +1,5 @@
 /*
- * $Id: volume.h,v 1.36 2009/10/15 10:43:13 didg Exp $
+ * $Id: volume.h,v 1.36 2009-10-15 10:43:13 didg Exp $
  *
  * Copyright (c) 1990,1994 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.

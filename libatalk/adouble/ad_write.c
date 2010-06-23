@@ -1,5 +1,5 @@
 /*
- * $Id: ad_write.c,v 1.11 2010/03/30 12:55:26 franklahm Exp $
+ * $Id: ad_write.c,v 1.11 2010-03-30 12:55:26 franklahm Exp $
  *
  * Copyright (c) 1990,1995 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.

@@ -1,5 +1,5 @@
 /*
- * $Id: cnid_cdb_rebuild_add.c,v 1.6 2009/11/20 17:22:11 didg Exp $
+ * $Id: cnid_cdb_rebuild_add.c,v 1.6 2009-11-20 17:22:11 didg Exp $
  *
  * All Rights Reserved. See COPYRIGHT.
  *

@@ -1,5 +1,5 @@
 /*
- * $Id: dbd_add.c,v 1.8 2010/01/19 14:57:11 franklahm Exp $
+ * $Id: dbd_add.c,v 1.8 2010-01-19 14:57:11 franklahm Exp $
  *
  * Copyright (C) Joerg Lenneis 2003
  * All Rights Reserved.  See COPYING.

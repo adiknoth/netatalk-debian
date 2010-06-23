@@ -1,4 +1,4 @@
-dnl $Id: afs-check.m4,v 1.4 2005/08/11 20:15:35 didg Exp $
+dnl $Id: afs-check.m4,v 1.4 2005-08-11 20:15:35 didg Exp $
 dnl Autoconf macro to check whether AFS support should be enabled
 
 AC_DEFUN([NETATALK_AFS_CHECK], [

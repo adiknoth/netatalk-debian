@@ -1,5 +1,5 @@
 /*
- * $Id: desktop.c,v 1.50 2010/01/22 04:40:38 didg Exp $
+ * $Id: desktop.c,v 1.50 2010-01-22 04:40:38 didg Exp $
  *
  * See COPYRIGHT.
  *

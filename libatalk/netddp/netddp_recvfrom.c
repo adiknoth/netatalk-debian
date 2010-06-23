@@ -1,5 +1,5 @@
 /* 
- * $Id: netddp_recvfrom.c,v 1.5 2003/02/17 02:02:25 srittau Exp $
+ * $Id: netddp_recvfrom.c,v 1.5 2003-02-17 02:02:25 srittau Exp $
  *
  * Copyright (c) 1999 Adrian Sun (asun@zoology.washington.edu)
  * Copyright (c) 1990,1991 Regents of The University of Michigan.

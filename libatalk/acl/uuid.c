@@ -1,5 +1,5 @@
 /*
-   $Id: uuid.c,v 1.3 2009/11/27 16:33:49 franklahm Exp $
+   $Id: uuid.c,v 1.3 2009-11-27 16:33:49 franklahm Exp $
    Copyright (c) 2008,2009 Frank Lahm <franklahm@gmail.com>
 
    This program is free software; you can redistribute it and/or modify

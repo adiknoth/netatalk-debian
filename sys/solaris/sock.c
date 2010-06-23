@@ -1,4 +1,4 @@
-/* $Id: sock.c,v 1.2 2002/01/17 07:11:13 srittau Exp $
+/* $Id: sock.c,v 1.2 2002-01-17 07:11:13 srittau Exp $
  */
 
 #ifdef HAVE_CONFIG_H

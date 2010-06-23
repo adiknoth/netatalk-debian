@@ -1,5 +1,5 @@
 /* 
- * $Id: mangle.c,v 1.19 2006/09/19 01:35:45 didg Exp $ 
+ * $Id: mangle.c,v 1.19 2006-09-19 01:35:45 didg Exp $ 
  *
  * Copyright (c) 2002. Joe Marcus Clarke (marcus@marcuscom.com)
  * All Rights Reserved.  See COPYRIGHT.

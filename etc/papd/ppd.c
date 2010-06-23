@@ -1,5 +1,5 @@
 /*
- * $Id: ppd.c,v 1.17 2009/10/14 02:24:05 didg Exp $
+ * $Id: ppd.c,v 1.17 2009-10-14 02:24:05 didg Exp $
  *
  * Copyright (c) 1995 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.

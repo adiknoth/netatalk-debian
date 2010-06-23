@@ -1,5 +1,5 @@
 /*
- * $Id: asingle.h,v 1.4 2010/01/27 21:27:53 didg Exp $
+ * $Id: asingle.h,v 1.4 2010-01-27 21:27:53 didg Exp $
  */
 
 #ifndef _ASINGLE_H
