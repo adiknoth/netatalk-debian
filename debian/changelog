@@ -1,3 +1,13 @@
+netatalk (2.1.3-1) UNRELEASED; urgency=low
+
+  * New upstream release.
+  * Add NEWS entry on BerkeleyDB bump to 4.8 and databases now auto-
+    upgrading (replacing older testing-only entry bumping to 4.7).
+    Rephrase README.Debian to mention auto-upgrading.
+  * Bump standards compliance to standards-version 3.9.0.
+
+ -- Jonas Smedegaard <dr@jones.dk>  Tue, 20 Jul 2010 11:49:11 +0200
+
 netatalk (2.1.2-2) unstable; urgency=low
 
   * Fix enable DEB_BUILD_HARDENING.
