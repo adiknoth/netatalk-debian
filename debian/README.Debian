@@ -59,11 +59,12 @@ this will look like this:
 Upgrading Problems
 ==================
 
-This version of Netatalk uses Berkeley DB 4.8.
+This version of Netatalk uses default Berkeley DB (i.e. 4.8 or newer).
 
-Earlier releases used Berkeley DB 4.7/4.2/older.  As Netatalk does not
-automatically update its database, problems like volumes appearing empty
-(bug #200373) or connections getting rejected (bug #533344) may occur.
+Earlier releases used Berkeley DB 4.7/4.2/older.  As Netatalk did not
+support automatically database updating until version 2.1, problems like
+volumes appearing empty (bug #200373) or connections getting rejected
+(bug #533344) may occur.
 
 If you experience such problems, you may try to upgrade the database
 using the script /usr/share/doc/netatalk/examples/netatalk_update.sh or
