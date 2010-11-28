@@ -1,6 +1,4 @@
 /*
-  $Id: cmd_dbd_scanvol.c,v 1.21 2010-04-11 07:01:23 franklahm Exp $
-
   Copyright (c) 2009 Frank Lahm <franklahm@gmail.com>
 
   This program is free software; you can redistribute it and/or modify
@@ -57,6 +55,10 @@ static char           stamp[CNID_DEV_LEN];
 static char           *netatalk_dirs[] = {
     ".AppleDB",
     ".AppleDesktop",
+    NULL
+};
+static char           *special_dirs[] = {
+    ".zfs",
     NULL
 };
 static struct cnid_dbd_rqst rqst;
@@ -267,6 +269,21 @@ static const char *check_netatalk_dirs(const char *name)
     for (c=0; netatalk_dirs[c]; c++) {
         if ((strcmp(name, netatalk_dirs[c])) == 0)
             return netatalk_dirs[c];
+    }
+    return NULL;
+}
+
+/*
+  Check for special names
+  Returns pointer to name or NULL.
+*/
+static const char *check_special_dirs(const char *name)
+{
+    int c;
+
+    for (c=0; special_dirs[c]; c++) {
+        if ((strcmp(name, special_dirs[c])) == 0)
+            return special_dirs[c];
     }
     return NULL;
 }
@@ -680,7 +697,7 @@ static cnid_t check_cnid(const char *name, cnid_t did, struct stat *st, int adfi
             ad_cnid = ad_getid(&ad, st->st_dev, st->st_ino, did, stamp);
 
         if (ad_cnid == 0)
-            dbd_log( LOGSTD, "Incorrect CNID data in .AppleDouble data for '%s/%s' (bad stamp?)", cwdbuf, name);
+            dbd_log( LOGSTD, "Bad CNID in adouble file of '%s/%s'", cwdbuf, name);
         else
             dbd_log( LOGDEBUG, "CNID from .AppleDouble file for '%s/%s': %u", cwdbuf, name, ntohl(ad_cnid));
 
@@ -738,10 +755,40 @@ static cnid_t check_cnid(const char *name, cnid_t did, struct stat *st, int adfi
     } else if (ad_cnid && (db_cnid == 0)) {
         /* in ad-file but not in db */
         if ( ! (dbd_flags & DBD_FLAGS_SCAN)) {
-            dbd_log( LOGDEBUG, "CNID rebuild add for '%s/%s', adding with CNID from ad-file: %u", cwdbuf, name, ntohl(ad_cnid));
+            /* Ensure the cnid from the ad-file is not already occupied by another file */
+            dbd_log(LOGDEBUG, "Checking whether CNID %u from ad-file is occupied",
+                    ntohl(ad_cnid));
+
             rqst.cnid = ad_cnid;
-            ret = dbd_delete(dbd, &rqst, &rply, DBIF_CNID);
-            dbif_txn_close(dbd, ret);
+            ret = dbd_resolve(dbd, &rqst, &rply);
+            if (ret == CNID_DBD_RES_OK) {
+                /* Occupied! Choose another, update ad-file */
+                ret = dbd_add(dbd, &rqst, &rply, 1);
+                dbif_txn_close(dbd, ret);
+                db_cnid = rply.cnid;
+                dbd_log(LOGSTD, "New CNID for '%s/%s': %u", cwdbuf, name, ntohl(db_cnid));
+
+                if ((volinfo->v_flags & AFPVOL_CACHE)
+                    && ADFILE_OK
+                    && ( ! (dbd_flags & DBD_FLAGS_SCAN))) {
+                    dbd_log(LOGSTD, "Writing CNID data for '%s/%s' to AppleDouble file",
+                            cwdbuf, name, ntohl(db_cnid));
+                    ad_init(&ad, volinfo->v_adouble, volinfo->v_ad_options);
+                    if (ad_open_metadata( name, adflags, O_RDWR, &ad) != 0) {
+                        dbd_log(LOGSTD, "Error opening AppleDouble file for '%s/%s': %s",
+                                cwdbuf, name, strerror(errno));
+                        return 0;
+                    }
+                    ad_setid( &ad, st->st_dev, st->st_ino, db_cnid, did, stamp);
+                    ad_flush(&ad);
+                    ad_close_metadata(&ad);
+                }
+                return db_cnid;
+            }
+
+            dbd_log(LOGDEBUG, "CNID rebuild add '%s/%s' with CNID from ad-file %u",
+                    cwdbuf, name, ntohl(ad_cnid));
+            rqst.cnid = ad_cnid;
             ret = dbd_rebuild_add(dbd, &rqst, &rply);
             dbif_txn_close(dbd, ret);
         }
@@ -754,7 +801,7 @@ static cnid_t check_cnid(const char *name, cnid_t did, struct stat *st, int adfi
             ret = dbd_add(dbd, &rqst, &rply, 1);
             dbif_txn_close(dbd, ret);
             db_cnid = rply.cnid;
-            dbd_log( LOGSTD, "New CNID for '%s/%s': %u", cwdbuf, name, ntohl(db_cnid));
+            dbd_log(LOGSTD, "New CNID for '%s/%s': %u", cwdbuf, name, ntohl(db_cnid));
         }
     }
 
@@ -762,10 +809,12 @@ static cnid_t check_cnid(const char *name, cnid_t did, struct stat *st, int adfi
         /* in db but zeroID in ad-file, write it to ad-file if AFPVOL_CACHE */
         if ((volinfo->v_flags & AFPVOL_CACHE) && ADFILE_OK) {
             if ( ! (dbd_flags & DBD_FLAGS_SCAN)) {
-                dbd_log( LOGSTD, "Writing CNID data for '%s/%s' to AppleDouble file", cwdbuf, name, ntohl(db_cnid));
+                dbd_log(LOGSTD, "Writing CNID data for '%s/%s' to AppleDouble file",
+                        cwdbuf, name, ntohl(db_cnid));
                 ad_init(&ad, volinfo->v_adouble, volinfo->v_ad_options);
                 if (ad_open_metadata( name, adflags, O_RDWR, &ad) != 0) {
-                    dbd_log( LOGSTD, "Error opening AppleDouble file for '%s/%s': %s", cwdbuf, name, strerror(errno));
+                    dbd_log(LOGSTD, "Error opening AppleDouble file for '%s/%s': %s",
+                            cwdbuf, name, strerror(errno));
                     return 0;
                 }
                 ad_setid( &ad, st->st_dev, st->st_ino, db_cnid, did, stamp);
@@ -828,12 +877,21 @@ static int dbd_readdir(int volroot, cnid_t did)
             continue;
         }
 
+        /* Check for special folders in volume root e.g. ".zfs" */
+        if (volroot) {
+            if ((name = check_special_dirs(ep->d_name)) != NULL) {
+                dbd_log(LOGSTD, "Ignoring special dir \"%s\"", name);
+                continue;
+            }
+        }
+
         /* Skip .AppleDouble dir in this loop */
         if (STRCMP(ep->d_name, == , ADv2_DIRNAME))
             continue;
 
         if ((ret = lstat(ep->d_name, &st)) < 0) {
-            dbd_log( LOGSTD, "Lost file while reading dir '%s/%s', probably removed: %s", cwdbuf, ep->d_name, strerror(errno));
+            dbd_log( LOGSTD, "Lost file while reading dir '%s/%s', probably removed: %s",
+                     cwdbuf, ep->d_name, strerror(errno));
             continue;
         }
         
@@ -990,6 +1048,9 @@ static void delete_orphaned_cnids(DBD *dbd, DBD *dbd_rebuild, dbd_flags_t flags)
 
     /* Start main loop through dbd: get CNID from dbd */
     while ((dbif_idwalk(dbd, &dbd_cnid, 0)) == 1) {
+        /* Check if we got a termination signal */
+        if (alarmed)
+            longjmp(jmp, 1); /* this jumps back to cmd_dbd_scanvol() */
 
         if (deleted > 50) {
             deleted = 0;
@@ -1015,6 +1076,9 @@ static void delete_orphaned_cnids(DBD *dbd, DBD *dbd_rebuild, dbd_flags_t flags)
                         dbif_txn_close(dbd, ret);
                         deleted++;
                     }
+                    /* Check if we got a termination signal */
+                    if (alarmed)
+                        longjmp(jmp, 1); /* this jumps back to cmd_dbd_scanvol() */
                 }
                 return;
             } else

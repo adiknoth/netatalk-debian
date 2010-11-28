@@ -246,8 +246,10 @@ SUBDIRS = pam
 SUFFIXES = .tmpl .
 GENFILES = afpd.conf AppleVolumes.default
 TMPLFILES = afpd.conf.tmpl AppleVolumes.default.tmpl
-CONFFILES = AppleVolumes.system atalkd.conf netatalk.conf papd.conf \
-	$(am__append_1)
+@USE_DEBIAN_FALSE@CONFFILES = AppleVolumes.system atalkd.conf \
+@USE_DEBIAN_FALSE@	papd.conf netatalk.conf $(am__append_1)
+@USE_DEBIAN_TRUE@CONFFILES = AppleVolumes.system atalkd.conf papd.conf \
+@USE_DEBIAN_TRUE@	$(am__append_1)
 EXTRA_DIST = $(CONFFILES) $(TMPLFILES) afp_ldap.conf
 CLEANFILES = $(GENFILES)
 pkgconfdir = @PKGCONFDIR@
@@ -594,6 +596,8 @@ uninstall-local:
 		rm -f $(DESTDIR)$(pkgconfdir)/$$f; \
 	done
 
+@USE_DEBIAN_TRUE@	rm -f $(DESTDIR)/etc/default/netatalk;
+
 install-config-files: $(CONFFILES) $(GENFILES)
 	$(mkinstalldirs) $(DESTDIR)$(pkgconfdir)
 	for f in $(CONFFILES) $(GENFILES); do \
@@ -604,6 +608,14 @@ install-config-files: $(CONFFILES) $(GENFILES)
 			echo "not overwriting $$f"; \
 		fi; \
 	done
+
+@USE_DEBIAN_TRUE@	$(mkinstalldirs) $(DESTDIR)/default
+@USE_DEBIAN_TRUE@	if test "x$(OVERWRITE_CONFIG)" = "xyes" -o ! -f /etc/default/netatalk; then \
+@USE_DEBIAN_TRUE@		echo "$(INSTALL_DATA) netatalk.conf $(DESTDIR)/etc/default/netatalk"; \
+@USE_DEBIAN_TRUE@		$(INSTALL_DATA) netatalk.conf $(DESTDIR)/etc/default/netatalk; \
+@USE_DEBIAN_TRUE@	else \
+@USE_DEBIAN_TRUE@		echo "not overwriting /etc/default/netatalk"; \
+@USE_DEBIAN_TRUE@	fi;
 
 install-webmin:
 	if test "x$(webminpath)" != "x"; then \
