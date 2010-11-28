@@ -134,6 +134,17 @@ Copyright: 2001, Andrew Tridgell
 	2002-2003, Jelmer Vernooij
 License: GPL-2+
 
+Files: ./etc/cnid_dbd/db_param.c,
+	./etc/cnid_dbd/dbd.h,
+	./etc/cnid_dbd/dbd_lookup.c,
+	./etc/cnid_dbd/dbd_update.c,
+	./etc/cnid_dbd/dbif.c,
+	./etc/cnid_dbd/dbif.h,
+	./etc/cnid_dbd/main.c
+Copyright: 2003, Joerg Lenneis
+	2009, Frank Lahm <franklahm@gmail.com>
+License: other-GPL-2
+
 Files: ./libatalk/unicode/charsets/mac_centraleurope.h,
 	./libatalk/unicode/charsets/mac_cyrillic.h,
 	./libatalk/unicode/charsets/mac_greek.h,
@@ -424,7 +435,7 @@ License: Expat
  CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
  TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- .
+License-Comment
  Some files differ from above by replacing "the authors or copyright
  holders" with more specific term.
 
@@ -503,7 +514,7 @@ License: other-GAP
 License: other-GAP-FSF
  This file is free software; the Free Software Foundation gives
  unlimited permission to copy, distribute and modify it.
- .
+License-Comment
  Some files differ from above by replacing "this file" with more
  specific term.
 
@@ -511,7 +522,7 @@ License: other-GAP-FSF-notice
  This file is free software; the Free Software Foundation gives
  unlimited permission to copy and/or distribute it, with or without
  modifications, as long as this notice is preserved.
- .
+License-Comment
  Some files differ from above by replacing "this file" with more
  specific term.
 
@@ -569,7 +580,7 @@ License: LGPL-2+
  useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  Library General Public License for more details.
- .
+License-Comment
  On Debian GNU systems, the complete text of the GNU Library General
  Public License (LGPL) version 2 can be found in
  '/usr/share/common-licenses/LGPL-2'.
@@ -588,7 +599,7 @@ License: GPL-2+
  WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  General Public License for more details.
- .
+License-Comment
  On Debian GNU systems, the complete text of the GNU General Public
  License (GPL) version 2 or later can be found in
  '/usr/share/common-licenses/GPL'.
@@ -601,10 +612,17 @@ License: other-GPL-2-and-maybe-later-too
  under the terms of the GNU General Public License as published by the
  Free Software Foundation version 2 of the License or later version if
  explicitly stated by any of above copyright holders.
+License-Comment
+ On Debian GNU systems, the complete text of the GNU General Public
+ License (GPL) version 2 can be found in
+ '/usr/share/common-licenses/GPL-2'.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 License: other-GPL-2
  See COPYING.
- .
+License-Comment
  A file "COPYING" at the root of the project tarball contain the
  complete of the GNU General Public License (GPL) version 2.
  .
