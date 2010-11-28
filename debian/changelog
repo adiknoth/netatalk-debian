@@ -1,12 +1,19 @@
-netatalk (2.1.3-1) UNRELEASED; urgency=low
+netatalk (2.1.4-1) unstable; urgency=low
 
   * New upstream release.
   * Add NEWS entry on BerkeleyDB bump to 4.8 and databases now auto-
     upgrading (replacing older testing-only entry bumping to 4.7).
     Rephrase README.Debian to mention auto-upgrading.
   * Bump standards compliance to standards-version 3.9.0.
+  * Unfuzz patch 114.
+  * Update copyright file:
+    + Fix document a few missed copyright holders (no new licenses).
+    + Split comments in License fields into separate License-Comments
+      fields.
+  * Ease building with git-buildpackage: Git-ignore quilt .pc dir, and
+    add source local-options.
 
- -- Jonas Smedegaard <dr@jones.dk>  Tue, 20 Jul 2010 11:49:11 +0200
+ -- Jonas Smedegaard <dr@jones.dk>  Sun, 28 Nov 2010 13:26:40 +0100
 
 netatalk (2.1.2-2) unstable; urgency=low
 

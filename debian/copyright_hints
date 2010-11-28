@@ -89,6 +89,7 @@ Files: ./AUTHORS,
 	./debian/patches/README,
 	./debian/patches/series,
 	./debian/source/format,
+	./debian/source/local-options,
 	./debian/watch,
 	./distrib/Makefile.am,
 	./distrib/config/Makefile.am,
@@ -619,7 +620,6 @@ Files: ./bin/cnid/cnid2_create.in,
 	./etc/cnid_dbd/dbd_get.c,
 	./etc/cnid_dbd/dbd_getstamp.c,
 	./etc/cnid_dbd/dbd_resolve.c,
-	./etc/cnid_dbd/dbd_update.c,
 	./etc/cnid_dbd/pack.c,
 	./etc/cnid_dbd/pack.h,
 	./etc/cnid_dbd/usockfd.c,
@@ -1048,6 +1048,12 @@ License: UNKNOWN
 
 Files: ./Makefile.am
 Copyright: COPYING NEWS\
+License: UNKNOWN
+ FIXME
+
+Files: ./etc/cnid_dbd/dbd_update.c
+Copyright: Frank Lahm 2009-2010
+	Joerg Lenneis 2003,
 License: UNKNOWN
  FIXME
 
