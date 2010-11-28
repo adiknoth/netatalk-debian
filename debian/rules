@@ -87,10 +87,6 @@ install/netatalk::
 clean::
 	rm -f debian/netatalk.init
 
-# Move master config file (Debian Policy 9.3.2)
-binary-post-install/netatalk::
-	mv debian/netatalk/etc/netatalk/netatalk.conf debian/netatalk/etc/default/netatalk
-
 # Rename some tools + manpages to avoid namespace conflicts
 #  * uniconv → netatalk-uniconv
 #  * install netatalk-uniconv as system binary
