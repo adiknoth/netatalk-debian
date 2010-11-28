@@ -1,6 +1,4 @@
 /*
- * $Id: ad_open.c,v 1.74 2010-04-13 08:05:06 franklahm Exp $
- *
  * Copyright (c) 1999 Adrian Sun (asun@u.washington.edu)
  * Copyright (c) 1990,1991 Regents of The University of Michigan.
  * All Rights Reserved.
@@ -283,6 +281,7 @@ static int ad_update(struct adouble *ad, const char *path)
 
     /* last place for failure. */
     if (sys_ftruncate(fd, st.st_size + shiftdata) < 0) {
+        munmap(buf, st.st_size + shiftdata);
         goto bail_lock;
     }
 
@@ -1080,8 +1079,8 @@ ad_mkdir( const char *path, int mode)
     int st_invalid;
     struct stat stbuf;
 
-    LOG(log_debug, logtype_default, "ad_mkdir: creating ad-directory '%s/%s' with mode %04o",
-        getcwdpath(), path, mode);
+    LOG(log_debug, logtype_default, "ad_mkdir(\"%s\", %04o) {cwd: \"%s\"}",
+        path, mode, getcwdpath());
 
     st_invalid = ad_mode_st(path, &mode, &stbuf);
     ret = mkdir( path, mode );
@@ -1302,7 +1301,6 @@ int ad_open( const char *path, int adflags, int oflags, int mode, struct adouble
                         return -1;
                     }
                     ad->ad_data_fork.adf_syml[lsz] = 0;
-                    ad->ad_data_fork.adf_syml = realloc(ad->ad_data_fork.adf_syml,lsz+1);
                     ad->ad_data_fork.adf_fd = -2; /* -2 means its a symlink */
                 }
             }
@@ -1383,7 +1381,8 @@ int ad_open( const char *path, int adflags, int oflags, int mode, struct adouble
              * here.
              * if ((oflags & O_CREAT) ==> (oflags & O_RDWR)
              */
-            LOG(log_debug, logtype_default, "ad_open: creating new adouble file: %s/%s", getcwdpath(), ad_p);
+            LOG(log_debug, logtype_default, "ad_open(\"%s\"): {cwd: \"%s\"} creating adouble file",
+                ad_p, getcwdpath());
             admode = mode;
             errno = 0;
             st_invalid = ad_mode_st(ad_p, &admode, &st_dir);

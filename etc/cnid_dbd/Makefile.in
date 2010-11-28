@@ -85,9 +85,10 @@ am_cnid_metad_OBJECTS = cnid_metad.$(OBJEXT) usockfd.$(OBJEXT) \
 cnid_metad_OBJECTS = $(am_cnid_metad_OBJECTS)
 cnid_metad_DEPENDENCIES = $(top_builddir)/libatalk/libatalk.la
 am_dbd_OBJECTS = cmd_dbd.$(OBJEXT) cmd_dbd_scanvol.$(OBJEXT) \
-	dbif.$(OBJEXT) pack.$(OBJEXT) dbd_delete.$(OBJEXT) \
-	dbd_update.$(OBJEXT) dbd_add.$(OBJEXT) dbd_lookup.$(OBJEXT) \
-	dbd_rebuild_add.$(OBJEXT) dbd_getstamp.$(OBJEXT)
+	dbif.$(OBJEXT) pack.$(OBJEXT) dbd_add.$(OBJEXT) \
+	dbd_delete.$(OBJEXT) dbd_getstamp.$(OBJEXT) \
+	dbd_lookup.$(OBJEXT) dbd_rebuild_add.$(OBJEXT) \
+	dbd_resolve.$(OBJEXT) dbd_update.$(OBJEXT)
 dbd_OBJECTS = $(am_dbd_OBJECTS)
 dbd_DEPENDENCIES = $(top_builddir)/libatalk/libatalk.la
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
@@ -283,10 +284,16 @@ cnid_dbd_SOURCES = dbif.c pack.c comm.c db_param.c main.c \
 cnid_dbd_LDADD = $(top_builddir)/libatalk/libatalk.la @BDB_LIBS@
 cnid_metad_SOURCES = cnid_metad.c usockfd.c db_param.c
 cnid_metad_LDADD = $(top_builddir)/libatalk/libatalk.la
-dbd_SOURCES = cmd_dbd.c cmd_dbd_scanvol.c \
-			  dbif.c pack.c \
-			  dbd_delete.c dbd_update.c dbd_add.c dbd_lookup.c \
-			  dbd_rebuild_add.c dbd_getstamp.c
+dbd_SOURCES = cmd_dbd.c \
+	cmd_dbd_scanvol.c \
+	dbif.c pack.c \
+	dbd_add.c \
+	dbd_delete.c \
+	dbd_getstamp.c \
+	dbd_lookup.c \
+	dbd_rebuild_add.c \
+	dbd_resolve.c \
+	dbd_update.c
 
 dbd_LDADD = $(top_builddir)/libatalk/libatalk.la @BDB_LIBS@
 noinst_HEADERS = dbif.h pack.h db_param.h dbd.h usockfd.h comm.h cmd_dbd.h
