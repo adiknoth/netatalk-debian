@@ -1,9 +1,9 @@
 --- a/contrib/macusers/macusers.in
 +++ b/contrib/macusers/macusers.in
-@@ -80,7 +80,14 @@
-         $time = $4;
+@@ -102,7 +102,14 @@
+                         close(PFILES);
+                 }
  
-         if ($ppid != 1) {
 -                ($t, $t, $uid, $t, $t, $t, $name, $t, $t) = getpwnam($user);
 +                # Deal with truncated usernames. Caution: this does make the
 +                # assumption that no username will be all-numeric.
