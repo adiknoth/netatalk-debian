@@ -34,7 +34,7 @@ You my need additional build-dependencies not resolved automatically.
 Alternatively you can subscribe to unofficial(!) precompiled packages by
 adding the following to your /etc/apt/sources.list:
 
-  deb http://debian.jones.dk/ $DIST netatalk
+  deb http://debian.jones.dk/ $DIST netatalk_
 
 
 MacOS X Specific Notes
