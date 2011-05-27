@@ -24,7 +24,7 @@ include /usr/share/cdbs/1/class/autotools.mk
 include /usr/share/hardening-includes/hardening.make
 
 DEB_UPSTREAM_URL = http://downloads.sourceforge.net/netatalk
-DEB_UPSTREAM_TARBALL_BASENAME_MANGLE = s/~(alpha|beta|rc)/\1/
+DEB_UPSTREAM_TARBALL_BASENAME_MANGLE = s/~(alpha|beta|rc)/-\1/
 DEB_UPSTREAM_TARBALL_MD5 = d5c9262896338cc1402a49c0f8ca2157
 
 db_stable = 4.2
