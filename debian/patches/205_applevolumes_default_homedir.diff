@@ -9,7 +9,7 @@
  # volume format:
  # :DEFAULT: [all of the default options except volume name]
  # path [name] [casefold:x] [options:z,l,j] \
-@@ -182,9 +177,7 @@
+@@ -178,9 +173,7 @@
  # The line below sets some DEFAULT, starting with Netatalk 2.1.
  :DEFAULT: options:upriv,usedots
  
