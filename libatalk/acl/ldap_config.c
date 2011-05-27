@@ -1,5 +1,4 @@
 /*
-  $Id: ldap_config.c,v 1.4 2009-11-28 11:10:37 franklahm Exp $
   Copyright (c) 2009 Frank Lahm <franklahm@gmail.com>
 
   This program is free software; you can redistribute it and/or modify
@@ -17,9 +16,10 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
-#ifdef HAVE_NFSv4_ACLS
+#ifdef HAVE_LDAP
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <errno.h>
 #include <string.h>
 #include <ctype.h>
@@ -124,7 +124,7 @@ int acl_ldap_readconfig(char *name)
 
     while(ldap_prefs[i].pref != NULL) {
         if ( ldap_prefs[i].valid != 0) {
-            LOG(log_error, logtype_afpd,"afp_ldap.conf: Missing option: \"%s\"", ldap_prefs[i].name);
+            LOG(log_debug, logtype_afpd,"afp_ldap.conf: Missing option: \"%s\"", ldap_prefs[i].name);
             ldap_config_valid = 0;
             break;
         }
@@ -133,16 +133,16 @@ int acl_ldap_readconfig(char *name)
 
     if (ldap_config_valid) {
         if (ldap_auth_method == LDAP_AUTH_NONE)
-            LOG(log_debug, logtype_afpd,"ldappref: Pref is ok. Using anonymous bind.");
+            LOG(log_debug, logtype_afpd,"afp_ldap.conf: Using anonymous bind.");
         else if (ldap_auth_method == LDAP_AUTH_SIMPLE)
-            LOG(log_debug, logtype_afpd,"ldappref: Pref is ok. Using simple bind.");
+            LOG(log_debug, logtype_afpd,"afp_ldap.conf: Using simple bind.");
         else {
             ldap_config_valid = 0;
-            LOG(log_error, logtype_afpd,"ldappref: Pref not ok. SASL not yet supported.");
+            LOG(log_error, logtype_afpd,"afp_ldap.conf: SASL not yet supported.");
         }
     } else
-        LOG(log_error, logtype_afpd,"ldappref: Pref is not ok.");
+        LOG(log_info, logtype_afpd,"afp_ldap.conf: not used");
     fclose(f);
     return 0;
 }
-#endif
+#endif /* HAVE_LDAP */

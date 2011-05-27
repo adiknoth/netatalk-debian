@@ -55,7 +55,7 @@ am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
 	$(top_srcdir)/macros/summary.m4 \
 	$(top_srcdir)/macros/tcp-wrappers.m4 \
 	$(top_srcdir)/macros/util.m4 $(top_srcdir)/macros/webmin.m4 \
-	$(top_srcdir)/configure.in
+	$(top_srcdir)/macros/zeroconf.m4 $(top_srcdir)/configure.in
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -68,6 +68,7 @@ SOURCES =
 DIST_SOURCES =
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
+ACL_LIBS = @ACL_LIBS@
 AFS_CFLAGS = @AFS_CFLAGS@
 AFS_LIBS = @AFS_LIBS@
 AMTAR = @AMTAR@
@@ -75,6 +76,10 @@ AR = @AR@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
+AVAHI_CFLAGS = @AVAHI_CFLAGS@
+AVAHI_LIBS = @AVAHI_LIBS@
+AVAHI_TPOLL_CFLAGS = @AVAHI_TPOLL_CFLAGS@
+AVAHI_TPOLL_LIBS = @AVAHI_TPOLL_LIBS@
 AWK = @AWK@
 BDB_BIN = @BDB_BIN@
 BDB_CFLAGS = @BDB_CFLAGS@
@@ -124,7 +129,6 @@ KLDFLAGS = @KLDFLAGS@
 KRB5_CONFIG = @KRB5_CONFIG@
 LDFLAGS = @LDFLAGS@
 LIBADD_DL = @LIBADD_DL@
-LIBATALK_ACLS = @LIBATALK_ACLS@
 LIBGCRYPT_CFLAGS = @LIBGCRYPT_CFLAGS@
 LIBGCRYPT_CONFIG = @LIBGCRYPT_CONFIG@
 LIBGCRYPT_LIBS = @LIBGCRYPT_LIBS@
@@ -156,7 +160,9 @@ PAM_SESSION = @PAM_SESSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
 PKGCONFDIR = @PKGCONFDIR@
+PKG_CONFIG = @PKG_CONFIG@
 PS = @PS@
+PTHREAD_LIBS = @PTHREAD_LIBS@
 QUOTA_LIBS = @QUOTA_LIBS@
 RANLIB = @RANLIB@
 SED = @SED@
@@ -177,6 +183,8 @@ WEBMIN_PORT = @WEBMIN_PORT@
 WEBMIN_USER = @WEBMIN_USER@
 WEBMIN_VERSION = @WEBMIN_VERSION@
 WRAP_LIBS = @WRAP_LIBS@
+ZEROCONF_CFLAGS = @ZEROCONF_CFLAGS@
+ZEROCONF_LIBS = @ZEROCONF_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -270,6 +278,8 @@ EXTRA_DIST = $(TEMPLATES) rc.atalk.cobalt
 # checking for "cobalt" style sysv scripts:
 #
 @USE_COBALT_TRUE@sysvdir = /etc/rc.d/init.d
+#	-rc-update del $(sysv_SCRIPTS) default
+#	rm -f $(DESTDIR)$(sysvdir)/$(sysv_SCRIPTS)
 
 #
 # checking for "Debian" style sysv scripts:
@@ -305,14 +315,14 @@ EXTRA_DIST = $(TEMPLATES) rc.atalk.cobalt
 # checking for "tru64" style sysv scripts:
 #
 @USE_TRU64_TRUE@sysvdir = /etc/init.d
-@USE_COBALT_TRUE@sysv_SCRIPTS = atalk
+@USE_COBALT_TRUE@sysv_SCRIPTS = netatalk
 @USE_DEBIAN_TRUE@sysv_SCRIPTS = netatalk
-@USE_GENTOO_TRUE@sysv_SCRIPTS = atalk
+@USE_GENTOO_TRUE@sysv_SCRIPTS = netatalk
 @USE_NETBSD_TRUE@sysv_SCRIPTS = afpd atalkd cnid_metad papd timelord
 @USE_REDHAT_TRUE@sysv_SCRIPTS = netatalk
 @USE_SOLARIS_TRUE@sysv_SCRIPTS = netatalk
-@USE_SUSE_TRUE@sysv_SCRIPTS = atalk
-@USE_TRU64_TRUE@sysv_SCRIPTS = atalk
+@USE_SUSE_TRUE@sysv_SCRIPTS = netatalk
+@USE_TRU64_TRUE@sysv_SCRIPTS = netatalk
 all: all-am
 
 .SUFFIXES:
@@ -615,11 +625,9 @@ uninstall: uninstall-startup
 @USE_GENTOO_TRUE@	chmod a+x $(sysv_SCRIPTS)
 
 @USE_GENTOO_TRUE@install-data-hook:
-@USE_GENTOO_TRUE@	-rc-update add $(sysv_SCRIPTS) default
+#	-rc-update add $(sysv_SCRIPTS) default
 
 @USE_GENTOO_TRUE@uninstall-startup:
-@USE_GENTOO_TRUE@	-rc-update del $(sysv_SCRIPTS) default
-@USE_GENTOO_TRUE@	rm -f $(DESTDIR)$(sysvdir)/$(sysv_SCRIPTS)
 
 @USE_DEBIAN_TRUE@$(sysv_SCRIPTS): rc.atalk.debian
 @USE_DEBIAN_TRUE@	cp -f rc.atalk.debian $(sysv_SCRIPTS)

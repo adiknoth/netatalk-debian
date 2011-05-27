@@ -1,6 +1,4 @@
 /*
- * $Id: enumerate.c,v 1.49 2010-02-10 14:05:37 franklahm Exp $
- *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
  */
@@ -21,8 +19,13 @@
 #include <atalk/adouble.h>
 #include <atalk/vfs.h>
 #include <atalk/cnid.h>
+#include <atalk/util.h>
+#include <atalk/bstrlib.h>
+#include <atalk/bstradd.h>
+
 #include "desktop.h"
 #include "directory.h"
+#include "dircache.h"
 #include "volume.h"
 #include "globals.h"
 #include "file.h"
@@ -152,7 +155,7 @@ for_each_dirent(const struct vol *vol, char *name, dir_loop fn, void *data)
    macnamelength(1) + macname(31) + utf8(4) + utf8namelen(2) + utf8name(255) +
    oddpadding(1) */
 
-#define REPLY_PARAM_MAXLEN (4 + 104 + 1 + MACFILELEN + 4 + 2 + 255 + 1)
+#define REPLY_PARAM_MAXLEN (4 + 104 + 1 + MACFILELEN + 4 + 2 + UTF8FILELEN_EARLY + 1)
 
 /* ----------------------------- */
 static int enumerate(AFPObj *obj _U_, char *ibuf, size_t ibuflen _U_, 
@@ -266,8 +269,8 @@ static int enumerate(AFPObj *obj _U_, char *ibuf, size_t ibuflen _U_,
         return path_error(o_path, AFPERR_NODIR );
     }
 
-    LOG(log_debug, logtype_afpd, "enumerate(vid:%u, did:%u, name:'%s', f/d:%04x/%04x, rc:%u, i:%u, max:%u)",
-        ntohs(vid), ntohl(did), o_path->u_name, fbitmap, dbitmap, reqcnt, sindex, maxsz);
+    LOG(log_debug, logtype_afpd, "enumerate(\"%s/%s\", f/d:%04x/%04x, rc:%u, i:%u, max:%u)",
+        getcwdpath(), o_path->u_name, fbitmap, dbitmap, reqcnt, sindex, maxsz);
 
     data = rbuf + 3 * sizeof( u_int16_t );
     sz = 3 * sizeof( u_int16_t );	/* fbitmap, dbitmap, reqcount */
@@ -281,11 +284,12 @@ static int enumerate(AFPObj *obj _U_, char *ibuf, size_t ibuflen _U_,
         sd.sd_last = sd.sd_buf;
         /* if dir was in the cache we don't have the inode */
         if (( !o_path->st_valid && lstat( ".", &o_path->st ) < 0 ) ||
-              (ret = for_each_dirent(vol, ".", enumerate_loop, (void *)&sd)) < 0) 
+            (ret = for_each_dirent(vol, ".", enumerate_loop, (void *)&sd)) < 0) 
         {
+            LOG(log_error, logtype_afpd, "enumerate: loop error: %s (%d)", strerror(errno), errno);
             switch (errno) {
             case EACCES:
-		return AFPERR_ACCESS;
+                return AFPERR_ACCESS;
             case ENOTDIR:
                 return AFPERR_BADTYPE;
             case ENOMEM:
@@ -370,19 +374,22 @@ static int enumerate(AFPObj *obj _U_, char *ibuf, size_t ibuflen _U_,
             if ( dbitmap == 0 ) {
                 continue;
             }
-            dir = dirsearch_byname(vol, curdir, s_path.u_name);
-            if (!dir && NULL == (dir = adddir( vol, curdir, &s_path) ) ) {
+            int len = strlen(s_path.u_name);
+            if ((dir = dircache_search_by_name(vol, curdir, s_path.u_name, len, s_path.st.st_ctime)) == NULL) {
+                if ((dir = dir_add(vol, curdir, &s_path, len)) == NULL) {
+                    LOG(log_error, logtype_afpd, "enumerate(vid:%u, did:%u, name:'%s'): error adding dir: '%s'",
+                        ntohs(vid), ntohl(did), o_path->u_name, s_path.u_name);
                     return AFPERR_MISC;
                 }
-            if (AFP_OK != ( ret = getdirparams(vol, dbitmap, &s_path, dir,
-                                     data + header , &esz ))) {
-                return( ret );
             }
+            if ((ret = getdirparams(vol, dbitmap, &s_path, dir, data + header , &esz)) != AFP_OK)
+                return( ret );
 
         } else {
             if ( fbitmap == 0 ) {
                 continue;
             }
+            /* files are added to the dircache in getfilparams() -> getmetadata() */
             if (AFP_OK != ( ret = getfilparams(vol, fbitmap, &s_path, curdir, 
                                      data + header , &esz )) ) {
                 return( ret );

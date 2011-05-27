@@ -60,7 +60,7 @@ am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
 	$(top_srcdir)/macros/summary.m4 \
 	$(top_srcdir)/macros/tcp-wrappers.m4 \
 	$(top_srcdir)/macros/util.m4 $(top_srcdir)/macros/webmin.m4 \
-	$(top_srcdir)/configure.in
+	$(top_srcdir)/macros/zeroconf.m4 $(top_srcdir)/configure.in
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -92,6 +92,7 @@ ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
+ACL_LIBS = @ACL_LIBS@
 AFS_CFLAGS = @AFS_CFLAGS@
 AFS_LIBS = @AFS_LIBS@
 AMTAR = @AMTAR@
@@ -99,6 +100,10 @@ AR = @AR@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
+AVAHI_CFLAGS = @AVAHI_CFLAGS@
+AVAHI_LIBS = @AVAHI_LIBS@
+AVAHI_TPOLL_CFLAGS = @AVAHI_TPOLL_CFLAGS@
+AVAHI_TPOLL_LIBS = @AVAHI_TPOLL_LIBS@
 AWK = @AWK@
 BDB_BIN = @BDB_BIN@
 BDB_CFLAGS = @BDB_CFLAGS@
@@ -148,7 +153,6 @@ KLDFLAGS = @KLDFLAGS@
 KRB5_CONFIG = @KRB5_CONFIG@
 LDFLAGS = @LDFLAGS@
 LIBADD_DL = @LIBADD_DL@
-LIBATALK_ACLS = @LIBATALK_ACLS@
 LIBGCRYPT_CFLAGS = @LIBGCRYPT_CFLAGS@
 LIBGCRYPT_CONFIG = @LIBGCRYPT_CONFIG@
 LIBGCRYPT_LIBS = @LIBGCRYPT_LIBS@
@@ -180,7 +184,9 @@ PAM_SESSION = @PAM_SESSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
 PKGCONFDIR = @PKGCONFDIR@
+PKG_CONFIG = @PKG_CONFIG@
 PS = @PS@
+PTHREAD_LIBS = @PTHREAD_LIBS@
 QUOTA_LIBS = @QUOTA_LIBS@
 RANLIB = @RANLIB@
 SED = @SED@
@@ -201,6 +207,8 @@ WEBMIN_PORT = @WEBMIN_PORT@
 WEBMIN_USER = @WEBMIN_USER@
 WEBMIN_VERSION = @WEBMIN_VERSION@
 WRAP_LIBS = @WRAP_LIBS@
+ZEROCONF_CFLAGS = @ZEROCONF_CFLAGS@
+ZEROCONF_LIBS = @ZEROCONF_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@

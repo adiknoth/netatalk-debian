@@ -3,9 +3,6 @@
 /* Define if the admin group should be enabled */
 #undef ADMIN_GRP
 
-/* Define to enable AFP 3.x support */
-#undef AFP3x
-
 /* Define if AFS should be used */
 #undef AFS
 
@@ -66,6 +63,9 @@
 /* Define if you want to use the experimental dropkludge support */
 #undef DROPKLUDGE
 
+/* Available Extended Attributes modules */
+#undef EA_MODULES
+
 /* Define if you want compatibily with the FHS */
 #undef FHS_COMPATIBILITY
 
@@ -91,11 +91,23 @@
 /* Define to 1 if you have the `access' function. */
 #undef HAVE_ACCESS
 
+/* Whether ACLs support is available */
+#undef HAVE_ACLS
+
+/* Whether acl_get_perm_np() is available */
+#undef HAVE_ACL_GET_PERM_NP
+
 /* Define to 1 if you have the `add_proplist_entry' function. */
 #undef HAVE_ADD_PROPLIST_ENTRY
 
+/* Whether AIX ACLs are available */
+#undef HAVE_AIX_ACLS
+
 /* set if struct at_addr is called atalk_addr */
 #undef HAVE_ATALK_ADDR
+
+/* whether at funcs are available */
+#undef HAVE_ATFUNCS
 
 /* Define to 1 if you have the `attropen' function. */
 #undef HAVE_ATTROPEN
@@ -126,6 +138,12 @@
 
 /* Define to 1 if you have the <attr/xattr.h> header file. */
 #undef HAVE_ATTR_XATTR_H
+
+/* Use Avahi/DNS-SD registration */
+#undef HAVE_AVAHI
+
+/* Uses Avahis threaded poll implementation */
+#undef HAVE_AVAHI_THREADED_POLL
 
 /* Define to 1 if you have the `backtrace_symbols' function. */
 #undef HAVE_BACKTRACE_SYMBOLS
@@ -272,6 +290,9 @@
 /* Define to 1 if you have the `fsetxattr' function. */
 #undef HAVE_FSETXATTR
 
+/* Define to 1 if you have the `fstatat' function. */
+#undef HAVE_FSTATAT
+
 /* Define if memcpy is buggy */
 #undef HAVE_GCC_MEMCPY_BUG
 
@@ -320,14 +341,23 @@
 /* Wheter GSS_C_NT_HOSTBASED_SERVICE is in gssapi.h */
 #undef HAVE_GSS_C_NT_HOSTBASED_SERVICE
 
+/* Whether HPUX ACLs are available */
+#undef HAVE_HPUX_ACLS
+
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
+
+/* Whether IRIX ACLs are available */
+#undef HAVE_IRIX_ACLS
 
 /* Define to 1 if you have the <langinfo.h> header file. */
 #undef HAVE_LANGINFO_H
 
 /* LARGEFILE support */
 #undef HAVE_LARGEFILE_SUPPORT
+
+/* Whether LDAP is available */
+#undef HAVE_LDAP
 
 /* Define to 1 if you have the `lgetea' function. */
 #undef HAVE_LGETEA
@@ -446,14 +476,20 @@
 /* Define to 1 if you have the <netdb.h> header file. */
 #undef HAVE_NETDB_H
 
-/* Enable ACL code */
-#undef HAVE_NFSv4_ACLS
-
 /* Define to 1 if you have the `nl_langinfo' function. */
 #undef HAVE_NL_LANGINFO
 
+/* Whether no ACLs support is available */
+#undef HAVE_NO_ACLS
+
+/* Define to 1 if you have the `openat' function. */
+#undef HAVE_OPENAT
+
 /* Define to 1 if you have the <pam/pam_appl.h> header file. */
 #undef HAVE_PAM_PAM_APPL_H
+
+/* Whether POSIX ACLs are available */
+#undef HAVE_POSIX_ACLS
 
 /* Define to 1 if you have the `pread' function. */
 #undef HAVE_PREAD
@@ -472,6 +508,9 @@
 
 /* Define to 1 if you have the `removexattr' function. */
 #undef HAVE_REMOVEXATTR
+
+/* Define to 1 if you have the `renameat' function. */
+#undef HAVE_RENAMEAT
 
 /* Define to 1 if you have the `rmdir' function. */
 #undef HAVE_RMDIR
@@ -523,6 +562,9 @@
 
 /* Define to 1 if you have the `socket' function. */
 #undef HAVE_SOCKET
+
+/* Whether solaris ACLs are available */
+#undef HAVE_SOLARIS_ACLS
 
 /* Define to 1 if you have the <statfs.h> header file. */
 #undef HAVE_STATFS_H
@@ -668,6 +710,9 @@
 /* Define to 1 if you have the <time.h> header file. */
 #undef HAVE_TIME_H
 
+/* Whether Tru64 ACLs are available */
+#undef HAVE_TRU64_ACLS
+
 /* Whether UCS-2-INTERNAL is supported */
 #undef HAVE_UCS2INTERNAL
 
@@ -676,6 +721,12 @@
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
+
+/* Whether UnixWare ACLs are available */
+#undef HAVE_UNIXWARE_ACLS
+
+/* Define to 1 if you have the `unlinkat' function. */
+#undef HAVE_UNLINKAT
 
 /* Whether to use native iconv */
 #undef HAVE_USABLE_ICONV
@@ -724,6 +775,9 @@
 /* Define to 1 if `major', `minor', and `makedev' are declared in
    <sysmacros.h>. */
 #undef MAJOR_IN_SYSMACROS
+
+/* Disable assertions */
+#undef NDEBUG
 
 /* Define if dlsym() requires a leading underscore in symbol names. */
 #undef NEED_USCORE
@@ -823,6 +877,9 @@
 
 /* Define to enable SLP support */
 #undef USE_SRVLOC
+
+/* Define to enable Zeroconf support */
+#undef USE_ZEROCONF
 
 /* Version number of package */
 #undef VERSION

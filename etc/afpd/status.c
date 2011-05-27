@@ -35,6 +35,7 @@
 #include <atalk/asp.h>
 #include <atalk/nbp.h>
 #include <atalk/unicode.h>
+#include <atalk/util.h>
 
 #include "globals.h"  /* includes <netdb.h> */
 #include "status.h"
@@ -46,32 +47,26 @@ static   size_t maxstatuslen = 0;
 static void status_flags(char *data, const int notif, const int ipok,
                          const unsigned char passwdbits, const int dirsrvcs _U_, int flags)
 {
-    u_int16_t           status;
+    uint16_t           status;
 
-    status = AFPSRVRINFO_COPY;
+    status = AFPSRVRINFO_COPY
+           | AFPSRVRINFO_SRVSIGNATURE
+           | AFPSRVRINFO_SRVMSGS
+           | AFPSRVRINFO_FASTBOZO
+           | AFPSRVRINFO_SRVRDIR
+           | AFPSRVRINFO_SRVUTF8
+           | AFPSRVRINFO_EXTSLEEP;
+
     if (passwdbits & PASSWD_SET) /* some uams may not allow this. */
         status |= AFPSRVRINFO_PASSWD;
     if (passwdbits & PASSWD_NOSAVE)
         status |= AFPSRVRINFO_NOSAVEPASSWD;
-    status |= AFPSRVRINFO_SRVSIGNATURE;
-    /* only advertise tcp/ip if we have a valid address */
-    if (ipok)
+    if (ipok) /* only advertise tcp/ip if we have a valid address */        
         status |= AFPSRVRINFO_TCPIP;
-    status |= AFPSRVRINFO_SRVMSGS;
-    /* Allow the user to decide if we should support server notifications.
-     * With this turned off, the clients will poll for directory changes every
-     * 10 seconds.  This might be too costly to network resources, so make
-     * this an optional thing.  Default will be to _not_ support server
-     * notifications. */
-    if (notif) {
+    if (notif) /* Default is yes */        
         status |= AFPSRVRINFO_SRVNOTIFY;
-    }
-    status |= AFPSRVRINFO_FASTBOZO;
-    status |= AFPSRVRINFO_SRVRDIR; /* AFP 3.1 specs says we need to specify this, but may set the count to 0 */
-    /* We don't set the UTF8 name flag here, we don't know whether we have enough space ... */
-
-    if (flags & OPTION_UUID)	/* 05122008 FIXME: can we set AFPSRVRINFO_UUID here ? see AFPSRVRINFO_SRVRDIR*/
-	status |= AFPSRVRINFO_UUID;
+    if (flags & OPTION_UUID)
+        status |= AFPSRVRINFO_UUID;
 
     status = htons(status);
     memcpy(data + AFPSTATUS_FLAGOFF, &status, sizeof(status));
@@ -133,15 +128,19 @@ static void status_machine(char *data)
 #ifdef AFS
     const char		*machine = "afs";
 #else /* !AFS */
-    const char		*machine = "Netatalk";
+    const char		*machine = "Netatalk %s";
 #endif /* AFS */
+    char buf[64];
 
     memcpy(&status, start + AFPSTATUS_MACHOFF, sizeof(status));
     data += ntohs( status );
-    len = strlen( machine );
+
+    //    len = strlen( machine );
+    len = snprintf(buf, 64, machine, VERSION);
     *data++ = len;
-    memcpy( data, machine, len );
+    memcpy( data, buf, len );
     data += len;
+
     status = htons(data - start);
     memcpy(start + AFPSTATUS_VERSOFF, &status, sizeof(status));
 }
@@ -393,13 +392,6 @@ static size_t status_utf8servername(char *data, int *nameoffset,
     	data += len;
     	offset = htons(offset);
     	memcpy(begin + *nameoffset, &offset, sizeof(u_int16_t));
-        
-        /* Now set the flag ... */
-	memcpy(&status, begin + AFPSTATUS_FLAGOFF, sizeof(status));
-	status = ntohs(status);
-	status |= AFPSRVRINFO_SRVUTF8;
-	status = htons(status);
-	memcpy(begin + AFPSTATUS_FLAGOFF, &status, sizeof(status));
     }
 
     /* return length of buffer */
@@ -556,7 +548,7 @@ void set_signature(struct afp_options *options) {
     char *servername_conf;
     int header = 0;
     char buf[1024], *p;
-    FILE *fp, *randomp;
+    FILE *fp = NULL, *randomp;
     size_t len;
     char *server_tmp;
     
@@ -661,12 +653,12 @@ server_signature_auto:
         }
     } else {                                                          /* conf file don't exist */
         if (( fd = creat(options->sigconffile, 0644 )) < 0 ) {
-            LOG(log_error, logtype_atalkd, "ERROR: Cannot create %s (%s). Using one-time signature.",
+            LOG(log_error, logtype_afpd, "ERROR: Cannot create %s (%s). Using one-time signature.",
                 options->sigconffile, strerror(errno));
             goto server_signature_random;
         }
         if (( fp = fdopen( fd, "w" )) == NULL ) {
-            LOG(log_error, logtype_atalkd, "ERROR: Cannot fdopen %s (%s). Using one-time signature.",
+            LOG(log_error, logtype_afpd, "ERROR: Cannot fdopen %s (%s). Using one-time signature.",
                 options->sigconffile, strerror(errno));
             close(fd);
             goto server_signature_random;
@@ -678,41 +670,9 @@ server_signature_auto:
 server_signature_random:
     
     /* generate signature from random number */
-    if ((randomp = fopen("/dev/urandom", "r")) != NULL) {   /* generate from /dev/urandom */
-        for (i=0 ; i<16 ; i++) {
-            (options->signature)[i] = fgetc(randomp);
-        }
-        LOG(log_note, logtype_afpd,
-            "generate %s's signature %02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X from /dev/urandom",
-            server_tmp,
-            (options->signature)[ 0], (options->signature)[ 1],
-            (options->signature)[ 2], (options->signature)[ 3],
-            (options->signature)[ 4], (options->signature)[ 5],
-            (options->signature)[ 6], (options->signature)[ 7],
-            (options->signature)[ 8], (options->signature)[ 9],
-            (options->signature)[10], (options->signature)[11],
-            (options->signature)[12], (options->signature)[13],
-            (options->signature)[14], (options->signature)[15]);
-        
-    } else {                                   /* genarate from random() because cannot open /dev/urandom */
-        srandom((unsigned int)time(NULL) + (unsigned int)options + (unsigned int)server_tmp);
-        for (i=0 ; i<16 ; i++) {
-            (options->signature)[i] = random() & 0xFF;
-        }
-        LOG(log_note, logtype_afpd,
-            "generate %s's signature %02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X from random()",
-            server_tmp,
-            (options->signature)[ 0], (options->signature)[ 1],
-            (options->signature)[ 2], (options->signature)[ 3],
-            (options->signature)[ 4], (options->signature)[ 5],
-            (options->signature)[ 6], (options->signature)[ 7],
-            (options->signature)[ 8], (options->signature)[ 9],
-            (options->signature)[10], (options->signature)[11],
-            (options->signature)[12], (options->signature)[13],
-            (options->signature)[14], (options->signature)[15]);
-    }
+    randombytes(options->signature, 16);
 
-    if (fp && header) {                                     /* conf file is created or size=0 */
+    if (fp && header) { /* conf file is created or size=0 */
         fprintf(fp, "# DON'T TOUCH NOR COPY THOUGHTLESSLY!\n");
         fprintf(fp, "# This file is auto-generated by afpd.\n");
         fprintf(fp, "# \n");

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2008,2009 Frank Lahm <franklahm@gmail.com>
+  Copyright (c) 2008, 2009, 2010 Frank Lahm <franklahm@gmail.com>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -23,8 +23,15 @@
 #include <grp.h>
 #include <pwd.h>
 #include <errno.h>
+#ifdef HAVE_SOLARIS_ACLS
 #include <sys/acl.h>
+#endif
+#ifdef HAVE_POSIX_ACLS
+#include <sys/acl.h>
+#include <acl/libacl.h>
+#endif
 
+#include <atalk/errchk.h>
 #include <atalk/adouble.h>
 #include <atalk/vfs.h>
 #include <atalk/afp.h>
@@ -33,211 +40,172 @@
 #include <atalk/logger.h>
 #include <atalk/uuid.h>
 #include <atalk/acl.h>
+#include <atalk/bstrlib.h>
+#include <atalk/bstradd.h>
 
 #include "directory.h"
 #include "desktop.h"
 #include "volume.h"
 #include "fork.h"
-
+#include "unix.h"
 #include "acls.h"
 #include "acl_mappings.h"
+#include "auth.h"
 
 /* for map_acl() */
-#define SOLARIS_2_DARWIN 1
-#define DARWIN_2_SOLARIS 2
+#define SOLARIS_2_DARWIN       1
+#define DARWIN_2_SOLARIS       2
+#define POSIX_DEFAULT_2_DARWIN 3
+#define POSIX_ACCESS_2_DARWIN  4
+#define DARWIN_2_POSIX_DEFAULT 5
+#define DARWIN_2_POSIX_ACCESS  6
+
+#define MAP_MASK               31
+#define IS_DIR                 32
 
 /********************************************************
- * Basic and helper funcs
+ * Solaris funcs
  ********************************************************/
 
-/*
-  Takes a users name, uid and primary gid and checks if user is member of any group
-  Returns -1 if no or error, 0 if yes
-*/
-static int check_group(char *name, uid_t uid, gid_t pgid, gid_t path_gid)
+#ifdef HAVE_SOLARIS_ACLS
+
+/*! 
+ * Compile access rights for a user to one file-system object
+ *
+ * This combines combines all access rights for a user to one fs-object and
+ * returns the result as a Darwin allowed rights ACE.
+ * This must honor trivial ACEs which are a mode_t mapping.
+ *
+ * @param path           (r) path to filesystem object
+ * @param sb             (r) struct stat of path
+ * @param result         (w) resulting Darwin allow ACE
+ *
+ * @returns                  0 or -1 on error
+ */
+static int solaris_acl_rights(const char *path,
+                              const struct stat *sb,
+                              uint32_t *result)
 {
-    int i;
-    struct group *grp;
+    EC_INIT;
+    int      i, ace_count, checkgroup;
+    ace_t    *aces = NULL;
+    uid_t    who;
+    uint16_t flags, type;
+    uint32_t rights, allowed_rights = 0, denied_rights = 0, darwin_rights;
 
-    if (pgid == path_gid)
-        return 0;
+    /* Get ACL from file/dir */
+    EC_NEG1_LOG(ace_count = get_nfsv4_acl(path, &aces));
 
-    grp = getgrgid(path_gid);
-    if (!grp)
-        return -1;
+    if (ace_count == 0)
+        goto EC_CLEANUP;
 
+    /* Now check requested rights */
     i = 0;
-    while (grp->gr_mem[i] != NULL) {
-        if ( (strcmp(grp->gr_mem[i], name)) == 0 ) {
-            LOG(log_debug, logtype_afpd, "check_group: requested user:%s is member of: %s", name, grp->gr_name);
-            return 0;
+    do { /* Loop through ACEs */
+        who = aces[i].a_who;
+        flags = aces[i].a_flags;
+        type = aces[i].a_type;
+        rights = aces[i].a_access_mask;
+
+        if (flags & ACE_INHERIT_ONLY_ACE)
+            continue;
+
+        /* Now the tricky part: decide if ACE effects our user. I'll explain:
+           if its a dedicated (non trivial) ACE for the user
+           OR
+           if its a ACE for a group we're member of
+           OR
+           if its a trivial ACE_OWNER ACE and requested UUID is the owner
+           OR
+           if its a trivial ACE_GROUP ACE and requested UUID is group
+           OR
+           if its a trivial ACE_EVERYONE ACE
+           THEN
+           process ACE */
+        if (((who == uuid) && !(flags & (ACE_TRIVIAL|ACE_IDENTIFIER_GROUP)))
+            ||
+            ((flags & ACE_IDENTIFIER_GROUP) && !(flags & ACE_GROUP) && gmem(who))
+            ||
+            ((flags & ACE_OWNER) && (uuid == sb->st_uid))
+            ||
+            ((flags & ACE_GROUP) && !(uuid == sb->st_uid) && gmem(sb->st_gid))
+            ||
+            (flags & ACE_EVERYONE && !(uuid == sb->st_uid) && !gmem(sb->st_gid))
+            ) {
+            /* Found an applicable ACE */
+            if (type == ACE_ACCESS_ALLOWED_ACE_TYPE)
+                allowed_rights |= rights;
+            else if (type == ACE_ACCESS_DENIED_ACE_TYPE)
+                /* Only or to denied rights if not previously allowed !! */
+                denied_rights |= ((!allowed_rights) & rights);
         }
-        i++;
+    } while (++i < ace_count);
+
+
+    /* Darwin likes to ask for "delete_child" on dir,
+       "write_data" is actually the same, so we add that for dirs */
+    if (S_ISDIR(sb->st_mode) && (allowed_rights & ACE_WRITE_DATA))
+        allowed_rights |= ACE_DELETE_CHILD;
+
+    /* Remove denied from allowed rights */
+    allowed_rights &= ~denied_rights;
+
+    /* map rights */
+    darwin_rights = 0;
+    for (i=0; nfsv4_to_darwin_rights[i].from != 0; i++) {
+        if (allowed_rights & nfsv4_to_darwin_rights[i].from)
+            darwin_rights |= nfsv4_to_darwin_rights[i].to;
     }
 
-    return -1;
+    *result |= darwin_rights;
+
+EC_CLEANUP:
+    if (aces) free(aces);
+
+    EC_EXIT;
 }
-
-/*
-  Remove any trivial ACE "in-place". Returns no of non-trivial ACEs
-*/
-static int strip_trivial_aces(ace_t **saces, int sacecount)
-{
-    int i,j;
-    int nontrivaces = 0;
-    ace_t *aces = *saces;
-    ace_t *new_aces;
-
-    /* Count non-trivial ACEs */
-    for (i=0; i < sacecount; ) {
-        if ( ! (aces[i].a_flags & (ACE_OWNER | ACE_GROUP | ACE_EVERYONE)))
-            nontrivaces++;
-        i++;
-    }
-    /* malloc buffer for new ACL */
-    if ((new_aces = malloc(nontrivaces * sizeof(ace_t))) == NULL) {
-        LOG(log_error, logtype_afpd, "strip_trivial_aces: malloc %s", strerror(errno));
-        return -1;
-    }
-
-    /* Copy non-trivial ACEs */
-    for (i=0, j=0; i < sacecount; ) {
-        if ( ! (aces[i].a_flags & (ACE_OWNER | ACE_GROUP | ACE_EVERYONE))) {
-            memcpy(&new_aces[j], &aces[i], sizeof(ace_t));
-            j++;
-        }
-        i++;
-    }
-
-    free(aces);
-    *saces = new_aces;
-
-    LOG(log_debug7, logtype_afpd, "strip_trivial_aces: non-trivial ACEs: %d", nontrivaces);
-
-    return nontrivaces;
-}
-
-/*
-  Remove non-trivial ACEs "in-place". Returns no of trivial ACEs.
-*/
-static int strip_nontrivial_aces(ace_t **saces, int sacecount)
-{
-    int i,j;
-    int trivaces = 0;
-    ace_t *aces = *saces;
-    ace_t *new_aces;
-
-    /* Count trivial ACEs */
-    for (i=0; i < sacecount; ) {
-        if ((aces[i].a_flags & (ACE_OWNER | ACE_GROUP | ACE_EVERYONE)))
-            trivaces++;
-        i++;
-    }
-    /* malloc buffer for new ACL */
-    if ((new_aces = malloc(trivaces * sizeof(ace_t))) == NULL) {
-        LOG(log_error, logtype_afpd, "strip_nontrivial_aces: malloc %s", strerror(errno));
-        return -1;
-    }
-
-    /* Copy trivial ACEs */
-    for (i=0, j=0; i < sacecount; ) {
-        if ((aces[i].a_flags & (ACE_OWNER | ACE_GROUP | ACE_EVERYONE))) {
-            memcpy(&new_aces[j], &aces[i], sizeof(ace_t));
-            j++;
-        }
-        i++;
-    }
-    /* Free old ACEs */
-    free(aces);
-    *saces = new_aces;
-
-    LOG(log_debug7, logtype_afpd, "strip_nontrivial_aces: trivial ACEs: %d", trivaces);
-
-    return trivaces;
-}
-
-/*
-  Concatenate ACEs
-*/
-static ace_t *concat_aces(ace_t *aces1, int ace1count, ace_t *aces2, int ace2count)
-{
-    ace_t *new_aces;
-    int i, j;
-
-    /* malloc buffer for new ACL */
-    if ((new_aces = malloc((ace1count + ace2count) * sizeof(ace_t))) == NULL) {
-        LOG(log_error, logtype_afpd, "combine_aces: malloc %s", strerror(errno));
-        return NULL;
-    }
-
-    /* Copy ACEs from buf1 */
-    for (i=0; i < ace1count; ) {
-        memcpy(&new_aces[i], &aces1[i], sizeof(ace_t));
-        i++;
-    }
-
-    j = i;
-
-    /* Copy ACEs from buf2 */
-    for (i=0; i < ace2count; ) {
-        memcpy(&new_aces[j], &aces2[i], sizeof(ace_t));
-        i++;
-        j++;
-    }
-    return new_aces;
-}
-
 
 /*
   Maps ACE array from Solaris to Darwin. Darwin ACEs are stored in network byte order.
   Return numer of mapped ACEs or -1 on error.
   All errors while mapping (e.g. getting UUIDs from LDAP) are fatal.
 */
-static int map_aces_solaris_to_darwin(ace_t *aces, darwin_ace_t *darwin_aces, int ace_count)
+static int map_aces_solaris_to_darwin(const ace_t *aces,
+                                      darwin_ace_t *darwin_aces,
+                                      int ace_count)
 {
+    EC_INIT;
     int i, count = 0;
     uint32_t flags;
     uint32_t rights;
     struct passwd *pwd = NULL;
     struct group *grp = NULL;
 
-    LOG(log_debug7, logtype_afpd, "map_aces_solaris_to_darwin: parsing %d ACES", ace_count);
+    LOG(log_maxdebug, logtype_afpd, "map_aces_solaris_to_darwin: parsing %d ACES", ace_count);
 
     while(ace_count--) {
-        LOG(log_debug7, logtype_afpd, "map_aces_solaris_to_darwin: parsing ACE No. %d", ace_count + 1);
+        LOG(log_maxdebug, logtype_afpd, "ACE No. %d", ace_count + 1);
         /* if its a ACE resulting from nfsv4 mode mapping, discard it */
         if (aces->a_flags & (ACE_OWNER | ACE_GROUP | ACE_EVERYONE)) {
-            LOG(log_debug, logtype_afpd, "map_aces_solaris_to_darwin: trivial ACE");
+            LOG(log_debug, logtype_afpd, "trivial ACE");
             aces++;
             continue;
         }
 
-        if ( ! (aces->a_flags & ACE_IDENTIFIER_GROUP) ) {
-            /* its a user ace */
-            LOG(log_debug, logtype_afpd, "map_aces_solaris_to_darwin: found user ACE with uid: %d", aces->a_who);
-            pwd = getpwuid(aces->a_who);
-            if (!pwd) {
-                LOG(log_error, logtype_afpd, "map_aces_solaris_to_darwin: getpwuid error: %s", strerror(errno));
-                return -1;
-            }
-            LOG(log_debug, logtype_afpd, "map_aces_solaris_to_darwin: uid: %d -> name: %s", aces->a_who, pwd->pw_name);
-            if ( (getuuidfromname(pwd->pw_name, UUID_USER, darwin_aces->darwin_ace_uuid)) != 0) {
-                LOG(log_error, logtype_afpd, "map_aces_solaris_to_darwin: getuuidfromname error");
-                return -1;
-            }
-        } else {
-            /* its a group ace */
-            LOG(log_debug, logtype_afpd, "map_aces_solaris_to_darwin: found group ACE with gid: %d", aces->a_who);
-            grp = getgrgid(aces->a_who);
-            if (!grp) {
-                LOG(log_error, logtype_afpd, "map_aces_solaris_to_darwin: getgrgid error: %s", strerror(errno));
-                return -1;
-            }
-            LOG(log_debug, logtype_afpd, "map_aces_solaris_to_darwin: gid: %d -> name: %s", aces->a_who, grp->gr_name);
-            if ( (getuuidfromname(grp->gr_name, UUID_GROUP, darwin_aces->darwin_ace_uuid)) != 0) {
-                LOG(log_error, logtype_afpd, "map_aces_solaris_to_darwin: getuuidfromname error");
-                return -1;
-            }
+        if ( ! (aces->a_flags & ACE_IDENTIFIER_GROUP) ) { /* user ace */
+            LOG(log_debug, logtype_afpd, "uid: %d", aces->a_who);
+            EC_NULL_LOG(pwd = getpwuid(aces->a_who));
+            LOG(log_debug, logtype_afpd, "uid: %d -> name: %s", aces->a_who, pwd->pw_name);
+            EC_ZERO_LOG(getuuidfromname(pwd->pw_name,
+                                        UUID_USER,
+                                        darwin_aces->darwin_ace_uuid));
+        } else { /* group ace */
+            LOG(log_debug, logtype_afpd, "gid: %d", aces->a_who);
+            EC_NULL_LOG(grp = getgrgid(aces->a_who));
+            LOG(log_debug, logtype_afpd, "gid: %d -> name: %s", aces->a_who, grp->gr_name);
+            EC_ZERO_LOG(getuuidfromname(grp->gr_name,
+                                        UUID_GROUP,
+                                        darwin_aces->darwin_ace_uuid));
         }
 
         /* map flags */
@@ -269,6 +237,8 @@ static int map_aces_solaris_to_darwin(ace_t *aces, darwin_ace_t *darwin_aces, in
     }
 
     return count;
+EC_CLEANUP:
+    EC_EXIT;
 }
 
 /*
@@ -276,14 +246,17 @@ static int map_aces_solaris_to_darwin(ace_t *aces, darwin_ace_t *darwin_aces, in
   Return numer of mapped ACEs or -1 on error.
   All errors while mapping (e.g. getting UUIDs from LDAP) are fatal.
 */
-int map_aces_darwin_to_solaris(darwin_ace_t *darwin_aces, ace_t *nfsv4_aces, int ace_count)
+static int map_aces_darwin_to_solaris(darwin_ace_t *darwin_aces,
+                                      ace_t *nfsv4_aces,
+                                      int ace_count)
 {
+    EC_INIT;
     int i, mapped_aces = 0;
     uint32_t darwin_ace_flags;
     uint32_t darwin_ace_rights;
     uint16_t nfsv4_ace_flags;
     uint32_t nfsv4_ace_rights;
-    char *name;
+    char *name = NULL;
     uuidtype_t uuidtype;
     struct passwd *pwd;
     struct group *grp;
@@ -293,25 +266,22 @@ int map_aces_darwin_to_solaris(darwin_ace_t *darwin_aces, ace_t *nfsv4_aces, int
         nfsv4_ace_rights = 0;
 
         /* uid/gid first */
-        if ( (getnamefromuuid(darwin_aces->darwin_ace_uuid, &name, &uuidtype)) != 0)
-            return -1;
-        if (uuidtype == UUID_USER) {
-            pwd = getpwnam(name);
-            if (!pwd) {
-                LOG(log_error, logtype_afpd, "map_aces_darwin_to_solaris: getpwnam: %s", strerror(errno));
-                free(name);
-                return -1;
-            }
+        EC_ZERO(getnamefromuuid(darwin_aces->darwin_ace_uuid, &name, &uuidtype));
+        switch (uuidtype) {
+        case UUID_LOCAL:
+            free(name);
+            name = NULL;
+            darwin_aces++;
+            continue;
+        case UUID_USER:
+            EC_NULL_LOG(pwd = getpwnam(name));
             nfsv4_aces->a_who = pwd->pw_uid;
-        } else { /* hopefully UUID_GROUP*/
-            grp = getgrnam(name);
-            if (!grp) {
-                LOG(log_error, logtype_afpd, "map_aces_darwin_to_solaris: getgrnam: %s", strerror(errno));
-                free(name);
-                return -1;
-            }
+            break;
+        case UUID_GROUP:
+            EC_NULL_LOG(grp = getgrnam(name));
             nfsv4_aces->a_who = (uid_t)(grp->gr_gid);
             nfsv4_ace_flags |= ACE_IDENTIFIER_GROUP;
+            break;
         }
         free(name);
         name = NULL;
@@ -351,32 +321,489 @@ int map_aces_darwin_to_solaris(darwin_ace_t *darwin_aces, ace_t *nfsv4_aces, int
     }
 
     return mapped_aces;
+EC_CLEANUP:
+    if (name)
+        free(name);
+    EC_EXIT;
 }
+#endif /* HAVE_SOLARIS_ACLS */
 
 /********************************************************
- * 2nd level funcs
+ * POSIX 1e funcs
  ********************************************************/
 
-/*  Map between ACL styles (SOLARIS_2_DARWIN, DARWIN_2_SOLARIS).
-    Reads from 'aces' buffer, writes to 'rbuf' buffer.
-    Caller must provide buffer.
-    Darwin ACEs are read and written in network byte order.
-    Needs to know how many ACEs are in the ACL (ace_count). Ignores trivial ACEs.
-    Return no of mapped ACEs or -1 on error. */
-static int map_acl(int type, ace_t *nfsv4_aces, darwin_ace_t *buf, int ace_count)
+#ifdef HAVE_POSIX_ACLS
+
+static uint32_t posix_permset_to_darwin_rights(acl_entry_t e, int is_dir)
+{
+    EC_INIT;
+    uint32_t rights = 0;
+    acl_permset_t permset;
+
+    EC_ZERO_LOG(acl_get_permset(e, &permset));
+
+    if (acl_get_perm(permset, ACL_READ))
+        rights = DARWIN_ACE_READ_DATA
+            | DARWIN_ACE_READ_EXTATTRIBUTES
+            | DARWIN_ACE_READ_ATTRIBUTES
+            | DARWIN_ACE_READ_SECURITY;
+    if (acl_get_perm(permset, ACL_WRITE)) {
+        rights |= DARWIN_ACE_WRITE_DATA
+            | DARWIN_ACE_APPEND_DATA
+            | DARWIN_ACE_WRITE_EXTATTRIBUTES
+            | DARWIN_ACE_WRITE_ATTRIBUTES;
+        if (is_dir)
+            rights |= DARWIN_ACE_DELETE_CHILD;
+    }
+    if (acl_get_perm(permset, ACL_EXECUTE))
+        rights |= DARWIN_ACE_EXECUTE;
+
+EC_CLEANUP:
+    LOG(log_maxdebug, logtype_afpd, "mapped rights: 0x%08x", rights);
+    return rights;
+}
+
+/*! 
+ * Compile access rights for a user to one file-system object
+ *
+ * This combines combines all access rights for a user to one fs-object and
+ * returns the result as a Darwin allowed rights ACE.
+ * This must honor trivial ACEs which are a mode_t mapping.
+ *
+ * @param path           (r) path to filesystem object
+ * @param sb             (r) struct stat of path
+ * @param result         (rw) resulting Darwin allow ACE
+ *
+ * @returns                  0 or -1 on error
+ */
+static int posix_acl_rights(const char *path,
+                            const struct stat *sb,
+                            uint32_t *result)
+{
+    EC_INIT;
+    int havemask = 0;
+    int entry_id = ACL_FIRST_ENTRY;
+    uint32_t rights = 0, maskrights = 0;
+    uid_t *uid = NULL;
+    gid_t *gid = NULL;
+    acl_t acl = NULL;
+    acl_entry_t e;
+    acl_tag_t tag;
+
+    EC_NULL_LOG(acl = acl_get_file(path, ACL_TYPE_ACCESS));
+
+    /* itereate through all ACEs to get the mask */
+    while (!havemask && acl_get_entry(acl, entry_id, &e) == 1) {
+        entry_id = ACL_NEXT_ENTRY;
+        EC_ZERO_LOG(acl_get_tag_type(e, &tag));
+        switch (tag) {
+        case ACL_MASK:
+            maskrights = posix_permset_to_darwin_rights(e, S_ISDIR(sb->st_mode));
+            LOG(log_maxdebug, logtype_afpd, "maskrights: 0x%08x", maskrights);
+            havemask = 1;
+            break;
+        default:
+            continue;
+        }
+    }
+
+    /* itereate through all ACEs */
+    entry_id = ACL_FIRST_ENTRY;
+    while (acl_get_entry(acl, entry_id, &e) == 1) {
+        entry_id = ACL_NEXT_ENTRY;
+        EC_ZERO_LOG(acl_get_tag_type(e, &tag));
+        switch (tag) {
+        case ACL_USER:
+            EC_NULL_LOG(uid = (uid_t *)acl_get_qualifier(e));
+            if (*uid == uuid) {
+                LOG(log_maxdebug, logtype_afpd, "ACL_USER: %u", *uid);
+                rights |= posix_permset_to_darwin_rights(e, S_ISDIR(sb->st_mode));
+            }
+            acl_free(uid);
+            uid = NULL;
+            break;
+        case ACL_USER_OBJ:
+            if (sb->st_uid == uuid) {
+                LOG(log_maxdebug, logtype_afpd, "ACL_USER_OBJ: %u", sb->st_uid);
+                rights |= posix_permset_to_darwin_rights(e, S_ISDIR(sb->st_mode));
+            }
+            break;
+        case ACL_GROUP:
+            EC_NULL_LOG(gid = (gid_t *)acl_get_qualifier(e));
+            if (gmem(*gid)) {
+                LOG(log_maxdebug, logtype_afpd, "ACL_GROUP: %u", *gid);
+                rights |= (posix_permset_to_darwin_rights(e, S_ISDIR(sb->st_mode)) & maskrights);
+            }
+            acl_free(gid);
+            gid = NULL;
+            break;
+        case ACL_GROUP_OBJ:
+            if (!(sb->st_uid == uuid) && gmem(sb->st_gid)) {
+                LOG(log_maxdebug, logtype_afpd, "ACL_GROUP_OBJ: %u", sb->st_gid);
+                rights |= posix_permset_to_darwin_rights(e, S_ISDIR(sb->st_mode));            
+            }
+            break;
+        case ACL_OTHER:
+            if (!(sb->st_uid == uuid) && !gmem(sb->st_gid)) {
+                LOG(log_maxdebug, logtype_afpd, "ACL_OTHER");
+                rights |= posix_permset_to_darwin_rights(e, S_ISDIR(sb->st_mode));
+            }
+            break;
+        default:
+            continue;
+        }
+    } /* while */
+
+    *result |= rights;
+
+EC_CLEANUP:
+    if (acl) acl_free(acl);
+    if (uid) acl_free(uid);
+    if (gid) acl_free(gid);
+    EC_EXIT;
+}
+
+/*!
+ * Add entries of one acl to another acl
+ *
+ * @param aclp   (rw) destination acl where new aces will be added
+ * @param acl    (r)  source acl where aces will be copied from
+ *
+ * @returns 0 on success, -1 on error
+ */
+static int acl_add_acl(acl_t *aclp, const acl_t acl)
+{
+    EC_INIT;
+    int id;
+    acl_entry_t se, de;
+
+    for (id = ACL_FIRST_ENTRY; acl_get_entry(acl, id, &se) == 1; id = ACL_NEXT_ENTRY) {
+        EC_ZERO_LOG_ERR(acl_create_entry(aclp, &de), AFPERR_MISC);
+        EC_ZERO_LOG_ERR(acl_copy_entry(de, se), AFPERR_MISC);
+    }
+
+EC_CLEANUP:
+    EC_EXIT;
+}
+
+/*!
+ * Map Darwin ACE rights to POSIX 1e perm
+ *
+ * We can only map few rights:
+ *   DARWIN_ACE_READ_DATA                    -> ACL_READ
+ *   DARWIN_ACE_WRITE_DATA                   -> ACL_WRITE
+ *   DARWIN_ACE_DELETE_CHILD & (is_dir == 1) -> ACL_WRITE
+ *   DARWIN_ACE_EXECUTE                      -> ACL_EXECUTE
+ *
+ * @param entry             (rw) result of the mapping
+ * @param is_dir            (r) 1 for dirs, 0 for files
+ *
+ * @returns mapping result as acl_perm_t, -1 on error
+ */
+static acl_perm_t map_darwin_right_to_posix_permset(uint32_t darwin_ace_rights, int is_dir)
+{
+    acl_perm_t perm = 0;
+
+    if (darwin_ace_rights & DARWIN_ACE_READ_DATA)
+        perm |= ACL_READ;
+
+    if (darwin_ace_rights & (DARWIN_ACE_WRITE_DATA | (DARWIN_ACE_DELETE_CHILD & is_dir)))
+        perm |= ACL_WRITE;
+
+    if (darwin_ace_rights & DARWIN_ACE_EXECUTE)
+        perm |= ACL_EXECUTE;
+
+    return perm;
+}
+
+/*!
+ * Add a ACL_USER or ACL_GROUP permission to an ACL, extending existing ACEs
+ *
+ * Add a permission of "type" for user or group "id" to an ACL. Scan the ACL
+ * for existing permissions for this type/id, if there is one add the perm,
+ * otherwise create a new ACL entry.
+ * perm can be or'ed ACL_READ, ACL_WRITE and ACL_EXECUTE.  
+ *
+ * @param aclp     (rw) pointer to ACL
+ * @param type     (r)  acl_tag_t of ACL_USER or ACL_GROUP
+ * @param id       (r)  uid_t uid for ACL_USER, or gid casted to uid_t for ACL_GROUP
+ * @param perm     (r)  acl_perm_t permissions to add
+ *
+ * @returns 0 on success, -1 on failure
+ */
+static int posix_acl_add_perm(acl_t *aclp, acl_tag_t type, uid_t id, acl_perm_t perm)
+{
+    EC_INIT;
+    uid_t *eid = NULL;
+    acl_entry_t e;
+    acl_tag_t tag;
+    int entry_id = ACL_FIRST_ENTRY;
+    acl_permset_t permset;
+
+    int found = 0;
+    for ( ; (! found) && acl_get_entry(*aclp, entry_id, &e) == 1; entry_id = ACL_NEXT_ENTRY) {
+        EC_ZERO_LOG(acl_get_tag_type(e, &tag));
+        if (tag != ACL_USER && tag != ACL_GROUP)
+            continue;
+        EC_NULL_LOG(eid = (uid_t *)acl_get_qualifier(e));
+        if ((*eid == id) && (type == tag)) {
+            /* found an ACE for this type/id */
+            found = 1;
+            EC_ZERO_LOG(acl_get_permset(e, &permset));
+            EC_ZERO_LOG(acl_add_perm(permset, perm));
+        }
+
+        acl_free(eid);
+        eid = NULL;
+    }
+
+    if ( ! found) {
+        /* there was no existing ACE for this type/id */
+        EC_ZERO_LOG(acl_create_entry(aclp, &e));
+        EC_ZERO_LOG(acl_set_tag_type(e, type));
+        EC_ZERO_LOG(acl_set_qualifier(e, &id));
+        EC_ZERO_LOG(acl_get_permset(e, &permset));
+        EC_ZERO_LOG(acl_clear_perms(permset));
+        EC_ZERO_LOG(acl_add_perm(permset, perm));
+        EC_ZERO_LOG(acl_set_permset(e, permset));
+    }
+    
+EC_CLEANUP:
+    if (eid) acl_free(eid);
+
+    EC_EXIT;
+}
+
+/*!
+ * Map Darwin ACL to POSIX ACL.
+ *
+ * aclp must point to a acl_init'ed acl_t or an acl_t that can eg contain default ACEs.
+ * Mapping pecularities:
+ * - we create a default ace (which inherits to files and dirs) if either
+     DARWIN_ACE_FLAGS_FILE_INHERIT or DARWIN_ACE_FLAGS_DIRECTORY_INHERIT is requested
+ * - we throw away DARWIN_ACE_FLAGS_LIMIT_INHERIT (can't be mapped), thus the ACL will
+ *   not be limited
+ *
+ * @param darwin_aces  (r)  pointer to darwin_aces buffer
+ * @param def_aclp     (rw) directories: pointer to an initialized acl_t with the default acl
+ *                          files: *def_aclp will be NULL
+ * @param acc_aclp     (rw) pointer to an initialized acl_t with the access acl
+ * @param ace_count    (r)  number of ACEs in darwin_aces buffer
+ *
+ * @returns 0 on success storing the result in aclp, -1 on error.
+ */
+static int map_aces_darwin_to_posix(const darwin_ace_t *darwin_aces,
+                                    acl_t *def_aclp,
+                                    acl_t *acc_aclp,
+                                    int ace_count)
+{
+    EC_INIT;
+    char *name = NULL;
+    uuidtype_t uuidtype;
+    struct passwd *pwd;
+    struct group *grp;
+    uid_t id;
+    uint32_t darwin_ace_flags, darwin_ace_rights;
+    acl_tag_t tag;
+    acl_perm_t perm;
+
+    for ( ; ace_count != 0; ace_count--, darwin_aces++) {
+        /* type: allow/deny, posix only has allow */
+        darwin_ace_flags = ntohl(darwin_aces->darwin_ace_flags);
+        if ( ! (darwin_ace_flags & DARWIN_ACE_FLAGS_PERMIT))
+            continue;
+
+        darwin_ace_rights = ntohl(darwin_aces->darwin_ace_rights);
+        perm = map_darwin_right_to_posix_permset(darwin_ace_rights, (*def_aclp != NULL));
+        if (perm == 0)
+            continue;       /* dont add empty perm */
+
+        LOG(log_debug, logtype_afpd, "map_ace: no: %u, flags: %08x, darwin: %08x, posix: %02x",
+            ace_count, darwin_ace_flags, darwin_ace_rights, perm);
+
+         /* uid/gid */
+        EC_ZERO_LOG(getnamefromuuid(darwin_aces->darwin_ace_uuid, &name, &uuidtype));
+        switch (uuidtype) {
+        case UUID_LOCAL:
+            free(name);
+            name = NULL;
+            continue;
+        case UUID_USER:
+            EC_NULL_LOG(pwd = getpwnam(name));
+            tag = ACL_USER;
+            id = pwd->pw_uid;
+            LOG(log_debug, logtype_afpd, "map_ace: name: %s, uid: %u", name, id);
+            break;
+        case UUID_GROUP:
+            EC_NULL_LOG(grp = getgrnam(name));
+            tag = ACL_GROUP;
+            id = (uid_t)(grp->gr_gid);
+            LOG(log_debug, logtype_afpd, "map_ace: name: %s, gid: %u", name, id);
+            break;
+        }
+        free(name);
+        name = NULL;
+
+        if (darwin_ace_flags & DARWIN_ACE_INHERIT_CONTROL_FLAGS) {
+            if (*def_aclp == NULL) {
+                /* ace request inheritane but we haven't got a default acl pointer */
+                LOG(log_warning, logtype_afpd, "map_acl: unexpected ACE, flags: 0x%04x",
+                    darwin_ace_flags);
+                EC_FAIL;
+            }
+            /* add it as default ace */
+            EC_ZERO_LOG(posix_acl_add_perm(def_aclp, tag, id, perm));
+
+
+            if (! (darwin_ace_flags & DARWIN_ACE_FLAGS_ONLY_INHERIT))
+                /* if it not a "inherit only" ace, it must be added as access aces too */
+                EC_ZERO_LOG(posix_acl_add_perm(acc_aclp, tag, id, perm));
+        } else {
+            EC_ZERO_LOG(posix_acl_add_perm(acc_aclp, tag, id, perm));
+        }
+    }
+
+EC_CLEANUP:
+    if (name)
+        free(name);
+
+    EC_EXIT;
+}
+
+/*
+ * Map ACEs from POSIX to Darwin.
+ * type is either POSIX_DEFAULT_2_DARWIN or POSIX_ACCESS_2_DARWIN, cf. acl_get_file.
+ * Return number of mapped ACES, -1 on error.
+ */
+static int map_acl_posix_to_darwin(int type, const acl_t acl, darwin_ace_t *darwin_aces)
+{
+    EC_INIT;
+    int mapped_aces = 0;
+    int entry_id = ACL_FIRST_ENTRY;
+    acl_entry_t e;
+    acl_tag_t tag;
+    uid_t *uid = NULL;
+    gid_t *gid = NULL;
+    struct passwd *pwd = NULL;
+    struct group *grp = NULL;
+    uint32_t flags;
+    uint32_t rights, maskrights = 0;
+    darwin_ace_t *saved_darwin_aces = darwin_aces;
+
+    LOG(log_maxdebug, logtype_afpd, "map_aces_posix_to_darwin(%s)",
+        (type & MAP_MASK) == POSIX_DEFAULT_2_DARWIN ?
+        "POSIX_DEFAULT_2_DARWIN" : "POSIX_ACCESS_2_DARWIN");
+
+    /* itereate through all ACEs */
+    while (acl_get_entry(acl, entry_id, &e) == 1) {
+        entry_id = ACL_NEXT_ENTRY;
+
+        /* get ACE type */
+        EC_ZERO_LOG(acl_get_tag_type(e, &tag));
+
+        /* we return user and group ACE */
+        switch (tag) {
+        case ACL_USER:
+            EC_NULL_LOG(uid = (uid_t *)acl_get_qualifier(e));
+            EC_NULL_LOG(pwd = getpwuid(*uid));
+            LOG(log_debug, logtype_afpd, "map_aces_posix_to_darwin: uid: %d -> name: %s",
+                *uid, pwd->pw_name);
+            EC_ZERO_LOG(getuuidfromname(pwd->pw_name, UUID_USER, darwin_aces->darwin_ace_uuid));
+            acl_free(uid);
+            uid = NULL;
+            break;
+
+        case ACL_GROUP:
+            EC_NULL_LOG(gid = (gid_t *)acl_get_qualifier(e));
+            EC_NULL_LOG(grp = getgrgid(*gid));
+            LOG(log_debug, logtype_afpd, "map_aces_posix_to_darwin: gid: %d -> name: %s",
+                *gid, grp->gr_name);
+            EC_ZERO_LOG(getuuidfromname(grp->gr_name, UUID_GROUP, darwin_aces->darwin_ace_uuid));
+            acl_free(gid);
+            gid = NULL;
+            break;
+
+        case ACL_MASK:
+            maskrights = posix_permset_to_darwin_rights(e, type & IS_DIR);
+            continue;
+
+        default:
+            continue;
+        }
+
+        /* flags */
+        flags = DARWIN_ACE_FLAGS_PERMIT;
+        if ((type & MAP_MASK) == POSIX_DEFAULT_2_DARWIN)
+            flags |= DARWIN_ACE_FLAGS_FILE_INHERIT
+                | DARWIN_ACE_FLAGS_DIRECTORY_INHERIT
+                | DARWIN_ACE_FLAGS_ONLY_INHERIT;
+        darwin_aces->darwin_ace_flags = htonl(flags);
+
+        /* rights */
+        rights = posix_permset_to_darwin_rights(e, type & IS_DIR);
+        darwin_aces->darwin_ace_rights = htonl(rights);
+
+        darwin_aces++;
+        mapped_aces++;
+    } /* while */
+
+    /* Loop through the mapped ACE buffer once again, applying the mask */
+    for (int i = mapped_aces; i > 0; i--) {
+        saved_darwin_aces->darwin_ace_rights &= htonl(maskrights);
+        saved_darwin_aces++;
+    }
+
+    EC_STATUS(mapped_aces);
+
+EC_CLEANUP:
+    if (uid) acl_free(uid);
+    if (gid) acl_free(gid);
+    EC_EXIT;
+}
+#endif
+
+/*
+ * Multiplex ACL mapping (SOLARIS_2_DARWIN, DARWIN_2_SOLARIS, POSIX_2_DARWIN, DARWIN_2_POSIX).
+ * Reads from 'aces' buffer, writes to 'rbuf' buffer.
+ * Caller must provide buffer.
+ * Darwin ACEs are read and written in network byte order.
+ * Needs to know how many ACEs are in the ACL (ace_count) for Solaris ACLs.
+ * Ignores trivial ACEs.
+ * Return no of mapped ACEs or -1 on error.
+ */
+static int map_acl(int type, void *acl, darwin_ace_t *buf, int ace_count)
 {
     int mapped_aces;
 
     LOG(log_debug9, logtype_afpd, "map_acl: BEGIN");
 
-    switch (type) {
+    switch (type & MAP_MASK) {
+
+#ifdef HAVE_SOLARIS_ACLS
     case SOLARIS_2_DARWIN:
-        mapped_aces = map_aces_solaris_to_darwin( nfsv4_aces, buf, ace_count);
+        mapped_aces = map_aces_solaris_to_darwin( acl, buf, ace_count);
         break;
 
     case DARWIN_2_SOLARIS:
-        mapped_aces = map_aces_darwin_to_solaris( buf, nfsv4_aces, ace_count);
+        mapped_aces = map_aces_darwin_to_solaris( buf, acl, ace_count);
         break;
+#endif /* HAVE_SOLARIS_ACLS */
+
+#ifdef HAVE_POSIX_ACLS
+    case POSIX_DEFAULT_2_DARWIN:
+        mapped_aces = map_acl_posix_to_darwin(type, (const acl_t)acl, buf);
+        break;
+
+    case POSIX_ACCESS_2_DARWIN:
+        mapped_aces = map_acl_posix_to_darwin(type, (const acl_t)acl, buf);
+        break;
+
+    case DARWIN_2_POSIX_DEFAULT:
+        break;
+
+    case DARWIN_2_POSIX_ACCESS:
+        break;
+#endif /* HAVE_POSIX_ACLS */
 
     default:
         mapped_aces = -1;
@@ -387,20 +814,22 @@ static int map_acl(int type, ace_t *nfsv4_aces, darwin_ace_t *buf, int ace_count
     return mapped_aces;
 }
 
-/********************************************************
- * 1st level funcs
- ********************************************************/
-
-
 /* Get ACL from object omitting trivial ACEs. Map to Darwin ACL style and
    store Darwin ACL at rbuf. Add length of ACL written to rbuf to *rbuflen.
    Returns 0 on success, -1 on error. */
 static int get_and_map_acl(char *name, char *rbuf, size_t *rbuflen)
 {
-    int ace_count, mapped_aces, err;
-    ace_t *aces;
+    EC_INIT;
+    int mapped_aces = 0;
+    int dirflag;
     uint32_t *darwin_ace_count = (u_int32_t *)rbuf;
-
+#ifdef HAVE_SOLARIS_ACLS
+    int ace_count = 0;
+    ace_t *aces = NULL;
+#endif
+#ifdef HAVE_POSIX_ACLS
+    struct stat st;
+#endif
     LOG(log_debug9, logtype_afpd, "get_and_map_acl: BEGIN");
 
     /* Skip length and flags */
@@ -408,38 +837,72 @@ static int get_and_map_acl(char *name, char *rbuf, size_t *rbuflen)
     *rbuf = 0;
     rbuf += 4;
 
-    if ( (ace_count = get_nfsv4_acl(name, &aces)) == -1) {
-        LOG(log_error, logtype_afpd, "get_and_map_acl: couldnt get ACL");
-        return -1;
+#ifdef HAVE_SOLARIS_ACLS
+    EC_NEG1(ace_count = get_nfsv4_acl(name, &aces));
+    EC_NEG1(mapped_aces = map_acl(SOLARIS_2_DARWIN, aces, (darwin_ace_t *)rbuf, ace_count));
+#endif /* HAVE_SOLARIS_ACLS */
+
+#ifdef HAVE_POSIX_ACLS
+    acl_t defacl = NULL , accacl = NULL;
+
+    /* stat to check if its a dir */
+    EC_ZERO_LOG(lstat(name, &st));
+
+    /* if its a dir, check for default acl too */
+    dirflag = 0;
+    if (S_ISDIR(st.st_mode)) {
+        dirflag = IS_DIR;
+        EC_NULL_LOG(defacl = acl_get_file(name, ACL_TYPE_DEFAULT));
+        EC_NEG1(mapped_aces = map_acl(POSIX_DEFAULT_2_DARWIN | dirflag,
+                                      defacl,
+                                      (darwin_ace_t *)rbuf,
+                                      0));
     }
 
-    if ( (mapped_aces = map_acl(SOLARIS_2_DARWIN, aces, (darwin_ace_t *)rbuf, ace_count)) == -1) {
-        err = -1;
-        goto cleanup;
-    }
+    EC_NULL_LOG(accacl = acl_get_file(name, ACL_TYPE_ACCESS));
+
+    int tmp;
+    EC_NEG1(tmp = map_acl(POSIX_ACCESS_2_DARWIN | dirflag,
+                          accacl,
+                          (darwin_ace_t *)(rbuf + mapped_aces * sizeof(darwin_ace_t)),
+                          0));
+    mapped_aces += tmp;
+#endif /* HAVE_POSIX_ACLS */
+
     LOG(log_debug, logtype_afpd, "get_and_map_acl: mapped %d ACEs", mapped_aces);
 
-    err = 0;
     *darwin_ace_count = htonl(mapped_aces);
     *rbuflen += sizeof(darwin_acl_header_t) + (mapped_aces * sizeof(darwin_ace_t));
 
-cleanup:
-    free(aces);
+    EC_STATUS(0);
+
+EC_CLEANUP:
+#ifdef HAVE_SOLARIS_ACLS
+    if (aces) free(aces);
+#endif
+#ifdef HAVE_POSIX_ACLS
+    if (defacl) acl_free(defacl);
+    if (accacl) acl_free(accacl);
+#endif /* HAVE_POSIX_ACLS */
 
     LOG(log_debug9, logtype_afpd, "get_and_map_acl: END");
-    return err;
+
+    EC_EXIT;
 }
 
 /* Removes all non-trivial ACLs from object. Returns full AFPERR code. */
-static int remove_acl_vfs(const struct vol *vol,const char *path, int dir)
+static int remove_acl(const struct vol *vol,const char *path, int dir)
 {
-    int ret;
+    int ret = AFP_OK;
 
+#if (defined HAVE_SOLARIS_ACLS || defined HAVE_POSIX_ACLS)
     /* Ressource etc. first */
     if ((ret = vol->vfs->vfs_remove_acl(vol, path, dir)) != AFP_OK)
         return ret;
     /* now the data fork or dir */
-    return (remove_acl(path));
+    ret = remove_acl_vfs(path);
+#endif
+    return ret;
 }
 
 /*
@@ -450,18 +913,20 @@ static int remove_acl_vfs(const struct vol *vol,const char *path, int dir)
   We will store inherited ACEs first, which is Darwins canonical order.
   - returns AFPerror code
 */
-static int set_acl_vfs(const struct vol *vol, char *name, int inherit, char *ibuf)
+#ifdef HAVE_SOLARIS_ACLS
+static int set_acl(const struct vol *vol,
+                   char *name,
+                   int inherit,
+                   darwin_ace_t *daces,
+                   uint32_t ace_count)
 {
-    int ret, i, nfsv4_ace_count, tocopy_aces_count = 0, new_aces_count = 0, trivial_ace_count = 0;
+    EC_INIT;
+    int i, nfsv4_ace_count;
+    int tocopy_aces_count = 0, new_aces_count = 0, trivial_ace_count = 0;
     ace_t *old_aces, *new_aces = NULL;
     uint16_t flags;
-    uint32_t ace_count;
 
     LOG(log_debug9, logtype_afpd, "set_acl: BEGIN");
-
-    /*  Get no of ACEs the client put on the wire */
-    ace_count = htonl(*((uint32_t *)ibuf));
-    ibuf += 8;      /* skip ACL flags (see acls.h) */
 
     if (inherit)
         /* inherited + trivial ACEs */
@@ -479,11 +944,10 @@ static int set_acl_vfs(const struct vol *vol, char *name, int inherit, char *ibu
     }
 
     /* Now malloc buffer exactly sized to fit all new ACEs */
-    new_aces = malloc( (ace_count + tocopy_aces_count) * sizeof(ace_t) );
-    if (new_aces == NULL) {
+    if ((new_aces = malloc((ace_count + tocopy_aces_count) * sizeof(ace_t))) == NULL) {
         LOG(log_error, logtype_afpd, "set_acl: malloc %s", strerror(errno));
-        ret = AFPERR_MISC;
-        goto cleanup;
+        EC_STATUS(AFPERR_MISC);
+        goto EC_CLEANUP;
     }
 
     /* Start building new ACL */
@@ -501,13 +965,15 @@ static int set_acl_vfs(const struct vol *vol, char *name, int inherit, char *ibu
     LOG(log_debug7, logtype_afpd, "set_acl: copied %d inherited ACEs", new_aces_count);
 
     /* Now the ACEs from the client */
-    ret = map_acl(DARWIN_2_SOLARIS, &new_aces[new_aces_count], (darwin_ace_t *)ibuf, ace_count);
-    if (ret == -1) {
-        ret = AFPERR_PARAM;
-        goto cleanup;
+    if ((ret = (map_acl(DARWIN_2_SOLARIS,
+                        &new_aces[new_aces_count],
+                        daces,
+                        ace_count))) == -1) {
+        EC_STATUS(AFPERR_PARAM);
+        goto EC_CLEANUP;
     }
-    new_aces_count += ace_count;
-    LOG(log_debug7, logtype_afpd, "set_acl: mapped %d ACEs from client", ace_count);
+    new_aces_count += ret;
+    LOG(log_debug7, logtype_afpd, "set_acl: mapped %d ACEs from client", ret);
 
     /* Now copy the trivial ACEs */
     for (i=0; i < nfsv4_ace_count; i++) {
@@ -522,203 +988,197 @@ static int set_acl_vfs(const struct vol *vol, char *name, int inherit, char *ibu
     /* Ressourcefork first.
        Note: for dirs we set the same ACL on the .AppleDouble/.Parent _file_. This
        might be strange for ACE_DELETE_CHILD and for inheritance flags. */
-    if ( (ret = vol->vfs->vfs_acl(vol, name, ACE_SETACL, new_aces_count, new_aces)) != 0) {
+    if ((ret = (vol->vfs->vfs_acl(vol, name, ACE_SETACL, new_aces_count, new_aces))) != 0) {
         LOG(log_error, logtype_afpd, "set_acl: error setting acl: %s", strerror(errno));
         if (errno == (EACCES | EPERM))
-            ret = AFPERR_ACCESS;
+            EC_STATUS(AFPERR_ACCESS);
         else if (errno == ENOENT)
-            ret = AFPERR_NOITEM;
+            EC_STATUS(AFPERR_NOITEM);
         else
-            ret = AFPERR_MISC;
-        goto cleanup;
+            EC_STATUS(AFPERR_MISC);
+        goto EC_CLEANUP;
     }
-    if ( (ret = acl(name, ACE_SETACL, new_aces_count, new_aces)) != 0) {
+    if ((ret = (acl(name, ACE_SETACL, new_aces_count, new_aces))) != 0) {
         LOG(log_error, logtype_afpd, "set_acl: error setting acl: %s", strerror(errno));
         if (errno == (EACCES | EPERM))
-            ret = AFPERR_ACCESS;
+            EC_STATUS(AFPERR_ACCESS);
         else if (errno == ENOENT)
-            ret = AFPERR_NOITEM;
+            EC_STATUS(AFPERR_NOITEM);
         else
-            ret = AFPERR_MISC;
-        goto cleanup;
+            EC_STATUS(AFPERR_MISC);
+        goto EC_CLEANUP;
     }
 
-    ret = AFP_OK;
+    EC_STATUS(AFP_OK);
 
-cleanup:
-    free(old_aces);
-    free(new_aces);
+EC_CLEANUP:
+    if (old_aces) free(old_aces);
+    if (new_aces) free(new_aces);
 
     LOG(log_debug9, logtype_afpd, "set_acl: END");
-    return ret;
+    EC_EXIT;
 }
+#endif /* HAVE_SOLARIS_ACLS */
 
-/*
-  Checks if a given UUID has requested_rights(type darwin_ace_rights) for path.
-  Note: this gets called frequently and is a good place for optimizations !
-*/
-static int check_acl_access(const char *path, const uuidp_t uuid, uint32_t requested_darwin_rights)
+#ifdef HAVE_POSIX_ACLS
+static int set_acl(const struct vol *vol,
+                   const char *name,
+                   int inherit _U_,
+                   darwin_ace_t *daces,
+                   uint32_t ace_count)
 {
-    int                 ret, i, ace_count, dir, checkgroup;
-    char                *username = NULL; /* might be group too */
-    uuidtype_t          uuidtype;
-    uid_t               uid;
-    gid_t               pgid;
-    uint32_t            requested_rights = 0, allowed_rights = 0, denied_rights = 0;
-    ace_t               *aces;
-    struct passwd       *pwd;
-    struct stat         st;
-    int                 check_user_trivace = 0, check_group_trivace = 0;
-    uid_t               who;
-    uint16_t            flags;
-    uint16_t            type;
-    uint32_t            rights;
+    EC_INIT;
+    acl_t def_acl = NULL;
+    acl_t acc_acl = NULL;
 
-#ifdef DEBUG
-    LOG(log_debug9, logtype_afpd, "check_access: BEGIN. Request: %08x", requested_darwin_rights);
-#endif
+    LOG(log_maxdebug, logtype_afpd, "set_acl: BEGIN");
+
+    struct stat st;
+    EC_ZERO_LOG_ERR(lstat(name, &st), AFPERR_NOOBJ);
+
+    /* seed default ACL with access ACL */
+    if (S_ISDIR(st.st_mode))
+        EC_NULL_LOG_ERR(def_acl = acl_get_file(name, ACL_TYPE_ACCESS), AFPERR_MISC);
+
+    /* for files def_acl will be NULL */
+
+    /* create access acl from mode */
+    EC_NULL_LOG_ERR(acc_acl = acl_from_mode(st.st_mode), AFPERR_MISC);
+
+    /* adds the clients aces */
+    EC_ZERO_ERR(map_aces_darwin_to_posix(daces, &def_acl, &acc_acl, ace_count), AFPERR_MISC);
+
+    /* calcuate ACL mask */
+    EC_ZERO_LOG_ERR(acl_calc_mask(&acc_acl), AFPERR_MISC);
+
+    /* is it ok? */
+    EC_ZERO_LOG_ERR(acl_valid(acc_acl), AFPERR_MISC);
+
+    /* set it */
+    EC_ZERO_LOG_ERR(acl_set_file(name, ACL_TYPE_ACCESS, acc_acl), AFPERR_MISC);
+    EC_ZERO_LOG_ERR(vol->vfs->vfs_acl(vol, name, ACL_TYPE_ACCESS, 0, acc_acl), AFPERR_MISC);
+
+    if (def_acl) {
+        EC_ZERO_LOG_ERR(acl_set_file(name, ACL_TYPE_DEFAULT, def_acl), AFPERR_MISC);
+        EC_ZERO_LOG_ERR(vol->vfs->vfs_acl(vol, name, ACL_TYPE_DEFAULT, 0, def_acl), AFPERR_MISC);
+    }
+
+EC_CLEANUP:
+    acl_free(acc_acl);
+    acl_free(def_acl);
+
+    LOG(log_maxdebug, logtype_afpd, "set_acl: END");
+    EC_EXIT;
+}
+#endif /* HAVE_POSIX_ACLS */
+
+/*!
+ * Checks if a given UUID has requested_rights(type darwin_ace_rights) for path.
+ *
+ * Note: this gets called frequently and is a good place for optimizations !
+ *
+ * @param vol              (r) volume
+ * @param dir              (r) directory
+ * @param path             (r) path to filesystem object
+ * @param uuid             (r) UUID of user
+ * @param requested_rights (r) requested Darwin ACE
+ *
+ * @returns                    AFP result code
+*/
+static int check_acl_access(const struct vol *vol,
+                            const struct dir *dir,
+                            const char *path,
+                            const uuidp_t uuid,
+                            uint32_t requested_rights)
+{
+    int            ret;
+    uint32_t       allowed_rights = 0;
+    char           *username = NULL;
+    uuidtype_t     uuidtype;
+    struct stat    st;
+    bstring        parent = NULL;
+
+    LOG(log_maxdebug, logtype_afpd, "check_access: Request: 0x%08x", requested_rights);
+
     /* Get uid or gid from UUID */
-    if ( (getnamefromuuid(uuid, &username, &uuidtype)) != 0) {
-        LOG(log_error, logtype_afpd, "check_access: error getting name from UUID");
-        return AFPERR_PARAM;
+    EC_ZERO_LOG_ERR(getnamefromuuid(uuid, &username, &uuidtype), AFPERR_PARAM);
+    EC_ZERO_LOG_ERR(lstat(path, &st), AFPERR_PARAM);
+
+    switch (uuidtype) {
+    case UUID_USER:
+        break;
+    case UUID_GROUP:
+        LOG(log_warning, logtype_afpd, "check_access: afp_access not supported for groups");
+        EC_STATUS(AFPERR_MISC);
+        goto EC_CLEANUP;
+
+    case UUID_LOCAL:
+        LOG(log_warning, logtype_afpd, "check_access: local UUID");
+        EC_STATUS(AFPERR_MISC);
+        goto EC_CLEANUP;
     }
 
-    /* File or dir */
-    if ((lstat(path, &st)) != 0) {
-        LOG(log_error, logtype_afpd, "check_access: stat: %s", strerror(errno));
-        ret = AFPERR_PARAM;
-        goto exit;
-    }
-    dir = S_ISDIR(st.st_mode);
-
-    if (uuidtype == UUID_USER) {
-        pwd = getpwnam(username);
-        if (!pwd) {
-            LOG(log_error, logtype_afpd, "check_access: getpwnam: %s", strerror(errno));
-            ret = AFPERR_MISC;
-            goto exit;
-        }
-        uid = pwd->pw_uid;
-        pgid = pwd->pw_gid;
-
-        /* If user is file/dir owner we must check the user trivial ACE */
-        if (uid == st.st_uid) {
-            LOG(log_debug, logtype_afpd, "check_access: user: %s is files owner. Must check trivial user ACE", username);
-            check_user_trivace = 1;
-        }
-
-        /* Now check if requested user is files owning group. If yes we must check the group trivial ACE */
-        if ( (check_group(username, uid, pgid, st.st_gid)) == 0) {
-            LOG(log_debug, logtype_afpd, "check_access: user: %s is in group: %d. Must check trivial group ACE", username, st.st_gid);
-            check_group_trivace = 1;
-        }
-    } else { /* hopefully UUID_GROUP*/
-        LOG(log_error, logtype_afpd, "check_access: afp_access for UUID of groups not supported!");
-#if 0
-        grp = getgrnam(username);
-        if (!grp) {
-            LOG(log_error, logtype_afpd, "check_access: getgrnam: %s", strerror(errno));
-            return -1;
-        }
-        if (st.st_gid == grp->gr_gid )
-            check_group_trivace = 1;
+#ifdef HAVE_SOLARIS_ACLS
+    EC_ZERO_LOG(solaris_acl_rights(path, &st, &allowed_rights));
 #endif
-    }
+#ifdef HAVE_POSIX_ACLS
+    EC_ZERO_LOG(posix_acl_rights(path, &st, &allowed_rights));
+#endif
 
-    /* Map requested rights to Solaris style. */
-    for (i=0; darwin_to_nfsv4_rights[i].from != 0; i++) {
-        if (requested_darwin_rights & darwin_to_nfsv4_rights[i].from)
-            requested_rights |= darwin_to_nfsv4_rights[i].to;
-    }
+    LOG(log_debug, logtype_afpd, "allowed rights: 0x%08x", allowed_rights);
 
-    /* Get ACL from file/dir */
-    if ( (ace_count = get_nfsv4_acl(path, &aces)) == -1) {
-        LOG(log_error, logtype_afpd, "check_access: error getting ACEs");
-        ret = AFPERR_MISC;
-        goto exit;
-    }
-    if (ace_count == 0) {
-        LOG(log_debug, logtype_afpd, "check_access: 0 ACEs from get_nfsv4_acl");
-        ret = AFPERR_MISC;
-        goto exit;
-    }
+    /*
+     * The DARWIN_ACE_DELETE right might implicitly result from write acces to the parent
+     * directory. As it seems the 10.6 AFP client is puzzled when this right is not
+     * allowed where a delete would succeed because the parent dir gives write perms.
+     * So we check the parent dir for write access and set the right accordingly.
+     * Currentyl acl2ownermode calls us with dir = NULL, because it doesn't make sense
+     * there to do this extra check -- afaict.
+     */
+    if (vol && dir && (requested_rights & DARWIN_ACE_DELETE)) {
+        int i;
+        uint32_t parent_rights = 0;
 
-    /* Now check requested rights */
-    ret = AFPERR_ACCESS;
-    i = 0;
-    do { /* Loop through ACEs */
-        who = aces[i].a_who;
-        flags = aces[i].a_flags;
-        type = aces[i].a_type;
-        rights = aces[i].a_access_mask;
-
-        if (flags & ACE_INHERIT_ONLY_ACE)
-            continue;
-
-        /* Check if its a group ACE and set checkgroup to 1 if yes */
-        checkgroup = 0;
-        if ( (flags & ACE_IDENTIFIER_GROUP) && !(flags & ACE_GROUP) ) {
-            if ( (check_group(username, uid, pgid, who)) == 0)
-                checkgroup = 1;
-            else
-                continue;
+        if (dir->d_did == DIRDID_ROOT_PARENT) {
+            /* use volume path */
+            EC_NULL_LOG_ERR(parent = bfromcstr(vol->v_path), AFPERR_MISC);
+        } else {
+            /* build path for parent */
+            EC_NULL_LOG_ERR(parent = bstrcpy(dir->d_fullpath), AFPERR_MISC);
+            EC_ZERO_LOG_ERR(bconchar(parent, '/'), AFPERR_MISC);
+            EC_ZERO_LOG_ERR(bcatcstr(parent, path), AFPERR_MISC);
+            EC_NEG1_LOG_ERR(i = bstrrchr(parent, '/'), AFPERR_MISC);
+            EC_ZERO_LOG_ERR(binsertch(parent, i, 1, 0), AFPERR_MISC);
         }
 
-        /* Now the tricky part: decide if ACE effects our user. I'll explain:
-           if its a dedicated (non trivial) ACE for the user
-           OR
-           if its a ACE for a group we're member of
-           OR
-           if its a trivial ACE_OWNER ACE and requested UUID is the owner
-           OR
-           if its a trivial ACE_GROUP ACE and requested UUID is group
-           OR
-           if its a trivial ACE_EVERYONE ACE
-           THEN
-           process ACE */
-        if (
-            ( (who == uid) && !(flags & (ACE_TRIVIAL|ACE_IDENTIFIER_GROUP)) ) ||
-            (checkgroup) ||
-            ( (flags & ACE_OWNER) && check_user_trivace ) ||
-            ( (flags & ACE_GROUP) && check_group_trivace ) ||
-            ( flags & ACE_EVERYONE )
-            ) {
-            /* Found an applicable ACE */
-            if (type == ACE_ACCESS_ALLOWED_ACE_TYPE)
-                allowed_rights |= rights;
-            else if (type == ACE_ACCESS_DENIED_ACE_TYPE)
-                /* Only or to denied rights if not previously allowed !! */
-                denied_rights |= ((!allowed_rights) & rights);
-        }
-    } while (++i < ace_count);
+        LOG(log_debug, logtype_afpd,"parent: %s", cfrombstr(parent));
+        EC_ZERO_LOG_ERR(lstat(cfrombstr(parent), &st), AFPERR_MISC);
 
+#ifdef HAVE_SOLARIS_ACLS
+        EC_ZERO_LOG(solaris_acl_rights(cfrombstr(parent), &st, &parent_rights));
+#endif
+#ifdef HAVE_POSIX_ACLS
+    EC_ZERO_LOG(posix_acl_rights(path, &st, &allowed_rights));
+#endif
+        if (parent_rights & (DARWIN_ACE_WRITE_DATA | DARWIN_ACE_DELETE_CHILD))
+            allowed_rights |= DARWIN_ACE_DELETE; /* man, that was a lot of work! */
+    }
 
-    /* Darwin likes to ask for "delete_child" on dir,
-       "write_data" is actually the same, so we add that for dirs */
-    if (dir && (allowed_rights & ACE_WRITE_DATA))
-        allowed_rights |= ACE_DELETE_CHILD;
-
-    if (requested_rights & denied_rights) {
-        LOG(log_debug, logtype_afpd, "check_access: some requested right was denied:");
-        ret = AFPERR_ACCESS;
-    } else if ((requested_rights & allowed_rights) != requested_rights) {
-        LOG(log_debug, logtype_afpd, "check_access: some requested right wasn't allowed:");
-        ret = AFPERR_ACCESS;
+    if ((requested_rights & allowed_rights) != requested_rights) {
+        LOG(log_debug, logtype_afpd, "some requested right wasn't allowed: 0x%08x / 0x%08x",
+            requested_rights, allowed_rights);
+        EC_STATUS(AFPERR_ACCESS);
     } else {
-        LOG(log_debug, logtype_afpd, "check_access: all requested rights are allowed:");
-        ret = AFP_OK;
+        LOG(log_debug, logtype_afpd, "all requested rights are allowed: 0x%08x",
+            requested_rights);
+        EC_STATUS(AFP_OK);
     }
 
-    LOG(log_debug, logtype_afpd, "check_access: Requested rights: %08x, allowed_rights: %08x, denied_rights: %08x, Result: %d",
-        requested_rights, allowed_rights, denied_rights, ret);
+EC_CLEANUP:
+    if (username) free(username);
+    if (parent) bdestroy(parent);
 
-exit:
-    free(aces);
-    free(username);
-#ifdef DEBUG
-    LOG(log_debug9, logtype_afpd, "check_access: END");
-#endif
-    return ret;
+    EC_EXIT;
 }
 
 /********************************************************
@@ -734,8 +1194,6 @@ int afp_access(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf _U_, size
     uint16_t        vid;
     struct path         *s_path;
     uuidp_t             uuid;
-
-    LOG(log_debug9, logtype_afpd, "afp_access: BEGIN");
 
     *rbuflen = 0;
     ibuf += 2;
@@ -778,9 +1236,8 @@ int afp_access(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf _U_, size
         return AFPERR_NOOBJ;
     }
 
-    ret = check_acl_access(s_path->u_name, uuid, darwin_ace_rights);
+    ret = check_acl_access(vol, dir, s_path->u_name, uuid, darwin_ace_rights);
 
-    LOG(log_debug9, logtype_afpd, "afp_access: END");
     return ret;
 }
 
@@ -838,11 +1295,14 @@ int afp_getacl(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf _U_, size
     /* Shall we return owner UUID ? */
     if (bitmap & kFileSec_UUID) {
         LOG(log_debug, logtype_afpd, "afp_getacl: client requested files owner user UUID");
-        if (NULL == (pw = getpwuid(s_path->st.st_uid)))
-            return AFPERR_MISC;
-        LOG(log_debug, logtype_afpd, "afp_getacl: got uid: %d, name: %s", s_path->st.st_uid, pw->pw_name);
-        if ((ret = getuuidfromname(pw->pw_name, UUID_USER, rbuf)) != 0)
-            return AFPERR_MISC;
+        if (NULL == (pw = getpwuid(s_path->st.st_uid))) {
+            LOG(log_debug, logtype_afpd, "afp_getacl: local uid: %u", s_path->st.st_uid);
+            localuuid_from_id(rbuf, UUID_USER, s_path->st.st_uid);
+        } else {
+            LOG(log_debug, logtype_afpd, "afp_getacl: got uid: %d, name: %s", s_path->st.st_uid, pw->pw_name);
+            if ((ret = getuuidfromname(pw->pw_name, UUID_USER, rbuf)) != 0)
+                return AFPERR_MISC;
+        }
         rbuf += UUID_BINSIZE;
         *rbuflen += UUID_BINSIZE;
     }
@@ -850,11 +1310,14 @@ int afp_getacl(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf _U_, size
     /* Shall we return group UUID ? */
     if (bitmap & kFileSec_GRPUUID) {
         LOG(log_debug, logtype_afpd, "afp_getacl: client requested files owner group UUID");
-        if (NULL == (gr = getgrgid(s_path->st.st_gid)))
-            return AFPERR_MISC;
-        LOG(log_debug, logtype_afpd, "afp_getacl: got gid: %d, name: %s", s_path->st.st_gid, gr->gr_name);
-        if ((ret = getuuidfromname(gr->gr_name, UUID_GROUP, rbuf)) != 0)
-            return AFPERR_MISC;
+        if (NULL == (gr = getgrgid(s_path->st.st_gid))) {
+            LOG(log_debug, logtype_afpd, "afp_getacl: local gid: %u", s_path->st.st_gid);
+            localuuid_from_id(rbuf, UUID_GROUP, s_path->st.st_gid);
+        } else {
+            LOG(log_debug, logtype_afpd, "afp_getacl: got gid: %d, name: %s", s_path->st.st_gid, gr->gr_name);
+            if ((ret = getuuidfromname(gr->gr_name, UUID_GROUP, rbuf)) != 0)
+                return AFPERR_MISC;
+        }
         rbuf += UUID_BINSIZE;
         *rbuflen += UUID_BINSIZE;
     }
@@ -862,7 +1325,11 @@ int afp_getacl(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf _U_, size
     /* Shall we return ACL ? */
     if (bitmap & kFileSec_ACL) {
         LOG(log_debug, logtype_afpd, "afp_getacl: client requested files ACL");
-        get_and_map_acl(s_path->u_name, rbuf, rbuflen);
+        if (get_and_map_acl(s_path->u_name, rbuf, rbuflen) != 0) {
+            LOG(log_error, logtype_afpd, "afp_getacl(\"%s/%s\"): mapping error",
+                getcwdpath(), s_path->u_name);
+            return AFPERR_MISC;
+        }
     }
 
     LOG(log_debug9, logtype_afpd, "afp_getacl: END");
@@ -921,14 +1388,14 @@ int afp_setacl(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf _U_, size
 
     /* Change owner: dont even try */
     if (bitmap & kFileSec_UUID) {
-        LOG(log_debug, logtype_afpd, "afp_setacl: change owner request. discarded.");
+        LOG(log_note, logtype_afpd, "afp_setacl: change owner request, discarded");
         ret = AFPERR_ACCESS;
         ibuf += UUID_BINSIZE;
     }
 
     /* Change group: certain changes might be allowed, so try it. FIXME: not implemented yet. */
     if (bitmap & kFileSec_UUID) {
-        LOG(log_debug, logtype_afpd, "afp_setacl: change group request. not supported this time.");
+        LOG(log_note, logtype_afpd, "afp_setacl: change group request, not supported");
         ret = AFPERR_PARAM;
         ibuf += UUID_BINSIZE;
     }
@@ -936,19 +1403,24 @@ int afp_setacl(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf _U_, size
     /* Remove ACL ? */
     if (bitmap & kFileSec_REMOVEACL) {
         LOG(log_debug, logtype_afpd, "afp_setacl: Remove ACL request.");
-        if ((ret = remove_acl_vfs(vol, s_path->u_name, S_ISDIR(s_path->st.st_mode))) != AFP_OK)
+        if ((ret = remove_acl(vol, s_path->u_name, S_ISDIR(s_path->st.st_mode))) != AFP_OK)
             LOG(log_error, logtype_afpd, "afp_setacl: error from remove_acl");
     }
 
     /* Change ACL ? */
     if (bitmap & kFileSec_ACL) {
         LOG(log_debug, logtype_afpd, "afp_setacl: Change ACL request.");
+        /*  Get no of ACEs the client put on the wire */
+        uint32_t ace_count;
+        memcpy(&ace_count, ibuf, sizeof(uint32_t));
+        ace_count = htonl(ace_count);
+        ibuf += 8;      /* skip ACL flags (see acls.h) */
 
-        /* Check if its our job to preserve inherited ACEs */
-        if (bitmap & kFileSec_Inherit)
-            ret = set_acl_vfs(vol, s_path->u_name, 1, ibuf);
-        else
-            ret = set_acl_vfs(vol, s_path->u_name, 0, ibuf);
+        ret = set_acl(vol,
+                      s_path->u_name,
+                      (bitmap & kFileSec_Inherit),
+                      (darwin_ace_t *)ibuf,
+                      ace_count);
         if (ret == 0)
             ret = AFP_OK;
         else {
@@ -962,115 +1434,81 @@ int afp_setacl(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf _U_, size
     return ret;
 }
 
-/*
-  unix.c/accessmode calls this: map ACL to OS 9 mode
-*/
-void acltoownermode(char *path, struct stat *st, uid_t uid, struct maccess *ma)
+/********************************************************************
+ * ACL funcs interfacing with other parts
+ ********************************************************************/
+
+/*!
+ * map ACL to user maccess
+ *
+ * This is the magic function that makes ACLs usable by calculating
+ * the access granted by ACEs to the logged in user.
+ */
+int acltoownermode(char *path, struct stat *st, struct maccess *ma)
 {
-    struct passwd *pw;
-    uuid_t uuid;
-    int dir, r_ok, w_ok, x_ok;
+    EC_INIT;
+    uint32_t rights = 0;
 
-    if ( ! (AFPobj->options.flags & OPTION_UUID))
-        return;
+    if ( ! (AFPobj->options.flags & OPTION_ACL2MACCESS)
+         || (current_vol == NULL)
+         || ! (current_vol->v_flags & AFPVOL_ACLS))
+         return 0;
 
-    LOG(log_maxdebug, logtype_afpd, "acltoownermode('%s')", path);
+    LOG(log_maxdebug, logtype_afpd, "acltoownermode(\"%s/%s\", 0x%02x)",
+        getcwdpath(), path, ma->ma_user);
 
-    if ((pw = getpwuid(uid)) == NULL) {
-        LOG(log_error, logtype_afpd, "acltoownermode: %s", strerror(errno));
-        return;
-    }
+#ifdef HAVE_SOLARIS_ACLS
+    EC_ZERO_LOG(solaris_acl_rights(path, st, &rights));
+#endif
+#ifdef HAVE_POSIX_ACLS
+    EC_ZERO_LOG(posix_acl_rights(path, st, &rights));
+#endif
 
-    /* We need the UUID for check_acl_access */
-    if ((getuuidfromname(pw->pw_name, UUID_USER, uuid)) != 0)
-        return;
+    LOG(log_maxdebug, logtype_afpd, "rights: 0x%08x", rights);
 
-    /* These work for files and dirs */
-    r_ok = check_acl_access(path, uuid, DARWIN_ACE_READ_DATA);
-    w_ok = check_acl_access(path, uuid, (DARWIN_ACE_WRITE_DATA|DARWIN_ACE_APPEND_DATA));
-    x_ok = check_acl_access(path, uuid, DARWIN_ACE_EXECUTE);
-
-    LOG(log_debug7, logtype_afpd, "acltoownermode: ma_user before: %04o",ma->ma_user);
-    if (r_ok == 0)
+    if (rights & DARWIN_ACE_READ_DATA)
         ma->ma_user |= AR_UREAD;
-    if (w_ok == 0)
+    if (rights & DARWIN_ACE_WRITE_DATA)
         ma->ma_user |= AR_UWRITE;
-    if (x_ok == 0)
+    if (rights & (DARWIN_ACE_EXECUTE | DARWIN_ACE_SEARCH))
         ma->ma_user |= AR_USEARCH;
-    LOG(log_debug7, logtype_afpd, "acltoownermode: ma_user after: %04o", ma->ma_user);
 
-    return;
+    LOG(log_maxdebug, logtype_afpd, "resulting user maccess: 0x%02x", ma->ma_user);
+
+EC_CLEANUP:
+    EC_EXIT;
 }
 
-/*
-  We're being called at the end of afp_createdir. We're (hopefully) inside dir
-  and ".AppleDouble" and ".AppleDouble/.Parent" should have already been created.
-  We then inherit any explicit ACE from "." to ".AppleDouble" and ".AppleDouble/.Parent".
-  FIXME: add to VFS layer ?
-*/
-void addir_inherit_acl(const struct vol *vol)
+/*!
+ * Check whether a volume supports ACLs
+ *
+ * @param vol  (r) volume
+ *
+ * @returns        0 if not, 1 if yes
+ */
+int check_vol_acl_support(const struct vol *vol)
 {
-    ace_t *diraces = NULL, *adaces = NULL, *combinedaces = NULL;
-    int diracecount, adacecount;
+    int ret = 1;
 
-    LOG(log_debug9, logtype_afpd, "addir_inherit_acl: BEGIN");
+#ifdef HAVE_SOLARIS_ACLS
+    ace_t *aces = NULL;
+    if (get_nfsv4_acl(vol->v_path, &aces) == -1)
+        ret = 0;
+#endif
+#ifdef HAVE_POSIX_ACLS
+    acl_t acl = NULL;
+    if ((acl = acl_get_file(vol->v_path, ACL_TYPE_ACCESS)) == NULL)
+        ret = 0;
+#endif
 
-    /* Check if ACLs are enabled for the volume */
-    if (vol->v_flags & AFPVOL_ACLS) {
+#ifdef HAVE_SOLARIS_ACLS
+    if (aces) free(aces);
+#endif
+#ifdef HAVE_POSIX_ACLS
+    if (acl) acl_free(acl);
+#endif /* HAVE_POSIX_ACLS */
 
-        if ((diracecount = get_nfsv4_acl(".", &diraces)) <= 0)
-            goto cleanup;
-        /* Remove any trivial ACE from "." */
-        if ((diracecount = strip_trivial_aces(&diraces, diracecount)) <= 0)
-            goto cleanup;
-
-        /*
-          Inherit to ".AppleDouble"
-        */
-
-        if ((adacecount = get_nfsv4_acl(".AppleDouble", &adaces)) <= 0)
-            goto cleanup;
-        /* Remove any non-trivial ACE from ".AppleDouble" */
-        if ((adacecount = strip_nontrivial_aces(&adaces, adacecount)) <= 0)
-            goto cleanup;
-
-        /* Combine ACEs */
-        if ((combinedaces = concat_aces(diraces, diracecount, adaces, adacecount)) == NULL)
-            goto cleanup;
-
-        /* Now set new acl */
-        if ((acl(".AppleDouble", ACE_SETACL, diracecount + adacecount, combinedaces)) != 0)
-            LOG(log_error, logtype_afpd, "addir_inherit_acl: acl: %s", strerror(errno));
-
-        free(adaces);
-        adaces = NULL;
-        free(combinedaces);
-        combinedaces = NULL;
-
-        /*
-          Inherit to ".AppleDouble/.Parent"
-        */
-
-        if ((adacecount = get_nfsv4_acl(".AppleDouble/.Parent", &adaces)) <= 0)
-            goto cleanup;
-        if ((adacecount = strip_nontrivial_aces(&adaces, adacecount)) <= 0)
-            goto cleanup;
-
-        /* Combine ACEs */
-        if ((combinedaces = concat_aces(diraces, diracecount, adaces, adacecount)) == NULL)
-            goto cleanup;
-
-        /* Now set new acl */
-        if ((acl(".AppleDouble/.Parent", ACE_SETACL, diracecount + adacecount, combinedaces)) != 0)
-            LOG(log_error, logtype_afpd, "addir_inherit_acl: acl: %s", strerror(errno));
-
-
-    }
-
-cleanup:
-    LOG(log_debug9, logtype_afpd, "addir_inherit_acl: END");
-
-    free(diraces);
-    free(adaces);
-    free(combinedaces);
+    LOG(log_debug, logtype_afpd, "Volume \"%s\" ACL support: %s",
+        vol->v_path, ret ? "yes" : "no");
+    return ret;
 }

@@ -26,9 +26,6 @@
 #include <time.h>
 #include <pwd.h>
 #include <grp.h>
-#include <atalk/logger.h>
-#include <atalk/server_ipc.h>
-#include <atalk/uuid.h>
 
 #ifdef TRU64
 #include <netdb.h>
@@ -39,6 +36,10 @@
 extern void afp_get_cmdline( int *ac, char ***av );
 #endif /* TRU64 */
 
+#include <atalk/logger.h>
+#include <atalk/server_ipc.h>
+#include <atalk/uuid.h>
+
 #include "globals.h"
 #include "auth.h"
 #include "uam_auth.h"
@@ -46,7 +47,7 @@ extern void afp_get_cmdline( int *ac, char ***av );
 #include "status.h"
 #include "fork.h"
 #include "extattrs.h"
-#ifdef HAVE_NFSv4_ACLS
+#ifdef HAVE_ACLS
 #include "acls.h"
 #endif
 
@@ -78,11 +79,10 @@ static struct afp_versions  afp_versions[] = {
     { "AFPVersion 2.1", 21 },
 #endif /* ! NO_DDP */
     { "AFP2.2", 22 },
-#ifdef AFP3x
     { "AFPX03", 30 },
     { "AFP3.1", 31 },
-    { "AFP3.2", 32 }
-#endif /* AFP3x */
+    { "AFP3.2", 32 },
+    { "AFP3.3", 33 }
 };
 
 static struct uam_mod uam_modules = {NULL, NULL, &uam_modules, &uam_modules};
@@ -207,21 +207,25 @@ static int set_auth_switch(int expired)
     else {
         afp_switch = postauth_switch;
         switch (afp_version) {
+
+        case 33:
         case 32:
-#ifdef HAVE_NFSv4_ACLS
+#ifdef HAVE_ACLS
             uam_afpserver_action(AFP_GETACL, UAM_AFPSERVER_POSTAUTH, afp_getacl, NULL);
             uam_afpserver_action(AFP_SETACL, UAM_AFPSERVER_POSTAUTH, afp_setacl, NULL);
             uam_afpserver_action(AFP_ACCESS, UAM_AFPSERVER_POSTAUTH, afp_access, NULL);
-#endif
+#endif /* HAVE_ACLS */
             uam_afpserver_action(AFP_GETEXTATTR, UAM_AFPSERVER_POSTAUTH, afp_getextattr, NULL);
             uam_afpserver_action(AFP_SETEXTATTR, UAM_AFPSERVER_POSTAUTH, afp_setextattr, NULL);
             uam_afpserver_action(AFP_REMOVEATTR, UAM_AFPSERVER_POSTAUTH, afp_remextattr, NULL);
             uam_afpserver_action(AFP_LISTEXTATTR, UAM_AFPSERVER_POSTAUTH, afp_listextattr, NULL);
+
         case 31:
             uam_afpserver_action(AFP_SYNCDIR, UAM_AFPSERVER_POSTAUTH, afp_syncdir, NULL);
             uam_afpserver_action(AFP_SYNCFORK, UAM_AFPSERVER_POSTAUTH, afp_syncfork, NULL);
             uam_afpserver_action(AFP_SPOTLIGHT_PRIVATE, UAM_AFPSERVER_POSTAUTH, afp_null_nolog, NULL);
             uam_afpserver_action(AFP_ENUMERATE_EXT2, UAM_AFPSERVER_POSTAUTH, afp_enumerate_ext2, NULL);
+
         case 30:
             uam_afpserver_action(AFP_ENUMERATE_EXT, UAM_AFPSERVER_POSTAUTH, afp_enumerate_ext, NULL);
             uam_afpserver_action(AFP_BYTELOCK_EXT,  UAM_AFPSERVER_POSTAUTH, afp_bytelock_ext, NULL);
@@ -432,25 +436,57 @@ static int login(AFPObj *obj, struct passwd *pwd, void (*logout)(void), int expi
 }
 
 /* ---------------------- */
-int afp_zzz ( /* Function 122 */
-    AFPObj       *obj,
-    char         *ibuf _U_, size_t ibuflen _U_, 
-    char *rbuf, size_t *rbuflen)
+int afp_zzz(AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf, size_t *rbuflen)
 {
-    u_int32_t   retdata;
+    uint32_t data;
+    DSI *dsi = (DSI *)AFPobj->handle;
 
     *rbuflen = 0;
+    ibuf += 2;
+    ibuflen -= 2;
 
-    retdata = obj->options.sleep /120;
-    if (!retdata) {
-        retdata = 1;
+    if (ibuflen < 4)
+        return AFPERR_MISC;
+    memcpy(&data, ibuf, 4); /* flag */
+    data = ntohl(data);
+
+    /*
+     * Possible sleeping states:
+     * 1) normal sleep: DSI_SLEEPING (up to 10.3)
+     * 2) extended sleep: DSI_SLEEPING | DSI_EXTSLEEP (starting with 10.4)
+     */
+
+    if (data & AFPZZZ_EXT_WAKEUP) {
+        /* wakeup request from exetended sleep */
+        if (dsi->flags & DSI_EXTSLEEP) {
+            LOG(log_note, logtype_afpd, "afp_zzz: waking up from extended sleep");
+            dsi->flags &= ~(DSI_SLEEPING | DSI_EXTSLEEP);
+        }
+    } else {
+        /* sleep request */
+        dsi->flags |= DSI_SLEEPING;
+        if (data & AFPZZZ_EXT_SLEEP) {
+            LOG(log_note, logtype_afpd, "afp_zzz: entering extended sleep");
+            dsi->flags |= DSI_EXTSLEEP;
+        } else {
+            LOG(log_note, logtype_afpd, "afp_zzz: entering normal sleep");
+        }
     }
-    *rbuflen = sizeof(retdata);
-    retdata = htonl(retdata);
-    memcpy(rbuf, &retdata, sizeof(retdata));
-    if (obj->sleep)
-        obj->sleep();
-    rbuf += sizeof(retdata);
+
+    /*
+     * According to AFP 3.3 spec we should not return anything,
+     * but eg 10.5.8 server still returns the numbers of hours
+     * the server is keeping the sessino (ie max sleeptime).
+     */
+    data = obj->options.sleep / 120; /* hours */
+    if (!data) {
+        data = 1;
+    }
+    *rbuflen = sizeof(data);
+    data = htonl(data);
+    memcpy(rbuf, &data, sizeof(data));
+    rbuf += sizeof(data);
+
     return AFP_OK;
 }
 
@@ -545,7 +581,7 @@ int afp_getsession(
             token = obj->sinfo.sessiontoken;
         }
         break;
-    case 3: /* Jaguar */
+    case 3:
     case 4:
         if (ibuflen >= 8 ) {
             p = ibuf;
@@ -558,7 +594,7 @@ int afp_getsession(
             if (ibuflen < idlen || idlen > (90-10)) {
                 return AFPERR_PARAM;
             }
-            server_ipc_write(IPC_GETSESSION, idlen+8, p );
+            ipc_child_write(obj->ipc_fd, IPC_GETSESSION, idlen+8, p);
             tklen = obj->sinfo.sessiontoken_len;
             token = obj->sinfo.sessiontoken;
         }
@@ -588,10 +624,10 @@ int afp_getsession(
 }
 
 /* ---------------------- */
-int afp_disconnect(AFPObj *obj _U_, char *ibuf, size_t ibuflen _U_, char *rbuf _U_, size_t *rbuflen)
+int afp_disconnect(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf _U_, size_t *rbuflen)
 {
+    DSI                 *dsi = (DSI *)obj->handle;
     u_int16_t           type;
-
     u_int32_t           tklen;
     pid_t               token;
     int                 i;
@@ -632,11 +668,41 @@ int afp_disconnect(AFPObj *obj _U_, char *ibuf, size_t ibuflen _U_, char *rbuf _
         }
     }
 
-    /* killed old session, not easy */
-    server_ipc_write(IPC_KILLTOKEN, tklen, &token);
-    sleep(1);
+    LOG(log_note, logtype_afpd, "afp_disconnect: trying primary reconnect");
+    dsi->flags |= DSI_RECONINPROG;
 
-    return AFPERR_SESSCLOS;   /* was AFP_OK */
+    /* Deactivate tickle timer */
+    const struct itimerval none = {{0, 0}, {0, 0}};
+    setitimer(ITIMER_REAL, &none, NULL);
+
+    /* check for old session, possibly transfering session from here to there */
+    if (ipc_child_write(obj->ipc_fd, IPC_DISCOLDSESSION, tklen, &token) == -1)
+        goto exit;
+    /* write uint16_t DSI request ID */
+    if (writet(obj->ipc_fd, &dsi->header.dsi_requestID, 2, 0, 2) != 2) {
+        LOG(log_error, logtype_afpd, "afp_disconnect: couldn't send DSI request ID");
+        goto exit;
+    }
+    /* now send our connected AFP client socket */
+    if (send_fd(obj->ipc_fd, dsi->socket) != 0)
+        goto exit;
+    /* Now see what happens: either afpd master sends us SIGTERM because our session */
+    /* has been transfered to a old disconnected session, or we continue    */
+    sleep(5);
+
+    if (!(dsi->flags & DSI_RECONINPROG)) { /* deleted in SIGTERM handler */
+        /* Reconnect succeeded, we exit now after sleeping some more */
+        sleep(2); /* sleep some more to give the recon. session time */
+        LOG(log_note, logtype_afpd, "afp_disconnect: primary reconnect succeeded");
+        exit(0);
+    }
+
+exit:
+    /* Reinstall tickle timer */
+    setitimer(ITIMER_REAL, &dsi->timer, NULL);
+
+    LOG(log_error, logtype_afpd, "afp_disconnect: primary reconnect failed");
+    return AFPERR_MISC;
 }
 
 /* ---------------------- */
@@ -869,11 +935,11 @@ int afp_logincont(AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf, size_t *r
 }
 
 
-int afp_logout(AFPObj *obj, char *ibuf _U_, size_t ibuflen  _U_, char *rbuf  _U_, size_t *rbuflen  _U_)
+int afp_logout(AFPObj *obj, char *ibuf _U_, size_t ibuflen  _U_, char *rbuf  _U_, size_t *rbuflen)
 {
     LOG(log_note, logtype_afpd, "AFP logout by %s", obj->username);
     close_all_vol();
-    obj->exit(0);
+    *rbuflen = 0;
     return AFP_OK;
 }
 
@@ -959,6 +1025,7 @@ int afp_getuserinfo(AFPObj *obj _U_, char *ibuf, size_t ibuflen _U_, char *rbuf,
     u_int8_t  thisuser;
     u_int32_t id;
     u_int16_t bitmap;
+    char *bitmapp;
 
     LOG(log_debug, logtype_afpd, "begin afp_getuserinfo:");
 
@@ -977,8 +1044,9 @@ int afp_getuserinfo(AFPObj *obj _U_, char *ibuf, size_t ibuflen _U_, char *rbuf,
     if ((bitmap & USERIBIT_ALL) != bitmap)
         return AFPERR_BITMAP;
 
-    /* copy the bitmap back to reply buffer */
+    /* remember place where we store the possibly modified bitmap later */
     memcpy(rbuf, ibuf, sizeof(bitmap));
+    bitmapp = rbuf;
     rbuf += sizeof(bitmap);
     *rbuflen = sizeof(bitmap);
 
@@ -997,29 +1065,27 @@ int afp_getuserinfo(AFPObj *obj _U_, char *ibuf, size_t ibuflen _U_, char *rbuf,
         *rbuflen += sizeof(id);
     }
 
-#ifdef HAVE_NFSv4_ACLS
     if (bitmap & USERIBIT_UUID) {
-        int ret;
-        uuid_t uuid;
-        char *uuidstring;
+        if ( ! (obj->options.flags & OPTION_UUID)) {
+            bitmap &= ~USERIBIT_UUID;
+            bitmap = htons(bitmap);
+            memcpy(bitmapp, &bitmap, sizeof(bitmap));
+        } else {
+            LOG(log_debug, logtype_afpd, "afp_getuserinfo: get UUID for \'%s\'", obj->username);
+            int ret;
+            atalk_uuid_t uuid;
+            ret = getuuidfromname( obj->username, UUID_USER, uuid);
+            if (ret != 0) {
+                LOG(log_info, logtype_afpd, "afp_getuserinfo: error getting UUID !");
+                return AFPERR_NOITEM;
+            }
+            LOG(log_debug, logtype_afpd, "afp_getuserinfo: got UUID: %s", uuid_bin2string(uuid));
 
-        if ( ! (obj->options.flags & OPTION_UUID))
-            return AFPERR_BITMAP;
-        LOG(log_debug, logtype_afpd, "afp_getuserinfo: get UUID for \'%s\'", obj->username);
-        ret = getuuidfromname( obj->username, UUID_USER, uuid);
-        if (ret != 0) {
-            LOG(log_info, logtype_afpd, "afp_getuserinfo: error getting UUID !");
-            return AFPERR_NOITEM;
+            memcpy(rbuf, uuid, UUID_BINSIZE);
+            rbuf += UUID_BINSIZE;
+            *rbuflen += UUID_BINSIZE;
         }
-        if (0 == (uuid_bin2string( uuid, &uuidstring))) {
-            LOG(log_debug, logtype_afpd, "afp_getuserinfo: got UUID: %s", uuidstring);
-            free(uuidstring);
-        }
-        memcpy(rbuf, uuid, UUID_BINSIZE);
-        rbuf += UUID_BINSIZE;
-        *rbuflen += UUID_BINSIZE;
     }
-#endif
 
     LOG(log_debug, logtype_afpd, "END afp_getuserinfo:");
     return AFP_OK;

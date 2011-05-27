@@ -11,33 +11,19 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-
-/* STDC check */
-#if STDC_HEADERS
 #include <string.h>
-#else /* STDC_HEADERS */
-#ifndef HAVE_STRCHR
-#define strchr index
-#define strrchr index
-#endif /* HAVE_STRCHR */
-char *strchr (), *strrchr ();
-#ifndef HAVE_MEMCPY
-#define memcpy(d,s,n) bcopy ((s), (d), (n))
-#define memmove(d,s,n) bcopy ((s), (d), (n))
-#endif /* ! HAVE_MEMCPY */
-#endif /* STDC_HEADERS */
-
-#ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#endif /* HAVE_UNISTD_H */
 #include <ctype.h>
-#include <atalk/logger.h>
-#include <atalk/util.h>
-
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#ifdef USE_SRVLOC
+#include <slp.h>
+#endif /* USE_SRVLOC */
+
+#include <atalk/logger.h>
+#include <atalk/util.h>
 #include <atalk/dsi.h>
 #include <atalk/atp.h>
 #include <atalk/asp.h>
@@ -45,10 +31,8 @@ char *strchr (), *strrchr ();
 #include <atalk/afp.h>
 #include <atalk/compat.h>
 #include <atalk/server_child.h>
-#ifdef USE_SRVLOC
-#include <slp.h>
-#endif /* USE_SRVLOC */
-#ifdef HAVE_NFSv4_ACLS
+
+#ifdef HAVE_LDAP
 #include <atalk/ldapconfig.h>
 #endif
 
@@ -56,6 +40,8 @@ char *strchr (), *strrchr ();
 #include "afp_config.h"
 #include "uam_auth.h"
 #include "status.h"
+#include "volume.h"
+#include "afp_zeroconf.h"
 
 #define LINESIZE 1024  
 
@@ -94,6 +80,9 @@ void configfree(AFPConfig *configs, const AFPConfig *config)
         }
         free(p);
     }
+
+    /* the master loaded the volumes for zeroconf, get rid of that */
+    unload_volumes_and_extmap();
 }
 
 #ifdef USE_SRVLOC
@@ -155,9 +144,9 @@ static char * srvloc_encode(const struct afp_options *options, const char *name)
 }
 #endif /* USE_SRVLOC */
 
-#ifdef USE_SRVLOC
 static void dsi_cleanup(const AFPConfig *config)
 {
+#ifdef USE_SRVLOC
     SLPError err;
     SLPError callbackerr;
     SLPHandle hslp;
@@ -190,8 +179,8 @@ static void dsi_cleanup(const AFPConfig *config)
 srvloc_dereg_err:
     dsi->srvloc_url[0] = '\0';
     SLPClose(hslp);
-}
 #endif /* USE_SRVLOC */
+}
 
 #ifndef NO_DDP
 static void asp_cleanup(const AFPConfig *config)
@@ -225,25 +214,30 @@ static int asp_start(AFPConfig *config, AFPConfig *configs,
 }
 #endif /* no afp/asp */
 
-static int dsi_start(AFPConfig *config, AFPConfig *configs,
-                     server_child *server_children)
+static afp_child_t *dsi_start(AFPConfig *config, AFPConfig *configs,
+                              server_child *server_children)
 {
-    DSI *dsi;
+    DSI *dsi = config->obj.handle;
+    afp_child_t *child = NULL;
 
-    if (!(dsi = dsi_getsession(config->obj.handle, server_children,
-                               config->obj.options.tickleval))) {
-        LOG(log_error, logtype_afpd, "main: dsi_getsession: %s", strerror(errno) );
-        exit( EXITERR_CLNT );
+    if (!(child = dsi_getsession(dsi,
+                                 server_children,
+                                 config->obj.options.tickleval))) {
+        LOG(log_error, logtype_afpd, "dsi_start: session error: %s", strerror(errno));
+        return NULL;
     }
 
     /* we've forked. */
-    if (dsi->child) {
+    if (parent_or_child == 1) {
         configfree(configs, config);
+        config->obj.ipc_fd = child->ipc_fds[1];
+        close(child->ipc_fds[0]); /* Close parent IPC fd */
+        free(child);
         afp_over_dsi(&config->obj); /* start a session */
         exit (0);
     }
 
-    return 0;
+    return child;
 }
 
 #ifndef NO_DDP
@@ -368,6 +362,7 @@ static AFPConfig *DSIConfigInit(const struct afp_options *options,
         free(config);
         return NULL;
     }
+    dsi->dsireadbuf = options->dsireadbuf;
 
     if (options->flags & OPTION_PROXY) {
         LOG(log_note, logtype_afpd, "AFP/TCP proxy initialized for %s:%d (%s)",
@@ -453,7 +448,6 @@ srvloc_reg_err:
     }
 #endif /* USE_SRVLOC */
 
-
     config->fd = dsi->serversock;
     config->obj.handle = dsi;
     config->obj.config = config;
@@ -476,7 +470,7 @@ srvloc_reg_err:
 /* allocate server configurations. this should really store the last
  * entry in config->last or something like that. that would make
  * supporting multiple dsi transports easier. */
-static AFPConfig *AFPConfigInit(const struct afp_options *options,
+static AFPConfig *AFPConfigInit(struct afp_options *options,
                                 const struct afp_options *defoptions)
 {
     AFPConfig *config = NULL, *next = NULL;
@@ -543,13 +537,6 @@ AFPConfig *configinit(struct afp_options *cmdline)
     struct afp_options options;
     AFPConfig *config=NULL, *first = NULL; 
 
-#ifdef HAVE_NFSv4_ACLS
-    /* Parse afp_ldap.conf first so we can set the uuid option */
-    LOG(log_debug, logtype_afpd, "Start parsing afp_ldap.conf");
-    acl_ldap_readconfig(_PATH_ACL_LDAPCONF);
-    LOG(log_debug, logtype_afpd, "Finished parsing afp_ldap.conf");
-#endif
-
     /* if config file doesn't exist, load defaults */
     if ((fp = fopen(cmdline->configfile, "r")) == NULL)
     {
@@ -557,8 +544,6 @@ AFPConfig *configinit(struct afp_options *cmdline)
             cmdline->configfile);
         return AFPConfigInit(cmdline, cmdline);
     }
-
-    LOG(log_debug, logtype_afpd, "Loading ConfigFile"); 
 
     /* scan in the configuration file */
     len = 0;
@@ -585,13 +570,7 @@ AFPConfig *configinit(struct afp_options *cmdline)
         if (!afp_options_parseline(p, &options))
             continue;
 
-#ifdef HAVE_NFSv4_ACLS
-	/* Enable UUID support if LDAP config is complete */
-	if (ldap_config_valid)
-	    options.flags |= OPTION_UUID;
-#endif
-
-        /* this should really get a head and a tail to simplify things. */
+        /* AFPConfigInit can return two linked configs due to DSI and ASP */
         if (!first) {
             if ((first = AFPConfigInit(&options, cmdline)))
                 config = first->next ? first->next : first;
@@ -600,11 +579,22 @@ AFPConfig *configinit(struct afp_options *cmdline)
         }
     }
 
+#ifdef HAVE_LDAP
+    /* Parse afp_ldap.conf */
+    acl_ldap_readconfig(_PATH_ACL_LDAPCONF);
+#endif /* HAVE_LDAP */
+
     LOG(log_debug, logtype_afpd, "Finished parsing Config File");
     fclose(fp);
 
     if (!have_option)
         first = AFPConfigInit(cmdline, cmdline);
+
+    /* Now register with zeroconf, we also need the volumes for that */
+    if (! (first->obj.options.flags & OPTION_NOZEROCONF)) {
+        load_volumes(&first->obj);
+        zeroconf_register(first);
+    }
 
     return first;
 }

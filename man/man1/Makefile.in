@@ -34,6 +34,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
+@USE_APPLETALK_TRUE@am__append_1 = $(ATALK_MANS)
 subdir = man/man1
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -56,7 +57,7 @@ am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
 	$(top_srcdir)/macros/summary.m4 \
 	$(top_srcdir)/macros/tcp-wrappers.m4 \
 	$(top_srcdir)/macros/util.m4 $(top_srcdir)/macros/webmin.m4 \
-	$(top_srcdir)/configure.in
+	$(top_srcdir)/macros/zeroconf.m4 $(top_srcdir)/configure.in
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -70,6 +71,7 @@ NROFF = nroff
 MANS = $(man_MANS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
+ACL_LIBS = @ACL_LIBS@
 AFS_CFLAGS = @AFS_CFLAGS@
 AFS_LIBS = @AFS_LIBS@
 AMTAR = @AMTAR@
@@ -77,6 +79,10 @@ AR = @AR@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
+AVAHI_CFLAGS = @AVAHI_CFLAGS@
+AVAHI_LIBS = @AVAHI_LIBS@
+AVAHI_TPOLL_CFLAGS = @AVAHI_TPOLL_CFLAGS@
+AVAHI_TPOLL_LIBS = @AVAHI_TPOLL_LIBS@
 AWK = @AWK@
 BDB_BIN = @BDB_BIN@
 BDB_CFLAGS = @BDB_CFLAGS@
@@ -126,7 +132,6 @@ KLDFLAGS = @KLDFLAGS@
 KRB5_CONFIG = @KRB5_CONFIG@
 LDFLAGS = @LDFLAGS@
 LIBADD_DL = @LIBADD_DL@
-LIBATALK_ACLS = @LIBATALK_ACLS@
 LIBGCRYPT_CFLAGS = @LIBGCRYPT_CFLAGS@
 LIBGCRYPT_CONFIG = @LIBGCRYPT_CONFIG@
 LIBGCRYPT_LIBS = @LIBGCRYPT_LIBS@
@@ -158,7 +163,9 @@ PAM_SESSION = @PAM_SESSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
 PKGCONFDIR = @PKGCONFDIR@
+PKG_CONFIG = @PKG_CONFIG@
 PS = @PS@
+PTHREAD_LIBS = @PTHREAD_LIBS@
 QUOTA_LIBS = @QUOTA_LIBS@
 RANLIB = @RANLIB@
 SED = @SED@
@@ -179,6 +186,8 @@ WEBMIN_PORT = @WEBMIN_PORT@
 WEBMIN_USER = @WEBMIN_USER@
 WEBMIN_VERSION = @WEBMIN_VERSION@
 WRAP_LIBS = @WRAP_LIBS@
+ZEROCONF_CFLAGS = @ZEROCONF_CFLAGS@
+ZEROCONF_LIBS = @ZEROCONF_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -237,35 +246,24 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 pkgconfdir = @PKGCONFDIR@
 SUFFIXES = .tmpl .
-GENERATED_MANS = apple_cp.1 apple_mv.1 apple_rm.1 uniconv.1 asip-status.pl.1
-TEMPLATE_FILES = apple_cp.1.tmpl apple_mv.1.tmpl apple_rm.1.tmpl uniconv.1.tmpl asip-status.pl.1.tmpl
-NONGENERATED_MANS = achfile.1  \
-				ad.1 \
-				aecho.1 \
-				afile.1 \
-				afppasswd.1 \
-				apple_dump.1 \
-				dbd.1 \
+GENERATED_MANS = uniconv.1 asip-status.pl.1 afpldaptest.1
+TEMPLATE_FILES = uniconv.1.tmpl asip-status.pl.1.tmpl afpldaptest.1.tmpl
+NONGENERATED_MANS = ad.1 afppasswd.1 apple_dump.1 dbd.1 hqx2bin.1 \
+	macbinary.1 megatron.1 netatalk-config.1 single2bin.1 unbin.1 \
+	unhex.1 unsingle.1 $(am__append_1)
+ATALK_MANS = aecho.1 \
 				getzones.1 \
-				hqx2bin.1 \
-				macbinary.1 \
-				megatron.1 \
 				nbp.1 \
 				nbplkup.1 \
 				nbprgstr.1 \
 				nbpunrgstr.1 \
-				netatalk-config.1 \
 				pap.1 \
 				papstatus.1 \
-				psorder.1 \
-				single2bin.1 \
-				unbin.1 \
-				unhex.1 \
-				unsingle.1
+				psorder.1
 
 man_MANS = $(GENERATED_MANS) $(NONGENERATED_MANS)
 CLEANFILES = $(GENERATED_MANS)
-EXTRA_DIST = $(TEMPLATE_FILES) $(NONGENERATED_MANS)
+EXTRA_DIST = $(TEMPLATE_FILES) $(NONGENERATED_MANS) $(ATALK_MANS)
 all: all-am
 
 .SUFFIXES:

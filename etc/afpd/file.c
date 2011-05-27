@@ -1,6 +1,4 @@
 /*
- * $Id: file.c,v 1.141 2010-03-12 15:16:49 franklahm Exp $
- *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
  */
@@ -41,6 +39,7 @@ char *strchr (), *strrchr ();
 #include <atalk/unix.h>
 
 #include "directory.h"
+#include "dircache.h"
 #include "desktop.h"
 #include "volume.h"
 #include "fork.h"
@@ -166,8 +165,8 @@ char *set_name(const struct vol *vol, char *data, cnid_t pid, char *name, cnid_t
     else {
         u_int16_t temp;
 
-        if (aint > 255)  /* FIXME safeguard, anyway if no ascii char it's game over*/
-           aint = 255;
+        if (aint > UTF8FILELEN_EARLY)  /* FIXME safeguard, anyway if no ascii char it's game over*/
+           aint = UTF8FILELEN_EARLY;
 
         utf8 = vol->v_kTextEncoding;
         memcpy(data, &utf8, sizeof(utf8));
@@ -201,9 +200,27 @@ char *set_name(const struct vol *vol, char *data, cnid_t pid, char *name, cnid_t
 				  (1 << FILPBIT_FNUM) |\
 				  (1 << FILPBIT_UNIXPR)))
 
-/* -------------------------- */
-u_int32_t get_id(struct vol *vol, struct adouble *adp,  const struct stat *st,
-                 const cnid_t did, char *upath, const int len) 
+/*!
+ * @brief Get CNID for did/upath args both from database and adouble file
+ *
+ * 1. Get the objects CNID as stored in its adouble file
+ * 2. Get the objects CNID from the database
+ * 3. If there's a problem with a "dbd" database, fallback to "tdb" in memory
+ * 4. In case 2 and 3 differ, store 3 in the adouble file
+ *
+ * @param vol    (rw) volume
+ * @param adp    (rw) adouble struct of object upath, might be NULL
+ * @param st     (r) stat of upath, must NOT be NULL
+ * @param did    (r) parent CNID of upath
+ * @param upath  (r) name of object
+ * @param len    (r) strlen of upath
+ */
+uint32_t get_id(struct vol *vol,
+                struct adouble *adp, 
+                const struct stat *st,
+                const cnid_t did,
+                const char *upath,
+                const int len) 
 {
     static int first = 1;       /* mark if this func is called the first time */
     u_int32_t adcnid;
@@ -213,9 +230,9 @@ restart:
     if (vol->v_cdb != NULL) {
         /* prime aint with what we think is the cnid, set did to zero for
            catching moved files */
-        adcnid = ad_getid(adp, st->st_dev, st->st_ino, 0, vol->v_stamp);
+        adcnid = ad_getid(adp, st->st_dev, st->st_ino, 0, vol->v_stamp); /* (1) */
 
-	    dbcnid = cnid_add(vol->v_cdb, st, did, upath, len, adcnid);
+	    dbcnid = cnid_add(vol->v_cdb, st, did, upath, len, adcnid); /* (2) */
 	    /* Throw errors if cnid_add fails. */
 	    if (dbcnid == CNID_INVALID) {
             switch (errno) {
@@ -233,7 +250,7 @@ restart:
                 /* we have to do it here for "dbd" because it uses "lazy opening" */
                 /* In order to not end in a loop somehow with goto restart below  */
                 /*  */
-                if (first && (strcmp(vol->v_cnidscheme, "dbd") == 0)) {
+                if (first && (strcmp(vol->v_cnidscheme, "dbd") == 0)) { /* (3) */
                     cnid_close(vol->v_cdb);
                     free(vol->v_cnidscheme);
                     vol->v_cnidscheme = strdup("tdb");
@@ -267,9 +284,10 @@ restart:
                 goto exit;
             }
         }
-        else if (adp && (adcnid != dbcnid)) {
+        else if (adp && (adcnid != dbcnid)) { /* 4 */
             /* Update the ressource fork. For a folder adp is always null */
-            LOG(log_debug, logtype_afpd, "get_id: calling ad_setid. adcnid: %u, dbcnid: %u", htonl(adcnid), htonl(dbcnid));
+            LOG(log_debug, logtype_afpd, "get_id(%s/%s): calling ad_setid(old: %u, new: %u)",
+                getcwdpath(), upath, htonl(adcnid), htonl(dbcnid));
             if (ad_setid(adp, st->st_dev, st->st_ino, dbcnid, did, vol->v_stamp)) {
                 ad_flush(adp);
             }
@@ -298,24 +316,52 @@ int getmetadata(struct vol *vol,
     struct stat         *st;
     struct maccess	ma;
 
-#ifdef DEBUG
-    LOG(log_debug9, logtype_afpd, "begin getmetadata:");
-#endif /* DEBUG */
+    LOG(log_debug, logtype_afpd, "getmetadata(\"%s\")", path->u_name);
 
     upath = path->u_name;
     st = &path->st;
-
     data = buf;
 
     if ( ((bitmap & ( (1 << FILPBIT_FINFO)|(1 << FILPBIT_LNAME)|(1 <<FILPBIT_PDINFO) ) ) && !path->m_name)
          || (bitmap & ( (1 << FILPBIT_LNAME) ) && utf8_encoding()) /* FIXME should be m_name utf8 filename */
          || (bitmap & (1 << FILPBIT_FNUM))) {
-        if (!path->id)
-            id = get_id(vol, adp, st, dir->d_did, upath, strlen(upath));
-        else 
+        if (!path->id) {
+            struct dir *cachedfile;
+            int len = strlen(upath);
+            if ((cachedfile = dircache_search_by_name(vol, dir, upath, len, st->st_ctime)) != NULL)
+                id = cachedfile->d_did;
+            else {
+                id = get_id(vol, adp, st, dir->d_did, upath, len);
+
+                /* Add it to the cache */
+                LOG(log_debug, logtype_afpd, "getmetadata: caching: did:%u, \"%s\", cnid:%u",
+                    ntohl(dir->d_did), upath, ntohl(id));
+
+                /* Get macname from unixname first */
+                if (path->m_name == NULL) {
+                    if ((path->m_name = utompath(vol, upath, id, utf8_encoding())) == NULL) {
+                        LOG(log_error, logtype_afpd, "getmetadata: utompath error");
+                        exit(EXITERR_SYS);
+                    }
+                }
+                
+                if ((cachedfile = dir_new(path->m_name, upath, vol, dir->d_did, id, NULL, st->st_ctime)) == NULL) {
+                    LOG(log_error, logtype_afpd, "getmetadata: error from dir_new");
+                    exit(EXITERR_SYS);
+                }
+
+                if ((dircache_add(vol, cachedfile)) != 0) {
+                    LOG(log_error, logtype_afpd, "getmetadata: fatal dircache error");
+                    exit(EXITERR_SYS);
+                }
+            }
+        } else {
             id = path->id;
+        }
+
         if (id == CNID_INVALID)
             return afp_errno;
+
         if (!path->m_name) {
             path->m_name = utompath(vol, upath, id, utf8_encoding());
         }
@@ -348,11 +394,15 @@ int getmetadata(struct vol *vol,
 #endif
             memcpy(data, &ashort, sizeof( ashort ));
             data += sizeof( ashort );
+            LOG(log_debug, logtype_afpd, "metadata('%s'): AFP Attributes: %04x",
+                path->u_name, ntohs(ashort));
             break;
 
         case FILPBIT_PDID :
             memcpy(data, &dir->d_did, sizeof( u_int32_t ));
             data += sizeof( u_int32_t );
+            LOG(log_debug, logtype_afpd, "metadata('%s'):     Parent DID: %u",
+                path->u_name, ntohl(dir->d_did));
             break;
 
         case FILPBIT_CDATE :
@@ -399,6 +449,8 @@ int getmetadata(struct vol *vol,
         case FILPBIT_FNUM :
             memcpy(data, &id, sizeof( id ));
             data += sizeof( id );
+            LOG(log_debug, logtype_afpd, "metadata('%s'):           CNID: %u",
+                path->u_name, ntohl(id));
             break;
 
         case FILPBIT_DFLEN :
@@ -563,9 +615,7 @@ int getfilparams(struct vol *vol,
     int                 opened = 0;
     int rc;    
 
-#ifdef DEBUG
-    LOG(log_debug9, logtype_default, "begin getfilparams:");
-#endif /* DEBUG */
+    LOG(log_debug, logtype_afpd, "getfilparams(\"%s\")", path->u_name);
 
     opened = PARAM_NEED_ADP(bitmap);
     adp = NULL;
@@ -597,9 +647,6 @@ int getfilparams(struct vol *vol,
     if ( adp ) {
         ad_close_metadata( adp);
     }
-#ifdef DEBUG
-    LOG(log_debug9, logtype_afpd, "end getfilparams:");
-#endif /* DEBUG */
 
     return( rc );
 }
@@ -703,6 +750,17 @@ int afp_createfile(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf _U_, 
 
     path = s_path->m_name;
     ad_setname(adp, path);
+
+    struct stat st;
+    if (lstat(upath, &st) != 0) {
+        LOG(log_error, logtype_afpd, "afp_createfile(\"%s\"): stat: %s",
+            upath, strerror(errno));
+        ad_close( adp, ADFLAGS_DF|ADFLAGS_HF);
+        return AFPERR_MISC;
+    }
+
+    (void)get_id(vol, adp, &st, dir->d_did, upath, strlen(upath));
+
     ad_flush( adp);
     ad_close( adp, ADFLAGS_DF|ADFLAGS_HF );
 
@@ -1053,6 +1111,9 @@ setfilparam_done:
 int renamefile(const struct vol *vol, int sdir_fd, char *src, char *dst, char *newname, struct adouble *adp)
 {
     int		rc;
+
+    LOG(log_debug, logtype_afpd,
+        "renamefile: src[%d, \"%s\"] -> dst[\"%s\"]", sdir_fd, src, dst);
 
     if ( unix_rename( sdir_fd, src, -1, dst ) < 0 ) {
         switch ( errno ) {
@@ -1945,6 +2006,10 @@ int afp_deleteid(AFPObj *obj _U_, char *ibuf, size_t ibuflen _U_, char *rbuf _U_
     }
 
     if (NULL == ( dir = dirlookup( vol, id )) ) {
+        if (afp_errno == AFPERR_NOOBJ) {
+            err = AFPERR_NOOBJ;
+            goto delete;
+        }
         return( AFPERR_PARAM );
     }
 
@@ -1968,6 +2033,7 @@ int afp_deleteid(AFPObj *obj _U_, char *ibuf, size_t ibuflen _U_, char *rbuf _U_
     else if (S_ISDIR(st.st_mode)) /* directories are bad */
         return AFPERR_BADTYPE;
 
+delete:
     if (cnid_delete(vol->v_cdb, fileid)) {
         switch (errno) {
         case EROFS:
@@ -2188,12 +2254,11 @@ int afp_exchangefiles(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf _U
     /* id's need switching. src -> dest and dest -> src. 
      * we need to re-stat() if it was a cross device copy.
     */
-    if (sid) {
-	cnid_delete(vol->v_cdb, sid);
-    }
-    if (did) {
-	cnid_delete(vol->v_cdb, did);
-    }
+    if (sid)
+        cnid_delete(vol->v_cdb, sid);
+    if (did)
+        cnid_delete(vol->v_cdb, did);
+
     if ((did && ( (crossdev && lstat( upath, &srcst) < 0) || 
                 cnid_update(vol->v_cdb, did, &srcst, curdir->d_did,upath, dlen) < 0))
        ||
@@ -2286,6 +2351,12 @@ err_exchangefile:
     if ( !d_of && addp && ad_meta_fileno(addp) != -1 ) {/* META */
        ad_close(addp, ADFLAGS_HF);
     }
+
+    struct dir *cached;
+    if ((cached = dircache_search_by_did(vol, sid)) != NULL)
+        (void)dir_remove(vol, cached);
+    if ((cached = dircache_search_by_did(vol, did)) != NULL)
+        (void)dir_remove(vol, cached);
 
     return err;
 }

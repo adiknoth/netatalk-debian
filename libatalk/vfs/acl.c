@@ -1,5 +1,6 @@
 /*
   Copyright (c) 2009 Frank Lahm <franklahm@gmail.com>
+  Copyright (c) 2010 Frank Lahm <franklahm@gmail.com>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,55 +23,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/acl.h>
 
 #include <atalk/afp.h>
 #include <atalk/util.h>
 #include <atalk/logger.h>
+#include <atalk/errchk.h>
+#include <atalk/acl.h>
 
-/* Get ACL. Allocates storage as needed. Caller must free.
- * Returns no of ACEs or -1 on error.  */
-int get_nfsv4_acl(const char *name, ace_t **retAces)
-{
-    int ace_count = -1;
-    ace_t *aces;
-    struct stat st;
-
-    *retAces = NULL;
-    /* Only call acl() for regular files and directories, otherwise just return 0 */
-    if (lstat(name, &st) != 0)
-        return -1;
-    if ( ! (S_ISREG(st.st_mode) || S_ISDIR(st.st_mode)))
-        return 0;
-    if ((ace_count = acl(name, ACE_GETACLCNT, 0, NULL)) == 0)
-        return 0;
-
-    if (ace_count == -1) {
-        LOG(log_error, logtype_afpd, "get_nfsv4_acl: acl('%s/%s', ACE_GETACLCNT): ace_count %i, error: %s",
-            getcwdpath(), name, ace_count, strerror(errno));
-        return -1;
-    }
-
-    aces = malloc(ace_count * sizeof(ace_t));
-    if (aces == NULL) {
-	LOG(log_error, logtype_afpd, "get_nfsv4_acl: malloc error");
-	return -1;
-    }
-
-    if ( (acl(name, ACE_GETACL, ace_count, aces)) == -1 ) {
-	LOG(log_error, logtype_afpd, "get_nfsv4_acl: acl(ACE_GETACL) error");
-	free(aces);
-	return -1;
-    }
-
-    LOG(log_debug9, logtype_afpd, "get_nfsv4_acl: file: %s -> No. of ACEs: %d", name, ace_count);
-    *retAces = aces;
-
-    return ace_count;
-}
+#ifdef HAVE_SOLARIS_ACLS
 
 /* Removes all non-trivial ACLs from object. Returns full AFPERR code. */
-int remove_acl(const char *name)
+int remove_acl_vfs(const char *name)
 {
     int ret,i, ace_count, trivial_aces, new_aces_count;
     ace_t *old_aces = NULL;
@@ -122,3 +85,51 @@ exit:
     LOG(log_debug9, logtype_afpd, "remove_acl: END");
     return ret;
 }
+
+#endif  /* HAVE_SOLARIS_ACLS */
+
+#ifdef HAVE_POSIX_ACLS
+/*!
+ * Remove any ACL_USER, ACL_GROUP or ACL_TYPE_DEFAULT ACEs from an object
+ *
+ * @param name  (r) filesystem object name
+ *
+ * @returns AFP error code, AFP_OK (= 0) on success, AFPERR_MISC on error
+ */
+int remove_acl_vfs(const char *name)
+{
+    EC_INIT;
+
+    struct stat st;
+    acl_t acl = NULL;
+    acl_entry_t e;
+    acl_tag_t tag;
+    int entry_id = ACL_FIRST_ENTRY;
+
+
+    /* Remove default ACL if it's a dir */
+    EC_ZERO_LOG_ERR(stat(name, &st), AFPERR_MISC);
+    if (S_ISDIR(st.st_mode)) {
+        EC_NULL_LOG_ERR(acl = acl_init(0), AFPERR_MISC);
+        EC_ZERO_LOG_ERR(acl_set_file(name, ACL_TYPE_DEFAULT, acl), AFPERR_MISC);
+        EC_ZERO_LOG_ERR(acl_free(acl), AFPERR_MISC);
+        acl = NULL;
+    }
+
+    /* Now get ACL and remove ACL_USER or ACL_GROUP entries, then re-set the ACL again */
+    EC_NULL_LOG_ERR(acl = acl_get_file(name, ACL_TYPE_ACCESS), AFPERR_MISC);
+    for ( ; acl_get_entry(acl, entry_id, &e) == 1; entry_id = ACL_NEXT_ENTRY) {
+        EC_ZERO_LOG_ERR(acl_get_tag_type(e, &tag), AFPERR_MISC);
+        if (tag == ACL_USER || tag == ACL_GROUP)
+            EC_ZERO_LOG_ERR(acl_delete_entry(acl, e), AFPERR_MISC);
+    }
+    EC_ZERO_LOG_ERR(acl_calc_mask(&acl), AFPERR_MISC);
+    EC_ZERO_LOG_ERR(acl_valid(acl), AFPERR_MISC);
+    EC_ZERO_LOG_ERR(acl_set_file(name, ACL_TYPE_ACCESS, acl), AFPERR_MISC);
+
+EC_CLEANUP:
+    if (acl) acl_free(acl);
+
+    EC_EXIT;
+}
+#endif /* HAVE_POSIX_ACLS */

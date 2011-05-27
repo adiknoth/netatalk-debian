@@ -21,9 +21,13 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <libgen.h>
 
 #include <atalk/afp.h>    
 #include <atalk/adouble.h>
@@ -35,6 +39,9 @@
 #include <atalk/vfs.h>
 #include <atalk/directory.h>
 #include <atalk/unix.h>
+#include <atalk/errchk.h>
+#include <atalk/bstrlib.h>
+#include <atalk/bstradd.h>
 
 struct perm {
     uid_t uid;
@@ -320,7 +327,67 @@ static int RF_renamefile_adouble(VFS_FUNC_ARGS_RENAMEFILE)
 	return 0;
 }
 
-#ifdef HAVE_NFSv4_ACLS
+static int RF_copyfile_adouble(VFS_FUNC_ARGS_COPYFILE)
+/* const struct vol *vol, int sfd, const char *src, const char *dst */
+{
+    EC_INIT;
+    bstring s = NULL, d = NULL;
+    char *dup1 = NULL;
+    char *dup2 = NULL;
+    char *dup3 = NULL;
+    char *dup4 = NULL;
+    const char *name = NULL;
+    const char *dir = NULL;
+
+    struct stat st;
+    EC_ZERO(stat(dst, &st));
+
+    if (S_ISDIR(st.st_mode)) {
+        /* build src path to AppleDouble file*/
+        EC_NULL(s = bfromcstr(src));
+        EC_ZERO(bcatcstr(s, "/.AppleDouble/.Parent"));
+
+        /* build dst path to AppleDouble file*/
+        EC_NULL(d = bfromcstr(dst));
+        EC_ZERO(bcatcstr(d, "/.AppleDouble/.Parent"));
+    } else {
+        /* get basename */
+
+        /* build src path to AppleDouble file*/
+        EC_NULL(dup1 = strdup(src));
+        EC_NULL(name = basename(strdup(dup1)));
+
+        EC_NULL(dup2 = strdup(src));
+        EC_NULL(dir = dirname(dup2));
+        EC_NULL(s = bfromcstr(dir));
+        EC_ZERO(bcatcstr(s, "/.AppleDouble/"));
+        EC_ZERO(bcatcstr(s, name));
+
+        /* build dst path to AppleDouble file*/
+        EC_NULL(dup4 = strdup(dst));
+        EC_NULL(name = basename(strdup(dup4)));
+
+        EC_NULL(dup3 = strdup(dst));
+        EC_NULL(dir = dirname(dup3));
+        EC_NULL(d = bfromcstr(dir));
+        EC_ZERO(bcatcstr(d, "/.AppleDouble/"));
+        EC_ZERO(bcatcstr(d, name));
+    }
+
+    EC_ZERO(copy_file(sfd, cfrombstr(s), cfrombstr(d), 0666));
+
+EC_CLEANUP:
+    bdestroy(s);
+    bdestroy(d);
+    if (dup1) free(dup1);
+    if (dup2) free(dup2);
+    if (dup3) free(dup3);
+    if (dup4) free(dup4);
+
+    EC_EXIT;
+}
+
+#ifdef HAVE_SOLARIS_ACLS
 static int RF_solaris_acl(VFS_FUNC_ARGS_ACL)
 {
     static char buf[ MAXPATHLEN + 1];
@@ -358,17 +425,71 @@ static int RF_solaris_remove_acl(VFS_FUNC_ARGS_REMOVE_ACL)
 	if (len < 0 || len >=  MAXPATHLEN)
 	    return AFPERR_MISC;
 	/* remove ACL from .AppleDouble/.Parent first */
-	if ((ret = remove_acl(vol->ad_path(path, ADFLAGS_DIR))) != AFP_OK)
+	if ((ret = remove_acl_vfs(vol->ad_path(path, ADFLAGS_DIR))) != AFP_OK)
 	    return ret;
 	/* now remove from .AppleDouble dir */
-	if ((ret = remove_acl(buf)) != AFP_OK)
+	if ((ret = remove_acl_vfs(buf)) != AFP_OK)
 	    return ret;
     } else
 	/* remove ACL from ressource fork */
-	if ((ret = remove_acl(vol->ad_path(path, ADFLAGS_HF))) != AFP_OK)
+	if ((ret = remove_acl_vfs(vol->ad_path(path, ADFLAGS_HF))) != AFP_OK)
 	    return ret;
 
     return AFP_OK;
+}
+#endif
+
+#ifdef HAVE_POSIX_ACLS
+static int RF_posix_acl(VFS_FUNC_ARGS_ACL)
+{
+    EC_INIT;
+    static char buf[ MAXPATHLEN + 1];
+    struct stat st;
+    int len;
+
+    if (S_ISDIR(st.st_mode)) {
+        len = snprintf(buf, MAXPATHLEN, "%s/.AppleDouble",path);
+        if (len < 0 || len >=  MAXPATHLEN)
+            EC_FAIL;
+        /* set acl on .AppleDouble dir first */
+        EC_ZERO_LOG(acl_set_file(buf, type, acl));
+
+        if (type == ACL_TYPE_ACCESS)
+            /* set ACL on ressource fork (".Parent") too */
+            EC_ZERO_LOG(acl_set_file(vol->ad_path(path, ADFLAGS_DIR), type, acl));
+    } else {
+        /* set ACL on ressource fork */
+        EC_ZERO_LOG(acl_set_file(vol->ad_path(path, ADFLAGS_HF), type, acl));
+    }
+    
+EC_CLEANUP:
+    if (ret != 0)
+        return AFPERR_MISC;
+    return AFP_OK;
+}
+
+static int RF_posix_remove_acl(VFS_FUNC_ARGS_REMOVE_ACL)
+{
+    EC_INIT;
+    static char buf[ MAXPATHLEN + 1];
+    int len;
+
+    if (dir) {
+        len = snprintf(buf, MAXPATHLEN, "%s/.AppleDouble",path);
+        if (len < 0 || len >=  MAXPATHLEN)
+            return AFPERR_MISC;
+        /* remove ACL from .AppleDouble/.Parent first */
+        EC_ZERO_LOG_ERR(remove_acl_vfs(vol->ad_path(path, ADFLAGS_DIR)), AFPERR_MISC);
+
+        /* now remove from .AppleDouble dir */
+        EC_ZERO_LOG_ERR(remove_acl_vfs(buf), AFPERR_MISC);
+    } else {
+        /* remove ACL from ressource fork */
+        EC_ZERO_LOG_ERR(remove_acl_vfs(vol->ad_path(path, ADFLAGS_HF)), AFPERR_MISC);
+    }
+
+EC_CLEANUP:
+    EC_EXIT;
 }
 #endif
 
@@ -839,8 +960,10 @@ VFS_MFUNC(setdirowner, VFS_FUNC_ARGS_SETDIROWNER, VFS_FUNC_VARS_SETDIROWNER)
 VFS_MFUNC(deletefile, VFS_FUNC_ARGS_DELETEFILE, VFS_FUNC_VARS_DELETEFILE)
 VFS_MFUNC(renamefile, VFS_FUNC_ARGS_RENAMEFILE, VFS_FUNC_VARS_RENAMEFILE)
 VFS_MFUNC(copyfile, VFS_FUNC_ARGS_COPYFILE, VFS_FUNC_VARS_COPYFILE)
+#ifdef HAVE_ACLS
 VFS_MFUNC(acl, VFS_FUNC_ARGS_ACL, VFS_FUNC_VARS_ACL)
 VFS_MFUNC(remove_acl, VFS_FUNC_ARGS_REMOVE_ACL, VFS_FUNC_VARS_REMOVE_ACL)
+#endif
 VFS_MFUNC(ea_getsize, VFS_FUNC_ARGS_EA_GETSIZE, VFS_FUNC_VARS_EA_GETSIZE)
 VFS_MFUNC(ea_getcontent, VFS_FUNC_ARGS_EA_GETCONTENT, VFS_FUNC_VARS_EA_GETCONTENT)
 VFS_MFUNC(ea_list, VFS_FUNC_ARGS_EA_LIST, VFS_FUNC_VARS_EA_LIST)
@@ -868,8 +991,10 @@ static struct vfs_ops vfs_master_funcs = {
     vfs_deletefile,
     vfs_renamefile,
     vfs_copyfile,
+#ifdef HAVE_ACLS
     vfs_acl,
     vfs_remove_acl,
+#endif
     vfs_ea_getsize,
     vfs_ea_getcontent,
     vfs_ea_list,
@@ -892,7 +1017,7 @@ static struct vfs_ops netatalk_adouble = {
     /* vfs_setdirowner:   */ RF_setdirowner_adouble,
     /* vfs_deletefile:    */ RF_deletefile_adouble,
     /* vfs_renamefile:    */ RF_renamefile_adouble,
-    /* vfs_copyfile:      */ NULL,
+    /* vfs_copyfile:      */ RF_copyfile_adouble,
     NULL
 };
 
@@ -943,8 +1068,10 @@ static struct vfs_ops netatalk_ea_adouble = {
     /* vfs_deletefile:    */ ea_deletefile,
     /* vfs_renamefile:    */ ea_renamefile,
     /* vfs_copyfile       */ ea_copyfile,
+#ifdef HAVE_ACLS
     /* vfs_acl:           */ NULL,
     /* vfs_remove_acl     */ NULL,
+#endif
     /* vfs_getsize        */ get_easize,
     /* vfs_getcontent     */ get_eacontent,
     /* vfs_list           */ list_eas,
@@ -964,8 +1091,10 @@ static struct vfs_ops netatalk_ea_sys = {
     /* rf_deletefile:     */ NULL,
     /* rf_renamefile:     */ NULL,
     /* vfs_copyfile:      */ sys_ea_copyfile,
+#ifdef HAVE_ACLS
     /* rf_acl:            */ NULL,
     /* rf_remove_acl      */ NULL,
+#endif
     /* ea_getsize         */ sys_get_easize,
     /* ea_getcontent      */ sys_get_eacontent,
     /* ea_list            */ sys_list_eas,
@@ -977,7 +1106,7 @@ static struct vfs_ops netatalk_ea_sys = {
  * Tertiary VFS modules for ACLs
  */
 
-#ifdef HAVE_NFSv4_ACLS
+#ifdef HAVE_SOLARIS_ACLS
 static struct vfs_ops netatalk_solaris_acl_adouble = {
     /* validupath:        */ NULL,
     /* rf_chown:          */ NULL,
@@ -992,6 +1121,25 @@ static struct vfs_ops netatalk_solaris_acl_adouble = {
     /* vfs_copyfile       */ NULL,
     /* rf_acl:            */ RF_solaris_acl,
     /* rf_remove_acl      */ RF_solaris_remove_acl,
+    NULL
+};
+#endif
+
+#ifdef HAVE_POSIX_ACLS
+static struct vfs_ops netatalk_posix_acl_adouble = {
+    /* validupath:        */ NULL,
+    /* rf_chown:          */ NULL,
+    /* rf_renamedir:      */ NULL,
+    /* rf_deletecurdir:   */ NULL,
+    /* rf_setfilmode:     */ NULL,
+    /* rf_setdirmode:     */ NULL,
+    /* rf_setdirunixmode: */ NULL,
+    /* rf_setdirowner:    */ NULL,
+    /* rf_deletefile:     */ NULL,
+    /* rf_renamefile:     */ NULL,
+    /* vfs_copyfile       */ NULL,
+    /* rf_acl:            */ RF_posix_acl,
+    /* rf_remove_acl      */ RF_posix_remove_acl,
     NULL
 };
 #endif
@@ -1027,7 +1175,11 @@ void initvol_vfs(struct vol *vol)
     }
 
     /* ACLs */
-#ifdef HAVE_NFSv4_ACLS
+#ifdef HAVE_SOLARIS_ACLS
     vol->vfs_modules[2] = &netatalk_solaris_acl_adouble;
 #endif
+#ifdef HAVE_POSIX_ACLS
+    vol->vfs_modules[2] = &netatalk_posix_acl_adouble;
+#endif
+
 }

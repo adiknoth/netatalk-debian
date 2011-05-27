@@ -1,17 +1,15 @@
 # Makefile.am for contrib/
 
+SUBDIRS = macusers shell_utils
+
 if COMPILE_TIMELORD
-TIMELORD = timelord
-else
-TIMELORD =
+SUBDIRS += timelord
 endif
 
 if COMPILE_A2BOOT
-A2BOOT = a2boot
-else
-A2BOOT =
+SUBDIRS += a2boot
 endif
 
-SUBDIRS = macusers printing shell_utils ${TIMELORD} ${A2BOOT}
-
-EXTRA_DIST = ICDumpSuffixMap
+if USE_APPLETALK
+SUBDIRS += printing
+endif

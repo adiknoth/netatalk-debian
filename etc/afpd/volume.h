@@ -1,6 +1,4 @@
 /*
- * $Id: volume.h,v 1.36 2009-10-15 10:43:13 didg Exp $
- *
  * Copyright (c) 1990,1994 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
  */
@@ -21,13 +19,15 @@
 #include "hash.h"
 #endif
 
-extern struct vol	*getvolbyvid (const u_int16_t);
+extern struct vol       *getvolbyvid (const u_int16_t);
 extern int              ustatfs_getvolspace (const struct vol *,
             VolSpace *, VolSpace *,
             u_int32_t *);
 extern void             setvoltime (AFPObj *, struct vol *);
 extern int              pollvoltime (AFPObj *);
 extern void             load_volumes (AFPObj *obj);
+extern const struct vol *getvolumes(void);
+extern void             unload_volumes_and_extmap(void);
 
 /* FP functions */
 int afp_openvol      (AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size_t *rbuflen);
@@ -38,5 +38,7 @@ int afp_closevol     (AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size
 
 /* netatalk functions */
 extern void     close_all_vol   (void);
+
+struct vol *current_vol;        /* last volume from getvolbyvid() */
 
 #endif

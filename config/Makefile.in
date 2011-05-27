@@ -32,7 +32,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-@USE_NFSv4_ACLS_TRUE@am__append_1 = afp_ldap.conf
+@HAVE_ACLS_TRUE@am__append_1 = afp_ldap.conf
+@USE_APPLETALK_TRUE@am__append_2 = atalkd.conf papd.conf
 subdir = config
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -55,7 +56,7 @@ am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
 	$(top_srcdir)/macros/summary.m4 \
 	$(top_srcdir)/macros/tcp-wrappers.m4 \
 	$(top_srcdir)/macros/util.m4 $(top_srcdir)/macros/webmin.m4 \
-	$(top_srcdir)/configure.in
+	$(top_srcdir)/macros/zeroconf.m4 $(top_srcdir)/configure.in
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -77,6 +78,7 @@ CTAGS = ctags
 DIST_SUBDIRS = $(SUBDIRS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
+ACL_LIBS = @ACL_LIBS@
 AFS_CFLAGS = @AFS_CFLAGS@
 AFS_LIBS = @AFS_LIBS@
 AMTAR = @AMTAR@
@@ -84,6 +86,10 @@ AR = @AR@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
+AVAHI_CFLAGS = @AVAHI_CFLAGS@
+AVAHI_LIBS = @AVAHI_LIBS@
+AVAHI_TPOLL_CFLAGS = @AVAHI_TPOLL_CFLAGS@
+AVAHI_TPOLL_LIBS = @AVAHI_TPOLL_LIBS@
 AWK = @AWK@
 BDB_BIN = @BDB_BIN@
 BDB_CFLAGS = @BDB_CFLAGS@
@@ -133,7 +139,6 @@ KLDFLAGS = @KLDFLAGS@
 KRB5_CONFIG = @KRB5_CONFIG@
 LDFLAGS = @LDFLAGS@
 LIBADD_DL = @LIBADD_DL@
-LIBATALK_ACLS = @LIBATALK_ACLS@
 LIBGCRYPT_CFLAGS = @LIBGCRYPT_CFLAGS@
 LIBGCRYPT_CONFIG = @LIBGCRYPT_CONFIG@
 LIBGCRYPT_LIBS = @LIBGCRYPT_LIBS@
@@ -165,7 +170,9 @@ PAM_SESSION = @PAM_SESSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
 PKGCONFDIR = @PKGCONFDIR@
+PKG_CONFIG = @PKG_CONFIG@
 PS = @PS@
+PTHREAD_LIBS = @PTHREAD_LIBS@
 QUOTA_LIBS = @QUOTA_LIBS@
 RANLIB = @RANLIB@
 SED = @SED@
@@ -186,6 +193,8 @@ WEBMIN_PORT = @WEBMIN_PORT@
 WEBMIN_USER = @WEBMIN_USER@
 WEBMIN_VERSION = @WEBMIN_VERSION@
 WRAP_LIBS = @WRAP_LIBS@
+ZEROCONF_CFLAGS = @ZEROCONF_CFLAGS@
+ZEROCONF_LIBS = @ZEROCONF_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -244,14 +253,22 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = pam
 SUFFIXES = .tmpl .
-GENFILES = afpd.conf AppleVolumes.default
 TMPLFILES = afpd.conf.tmpl AppleVolumes.default.tmpl
-@USE_DEBIAN_FALSE@CONFFILES = AppleVolumes.system atalkd.conf \
-@USE_DEBIAN_FALSE@	papd.conf netatalk.conf $(am__append_1)
-@USE_DEBIAN_TRUE@CONFFILES = AppleVolumes.system atalkd.conf papd.conf \
-@USE_DEBIAN_TRUE@	$(am__append_1)
-EXTRA_DIST = $(CONFFILES) $(TMPLFILES) afp_ldap.conf
+GENFILES = afpd.conf AppleVolumes.default
 CLEANFILES = $(GENFILES)
+EXTRA_DIST = \
+	AppleVolumes.default.tmpl \
+	AppleVolumes.system \
+	afp_ldap.conf \
+	afpd.conf.tmpl \
+	atalkd.conf \
+	netatalk.conf \
+	papd.conf
+
+@USE_DEBIAN_FALSE@CONFFILES = AppleVolumes.system netatalk.conf \
+@USE_DEBIAN_FALSE@	$(am__append_1) $(am__append_2)
+@USE_DEBIAN_TRUE@CONFFILES = AppleVolumes.system $(am__append_1) \
+@USE_DEBIAN_TRUE@	$(am__append_2)
 pkgconfdir = @PKGCONFDIR@
 webminpath = @WEBMIN_PATH@
 webminuser = @WEBMIN_USER@
@@ -595,8 +612,7 @@ uninstall-local:
 		echo rm -f $(DESTDIR)$(pkgconfdir)/$$f; \
 		rm -f $(DESTDIR)$(pkgconfdir)/$$f; \
 	done
-
-@USE_DEBIAN_TRUE@	rm -f $(DESTDIR)/etc/default/netatalk;
+@USE_DEBIAN_TRUE@	rm -f $(DESTDIR)/etc/default/netatalk
 
 install-config-files: $(CONFFILES) $(GENFILES)
 	$(mkinstalldirs) $(DESTDIR)$(pkgconfdir)
@@ -608,14 +624,13 @@ install-config-files: $(CONFFILES) $(GENFILES)
 			echo "not overwriting $$f"; \
 		fi; \
 	done
-
 @USE_DEBIAN_TRUE@	$(mkinstalldirs) $(DESTDIR)/default
 @USE_DEBIAN_TRUE@	if test "x$(OVERWRITE_CONFIG)" = "xyes" -o ! -f /etc/default/netatalk; then \
-@USE_DEBIAN_TRUE@		echo "$(INSTALL_DATA) netatalk.conf $(DESTDIR)/etc/default/netatalk"; \
-@USE_DEBIAN_TRUE@		$(INSTALL_DATA) netatalk.conf $(DESTDIR)/etc/default/netatalk; \
+@USE_DEBIAN_TRUE@		echo "$(INSTALL_DATA) $(srcdir)/netatalk.conf $(DESTDIR)/etc/default/netatalk"; \
+@USE_DEBIAN_TRUE@		$(INSTALL_DATA) $(srcdir)/netatalk.conf $(DESTDIR)/etc/default/netatalk; \
 @USE_DEBIAN_TRUE@	else \
 @USE_DEBIAN_TRUE@		echo "not overwriting /etc/default/netatalk"; \
-@USE_DEBIAN_TRUE@	fi;
+@USE_DEBIAN_TRUE@	fi
 
 install-webmin:
 	if test "x$(webminpath)" != "x"; then \

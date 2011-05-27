@@ -1,5 +1,4 @@
 /*
-   $Id: acls.h,v 1.3 2009-11-20 17:45:47 franklahm Exp $
    Copyright (c) 2008,2009 Frank Lahm <franklahm@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
@@ -16,8 +15,11 @@
 #ifndef AFPD_ACLS_H 
 #define AFPD_ACLS_H
 
+#ifdef HAVE_SOLARIS_ACLS
 #include <sys/acl.h>
-#include <atalk/uuid.h>		/* for uuid_t */
+#endif
+
+#include <atalk/uuid.h>		/* for atalk_uuid_t */
 
 /*
  * This is what Apple says about ACL flags in sys/kauth.h:
@@ -32,8 +34,10 @@
  * the wire! We will ignore and spoil em.
  */
 
+#ifdef HAVE_SOLARIS_ACLS
 /* Some stuff for the handling of NFSv4 ACLs */
 #define ACE_TRIVIAL (ACE_OWNER | ACE_GROUP | ACE_EVERYONE)
+#endif /* HAVE_SOLARIS_ACLS */
 
 /* FPGet|Set Bitmap */
 enum {
@@ -53,13 +57,13 @@ enum {
 
 /* ACE Flags */
 #define DARWIN_ACE_FLAGS_KINDMASK           0xf
-#define DARWIN_ACE_FLAGS_PERMIT             (1<<0)
-#define DARWIN_ACE_FLAGS_DENY               (1<<1)
-#define DARWIN_ACE_FLAGS_INHERITED          (1<<4)
-#define DARWIN_ACE_FLAGS_FILE_INHERIT       (1<<5)
-#define DARWIN_ACE_FLAGS_DIRECTORY_INHERIT  (1<<6)
-#define DARWIN_ACE_FLAGS_LIMIT_INHERIT      (1<<7)
-#define DARWIN_ACE_FLAGS_ONLY_INHERIT       (1<<8)
+#define DARWIN_ACE_FLAGS_PERMIT             (1<<0) /* 0x00000001 */
+#define DARWIN_ACE_FLAGS_DENY               (1<<1) /* 0x00000002 */
+#define DARWIN_ACE_FLAGS_INHERITED          (1<<4) /* 0x00000010 */
+#define DARWIN_ACE_FLAGS_FILE_INHERIT       (1<<5) /* 0x00000020 */
+#define DARWIN_ACE_FLAGS_DIRECTORY_INHERIT  (1<<6) /* 0x00000040 */
+#define DARWIN_ACE_FLAGS_LIMIT_INHERIT      (1<<7) /* 0x00000080 */
+#define DARWIN_ACE_FLAGS_ONLY_INHERIT       (1<<8) /* 0x00000100 */
 
 /* All flag bits controlling ACE inheritance */
 #define DARWIN_ACE_INHERIT_CONTROL_FLAGS \
@@ -89,7 +93,7 @@ enum {
 
 /* Access Control List Entry (ACE) */
 typedef struct {
-    uuid_t      darwin_ace_uuid;
+    atalk_uuid_t      darwin_ace_uuid;
     uint32_t    darwin_ace_flags;
     uint32_t    darwin_ace_rights;
 } darwin_ace_t;
@@ -108,4 +112,7 @@ int afp_setacl (AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size_t *rb
 /* Parse afp_ldap.conf */
 extern int acl_ldap_readconfig(char *name);
 
+/* Misc funcs */
+extern int acltoownermode(char *path, struct stat *st, struct maccess *ma);
+extern int check_vol_acl_support(const struct vol *vol);
 #endif

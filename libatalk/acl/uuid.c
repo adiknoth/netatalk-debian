@@ -20,6 +20,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <inttypes.h>
+#include <sys/types.h>
+#include <pwd.h>
+#include <grp.h>
 
 #include <atalk/logger.h>
 #include <atalk/afp.h>
@@ -29,11 +33,39 @@
 #include "aclldap.h"
 #include "cache.h"
 
-char *uuidtype[] = {"NULL","USER", "GROUP"};
+char *uuidtype[] = {"NULL","USER", "GROUP", "LOCAL"};
 
 /********************************************************
  * Public helper function
  ********************************************************/
+
+static unsigned char local_group_uuid[] = {0xab, 0xcd, 0xef,
+                                           0xab, 0xcd, 0xef,
+                                           0xab, 0xcd, 0xef, 
+                                           0xab, 0xcd, 0xef};
+
+static unsigned char local_user_uuid[] = {0xff, 0xff, 0xee, 0xee, 0xdd, 0xdd,
+                                          0xcc, 0xcc, 0xbb, 0xbb, 0xaa, 0xaa};
+
+void localuuid_from_id(unsigned char *buf, uuidtype_t type, unsigned int id)
+{
+    uint32_t tmp;
+
+    switch (type) {
+    case UUID_GROUP:
+        memcpy(buf, local_group_uuid, 12);
+        break;
+    case UUID_USER:
+    default:
+        memcpy(buf, local_user_uuid, 12);
+        break;
+    }
+
+    tmp = htonl(id);
+    memcpy(buf + 12, &tmp, 4);
+
+    return;
+}
 
 /* 
  * convert ascii string that can include dashes to binary uuid.
@@ -68,39 +100,27 @@ void uuid_string2bin( const char *uuidstring, uuidp_t uuid) {
 
 }
 
-/* 
- * convert 16 byte binary uuid to neat ascii represantation including dashes
- * string is allocated and pointer returned. caller must freee.
+/*! 
+ * Convert 16 byte binary uuid to neat ascii represantation including dashes.
+ * 
+ * Returns pointer to static buffer.
  */
-int uuid_bin2string( uuidp_t uuid, char **uuidstring) {
-    char ascii[16] = { "0123456789ABCDEF" };
-    int nibble = 1;
+const char *uuid_bin2string(unsigned char *uuid) {
+    static char uuidstring[UUID_STRINGSIZE + 1];
+
     int i = 0;
     unsigned char c;
-    char *s;
-
-    *uuidstring = calloc(1, UUID_STRINGSIZE + 1);
-    if (*uuidstring == NULL) {
-        LOG(log_error, logtype_default, "uuid_bin2string: %s: error calloc'ing",strerror(errno));
-        return -1;
-    }
-    s = *uuidstring;
 
     while (i < UUID_STRINGSIZE) {
         c = *uuid;
-        if (nibble)
-            c = c >> 4;
-        else {
-            c &= 0x0f;
-            uuid++;
-        }
-        s[i] = ascii[c];
-        nibble ^= 1;
-        i++;
+        uuid++;
+        sprintf(uuidstring + i, "%02X", c);
+        i += 2;
         if (i==8 || i==13 || i==18 || i==23)
-            s[i++] = '-';
+            uuidstring[i++] = '-';
     }
-    return 0;
+    uuidstring[i] = 0;
+    return uuidstring;
 }
 
 /********************************************************
@@ -115,69 +135,102 @@ int uuid_bin2string( uuidp_t uuid, char **uuidstring) {
  */  
 int getuuidfromname( const char *name, uuidtype_t type, uuidp_t uuid) {
     int ret = 0;
+#ifdef HAVE_LDAP
     char *uuid_string = NULL;
-
-    ret = search_cachebyname( name, type, uuid);
-    if (ret == 0) {     /* found in cache */
-#ifdef DEBUG
-        uuid_bin2string( uuid, &uuid_string);
-        LOG(log_debug, logtype_afpd, "getuuidfromname{cache}: name: %s, type: %s -> UUID: %s",
-            name, uuidtype[type], uuid_string);
-#else
-        LOG(log_debug, logtype_afpd, "getuuidfromname{cache}: name: %s, type: %s",
-            name, uuidtype[type]);
 #endif
-    } else  {                   /* if not found in cache */
-        ret = ldap_getuuidfromname( name, type, &uuid_string);
-        if (ret != 0) {
-            LOG(log_info, logtype_afpd, "getuuidfromname: no result from ldap_getuuidfromname");
-            goto cleanup;
+    ret = search_cachebyname( name, type, uuid);
+    if (ret == 0) {
+        /* found in cache */
+        LOG(log_debug, logtype_afpd, "getuuidfromname{cache}: name: %s, type: %s -> UUID: %s",
+            name, uuidtype[type], uuid_bin2string(uuid));
+    } else  {
+        /* if not found in cache */
+#ifdef HAVE_LDAP
+        if ((ret = ldap_getuuidfromname( name, type, &uuid_string)) == 0) {
+            uuid_string2bin( uuid_string, uuid);
+            LOG(log_debug, logtype_afpd, "getuuidfromname{local}: name: %s, type: %s -> UUID: %s",
+                name, uuidtype[type], uuid_bin2string(uuid));
+        } else {
+            LOG(log_debug, logtype_afpd, "getuuidfromname(\"%s\",t:%u): no result from ldap search",
+                name, type);
         }
-        uuid_string2bin( uuid_string, uuid);
+#endif
+        if (ret != 0) {
+            /* Build a local UUID */
+            if (type == UUID_USER) {
+                struct passwd *pwd;
+                if ((pwd = getpwnam(name)) == NULL) {
+                    LOG(log_error, logtype_afpd, "getuuidfromname(\"%s\",t:%u): unknown user",
+                        name, uuidtype[type]);
+                    goto cleanup;
+                }
+                localuuid_from_id(uuid, UUID_USER, pwd->pw_uid);
+            } else {
+                struct group *grp;
+                if ((grp = getgrnam(name)) == NULL) {
+                    LOG(log_error, logtype_afpd, "getuuidfromname(\"%s\",t:%u): unknown user",
+                        name, uuidtype[type]);
+                    goto cleanup;
+                }
+                localuuid_from_id(uuid, UUID_GROUP, grp->gr_gid);
+            }
+            LOG(log_debug, logtype_afpd, "getuuidfromname{local}: name: %s, type: %s -> UUID: %s",
+                name, uuidtype[type], uuid_bin2string(uuid));
+        }
+        ret = 0;
         add_cachebyname( name, uuid, type, 0);
-        LOG(log_debug, logtype_afpd, "getuuidfromname{LDAP}: name: %s, type: %s -> UUID: %s",name, uuidtype[type], uuid_string);
     }
 
 cleanup:
-    free(uuid_string);
+#ifdef HAVE_LDAP
+    if (uuid_string) free(uuid_string);
+#endif
     return ret;
 }
 
-/* 
+
+/*
  * uuidp: pointer to a uuid
  * name: returns allocated buffer from ldap_getnamefromuuid
- * type: returns USER or GROUP
+ * type: returns USER, GROUP or LOCAL
  * return 0 on success !=0 on errror
  *
  * Caller must free name appropiately.
  */
-int getnamefromuuid( uuidp_t uuidp, char **name, uuidtype_t *type) {
+int getnamefromuuid(const uuidp_t uuidp, char **name, uuidtype_t *type) {
     int ret;
-    char *uuid_string = NULL;
 
     ret = search_cachebyuuid( uuidp, name, type);
-    if (ret == 0) {     /* found in cache */
-#ifdef DEBUG
-        uuid_bin2string( uuidp, &uuid_string);
+    if (ret == 0) {
+        /* found in cache */
         LOG(log_debug9, logtype_afpd, "getnamefromuuid{cache}: UUID: %s -> name: %s, type:%s",
-            uuid_string, *name, uuidtype[*type]);
-        free(uuid_string);
-        uuid_string = NULL;
-#endif
-    } else  {                   /* if not found in cache */
-        uuid_bin2string( uuidp, &uuid_string);
-        ret = ldap_getnamefromuuid( uuid_string, name, type);
+            uuid_bin2string(uuidp), *name, uuidtype[*type]);
+    } else {
+        /* not found in cache */
+
+        /* Check if UUID is a client local one */
+        if (memcmp(uuidp, local_user_uuid, 12) == 0
+            || memcmp(uuidp, local_group_uuid, 12) == 0) {
+            LOG(log_debug, logtype_afpd, "getnamefromuuid: local UUID: %" PRIu32 "",
+                ntohl(*(uint32_t *)(uuidp + 12)));
+            *type = UUID_LOCAL;
+            *name = strdup("UUID_LOCAL");
+            return 0;
+        }
+
+#ifdef HAVE_LDAP
+        ret = ldap_getnamefromuuid(uuid_bin2string(uuidp), name, type);
         if (ret != 0) {
             LOG(log_warning, logtype_afpd, "getnamefromuuid(%s): no result from ldap_getnamefromuuid",
-                uuid_string);
+                uuid_bin2string(uuidp));
             goto cleanup;
         }
         add_cachebyuuid( uuidp, *name, *type, 0);
         LOG(log_debug, logtype_afpd, "getnamefromuuid{LDAP}: UUID: %s -> name: %s, type:%s",
-            uuid_string, *name, uuidtype[*type]);
+            uuid_bin2string(uuidp), *name, uuidtype[*type]);
+#endif
     }
 
 cleanup:
-    free(uuid_string);
     return ret;
 }

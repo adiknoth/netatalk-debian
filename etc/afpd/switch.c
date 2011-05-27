@@ -1,6 +1,4 @@
 /*
- * $Id: switch.c,v 1.19 2009-10-15 10:43:13 didg Exp $
- *
  * Copyright (c) 1990,1991 Regents of The University of Michigan.
  * All Rights Reserved.
  *
@@ -46,7 +44,7 @@
 #include "filedir.h"
 #include "status.h"
 #include "misc.h"
-#ifdef HAVE_NFSv4_ACLS
+#ifdef HAVE_ACLS
 #include "acls.h"
 #endif
 

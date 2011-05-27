@@ -1,6 +1,4 @@
 /*
- * $Id: usockfd.c,v 1.6 2009-11-05 14:38:07 franklahm Exp $
- *
  * Copyright (C) Joerg Lenneis 2003
  * All Rights Reserved.  See COPYING.
  */
@@ -67,6 +65,9 @@ int usockfd_create(char *usock_fn, mode_t mode, int backlog)
         return -1;
     }
 
+#ifdef chmod
+#undef chmod
+#endif
     if (chmod(usock_fn, mode) < 0) {
         LOG(log_error, logtype_cnid, "error changing permissions for %s: %s",
             usock_fn, strerror(errno));
@@ -154,7 +155,6 @@ int usockfd_check(int sockfd, const sigset_t *sigset)
     socklen_t size;
     fd_set readfds;
     int ret;
-    struct timeval tv;
      
     FD_ZERO(&readfds);
     FD_SET(sockfd, &readfds);
@@ -174,13 +174,6 @@ int usockfd_check(int sockfd, const sigset_t *sigset)
                 return 0;
             LOG(log_error, logtype_cnid, "error in accept: %s", 
                 strerror(errno));
-            return -1;
-        }
-        tv.tv_sec = 5;
-        tv.tv_usec = 0;
-        if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
-            LOG(log_error, logtype_cnid, "set SO_RCVTIMEO: %s", strerror(errno));
-            close(fd);
             return -1;
         }
         return fd;

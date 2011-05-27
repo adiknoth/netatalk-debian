@@ -1,5 +1,4 @@
 /*
-   $Id: acl_mappings.h,v 1.1 2009-02-02 11:55:00 franklahm Exp $
    Copyright (c) 2008,2009 Frank Lahm <franklahm@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
@@ -16,18 +15,27 @@
 #ifndef ACL_MAPPINGS
 #define ACL_MAPPINGS
 
+#ifdef HAVE_SOLARIS_ACLS
 #include <sys/acl.h>
+#endif
+
 #include "acls.h"
 
 /* 
  * Stuff for mapping between ACL implementations
  */
 
+/* Solaris 10u8 still hasn't got ACE_INHERITED_ACE */
+#ifndef ACE_INHERITED_ACE
+#define ACE_INHERITED_ACE 0x0080
+#endif
+
 struct ace_rights_map {
     u_int32_t from;
     u_int32_t to;
 };
 
+#ifdef HAVE_SOLARIS_ACLS
 struct ace_rights_map nfsv4_to_darwin_rights[] = {
     {ACE_READ_DATA,         DARWIN_ACE_READ_DATA},
     {ACE_WRITE_DATA,        DARWIN_ACE_WRITE_DATA},
@@ -89,5 +97,6 @@ struct darwin_to_nfsv4_flags_map darwin_to_nfsv4_flags[] = {
     {DARWIN_ACE_FLAGS_INHERITED,         ACE_INHERITED_ACE},
     {0,0}
 };
+#endif /* HAVE_SOLARIS_ACLS */
 
 #endif	/* ACL_MAPPINGS */

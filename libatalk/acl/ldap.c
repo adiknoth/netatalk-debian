@@ -1,5 +1,4 @@
 /*
-  $Id: ldap.c,v 1.7 2010-04-23 11:37:06 franklahm Exp $
   Copyright (c) 2008,2009 Frank Lahm <franklahm@gmail.com>
 
   This program is free software; you can redistribute it and/or modify
@@ -17,11 +16,14 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
+#ifdef HAVE_LDAP
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
 #include <string.h>
 #include <errno.h>
+#define LDAP_DEPRECATED 1
 #include <ldap.h>
 
 #include <atalk/logger.h>
@@ -247,9 +249,16 @@ cleanup:
  * Interface
  ********************************************************/
 
-/* 
- * returns allocated storage in uuid_string, caller must free it
- * returns 0 on success, -1 on error or not found
+/*! 
+ * Search UUID for name in LDAP
+ *
+ * Caller must free uuid_string when done with it
+ *
+ * @param name        (r) name to search
+ * @param type        (r) type of USER or GROUP
+ * @param uuid_string (w) result as pointer to allocated UUID-string
+ *
+ * @returns 0 on success, -1 on error or not found
  */
 int ldap_getuuidfromname( const char *name, uuidtype_t type, char **uuid_string) {
     int ret;
@@ -257,6 +266,9 @@ int ldap_getuuidfromname( const char *name, uuidtype_t type, char **uuid_string)
     char filter[256];           /* this should really be enough. we dont want to malloc everything! */
     char *attributes[]  = { ldap_uuid_attr, NULL};
     char *ldap_attr;
+
+    if (!ldap_config_valid)
+        return -1;
 
     /* make filter */
     if (type == UUID_GROUP)
@@ -283,12 +295,21 @@ int ldap_getuuidfromname( const char *name, uuidtype_t type, char **uuid_string)
  * LDAP search wrapper
  * returns allocated storage in name, caller must free it
  * returns 0 on success, -1 on error or not found
+ * 
+ * @param uuidstr  (r) uuid to search as ascii string
+ * @param name     (w) return pointer to name as allocated string
+ * @param type     (w) return type: USER or GROUP
+ *
+ * returns 0 on success, -1 on errror
  */
-int ldap_getnamefromuuid( char *uuidstr, char **name, uuidtype_t *type) {
+int ldap_getnamefromuuid( const char *uuidstr, char **name, uuidtype_t *type) {
     int ret;
     int len;
     char filter[256];       /* this should really be enough. we dont want to malloc everything! */
     char *attributes[]  = { NULL, NULL};
+
+    if (!ldap_config_valid)
+        return -1;
 
     /* make filter */
     len = snprintf( filter, 256, "%s=%s", ldap_uuid_attr, uuidstr);
@@ -315,3 +336,4 @@ int ldap_getnamefromuuid( char *uuidstr, char **name, uuidtype_t *type) {
 
     return -1;
 }
+#endif  /* HAVE_LDAP */

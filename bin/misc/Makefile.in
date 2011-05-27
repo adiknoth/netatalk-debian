@@ -35,8 +35,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-bin_PROGRAMS = netacnv$(EXEEXT) $(am__EXEEXT_1)
-@USE_NFSv4_ACLS_TRUE@am__append_1 = afpldaptest
+bin_PROGRAMS = afpldaptest$(EXEEXT)
+noinst_PROGRAMS = netacnv$(EXEEXT) logger_test$(EXEEXT)
 subdir = bin/misc
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -59,21 +59,24 @@ am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
 	$(top_srcdir)/macros/summary.m4 \
 	$(top_srcdir)/macros/tcp-wrappers.m4 \
 	$(top_srcdir)/macros/util.m4 $(top_srcdir)/macros/webmin.m4 \
-	$(top_srcdir)/configure.in
+	$(top_srcdir)/macros/zeroconf.m4 $(top_srcdir)/configure.in
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
-@USE_NFSv4_ACLS_TRUE@am__EXEEXT_1 = afpldaptest$(EXEEXT)
 am__installdirs = "$(DESTDIR)$(bindir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
-PROGRAMS = $(bin_PROGRAMS)
-am__afpldaptest_SOURCES_DIST = uuidtest.c
-@USE_NFSv4_ACLS_TRUE@am_afpldaptest_OBJECTS = uuidtest.$(OBJEXT)
+PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)
+am_afpldaptest_OBJECTS = afpldaptest-uuidtest.$(OBJEXT)
 afpldaptest_OBJECTS = $(am_afpldaptest_OBJECTS)
-@USE_NFSv4_ACLS_TRUE@afpldaptest_DEPENDENCIES =  \
-@USE_NFSv4_ACLS_TRUE@	$(top_builddir)/libatalk/libatalk.la
+afpldaptest_DEPENDENCIES = $(top_builddir)/libatalk/libatalk.la
+afpldaptest_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(afpldaptest_CFLAGS) \
+	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+am_logger_test_OBJECTS = logger_test.$(OBJEXT)
+logger_test_OBJECTS = $(am_logger_test_OBJECTS)
+logger_test_DEPENDENCIES = $(top_builddir)/libatalk/libatalk.la
 am_netacnv_OBJECTS = netacnv.$(OBJEXT)
 netacnv_OBJECTS = $(am_netacnv_OBJECTS)
 netacnv_DEPENDENCIES = $(top_builddir)/libatalk/libatalk.la
@@ -89,12 +92,15 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(afpldaptest_SOURCES) $(netacnv_SOURCES)
-DIST_SOURCES = $(am__afpldaptest_SOURCES_DIST) $(netacnv_SOURCES)
+SOURCES = $(afpldaptest_SOURCES) $(logger_test_SOURCES) \
+	$(netacnv_SOURCES)
+DIST_SOURCES = $(afpldaptest_SOURCES) $(logger_test_SOURCES) \
+	$(netacnv_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
+ACL_LIBS = @ACL_LIBS@
 AFS_CFLAGS = @AFS_CFLAGS@
 AFS_LIBS = @AFS_LIBS@
 AMTAR = @AMTAR@
@@ -102,6 +108,10 @@ AR = @AR@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
+AVAHI_CFLAGS = @AVAHI_CFLAGS@
+AVAHI_LIBS = @AVAHI_LIBS@
+AVAHI_TPOLL_CFLAGS = @AVAHI_TPOLL_CFLAGS@
+AVAHI_TPOLL_LIBS = @AVAHI_TPOLL_LIBS@
 AWK = @AWK@
 BDB_BIN = @BDB_BIN@
 BDB_CFLAGS = @BDB_CFLAGS@
@@ -151,7 +161,6 @@ KLDFLAGS = @KLDFLAGS@
 KRB5_CONFIG = @KRB5_CONFIG@
 LDFLAGS = @LDFLAGS@
 LIBADD_DL = @LIBADD_DL@
-LIBATALK_ACLS = @LIBATALK_ACLS@
 LIBGCRYPT_CFLAGS = @LIBGCRYPT_CFLAGS@
 LIBGCRYPT_CONFIG = @LIBGCRYPT_CONFIG@
 LIBGCRYPT_LIBS = @LIBGCRYPT_LIBS@
@@ -183,7 +192,9 @@ PAM_SESSION = @PAM_SESSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
 PKGCONFDIR = @PKGCONFDIR@
+PKG_CONFIG = @PKG_CONFIG@
 PS = @PS@
+PTHREAD_LIBS = @PTHREAD_LIBS@
 QUOTA_LIBS = @QUOTA_LIBS@
 RANLIB = @RANLIB@
 SED = @SED@
@@ -204,6 +215,8 @@ WEBMIN_PORT = @WEBMIN_PORT@
 WEBMIN_USER = @WEBMIN_USER@
 WEBMIN_VERSION = @WEBMIN_VERSION@
 WRAP_LIBS = @WRAP_LIBS@
+ZEROCONF_CFLAGS = @ZEROCONF_CFLAGS@
+ZEROCONF_LIBS = @ZEROCONF_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -260,12 +273,14 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+pkgconfdir = @PKGCONFDIR@
 netacnv_SOURCES = netacnv.c
 netacnv_LDADD = $(top_builddir)/libatalk/libatalk.la
-pkgconfdir = @PKGCONFDIR@
-@USE_NFSv4_ACLS_TRUE@afpldaptest_SOURCES = uuidtest.c
-@USE_NFSv4_ACLS_TRUE@afpldaptest_LDADD = $(top_builddir)/libatalk/libatalk.la
-@USE_NFSv4_ACLS_TRUE@AM_CFLAGS = -D_PATH_ACL_LDAPCONF=\"$(pkgconfdir)/afp_ldap.conf\"
+logger_test_SOURCES = logger_test.c
+logger_test_LDADD = $(top_builddir)/libatalk/libatalk.la
+afpldaptest_SOURCES = uuidtest.c
+afpldaptest_CFLAGS = -D_PATH_ACL_LDAPCONF=\"$(pkgconfdir)/afp_ldap.conf\"
+afpldaptest_LDADD = $(top_builddir)/libatalk/libatalk.la
 all: all-am
 
 .SUFFIXES:
@@ -327,9 +342,19 @@ clean-binPROGRAMS:
 	  echo " rm -f $$p $$f"; \
 	  rm -f $$p $$f ; \
 	done
+
+clean-noinstPROGRAMS:
+	@list='$(noinst_PROGRAMS)'; for p in $$list; do \
+	  f=`echo $$p|sed 's/$(EXEEXT)$$//'`; \
+	  echo " rm -f $$p $$f"; \
+	  rm -f $$p $$f ; \
+	done
 afpldaptest$(EXEEXT): $(afpldaptest_OBJECTS) $(afpldaptest_DEPENDENCIES) 
 	@rm -f afpldaptest$(EXEEXT)
-	$(LINK) $(afpldaptest_OBJECTS) $(afpldaptest_LDADD) $(LIBS)
+	$(afpldaptest_LINK) $(afpldaptest_OBJECTS) $(afpldaptest_LDADD) $(LIBS)
+logger_test$(EXEEXT): $(logger_test_OBJECTS) $(logger_test_DEPENDENCIES) 
+	@rm -f logger_test$(EXEEXT)
+	$(LINK) $(logger_test_OBJECTS) $(logger_test_LDADD) $(LIBS)
 netacnv$(EXEEXT): $(netacnv_OBJECTS) $(netacnv_DEPENDENCIES) 
 	@rm -f netacnv$(EXEEXT)
 	$(LINK) $(netacnv_OBJECTS) $(netacnv_LDADD) $(LIBS)
@@ -340,8 +365,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpldaptest-uuidtest.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/logger_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netacnv.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uuidtest.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -363,6 +389,20 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
+
+afpldaptest-uuidtest.o: uuidtest.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpldaptest_CFLAGS) $(CFLAGS) -MT afpldaptest-uuidtest.o -MD -MP -MF $(DEPDIR)/afpldaptest-uuidtest.Tpo -c -o afpldaptest-uuidtest.o `test -f 'uuidtest.c' || echo '$(srcdir)/'`uuidtest.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpldaptest-uuidtest.Tpo $(DEPDIR)/afpldaptest-uuidtest.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uuidtest.c' object='afpldaptest-uuidtest.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpldaptest_CFLAGS) $(CFLAGS) -c -o afpldaptest-uuidtest.o `test -f 'uuidtest.c' || echo '$(srcdir)/'`uuidtest.c
+
+afpldaptest-uuidtest.obj: uuidtest.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpldaptest_CFLAGS) $(CFLAGS) -MT afpldaptest-uuidtest.obj -MD -MP -MF $(DEPDIR)/afpldaptest-uuidtest.Tpo -c -o afpldaptest-uuidtest.obj `if test -f 'uuidtest.c'; then $(CYGPATH_W) 'uuidtest.c'; else $(CYGPATH_W) '$(srcdir)/uuidtest.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpldaptest-uuidtest.Tpo $(DEPDIR)/afpldaptest-uuidtest.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uuidtest.c' object='afpldaptest-uuidtest.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpldaptest_CFLAGS) $(CFLAGS) -c -o afpldaptest-uuidtest.obj `if test -f 'uuidtest.c'; then $(CYGPATH_W) 'uuidtest.c'; else $(CYGPATH_W) '$(srcdir)/uuidtest.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -476,7 +516,8 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-binPROGRAMS clean-generic clean-libtool mostlyclean-am
+clean-am: clean-binPROGRAMS clean-generic clean-libtool \
+	clean-noinstPROGRAMS mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -535,18 +576,18 @@ uninstall-am: uninstall-binPROGRAMS
 .MAKE: install-am install-strip
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-binPROGRAMS \
-	clean-generic clean-libtool ctags distclean distclean-compile \
-	distclean-generic distclean-libtool distclean-tags distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-binPROGRAMS install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am install-man \
-	install-pdf install-pdf-am install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
-	pdf pdf-am ps ps-am tags uninstall uninstall-am \
-	uninstall-binPROGRAMS
+	clean-generic clean-libtool clean-noinstPROGRAMS ctags \
+	distclean distclean-compile distclean-generic \
+	distclean-libtool distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-binPROGRAMS \
+	install-data install-data-am install-dvi install-dvi-am \
+	install-exec install-exec-am install-html install-html-am \
+	install-info install-info-am install-man install-pdf \
+	install-pdf-am install-ps install-ps-am install-strip \
+	installcheck installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
+	tags uninstall uninstall-am uninstall-binPROGRAMS
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

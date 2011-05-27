@@ -12,48 +12,33 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
-/* STDC check */
-#if STDC_HEADERS
 #include <string.h>
-#else /* STDC_HEADERS */
-#ifndef HAVE_STRCHR
-#define strchr index
-#define strrchr index
-#endif /* HAVE_STRCHR */
-char *strchr (), *strrchr ();
-#ifndef HAVE_MEMCPY
-#define memcpy(d,s,n) bcopy ((s), (d), (n))
-#define memmove(d,s,n) bcopy ((s), (d), (n))
-#endif /* ! HAVE_MEMCPY */
-#endif /* STDC_HEADERS */
-
 #include <ctype.h>
-#ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#endif /* HAVE_UNISTD_H */
 #include <sys/param.h>
 #include <sys/socket.h>
 #include <atalk/logger.h>
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
+
 #ifdef HAVE_NETDB_H
 #include <netdb.h>
 #endif /* HAVE_NETDB_H */
-
-#include <atalk/paths.h>
-#include <atalk/util.h>
-#include "globals.h"
-#include "status.h"
-#include "auth.h"
-
-#include <atalk/compat.h>
 
 #ifdef ADMIN_GRP
 #include <grp.h>
 #include <sys/types.h>
 #endif /* ADMIN_GRP */
+
+#include <atalk/paths.h>
+#include <atalk/util.h>
+#include <atalk/compat.h>
+
+#include "globals.h"
+#include "status.h"
+#include "auth.h"
+#include "dircache.h"
 
 #ifndef MIN
 #define MIN(a, b)  ((a) < (b) ? (a) : (b))
@@ -152,6 +137,8 @@ void afp_options_free(struct afp_options *opt,
 	free(opt->ntdomain);
     if (opt->ntseparator && (opt->ntseparator != save->ntseparator))
 	free(opt->ntseparator);
+    if (opt->logconfig && (opt->logconfig != save->logconfig))
+	free(opt->logconfig);
 }
 
 /* initialize options */
@@ -164,6 +151,7 @@ void afp_options_init(struct afp_options *options)
     options->systemvol.name = _PATH_AFPDSYSVOL;
     options->configfile = _PATH_AFPDCONF;
     options->sigconffile = _PATH_AFPDSIGCONF;
+    options->uuidconf = _PATH_AFPDUUIDCONF;
     options->uampath = _PATH_AFPDUAMPATH;
     options->uamlist = "uams_dhx.so,uams_dhx2.so";
     options->guest = "nobody";
@@ -171,8 +159,9 @@ void afp_options_init(struct afp_options *options)
     options->transports = AFPTRANS_TCP; /*  TCP only */
     options->passwdfile = _PATH_AFPDPWFILE;
     options->tickleval = 30;
-    options->timeout = 4;
-    options->sleep = 10* 120; /* 10 h in 30 seconds tick */
+    options->timeout = 4;       /* 4 tickles = 2 minutes */
+    options->sleep = 10 * 60 * 2; /* 10 h in 30 seconds tick */
+    options->disconnected = 10 * 60 * 2; /* 10 h in 30 seconds tick */
     options->server_notif = 1;
     options->authprintdir = NULL;
     options->signatureopt = "auto";
@@ -194,6 +183,12 @@ void afp_options_init(struct afp_options *options)
     /* don't advertize slp by default */
     options->flags |= OPTION_NOSLP;
 #endif
+    options->dircachesize = DEFAULT_MAX_DIRCACHE_SIZE;
+    options->flags |= OPTION_ACL2MACCESS;
+    options->flags |= OPTION_UUID;
+    options->tcp_sndbuf = 0;    /* 0 means don't change OS default */
+    options->tcp_rcvbuf = 0;    /* 0 means don't change OS default */
+    options->dsireadbuf = 12;
 }
 
 /* parse an afpd.conf line. i'm doing it this way because it's
@@ -219,7 +214,10 @@ int afp_options_parseline(char *buf, struct afp_options *options)
     if (strstr(buf, " -slp"))
         options->flags &= ~OPTION_NOSLP;
 #endif
-
+#ifdef USE_ZEROCONF
+    if (strstr(buf, " -nozeroconf"))
+        options->flags |= OPTION_NOZEROCONF;
+#endif
     if (strstr(buf, " -nouservolfirst"))
         options->flags &= ~OPTION_USERVOLFIRST;
     if (strstr(buf, " -uservolfirst"))
@@ -236,6 +234,8 @@ int afp_options_parseline(char *buf, struct afp_options *options)
         options->flags |= OPTION_CUSTOMICON;
     if (strstr(buf, " -advertise_ssh"))
         options->flags |= OPTION_ANNOUNCESSH;
+    if (strstr(buf, " -noacl2maccess"))
+        options->flags &= ~OPTION_ACL2MACCESS;
 
     /* passwd bits */
     if (strstr(buf, " -nosavepassword"))
@@ -280,8 +280,22 @@ int afp_options_parseline(char *buf, struct afp_options *options)
         options->defaultvol.name = opt;
     if ((c = getoption(buf, "-systemvol")) && (opt = strdup(c)))
         options->systemvol.name = opt;
-    if ((c = getoption(buf, "-loginmesg")) && (opt = strdup(c)))
+    if ((c = getoption(buf, "-loginmesg")) && (opt = strdup(c))) {
+        int i = 0, j = 0;
+        while (c[i]) {
+            if (c[i] != '\\') {
+                opt[j++] = c[i];
+            } else {
+                i++;
+                if (c[i] == 'n')
+                    opt[j++] = '\n';
+            }
+            i++;
+        }
+        opt[j] = 0;
         options->loginmesg = opt;
+        
+    }
     if ((c = getoption(buf, "-guestname")) && (opt = strdup(c)))
         options->guest = opt;
     if ((c = getoption(buf, "-passwdfile")) && (opt = strdup(c)))
@@ -310,6 +324,12 @@ int afp_options_parseline(char *buf, struct afp_options *options)
         }
     }
 
+    if ((c = getoption(buf, "-dsireadbuf"))) {
+        options->dsireadbuf = atoi(c);
+        if (options->dsireadbuf < 6)
+            options->dsireadbuf = 6;
+    }
+
     if ((c = getoption(buf, "-server_quantum")))
         options->server_quantum = strtoul(c, NULL, 0);
 
@@ -331,6 +351,7 @@ int afp_options_parseline(char *buf, struct afp_options *options)
         char *optstr;
         if ((optstr = getoption(c, "-setuplog"))) {
             setuplog(optstr);
+            options->logconfig = optstr; /* at least store the last (possibly only) one */
             c += sizeof("-setuplog");
         }
     }
@@ -448,6 +469,15 @@ int afp_options_parseline(char *buf, struct afp_options *options)
     if ((c = getoption(buf, "-ntseparator")) && (opt = strdup(c)))
        options->ntseparator = opt;
 
+    if ((c = getoption(buf, "-dircachesize")))
+        options->dircachesize = atoi(c);
+     
+    if ((c = getoption(buf, "-tcpsndbuf")))
+        options->tcp_sndbuf = atoi(c);
+
+    if ((c = getoption(buf, "-tcprcvbuf")))
+        options->tcp_rcvbuf = atoi(c);
+
     return 1;
 }
 
@@ -466,18 +496,15 @@ static void show_version( void )
 
 	puts( "afpd has been compiled with support for these features:\n" );
 
-	printf( "        AFP3.x support:\t" );
-#ifdef AFP3x
-	puts( "Yes" );
-#else
-	puts( "No" );
-#endif
+	printf( "        AFP3.x support:\tYes\n" );
+        printf( "        TCP/IP Support:\t" );
+        puts( "Yes" );
 
-	printf( "      Transport layers:\t" );
+	printf( "DDP(AppleTalk) Support:\t" );
 #ifdef NO_DDP
-	puts( "TCP/IP" );
+	puts( "No" );
 #else
-	puts( "TCP/IP DDP" );
+	puts( "Yes" );
 #endif
 
 	printf( "         CNID backends:\t" );
@@ -519,6 +546,13 @@ static void show_version_extended(void )
 
 	printf( "           SLP support:\t" );
 #ifdef USE_SRVLOC
+	puts( "Yes" );
+#else
+	puts( "No" );
+#endif
+
+	printf( "      Zeroconf support:\t" );
+#ifdef USE_ZEROCONF
 	puts( "Yes" );
 #else
 	puts( "No" );
@@ -572,6 +606,23 @@ static void show_version_extended(void )
 #else
 	puts( "No" );
 #endif
+
+	printf( "           ACL support:\t" );
+#ifdef HAVE_ACLS
+	puts( "Yes" );
+#else
+	puts( "No" );
+#endif
+
+	printf( "            EA support:\t" );
+	puts( EA_MODULES );
+
+	printf( "          LDAP support:\t" );
+#ifdef HAVE_LDAP
+	puts( "Yes" );
+#else
+	puts( "No" );
+#endif
 }
 
 /*
@@ -580,11 +631,18 @@ static void show_version_extended(void )
 static void show_paths( void )
 {
 	printf( "             afpd.conf:\t%s\n", _PATH_AFPDCONF );
-	printf( "    afp_signature.conf:\t%s\n", _PATH_AFPDSIGCONF );
 	printf( "   AppleVolumes.system:\t%s\n", _PATH_AFPDSYSVOL );
 	printf( "  AppleVolumes.default:\t%s\n", _PATH_AFPDDEFVOL );
+	printf( "    afp_signature.conf:\t%s\n", _PATH_AFPDSIGCONF );
+	printf( "      afp_voluuid.conf:\t%s\n", _PATH_AFPDUUIDCONF );
+#ifdef HAVE_LDAP
+	printf( "         afp_ldap.conf:\t%s\n", _PATH_ACL_LDAPCONF );
+#else
+	printf( "         afp_ldap.conf:\tnot supported\n");
+#endif
 	printf( "       UAM search path:\t%s\n", _PATH_AFPDUAMPATH );
-    printf( "  Server messages path:\t%s\n", SERVERTEXT);
+	printf( "  Server messages path:\t%s\n", SERVERTEXT);
+	printf( "              lockfile:\t%s\n", _PATH_AFPDLOCK);
 }
 
 /*

@@ -1,7 +1,7 @@
 /*
- * $Id: comm.c,v 1.6 2009-10-19 08:09:07 didg Exp $
- *
  * Copyright (C) Joerg Lenneis 2003
+ * Copyright (C) Frank Lahm 2010
+ *
  * All Rights Reserved.  See COPYING.
  */
 
@@ -9,41 +9,32 @@
 #include "config.h"
 #endif
 
+#ifndef _XOPEN_SOURCE
+# define _XOPEN_SOURCE 600
+#endif
+#ifndef __EXTENSIONS__
+# define __EXTENSIONS__
+#endif
+#ifndef _GNU_SOURCE
+# define _GNU_SOURCE
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-
-#ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#endif
-
 #include <sys/param.h>
-#define _XPG4_2 1
-#include <sys/socket.h>
-
-#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
-#endif
-
-#ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
-#endif
-
-#ifdef HAVE_SYS_UIO_H
 #include <sys/uio.h>
-#endif
-
-#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
-#endif
-
 #include <sys/select.h>
-
 #include <assert.h>
 #include <time.h>
 
 #include <atalk/logger.h>
+#include <atalk/util.h>
 #include <atalk/cnid_dbd_private.h>
 
 #include "db_param.h"
@@ -87,51 +78,6 @@ static void invalidate_fd(int fd)
     return;
 }
 
-static int recv_cred(int fd)
-{
-    int ret;
-    struct msghdr msgh;
-    struct iovec iov[1];
-    struct cmsghdr *cmsgp = NULL;
-    char buf[CMSG_SPACE(sizeof(int))];
-    char dbuf[80];
-
-    memset(&msgh,0,sizeof(msgh));
-    memset(buf,0,sizeof(buf));
-
-    msgh.msg_name = NULL;
-    msgh.msg_namelen = 0;
-
-    msgh.msg_iov = iov;
-    msgh.msg_iovlen = 1;
-
-    iov[0].iov_base = dbuf;
-    iov[0].iov_len = sizeof(dbuf);
-
-    msgh.msg_control = buf;
-    msgh.msg_controllen = sizeof(buf);
-
-    do  {
-        ret = recvmsg(fd ,&msgh,0);
-    } while ( ret == -1 && errno == EINTR );
-
-    if ( ret == -1 ) {
-        return -1;
-    }
-
-    for ( cmsgp = CMSG_FIRSTHDR(&msgh); cmsgp != NULL; cmsgp = CMSG_NXTHDR(&msgh,cmsgp) ) {
-        if ( cmsgp->cmsg_level == SOL_SOCKET && cmsgp->cmsg_type == SCM_RIGHTS ) {
-            return *(int *) CMSG_DATA(cmsgp);
-        }
-    }
-
-    if ( ret == sizeof (int) )
-        errno = *(int *)dbuf; /* Rcvd errno */
-    else
-        errno = ENOENT;    /* Default errno */
-
-    return -1;
-}
 
 /*
  *  Check for client requests. We keep up to fd_table_size open descriptors in
@@ -181,7 +127,7 @@ static int check_fd(time_t timeout, const sigset_t *sigmask, time_t *now)
     if (FD_ISSET(control_fd, &readfds)) {
         int    l = 0;
 
-        fd = recv_cred(control_fd);
+        fd = recv_fd(control_fd, 0);
         if (fd < 0) {
             return -1;
         }
@@ -264,8 +210,17 @@ int comm_rcv(struct cnid_dbd_rqst *rqst, time_t timeout, const sigset_t *sigmask
 
     if (!cur_fd)
         return 0;
+
+    LOG(log_maxdebug, logtype_cnid, "comm_rcv: got data on fd %u", cur_fd);
+
+    if (setnonblock(cur_fd, 1) != 0) {
+        LOG(log_error, logtype_cnid, "comm_rcv: setnonblock: %s", strerror(errno));
+        return -1;
+    }
+
     nametmp = rqst->name;
-    if ((b = read(cur_fd, rqst, sizeof(struct cnid_dbd_rqst))) != sizeof(struct cnid_dbd_rqst)) {
+    if ((b = readt(cur_fd, rqst, sizeof(struct cnid_dbd_rqst), 1, CNID_DBD_TIMEOUT))
+        != sizeof(struct cnid_dbd_rqst)) {
         if (b)
             LOG(log_error, logtype_cnid, "error reading message header: %s", strerror(errno));
         invalidate_fd(cur_fd);
@@ -273,7 +228,8 @@ int comm_rcv(struct cnid_dbd_rqst *rqst, time_t timeout, const sigset_t *sigmask
         return 0;
     }
     rqst->name = nametmp;
-    if (rqst->namelen && read(cur_fd, rqst->name, rqst->namelen) != rqst->namelen) {
+    if (rqst->namelen && readt(cur_fd, rqst->name, rqst->namelen, 1, CNID_DBD_TIMEOUT)
+        != rqst->namelen) {
         LOG(log_error, logtype_cnid, "error reading message name: %s", strerror(errno));
         invalidate_fd(cur_fd);
         return 0;
@@ -281,6 +237,8 @@ int comm_rcv(struct cnid_dbd_rqst *rqst, time_t timeout, const sigset_t *sigmask
     /* We set this to make life easier for logging. None of the other stuff
        needs zero terminated strings. */
     rqst->name[rqst->namelen] = '\0';
+
+    LOG(log_maxdebug, logtype_cnid, "comm_rcv: got %u bytes", b + rqst->namelen);
 
     return 1;
 }

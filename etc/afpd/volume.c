@@ -35,6 +35,7 @@ char *strchr (), *strrchr ();
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+
 #include <atalk/asp.h>
 #include <atalk/dsi.h>
 #include <atalk/adouble.h>
@@ -43,7 +44,11 @@ char *strchr (), *strrchr ();
 #include <atalk/volinfo.h>
 #include <atalk/logger.h>
 #include <atalk/vfs.h>
-#include <atalk/ea.h>
+#include <atalk/uuid.h>
+#include <atalk/bstrlib.h>
+#include <atalk/bstradd.h>
+
+
 #ifdef CNID_DB
 #include <atalk/cnid.h>
 #endif /* CNID_DB*/
@@ -56,6 +61,7 @@ char *strchr (), *strrchr ();
 #include "mangle.h"
 #include "fork.h"
 #include "hash.h"
+#include "acls.h"
 
 extern int afprun(int root, char *cmd, int *outfd);
 
@@ -73,6 +79,13 @@ extern int afprun(int root, char *cmd, int *outfd);
 #define ntoh64(x)       (hton64(x))
 #endif /* BYTE_ORDER == BIG_ENDIAN */
 #endif /* ! NO_LARGE_VOL_SUPPORT */
+
+#ifndef UUID_PRINTABLE_STRING_LENGTH
+#define UUID_PRINTABLE_STRING_LENGTH 37
+#endif
+
+/* Globals */
+struct vol *current_vol;        /* last volume from getvolbyvid() */
 
 static struct vol *Volumes = NULL;
 static u_int16_t    lastvid = 0;
@@ -154,6 +167,8 @@ static void handle_special_folders (const struct vol *);
 static void deletevol(struct vol *vol);
 static void volume_free(struct vol *vol);
 static void check_ea_sys_support(struct vol *vol);
+static char *get_vol_uuid(const AFPObj *obj, const char *volname);
+static int readvolfile(AFPObj *obj, struct afp_volume_name *p1,char *p2, int user, struct passwd *pwent);
 
 static void volfree(struct vol_option *options, const struct vol_option *save)
 {
@@ -173,7 +188,10 @@ static void volfree(struct vol_option *options, const struct vol_option *save)
 }
 
 
-/* handle variable substitutions. here's what we understand:
+#define is_var(a, b) (strncmp((a), (b), 2) == 0)
+
+/*
+ * Handle variable substitutions. here's what we understand:
  * $b   -> basename of path
  * $c   -> client ip/appletalk address
  * $d   -> volume pathname on server
@@ -187,17 +205,37 @@ static void volfree(struct vol_option *options, const struct vol_option *save)
  * $z   -> zone (may not exist)
  * $$   -> $
  *
+ * This get's called from readvolfile with
+ * path = NULL, volname = NULL for xlating the volumes path
+ * path = path, volname = NULL for xlating the volumes name
+ * ... and from volumes options parsing code when xlating eg dbpath with
+ * path = path, volname = volname
  *
+ * Using this information we can reject xlation of any variable depeninding on a login
+ * context which is not given in the afp master, where we must evaluate this whole stuff
+ * too for the Zeroconf announcements.
  */
-#define is_var(a, b) (strncmp((a), (b), 2) == 0)
-
-static char *volxlate(AFPObj *obj, char *dest, size_t destlen,
-                      char *src, struct passwd *pwd, char *path, char *volname)
+static char *volxlate(AFPObj *obj,
+                      char *dest,
+                      size_t destlen,
+                      char *src,
+                      struct passwd *pwd,
+                      char *path,
+                      char *volname)
 {
     char *p, *r;
     const char *q;
     int len;
     char *ret;
+    int afpmaster = 0;
+    int xlatevolname = 0;
+
+    if (parent_or_child == 0)
+        afpmaster = 1;
+
+    if (path && !volname)
+        /* cf above */
+        xlatevolname = 1;
 
     if (!src) {
         return NULL;
@@ -224,6 +262,8 @@ static char *volxlate(AFPObj *obj, char *dest, size_t destlen,
         /* now figure out what the variable is */
         q = NULL;
         if (is_var(p, "$b")) {
+            if (afpmaster && xlatevolname)
+                return NULL;
             if (path) {
                 if ((q = strrchr(path, '/')) == NULL)
                     q = path;
@@ -231,6 +271,8 @@ static char *volxlate(AFPObj *obj, char *dest, size_t destlen,
                     q++;
             }
         } else if (is_var(p, "$c")) {
+            if (afpmaster && xlatevolname)
+                return NULL;
             if (obj->proto == AFPPROTO_ASP) {
                 ASP asp = obj->handle;
 
@@ -248,18 +290,26 @@ static char *volxlate(AFPObj *obj, char *dest, size_t destlen,
                 destlen -= len;
             }
         } else if (is_var(p, "$d")) {
+            if (afpmaster && xlatevolname)
+                return NULL;
             q = path;
-        } else if (is_var(p, "$f")) {
+        } else if (pwd && is_var(p, "$f")) {
+            if (afpmaster && xlatevolname)
+                return NULL;
             if ((r = strchr(pwd->pw_gecos, ',')))
                 *r = '\0';
             q = pwd->pw_gecos;
-        } else if (is_var(p, "$g")) {
+        } else if (pwd && is_var(p, "$g")) {
+            if (afpmaster && xlatevolname)
+                return NULL;
             struct group *grp = getgrgid(pwd->pw_gid);
             if (grp)
                 q = grp->gr_name;
         } else if (is_var(p, "$h")) {
             q = obj->options.hostname;
         } else if (is_var(p, "$i")) {
+            if (afpmaster && xlatevolname)
+                return NULL;
             if (obj->proto == AFPPROTO_ASP) {
                 ASP asp = obj->handle;
 
@@ -278,13 +328,17 @@ static char *volxlate(AFPObj *obj, char *dest, size_t destlen,
                 q = obj->options.server;
             } else
                 q = obj->options.hostname;
-        } else if (is_var(p, "$u")) {
+        } else if (obj->username && is_var(p, "$u")) {
+            if (afpmaster && xlatevolname)
+                return NULL;
             char* sep = NULL;
             if ( obj->options.ntseparator && (sep = strchr(obj->username, obj->options.ntseparator[0])) != NULL)
                 q = sep+1;
             else
                 q = obj->username;
         } else if (is_var(p, "$v")) {
+            if (afpmaster && xlatevolname)
+                return NULL;
             if (volname) {
                 q = volname;
             }
@@ -445,8 +499,6 @@ static void volset(struct vol_option *options, struct vol_option *save,
                 options[VOLOPT_ROOTPREEXEC].i_value = 1;
             else if (strcasecmp(p, "upriv") == 0)
                 options[VOLOPT_FLAGS].i_value |= AFPVOL_UNIX_PRIV;
-            else if (strcasecmp(p, "acls") == 0)
-                options[VOLOPT_FLAGS].i_value |= AFPVOL_ACLS;
             else if (strcasecmp(p, "nodev") == 0)
                 options[VOLOPT_FLAGS].i_value |= AFPVOL_NODEV;
             else if (strcasecmp(p, "caseinsensitive") == 0)
@@ -457,7 +509,13 @@ static void volset(struct vol_option *options, struct vol_option *save,
                 options[VOLOPT_FLAGS].i_value &= ~AFPVOL_CACHE;
             else if (strcasecmp(p, "tm") == 0)
                 options[VOLOPT_FLAGS].i_value |= AFPVOL_TM;
-
+            else if (strcasecmp(p, "searchdb") == 0)
+                options[VOLOPT_FLAGS].i_value |= AFPVOL_SEARCHDB;
+/* Found this in branch dir-rewrite, maybe we want to use it sometimes */
+#if 0
+            else if (strcasecmp(p, "cdrom") == 0)
+                options[VOLOPT_FLAGS].i_value |= AFPVOL_CDROM | AFPVOL_RO;
+#endif
             p = strtok(NULL, ",");
         }
 
@@ -559,6 +617,8 @@ static int creatvol(AFPObj *obj, struct passwd *pwd,
     char        suffix[6]; /* max is #FFFF */
     u_int16_t   flags;
 
+    LOG(log_debug, logtype_afpd, "createvol: Volume '%s'", name);
+
     if ( name == NULL || *name == '\0' ) {
         if ((name = strrchr( path, '/' )) == NULL) {
             return -1;  /* Obviously not a fully qualified path */
@@ -599,7 +659,7 @@ static int creatvol(AFPObj *obj, struct passwd *pwd,
     if ( 0 >= ( u8mvlen = convert_string(CH_UTF8_MAC, CH_UCS2, tmpname, tmpvlen, u8mtmpname, AFPVOL_U8MNAMELEN*2)) )
         return -1;
 
-    LOG(log_debug, logtype_afpd, "createvol: Volume '%s' -> UTF8-MAC Name: '%s'", name, tmpname);
+    LOG(log_maxdebug, logtype_afpd, "createvol: Volume '%s' -> UTF8-MAC Name: '%s'", name, tmpname);
 
     /* Maccharset Volume Name */
     /* Firsty convert name from unixcharset to maccharset */
@@ -625,7 +685,7 @@ static int creatvol(AFPObj *obj, struct passwd *pwd,
     if ( 0 >= ( macvlen = convert_string(obj->options.maccharset, CH_UCS2, tmpname, tmpvlen, mactmpname, AFPVOL_U8MNAMELEN*2)) )
         return -1;
 
-    LOG(log_debug, logtype_afpd, "createvol: Volume '%s' ->  Longname: '%s'", name, tmpname);
+    LOG(log_maxdebug, logtype_afpd, "createvol: Volume '%s' ->  Longname: '%s'", name, tmpname);
 
     /* check duplicate */
     for ( volume = Volumes; volume; volume = volume->v_next ) {
@@ -678,14 +738,16 @@ static int creatvol(AFPObj *obj, struct passwd *pwd,
     /* os X start at 1 and use network order ie. 1 2 3 */
     volume->v_vid = ++lastvid;
     volume->v_vid = htons(volume->v_vid);
+#ifdef HAVE_ACLS
+    if (check_vol_acl_support(volume))
+        volume->v_flags |= AFPVOL_ACLS
+;
+#endif
 
     /* handle options */
     if (options) {
-        /* should we casefold? */
         volume->v_casefold = options[VOLOPT_CASEFOLD].i_value;
-
-        /* shift in some flags */
-        volume->v_flags = options[VOLOPT_FLAGS].i_value;
+        volume->v_flags |= options[VOLOPT_FLAGS].i_value;
 
         if (options[VOLOPT_EA_VFS].i_value)
             volume->v_vfs_ea = options[VOLOPT_EA_VFS].i_value;
@@ -806,6 +868,19 @@ static int creatvol(AFPObj *obj, struct passwd *pwd,
     if (volume->v_vfs_ea == AFPVOL_EA_AUTO)
         check_ea_sys_support(volume);
     initvol_vfs(volume);
+
+    /* get/store uuid from file */
+    if (volume->v_flags & AFPVOL_TM) {
+        char *uuid = get_vol_uuid(obj, volume->v_localname);
+        if (!uuid) {
+            LOG(log_error, logtype_afpd, "Volume '%s': couldn't get UUID",
+                volume->v_localname);
+        } else {
+            volume->v_uuid = uuid;
+            LOG(log_debug, logtype_afpd, "Volume '%s': UUID '%s'",
+                volume->v_localname, volume->v_uuid);
+        }
+    }
 
     volume->v_next = Volumes;
     Volumes = volume;
@@ -1074,7 +1149,10 @@ static int volfile_changed(struct afp_volume_name *p)
 
 /* ----------------------
  * Read a volume configuration file and add the volumes contained within to
- * the global volume list.  If p2 is non-NULL, the file that is opened is
+ * the global volume list. This gets called from the forked afpd childs.
+ * The master now reads this too for Zeroconf announcements.
+ *
+ * If p2 is non-NULL, the file that is opened is
  * p1/p2
  *
  * Lines that begin with # and blank lines are ignored.
@@ -1082,6 +1160,7 @@ static int volfile_changed(struct afp_volume_name *p)
  *      <unix path> [<volume name>] [allow:<user>,<@group>,...] \
  *                           [codepage:<file>] [casefold:<num>]
  *      <extension> TYPE [CREATOR]
+ *
  */
 static int readvolfile(AFPObj *obj, struct afp_volume_name *p1, char *p2, int user, struct passwd *pwent)
 {
@@ -1092,12 +1171,12 @@ static int readvolfile(AFPObj *obj, struct afp_volume_name *p1, char *p2, int us
     char        buf[BUFSIZ];
     char        type[5], creator[5];
     char        *u, *p;
+    int         fd;
+    int         i;
     struct passwd   *pw;
     struct vol_option   save_options[VOLOPT_NUM];
     struct vol_option   options[VOLOPT_NUM];
-    int                 i;
     struct stat         st;
-    int                 fd;
 
     if (!p1->name)
         return -1;
@@ -1120,6 +1199,14 @@ static int readvolfile(AFPObj *obj, struct afp_volume_name *p1, char *p2, int us
         p1->mtime = st.st_mtime;
     }
 
+    if ((read_lock(fd, 0, SEEK_SET, 0)) != 0) {
+        LOG(log_error, logtype_afpd, "readvolfile: can't lock volume file \"%s\"", path);
+        if ( fclose( fp ) != 0 ) {
+            LOG(log_error, logtype_afpd, "readvolfile: fclose: %s", strerror(errno) );
+        }
+        return -1;
+    }
+
     memset(save_options, 0, sizeof(save_options));
 
     /* Enable some default options for all volumes */
@@ -1128,6 +1215,8 @@ static int readvolfile(AFPObj *obj, struct afp_volume_name *p1, char *p2, int us
     LOG(log_maxdebug, logtype_afpd, "readvolfile: seeding default umask: %04o",
         obj->options.umask);
     save_options[VOLOPT_UMASK].i_value = obj->options.umask;
+
+    LOG(log_debug, logtype_afpd, "readvolfile: \"%s\"", path);
 
     while ( myfgets( buf, sizeof( buf ), fp ) != NULL ) {
         initline( strlen( buf ), buf );
@@ -1174,29 +1263,16 @@ static int readvolfile(AFPObj *obj, struct afp_volume_name *p1, char *p2, int us
             /* send path through variable substitution */
             if (*path != '~') /* need to copy path to tmp */
                 strcpy(tmp, path);
-            if (!pwent)
+            if (!pwent && obj->username)
                 pwent = getpwnam(obj->username);
-            volxlate(obj, path, sizeof(path) - 1, tmp, pwent, NULL, NULL);
+
+            if (volxlate(obj, path, sizeof(path) - 1, tmp, pwent, NULL, NULL) == NULL)
+                continue;
 
             /* this is sort of braindead. basically, i want to be
              * able to specify things in any order, but i don't want to
-             * re-write everything.
-             *
-             * currently we have options:
-             *   volname
-             *   codepage:x
-             *   casefold:x
-             *   allow:x,y,@z
-             *   deny:x,y,@z
-             *   rwlist:x,y,@z
-             *   rolist:x,y,@z
-             *   options:prodos,crlf,noadouble,ro...
-             *   dbpath:x
-             *   password:x
-             *   preexec:x
-             *
-             *   namemask:x,y,!z  (not implemented yet)
-             */
+             * re-write everything. */
+
             memcpy(options, save_options, sizeof(options));
             *volname = '\0';
 
@@ -1208,27 +1284,32 @@ static int readvolfile(AFPObj *obj, struct afp_volume_name *p1, char *p2, int us
                 volset(options, save_options, volname, sizeof(volname) - 1, tmp);
             }
 
-            /* check allow/deny lists:
+            /* check allow/deny lists (if not afpd master loading volumes for Zeroconf reg.):
                allow -> either no list (-1), or in list (1)
                deny -> either no list (-1), or not in list (0) */
-            if (accessvol(options[VOLOPT_ALLOW].c_value, obj->username) &&
-                (accessvol(options[VOLOPT_DENY].c_value, obj->username) < 1) &&
-                hostaccessvol(VOLOPT_ALLOWED_HOSTS, volname, options[VOLOPT_ALLOWED_HOSTS].c_value, obj) &&
-                (hostaccessvol(VOLOPT_DENIED_HOSTS, volname, options[VOLOPT_DENIED_HOSTS].c_value, obj) < 1)) {
+            if (parent_or_child == 0
+                ||
+                (accessvol(options[VOLOPT_ALLOW].c_value, obj->username) &&
+                 (accessvol(options[VOLOPT_DENY].c_value, obj->username) < 1) &&
+                 hostaccessvol(VOLOPT_ALLOWED_HOSTS, volname, options[VOLOPT_ALLOWED_HOSTS].c_value, obj) &&
+                 (hostaccessvol(VOLOPT_DENIED_HOSTS, volname, options[VOLOPT_DENIED_HOSTS].c_value, obj) < 1))) {
 
                 /* handle read-only behaviour. semantics:
                  * 1) neither the rolist nor the rwlist exist -> rw
                  * 2) rolist exists -> ro if user is in it.
                  * 3) rwlist exists -> ro unless user is in it. */
-                if (((options[VOLOPT_FLAGS].i_value & AFPVOL_RO) == 0) &&
-                    ((accessvol(options[VOLOPT_ROLIST].c_value,
-                                obj->username) == 1) ||
-                     !accessvol(options[VOLOPT_RWLIST].c_value,
-                                obj->username)))
+                if (parent_or_child == 1
+                    &&
+                    ((options[VOLOPT_FLAGS].i_value & AFPVOL_RO) == 0)
+                    &&
+                    ((accessvol(options[VOLOPT_ROLIST].c_value, obj->username) == 1) ||
+                     !accessvol(options[VOLOPT_RWLIST].c_value, obj->username)))
                     options[VOLOPT_FLAGS].i_value |= AFPVOL_RO;
 
                 /* do variable substitution for volname */
-                volxlate(obj, tmp, sizeof(tmp) - 1, volname, pwent, path, NULL);
+                if (volxlate(obj, tmp, sizeof(tmp) - 1, volname, pwent, path, NULL) == NULL)
+                    continue;
+
                 creatvol(obj, pwent, path, tmp, options, p2 != NULL);
             }
             volfree(options, save_options);
@@ -1274,6 +1355,8 @@ static void volume_free(struct vol *vol)
     free(vol->v_forceuid);
     free(vol->v_forcegid);
 #endif /* FORCE_UIDGID */
+    if (vol->v_uuid)
+        free(vol->v_uuid);
 }
 
 /* ------------------------------- */
@@ -1375,10 +1458,45 @@ static int getvolspace(struct vol *vol,
 
 getvolspace_done:
     if (vol->v_limitsize) {
-        /* FIXME: Free could be limit minus (total minus used), */
-        /* which will confuse the client less ? */
-        *xbfree = min(*xbfree, (vol->v_limitsize * 1024 * 1024));
+        bstring cmdstr;
+        if ((cmdstr = bformat("du -sh \"%s\" 2> /dev/null | cut -f1", vol->v_path)) == NULL)
+            return AFPERR_MISC;
+
+        FILE *cmd = popen(cfrombstr(cmdstr), "r");
+        bdestroy(cmdstr);
+        if (cmd == NULL)
+            return AFPERR_MISC;
+
+        char buf[100];
+        fgets(buf, 100, cmd);
+
+        if (pclose(cmd) == -1)
+            return AFPERR_MISC;
+
+        size_t multi = 0;
+        if (buf[strlen(buf) - 2] == 'G' || buf[strlen(buf) - 2] == 'g')
+            /* GB */
+            multi = 1024 * 1024 * 1024;
+        else if (buf[strlen(buf) - 2] == 'M' || buf[strlen(buf) - 2] == 'm')
+            /* MB */
+            multi = 1024 * 1024;
+        else if (buf[strlen(buf) - 2] == 'K' || buf[strlen(buf) - 2] == 'k')
+            /* MB */
+            multi = 1024;
+
+        char *p;
+        if (p = strchr(buf, ','))
+            /* ignore fraction */
+            *p = 0;
+        else
+            /* remove G|M|K char */
+            buf[strlen(buf) - 2] = 0;
+        /* now buf contains only digits */
+        long long used = atoll(buf) * multi;
+        LOG(log_debug, logtype_afpd, "volparams: used on volume: %llu bytes", used);
+
         *xbtotal = min(*xbtotal, (vol->v_limitsize * 1024 * 1024));
+        *xbfree = min(*xbfree, *xbtotal < used ? 0 : *xbtotal - used);
     }
 
     *bfree = min( *xbfree, maxsize);
@@ -1669,6 +1787,12 @@ void load_volumes(AFPObj *obj)
         free_volumes();
     }
 
+    if (parent_or_child == 0) {
+        LOG(log_debug, logtype_afpd, "load_volumes: AFP MASTER");
+    } else {
+        LOG(log_debug, logtype_afpd, "load_volumes: user: %s", obj->username);
+    }
+
     pwent = getpwnam(obj->username);
     if ( (obj->options.flags & OPTION_USERVOLFIRST) == 0 ) {
         readvolfile(obj, &obj->options.systemvol, NULL, 0, pwent);
@@ -1837,23 +1961,46 @@ static int volume_openDB(struct vol *volume)
             volume->v_path, volume->v_cnidscheme);
     }
 
-    LOG(log_info, logtype_afpd, "CNID server %s:%s",
+    LOG(log_info, logtype_afpd, "CNID server: %s:%s",
         volume->v_cnidserver ? volume->v_cnidserver : Cnid_srv,
         volume->v_cnidport ? volume->v_cnidport : Cnid_port);
-    
-    volume->v_cdb = cnid_open(volume->v_dbpath ? volume->v_dbpath : volume->v_path,
+
+#if 0
+/* Found this in branch dir-rewrite, maybe we want to use it sometimes */
+
+    /* Legacy pre 2.1 way of sharing eg CD-ROM */
+    if (strcmp(volume->v_cnidscheme, "last") == 0) {
+        /* "last" is gone. We support it by switching to in-memory "tdb" */
+        volume->v_cnidscheme = strdup("tdb");
+        flags |= CNID_FLAG_MEMORY;
+    }
+
+    /* New way of sharing CD-ROM */
+    if (volume->v_flags & AFPVOL_CDROM) {
+        flags |= CNID_FLAG_MEMORY;
+        if (strcmp(volume->v_cnidscheme, "tdb") != 0) {
+            free(volume->v_cnidscheme);
+            volume->v_cnidscheme = strdup("tdb");
+            LOG(log_info, logtype_afpd, "Volume %s is ejectable, switching to scheme %s.",
+                volume->v_path, volume->v_cnidscheme);
+        }
+    }
+#endif
+
+    volume->v_cdb = cnid_open(volume->v_path,
                               volume->v_umask,
                               volume->v_cnidscheme,
                               flags,
                               volume->v_cnidserver ? volume->v_cnidserver : Cnid_srv,
                               volume->v_cnidport ? volume->v_cnidport : Cnid_port);
 
-    if (!volume->v_cdb) {
+    if ( ! volume->v_cdb && ! (flags & CNID_FLAG_MEMORY)) {
+        /* The first attempt failed and it wasn't yet an attempt to open in-memory */
         LOG(log_error, logtype_afpd, "Can't open volume \"%s\" CNID backend \"%s\" ",
             volume->v_path, volume->v_cnidscheme);
-        flags |= CNID_FLAG_MEMORY;
         LOG(log_error, logtype_afpd, "Reopen volume %s using in memory temporary CNID DB.",
             volume->v_path);
+        flags |= CNID_FLAG_MEMORY;
         volume->v_cdb = cnid_open (volume->v_path, volume->v_umask, "tdb", flags, NULL, NULL);
 #ifdef SERVERTEXT
         /* kill ourself with SIGUSR2 aka msg pending */
@@ -1870,11 +2017,11 @@ static int volume_openDB(struct vol *volume)
     return (!volume->v_cdb)?-1:0;
 }
 
-/* 
-   Check if the underlying filesystem supports EAs for ea:sys volumes.
-   If not, switch to ea:ad.
-   As we can't check (requires write access) on ro-volumes, we switch ea:auto
-   volumes that are options:ro to ea:none.
+/*
+  Check if the underlying filesystem supports EAs for ea:sys volumes.
+  If not, switch to ea:ad.
+  As we can't check (requires write access) on ro-volumes, we switch ea:auto
+  volumes that are options:ro to ea:none.
 */
 static void check_ea_sys_support(struct vol *vol)
 {
@@ -1885,7 +2032,7 @@ static void check_ea_sys_support(struct vol *vol)
     if (vol->v_vfs_ea == AFPVOL_EA_AUTO) {
 
         if ((vol->v_flags & AFPVOL_RO) == AFPVOL_RO) {
-            LOG(log_info, logtype_logger, "read-only volume '%s', can't test for EA support, disabling EAs", vol->v_localname);
+            LOG(log_info, logtype_afpd, "read-only volume '%s', can't test for EA support, disabling EAs", vol->v_localname);
             vol->v_vfs_ea = AFPVOL_EA_NONE;
             return;
         }
@@ -1895,7 +2042,7 @@ static void check_ea_sys_support(struct vol *vol)
         process_uid = geteuid();
         if (process_uid)
             if (seteuid(0) == -1) {
-                LOG(log_error, logtype_logger, "check_ea_sys_support: can't seteuid(0): %s", strerror(errno));
+                LOG(log_error, logtype_afpd, "check_ea_sys_support: can't seteuid(0): %s", strerror(errno));
                 exit(EXITERR_SYS);
             }
 
@@ -1910,7 +2057,7 @@ static void check_ea_sys_support(struct vol *vol)
 
         if (process_uid) {
             if (seteuid(process_uid) == -1) {
-                LOG(log_error, logtype_logger, "can't seteuid back %s", strerror(errno));
+                LOG(log_error, logtype_afpd, "can't seteuid back %s", strerror(errno));
                 exit(EXITERR_SYS);
             }
         }
@@ -2039,7 +2186,7 @@ int afp_openvol(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf, size_t 
     if ((tmp = strdup(volume->v_path)) == NULL) {
         free(volume->v_path);
         return AFPERR_MISC;
-    } 
+    }
     free(volume->v_path);
     volume->v_path = tmp;
 #endif
@@ -2053,14 +2200,11 @@ int afp_openvol(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf, size_t 
      * FIXME file size
      */
     if (utf8_encoding()) {
-        volume->max_filename = 255;
+        volume->max_filename = UTF8FILELEN_EARLY;
     }
     else {
         volume->max_filename = MACFILELEN;
     }
-
-    volume->v_dir = volume->v_root = NULL;
-    volume->v_hash = NULL;
 
     volume->v_flags |= AFPVOL_OPEN;
     volume->v_cdb = NULL;
@@ -2080,22 +2224,23 @@ int afp_openvol(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf, size_t 
     else if (*(vol_uname + 1) != '\0')
         vol_uname++;
 
-    if ((dir = dirnew(vol_mname, vol_uname) ) == NULL) {
+    if ((dir = dir_new(vol_mname,
+                       vol_uname,
+                       volume,
+                       DIRDID_ROOT_PARENT,
+                       DIRDID_ROOT,
+                       bfromcstr(volume->v_path),
+                       st.st_ctime)
+            ) == NULL) {
         free(vol_mname);
         LOG(log_error, logtype_afpd, "afp_openvol(%s): malloc: %s", volume->v_path, strerror(errno) );
         ret = AFPERR_MISC;
         goto openvol_err;
     }
     free(vol_mname);
+    volume->v_root = dir;
+    curdir = dir;
 
-    dir->d_did = DIRDID_ROOT;
-    dir->d_color = DIRTREE_COLOR_BLACK; /* root node is black */
-    dir->d_m_name_ucs2 = strdup_w(volume->v_name);
-    volume->v_dir = volume->v_root = dir;
-    volume->v_curdir = NULL;
-    volume->v_hash = dirhash();
-
-    curdir = volume->v_dir;
     if (volume_openDB(volume) < 0) {
         LOG(log_error, logtype_afpd, "Fatal error: cannot open CNID or invalid CNID backend for %s: %s",
             volume->v_path, volume->v_cnidscheme);
@@ -2134,16 +2279,15 @@ int afp_openvol(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf, size_t 
         }
         else {
             p = Trash;
-            cname( volume, volume->v_dir, &p );
+            cname( volume, volume->v_root, &p );
         }
         return( AFP_OK );
     }
 
 openvol_err:
-    if (volume->v_dir) {
-        hash_free( volume->v_hash);
-        dirfree( volume->v_dir );
-        volume->v_dir = volume->v_root = NULL;
+    if (volume->v_root) {
+        dir_free( volume->v_root );
+        volume->v_root = NULL;
     }
 
     volume->v_flags &= ~AFPVOL_OPEN;
@@ -2161,9 +2305,8 @@ static void closevol(struct vol *vol)
     if (!vol)
         return;
 
-    hash_free( vol->v_hash);
-    dirfree( vol->v_root );
-    vol->v_dir = NULL;
+    dir_free( vol->v_root );
+    vol->v_root = NULL;
     if (vol->v_cdb != NULL) {
         cnid_close(vol->v_cdb);
         vol->v_cdb = NULL;
@@ -2204,7 +2347,7 @@ static void deletevol(struct vol *vol)
     if ( ovol != NULL ) {
         /* Even if chdir fails, we can't say afp_closevol fails. */
         if ( chdir( ovol->v_path ) == 0 ) {
-            curdir = ovol->v_dir;
+            curdir = ovol->v_root;
         }
     }
 
@@ -2231,6 +2374,7 @@ int afp_closevol(AFPObj *obj _U_, char *ibuf, size_t ibuflen _U_, char *rbuf _U_
     }
 
     deletevol(vol);
+    current_vol = NULL;
 
     return( AFP_OK );
 }
@@ -2252,6 +2396,8 @@ struct vol *getvolbyvid(const u_int16_t vid )
 #ifdef FORCE_UIDGID
     set_uidgid ( vol );
 #endif /* FORCE_UIDGID */
+
+    current_vol = vol;
 
     return( vol );
 }
@@ -2510,7 +2656,7 @@ static int create_special_folder (const struct vol *vol, const struct _special_f
             free(q);
             return (-1);
         }
-        
+
         ad_setname(&ad, folder->name);
 
         ad_getattr(&ad, &attr);
@@ -2544,3 +2690,111 @@ static void handle_special_folders (const struct vol * vol)
     }
 }
 
+const struct vol *getvolumes(void)
+{
+    return Volumes;
+}
+
+void unload_volumes_and_extmap(void)
+{
+    LOG(log_debug, logtype_afpd, "unload_volumes_and_extmap");
+    free_extmap();
+    free_volumes();
+}
+
+/* 
+ * Get a volumes UUID from the config file.
+ * If there is none, it is generated and stored there.
+ *
+ * Returns pointer to allocated storage on success, NULL on error.
+ */
+static char *get_vol_uuid(const AFPObj *obj, const char *volname)
+{
+    char *volname_conf;
+    char buf[1024], uuid[UUID_PRINTABLE_STRING_LENGTH], *p;
+    FILE *fp;
+    struct stat tmpstat;
+    int fd;
+    
+    if ((fp = fopen(obj->options.uuidconf, "r")) != NULL) {  /* read open? */
+        /* scan in the conf file */
+        while (fgets(buf, sizeof(buf), fp) != NULL) { 
+            p = buf;
+            while (p && isblank(*p))
+                p++;
+            if (!p || (*p == '#') || (*p == '\n'))
+                continue;                             /* invalid line */
+            if (*p == '"') {
+                p++;
+                if ((volname_conf = strtok( p, "\"" )) == NULL)
+                    continue;                         /* syntax error */
+            } else {
+                if ((volname_conf = strtok( p, " \t" )) == NULL)
+                    continue;                         /* syntax error: invalid name */
+            }
+            p = strchr(p, '\0');
+            p++;
+            if (*p == '\0')
+                continue;                             /* syntax error */
+            
+            if (strcmp(volname, volname_conf) != 0)
+                continue;                             /* another volume name */
+                
+            while (p && isblank(*p))
+                p++;
+
+            if (sscanf(p, "%36s", uuid) == 1 ) {
+                for (int i=0; uuid[i]; i++)
+                    uuid[i] = toupper(uuid[i]);
+                LOG(log_debug, logtype_afpd, "get_uuid('%s'): UUID: '%s'", volname, uuid);
+                fclose(fp);
+                return strdup(uuid);
+            }
+        }
+    }
+
+    if (fp)
+        fclose(fp);
+
+    /*  not found or no file, reopen in append mode */
+
+    if (stat(obj->options.uuidconf, &tmpstat)) {                /* no file */
+        if (( fd = creat(obj->options.uuidconf, 0644 )) < 0 ) {
+            LOG(log_error, logtype_afpd, "ERROR: Cannot create %s (%s).",
+                obj->options.uuidconf, strerror(errno));
+            return NULL;
+        }
+        if (( fp = fdopen( fd, "w" )) == NULL ) {
+            LOG(log_error, logtype_afpd, "ERROR: Cannot fdopen %s (%s).",
+                obj->options.uuidconf, strerror(errno));
+            close(fd);
+            return NULL;
+        }
+    } else if ((fp = fopen(obj->options.uuidconf, "a+")) == NULL) { /* not found */
+        LOG(log_error, logtype_afpd, "Cannot create or append to %s (%s).",
+            obj->options.uuidconf, strerror(errno));
+        return NULL;
+    }
+    fseek(fp, 0L, SEEK_END);
+    if(ftell(fp) == 0) {                     /* size = 0 */
+        fprintf(fp, "# DON'T TOUCH NOR COPY THOUGHTLESSLY!\n");
+        fprintf(fp, "# This file is auto-generated by afpd\n");
+        fprintf(fp, "# and stores UUIDs for TM volumes.\n\n");
+    } else {
+        fseek(fp, -1L, SEEK_END);
+        if(fgetc(fp) != '\n') fputc('\n', fp); /* last char is \n? */
+    }                    
+    
+    /* generate uuid and write to file */
+    atalk_uuid_t id;
+    const char *cp;
+    randombytes((void *)id, 16);
+    cp = uuid_bin2string(id);
+
+    LOG(log_debug, logtype_afpd, "get_uuid('%s'): generated UUID '%s'", volname, cp);
+
+    fprintf(fp, "\"%s\"\t%36s\n", volname, cp);
+    fclose(fp);
+    
+    return strdup(cp);
+}

@@ -1,7 +1,3 @@
-/*
- * $Id: volinfo.h,v 1.10 2009-12-03 12:47:37 franklahm Exp $
- */
-
 #ifndef _ATALK_VOLINFO_H
 #define _ATALK_VOLINFO_H 1
 
@@ -18,6 +14,9 @@ typedef struct {
 } vol_opt_name_t;
 
 struct volinfo {
+    int                 retaincount;
+    int                 malloced;
+
     char                *v_name;
     char                *v_path;
     int                 v_flags;
@@ -33,10 +32,13 @@ struct volinfo {
     int                 v_vfs_ea;
     char                *(*ad_path)(const char *, int);
     char                *v_dbd_host;
-    int                 v_dbd_port;
+    char                *v_dbd_port;
 };
 
+struct volinfo *allocvolinfo(char *path);
 extern int loadvolinfo(char *path, struct volinfo *vol);
+extern void retainvolinfo(struct volinfo *vol);
+extern int closevolinfo(struct volinfo *vol);
 extern int savevolinfo(const struct vol *vol, const char *Cnid_srv, const char *Cnid_port);
 extern int vol_load_charsets(struct volinfo *vol);
 
