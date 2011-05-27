@@ -1,3 +1,122 @@
+Changes in 2.2beta4
+===================
+
+* NEW: afpd: new afpd.conf options "tcprcvbuf" and "tcpsndbuf" to customize
+       the corresponding TCP socket options.
+* NEW: afpd: new afpd.conf option "nozeroconf" which disabled automatic
+       Zeroconf service registration.
+* FIX: afpd: generate mersenne primes for DHX2 UAM once at startup,
+       not for every login
+* FIX: afpd: DSI streaming deadlock
+* FIX: afpd: extended sleep
+* FIX: afpd: directory cache
+* FIX: Support for platforms that do not have the *at functions
+* UPD: afpd: put POSIX write lock on volume files while reading them
+
+Changes in 2.2beta3
+===================
+
+* FIX: afpd: fix option volsizelimit to return a usefull value for the
+       volume free space using `du -sh` with popen
+* FIX: afpd: fix idle connection disconnects
+* FIX: afpd: don't disconnect sessions for clients if boottimes don't match
+* FIX: afpd: better handling of very long filenames that contain many
+       multibyte UTF-8 glyphs
+
+Changes in 2.2beta2
+====================
+
+* NEW: afpd: AFP 3.3
+* UPD: afpd: AFP 3.x can't be disabled
+
+Changes in 2.2beta1
+====================
+
+* FIX: composition of Surrogate Pair
+* UPD: gentoo,suse,cobalt,tru64: inistscript name is "netatalk", not "atalk"
+* UPD: gentoo: rc-update install don't hook in the Makefile
+
+Changes in 2.2alpha5
+====================
+
+* UPD: afpd: new option "searchdb" which enables fast catalog searches
+       using the CNID db.
+* UPD: Case-insensitive fast search with the CNID db
+* UPD: cnid_dbd: afpd now passes the volume path, not the db path when
+       connecting for a volume. cnid_dbd will read the
+       ".AppleDesktop/.volinfo" file of the volume in order to figure
+       out the CNID db path and the volume charset encoding.
+
+Changes in 2.2alpha4
+====================
+
+* NEW: Enhanced CNID "dbd" database for fast name search support.
+       Important: this makes cnidscheme "cdb" incompatible with "dbd".
+* NEW: afpd: support for fast catalog searches
+* NEW: ad utility: ad find
+* UPD: afpd: CNID database versioning check for "cdb" scheme
+* UPD: cnid_dbd: CNID database versioning and upgrading. Additional
+       CNID database index for fast name searches.
+
+Changes in 2.2alpha3
+====================
+
+* FIX: afpd: various fixes
+* FIX: Any daemon did not run if atalkd doesn't exist (redhat/debian)
+
+Changes in 2.2alpha2
+====================
+
+* FIX: afpd: fix compilation error when ACL support is not available
+* FIX: Ensure Appletalk manpages and config files are distributed
+
+Changes in 2.2alpha1
+====================
+
+* NEW: ad utility: ad cp
+* NEW: ad utility: ad rm
+* NEW: ad utility: ad mv
+* NEW: afpd: dynamic directoy and CNID cache (new config option -dircachesize)
+* NEW: afpd: POSIX 1e ACL support
+* NEW: afpd: automagic Zeroconf registration with avahi, registering both
+       the service _afpovertcp._tcp and TimeMachine volumes with _adisk._tcp.
+* UPD: afpd: ACLs usable (though not visible on the client side) without common
+       directory service, by mapping ACLs to UARight
+* UPD: afpd: performance improvements for ACL access calculations
+* UPD: AppleTalk is disabled by default at configuration time. If needed
+       use configure switch --enable-ddp.
+* FIX: afpd: Solaris 10 compatibilty fix: don't use SO_SNDTIMEO/SO_RCVTIMEO,
+       use non-blocking IO and select instead.
+* FIX: cnid_dbd: Solaris 10 compatibilty fix: don't use SO_SNDTIMEO/SO_RCVTIMEO,
+       use non-blocking IO and select instead.
+* REM: afile/achfile/apple_cp/apple_mv/apple_rm: use ad
+
+Changes in 2.1.6
+================
+
+* FIX: afpd: Fix for LDAP user cache corruption
+* FIX: afpd: Fix for not shown ACLs for when filesyem uid or gid
+       couldn't be resolved because (eg deleted users/groups)
+* FIX: gentoo: cannot set $CNID_CONFIG
+* FIX: ubuntu: servername was empty
+* FIX: Solaris: configure script failed to enable DDP module
+* FIX: AppleDouble buffer overrun by extremely long filename
+* UPD: afpd: return version info with machine type in DSIGetStatus
+
+Changes in 2.1.5
+================
+
+* UPD: afpd: support newlines in -loginmesg with \n escaping syntax
+* UPD: afpd: support for changed chmod semantics on ZFS with ACLs
+       in onnv145+
+* FIX: afpd: fix leaking ressource when moving objects on the server
+* FIX: afpd: backport Solaris 10 compatibilty fix from 2.2: don't use
+       SO_SNDTIMEO/SO_RCVTIMEO, use non-blocking IO and select instead.
+* FIX: afpd: misaligned memory access on Sparc in ad_setattr, fixes
+       bug 3110004.
+* FIX: cnid_dbd: backport Solaris 10 compatibilty fix from 2.2: don't
+       use SO_SNDTIMEO/SO_RCVTIMEO, use non-blocking IO and select instead.
+
 Changes in 2.1.4
 ================
 
@@ -6,7 +125,7 @@ Changes in 2.1.4
 * FIX: afpd: Better handling of symlinks in combination with ACLs and EAs.
        Fixes bug 3074076.
 * FIX: dbd: Adding a file with the CNID from it's adouble file did
-       not work in case that CNID was alread occupied in the database
+       not work in case that CNID was already occupied in the database
 * FIX: macusers: add support for Solaris
 * NEW: cnid_metad: use a PID lockfile
 * NEW: afpd: prevent log flooding
@@ -58,6 +177,7 @@ Changes in 2.1-release
 
 Changes in 2.1-beta2
 ====================
+
 * NEW: afpd: static generated AFP signature stored in afp_signature.conf,
        cf man 5 afp_signature.conf
 * NEW: afpd: clustering support: new per volume option "cnidserver".

@@ -11,36 +11,33 @@
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif /* HAVE_SYS_TYPES_H */
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/cdefs.h>
 #include <unistd.h>
-#include <atalk/logger.h>
+
 #include <db.h>
+
+#include <atalk/logger.h>
+#include <atalk/util.h>
+
 #include "db_param.h"
 #include "dbif.h"
 #include "pack.h"
 
 #define DB_ERRLOGFILE "db_errlog"
 
-static char *old_dbfiles[] = {"cnid.db", NULL};
-
-/* --------------- */
-static int upgrade_required(const DBD *dbd)
+/*!
+ * Get the db stamp which is the st_ctime of the file "cnid2.db" and store it in buffer
+ */
+static int dbif_stamp(DBD *dbd, void *buffer, int size)
 {
-    int i;
-    int cwd = -1;
-    int ret = 0;
-    int found = 0;
     struct stat st;
+    int         rc,cwd;
 
-    if ( ! dbd->db_filename)
-        /* in memory db */
-        return 0;
+    if (size < 8)
+        return -1;
 
     /* Remember cwd */
     if ((cwd = open(".", O_RDONLY)) < 0) {
@@ -51,30 +48,182 @@ static int upgrade_required(const DBD *dbd)
     /* chdir to db_envhome */
     if ((chdir(dbd->db_envhome)) != 0) {
         LOG(log_error, logtype_cnid, "error chdiring to db_env '%s': %s", dbd->db_envhome, strerror(errno));        
+        return -1;
+    }
+
+    if ((rc = stat(dbd->db_table[DBIF_CNID].name, &st)) < 0) {
+        LOG(log_error, logtype_cnid, "error stating database %s: %s", dbd->db_table[DBIF_CNID].name, db_strerror(errno));
+        return -1;
+    }
+
+    LOG(log_maxdebug, logtype_cnid,"stamp: %s", asctime(localtime(&st.st_ctime)));
+
+    memset(buffer, 0, size);
+    memcpy(buffer, &st.st_ctime, sizeof(st.st_ctime));
+
+    if ((fchdir(cwd)) != 0) {
+        LOG(log_error, logtype_cnid, "error chdiring back: %s", strerror(errno));        
+        return -1;
+    }
+
+    return 0;
+}
+
+/*!
+ * Inititialize rootinfo key (which has CNID 0 as key)
+ *
+ * This also "stamps" the database, which means storing st.st_ctime of the
+ * "cnid2.db" file in the rootinfo data at the DEV offset
+ *
+ * @param dbd      (rw) database handle
+ * @param version  (r)  database version number
+ *
+ * @returns -1 on error, 0 on success
+ */
+static int dbif_init_rootinfo(DBD *dbd, int version)
+{
+    DBT key, data;
+    uint32_t v;
+    char buf[ROOTINFO_DATALEN];
+
+    LOG(log_debug, logtype_cnid, "Setting CNID database version to %u", version);
+
+    v = version;
+    v = htonl(v);
+
+    memset(&key, 0, sizeof(key));
+    memset(&data, 0, sizeof(data));
+    key.data = ROOTINFO_KEY;
+    key.size = ROOTINFO_KEYLEN;
+    data.data = buf;
+    data.size = ROOTINFO_DATALEN;
+
+    memcpy(buf, ROOTINFO_DATA, ROOTINFO_DATALEN);
+    memcpy(buf + CNID_DID_OFS, &v, sizeof(v));
+    if (dbif_stamp(dbd, buf + CNID_DEV_OFS, CNID_DEV_LEN) < 0)
+        return -1;
+
+    if (dbif_put(dbd, DBIF_CNID, &key, &data, 0) < 0)
+        return -1;
+    if (dbif_txn_commit(dbd) != 1) {
+        LOG(log_error, logtype_cnid, "dbif_init_rootinfo: cant commit txn");
+        return -1;
+    }
+
+    return 0;
+}
+
+/*!
+ * Return CNID database version number
+ *
+ * Returns version in *version
+ *
+ * @returns -1 on error, 0 if theres no rootinfo key yet, 1 if *version is returned
+ */
+static int dbif_getversion(DBD *dbd, uint32_t *version)
+{
+    DBT key, data;
+    int ret;
+
+    LOG(log_maxdebug, logtype_cnid, "dbif_getversion: reading version info");
+
+    *version = -1;
+    memset(&key, 0, sizeof(key));
+    memset(&data, 0, sizeof(data));
+    key.data = ROOTINFO_KEY;
+    key.size = ROOTINFO_KEYLEN;
+
+    switch (dbif_get(dbd, DBIF_CNID, &key, &data, 0)) {
+    case 1: /* found */
+        memcpy(version, (char *)data.data + CNID_DID_OFS, sizeof(uint32_t));
+        *version = ntohl(*version);
+        LOG(log_debug, logtype_cnid, "CNID database version %u", *version);
+        ret = 1;
+        break;
+    case 0: /* not found */
+        LOG(log_debug, logtype_cnid, "dbif_getversion: no version info found");
+        ret = 0;
+        break;
+    default:
+        LOG(log_error, logtype_cnid, "dbif_getversion: database error");
         ret = -1;
-        goto exit;
+        break;
     }
 
-    for (i = 0; old_dbfiles[i] != NULL; i++) {
-        if ( !(stat(old_dbfiles[i], &st) < 0) ) {
-            found++;
-            continue;
-        }
-        if (errno != ENOENT) {
-            LOG(log_error, logtype_cnid, "cnid_open: Checking %s gave %s", old_dbfiles[i], strerror(errno));
-            found++;
-        }
+    return ret;
+}
+
+/*!
+ * Set CNID database version number
+ *
+ * Initializes rootinfo key as neccessary
+ * @returns -1 on error, 0 on success
+ */
+static int dbif_setversion(DBD *dbd, uint32_t version)
+{
+    int ret;
+    DBT key, data;
+    uint32_t v;
+
+    LOG(log_debug, logtype_cnid, "Setting CNID database version to %u", version);
+
+    v = version;
+    v = htonl(v);
+
+    memset(&key, 0, sizeof(key));
+    memset(&data, 0, sizeof(data));
+    key.data = ROOTINFO_KEY;
+    key.size = ROOTINFO_KEYLEN;
+
+    if ((ret = dbif_get(dbd, DBIF_CNID, &key, &data, 0)) == -1)
+        return -1;
+    if (ret == 0) {
+        /* No rootinfo key yet, init it */
+        if (dbif_init_rootinfo(dbd, CNID_VERSION) != 0)
+            return -1;
+        /* Now try again */
+        if (dbif_get(dbd, DBIF_CNID, &key, &data, 0) == -1)
+            return -1;
+    }
+    memcpy((char *)data.data + CNID_DID_OFS, &v, sizeof(v));
+    data.size = ROOTINFO_DATALEN;
+    if (dbif_put(dbd, DBIF_CNID, &key, &data, 0) < 0)
+        return -1;
+
+    return 0;
+}
+
+/*!
+ * Upgrade CNID database versions, initialize rootinfo key as as necessary in dbif_setversion()
+ *
+ * For now this does nothing, as upgrading from ver. 0 to 1 is done in dbif_open
+ */
+#define UNINTIALIZED_DB UINT32_MAX
+static int dbif_upgrade(DBD *dbd)
+{
+    uint32_t version = CNID_VERSION_UNINTIALIZED_DB;
+
+    if (dbif_getversion(dbd, &version) == -1)
+        return -1;
+    if (version == CNID_VERSION_UNINTIALIZED_DB) {
+        version = CNID_VERSION;
+        if (dbif_setversion(dbd, CNID_VERSION) != 0)
+            return -1;
     }
 
-exit:
-    if (cwd != -1) {
-        if ((fchdir(cwd)) != 0) {
-            LOG(log_error, logtype_cnid, "error chdiring back: %s", strerror(errno));        
-            ret = -1;
-        }
-        close(cwd);
+    /* 
+     * Do upgrade stuff ...
+     */
+
+    /* Write current version to database */
+    if (version != CNID_VERSION) {
+        if (dbif_setversion(dbd, CNID_VERSION) != 0)
+            return -1;
     }
-    return (ret < 0 ? ret : found);
+
+    LOG(log_debug, logtype_cnid, "Finished CNID database version upgrade check");
+
+    return 0;
 }
 
 /* --------------- */
@@ -173,42 +322,6 @@ exit:
 }
 
 /* --------------- */
-int dbif_stamp(DBD *dbd, void *buffer, int size)
-{
-    struct stat st;
-    int         rc,cwd;
-
-    if (size < 8)
-        return -1;
-
-    /* Remember cwd */
-    if ((cwd = open(".", O_RDONLY)) < 0) {
-        LOG(log_error, logtype_cnid, "error opening cwd: %s", strerror(errno));
-        return -1;
-    }
-
-    /* chdir to db_envhome */
-    if ((chdir(dbd->db_envhome)) != 0) {
-        LOG(log_error, logtype_cnid, "error chdiring to db_env '%s': %s", dbd->db_envhome, strerror(errno));        
-        return -1;
-    }
-
-    if ((rc = stat(dbd->db_table[DBIF_CNID].name, &st)) < 0) {
-        LOG(log_error, logtype_cnid, "error stating database %s: %s", dbd->db_table[DBIF_CNID].name, db_strerror(errno));
-        return -1;
-    }
-    memset(buffer, 0, size);
-    memcpy(buffer, &st.st_ctime, sizeof(st.st_ctime));
-
-    if ((fchdir(cwd)) != 0) {
-        LOG(log_error, logtype_cnid, "error chdiring back: %s", strerror(errno));        
-        return -1;
-    }
-
-    return 0;
-}
-
-/* --------------- */
 DBD *dbif_init(const char *envhome, const char *filename)
 {
     DBD *dbd;
@@ -238,14 +351,19 @@ DBD *dbif_init(const char *envhome, const char *filename)
     dbd->db_table[DBIF_CNID].name        = "cnid2.db";
     dbd->db_table[DBIF_IDX_DEVINO].name  = "devino.db";
     dbd->db_table[DBIF_IDX_DIDNAME].name = "didname.db";
+    dbd->db_table[DBIF_IDX_NAME].name    = "name.db";
 
     dbd->db_table[DBIF_CNID].type        = DB_BTREE;
     dbd->db_table[DBIF_IDX_DEVINO].type  = DB_BTREE;
     dbd->db_table[DBIF_IDX_DIDNAME].type = DB_BTREE;
+    dbd->db_table[DBIF_IDX_NAME].type    = DB_BTREE;
 
     dbd->db_table[DBIF_CNID].openflags        = DB_CREATE;
     dbd->db_table[DBIF_IDX_DEVINO].openflags  = DB_CREATE;
     dbd->db_table[DBIF_IDX_DIDNAME].openflags = DB_CREATE;
+    dbd->db_table[DBIF_IDX_NAME].openflags    = DB_CREATE;
+
+    dbd->db_table[DBIF_IDX_NAME].flags = DB_DUPSORT;
 
     return dbd;
 }
@@ -253,19 +371,13 @@ DBD *dbif_init(const char *envhome, const char *filename)
 /* 
    We must open the db_env with an absolute pathname, as `dbd` keeps chdir'ing, which
    breaks e.g. bdb logfile-rotation with relative pathnames.
-   But still we use relative paths with upgrade_required() and the DB_ERRLOGFILE
+   But still we use relative paths with DB_ERRLOGFILE
    in order to avoid creating absolute paths by copying. Both have no problem with
    a relative path.
 */
 int dbif_env_open(DBD *dbd, struct db_param *dbp, uint32_t dbenv_oflags)
 {
     int ret;
-
-    /* Refuse to do anything if this is an old version of the CNID database */
-    if (upgrade_required(dbd)) {
-        LOG(log_error, logtype_cnid, "Found version 1 of the CNID database. Please upgrade to version 2");
-        return -1;
-    }
 
     if ((ret = db_env_create(&dbd->db_env, 0))) {
         LOG(log_error, logtype_cnid, "error creating DB environment: %s",
@@ -319,6 +431,22 @@ int dbif_env_open(DBD *dbd, struct db_param *dbp, uint32_t dbenv_oflags)
     if ((ret = dbd->db_env->set_cachesize(dbd->db_env, 0, 1024 * dbp->cachesize, 0))) {
         LOG(log_error, logtype_cnid, "error setting DB environment cachesize to %i: %s",
             dbp->cachesize, db_strerror(ret));
+        dbd->db_env->close(dbd->db_env, 0);
+        dbd->db_env = NULL;
+        return -1;
+    }
+
+    if ((ret = dbd->db_env->set_lk_max_locks(dbd->db_env, dbp->maxlocks))) {
+        LOG(log_error, logtype_cnid, "error setting DB environment maxlocks to %i: %s",
+            10000, db_strerror(ret));
+        dbd->db_env->close(dbd->db_env, 0);
+        dbd->db_env = NULL;
+        return -1;
+    }
+
+    if ((ret = dbd->db_env->set_lk_max_objects(dbd->db_env, dbp->maxlockobjs))) {
+        LOG(log_error, logtype_cnid, "error setting DB environment max lockobjects to %i: %s",
+            10000, db_strerror(ret));
         dbd->db_env->close(dbd->db_env, 0);
         dbd->db_env = NULL;
         return -1;
@@ -406,7 +534,7 @@ int dbif_open(DBD *dbd, struct db_param *dbp, int reindex)
                 LOG(log_error, logtype_cnid, "error forcing checkpoint: %s", db_strerror(ret));
                 return -1;
             }
-            LOG(log_debug, logtype_cnid, "Finished CNID database upgrade check");
+            LOG(log_debug, logtype_cnid, "Finished BerkeleyBD upgrade check");
         }
         
         if ((fchdir(cwd)) != 0) {
@@ -495,6 +623,38 @@ int dbif_open(DBD *dbd, struct db_param *dbp, int reindex)
     }
     if (reindex)
         LOG(log_info, logtype_cnid, "... done.");
+
+    if (reindex)
+        LOG(log_info, logtype_cnid, "Reindexing name index...");
+
+    /*
+     * Upgrading from version 0 to 1 requires adding the name index below which
+     * must be done by specifying the DB_CREATE flag
+     */
+    uint32_t version = CNID_VERSION;
+    if (dbd->db_envhome && !reindex) {
+        if (dbif_getversion(dbd, &version) == -1)
+            return -1;
+    }
+
+    if ((ret = dbd->db_table[0].db->associate(dbd->db_table[0].db, 
+                                              dbd->db_txn,
+                                              dbd->db_table[DBIF_IDX_NAME].db, 
+                                              idxname,
+                                              (reindex
+                                               || 
+                                               ((CNID_VERSION == CNID_VERSION_1) && (version == CNID_VERSION_0)))
+                                              ? DB_CREATE : 0)) != 0) {
+        LOG(log_error, logtype_cnid, "Failed to associate name index: %s", db_strerror(ret));
+        return -1;
+    }
+    if (reindex)
+        LOG(log_info, logtype_cnid, "... done.");
+
+    if ((dbd->db_envhome) && ((ret = dbif_upgrade(dbd)) != 0)) {
+        LOG(log_error, logtype_cnid, "Error upgrading CNID database to version %d", CNID_VERSION);
+        return -1;
+    }
     
     return 0;
 }
@@ -548,7 +708,7 @@ int dbif_close(DBD *dbd)
    In order to support silent database upgrades:
    destroy env at cnid_dbd shutdown.
  */
-int dbif_prep_upgrade(const char *path)
+int dbif_env_remove(const char *path)
 {
     int ret;
     DBD *dbd;
@@ -715,14 +875,70 @@ int dbif_del(DBD *dbd, const int dbi, DBT *key, u_int32_t flags)
                                      key,
                                      flags);
     
-    if (ret == DB_NOTFOUND || ret == DB_SECONDARY_BAD)
+    if (ret == DB_NOTFOUND) {
+        LOG(log_info, logtype_cnid, "key not found");
         return 0;
+    }
     if (ret) {
         LOG(log_error, logtype_cnid, "error deleting key/value from %s: %s",
             dbd->db_table[dbi].name, db_strerror(ret));
         return -1;
     } else
         return 1;
+}
+
+/*!
+ * Search the database by name
+ *
+ * @param resbuf    (w) buffer for search results CNIDs, maxsize is assumed to be
+ *                      DBD_MAX_SRCH_RSLTS * sizefof(cnid_t)
+ *
+ * @returns -1 on error, 0 when nothing found, else the number of matches
+ */
+int dbif_search(DBD *dbd, DBT *key, char *resbuf)
+{
+    int ret = 0;
+    int count = 0;
+    DBC *cursorp = NULL;
+    DBT pkey, data;
+    char *cnids = resbuf;
+    cnid_t cnid;
+    char *namebkp = key->data;
+    int namelenbkp = key->size;
+
+    memset(&pkey, 0, sizeof(DBT));
+    memset(&data, 0, sizeof(DBT));
+
+    /* Get a cursor */
+    ret = dbd->db_table[DBIF_IDX_NAME].db->cursor(dbd->db_table[DBIF_IDX_NAME].db,
+                                                  NULL,
+                                                  &cursorp,
+                                                  0);
+    if (ret != 0) {
+        LOG(log_error, logtype_cnid, "Couldn't create cursor: %s", db_strerror(ret));
+        ret = -1;
+        goto exit;
+    }
+
+    ret = cursorp->pget(cursorp, key, &pkey, &data, DB_SET_RANGE);
+    while (count < DBD_MAX_SRCH_RSLTS && ret != DB_NOTFOUND) {
+        if (!((namelenbkp <= key->size) && (strncmp(namebkp, key->data, namelenbkp) == 0)))
+            break;
+        count++;
+        memcpy(cnids, pkey.data, sizeof(cnid_t));
+        memcpy(&cnid, pkey.data, sizeof(cnid_t));
+        cnids += sizeof(cnid_t);
+        LOG(log_debug, logtype_cnid, "match: CNID %" PRIu32, ntohl(cnid));
+
+        ret = cursorp->pget(cursorp, key, &pkey, &data, DB_NEXT);
+    }
+
+    ret = count;
+
+exit:
+    if (cursorp != NULL)
+        cursorp->close(cursorp);
+    return ret;
 }
 
 int dbif_txn_begin(DBD *dbd)
@@ -871,7 +1087,7 @@ int dbif_copy_rootinfokey(DBD *srcdbd, DBD *destdbd)
 int dbif_dump(DBD *dbd, int dumpindexes)
 {
     int rc;
-    uint32_t max = 0, count = 0, cnid, type, did, lastid;
+    uint32_t max = 0, count = 0, cnid, type, did, lastid, version;
     uint64_t dev, ino;
     time_t stamp;
     DBC *cur;
@@ -898,11 +1114,15 @@ int dbif_dump(DBD *dbd, int dumpindexes)
 
         /* Rootinfo node ? */
         if (cnid == 0) {
-            memcpy(&stamp, (char *)data.data + 4, sizeof(time_t));
-            memcpy(&lastid, (char *)data.data + 20, sizeof(cnid_t));
+            memcpy(&stamp, (char *)data.data + CNID_DEV_OFS, sizeof(time_t));
+            memcpy(&lastid, (char *)data.data + CNID_TYPE_OFS, CNID_TYPE_LEN);
             lastid = ntohl(lastid);
+            memcpy(&version, (char *)data.data + CNID_DID_OFS, CNID_DID_LEN);
+            version = ntohl(version);
+
             strftime(timebuf, sizeof(timebuf), "%b %d %Y %H:%M:%S", localtime(&stamp));
-            printf("dbd stamp: 0x%08x (%s), next free CNID: %u\n", (unsigned int)stamp, timebuf, lastid + 1);
+            printf("CNID db version: %u, dbd stamp: 0x%08x (%s), next free CNID: %u\n",
+                   version, (unsigned int)stamp, timebuf, lastid + 1);
         } else {
             /* dev */
             memcpy(&dev, (char *)data.data + CNID_DEV_OFS, 8);

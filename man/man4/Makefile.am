@@ -1,5 +1,9 @@
 # Makefile.am for man/man4/
 
-man_MANS = atalk.4
+ATALK_MANS = atalk.4
 
-EXTRA_DIST = $(man_MANS)
+if USE_APPLETALK
+man_MANS = $(ATALK_MANS)
+endif
+
+EXTRA_DIST = $(ATALK_MANS)

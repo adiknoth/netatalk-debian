@@ -1,5 +1,4 @@
 /*
-  $Id: uuidtest.c,v 1.3 2009-11-28 12:27:24 franklahm Exp $
   Copyright (c) 2008,2009 Frank Lahm <franklahm@gmail.com>
 
   This program is free software; you can redistribute it and/or modify
@@ -17,14 +16,16 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
-#ifdef HAVE_NFSv4_ACLS
-
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
+
+#ifdef HAVE_LDAP
+#define LDAP_DEPRECATED 1
 #include <ldap.h>
+#endif
 
 #include <atalk/ldapconfig.h>
 #include <atalk/uuid.h>
@@ -42,6 +43,7 @@ static void parse_ldapconf()
     static int inited = 0;
 
     if (! inited) {
+#ifdef HAVE_LDAP
         /* Parse afp_ldap.conf */
         printf("Start parsing afp_ldap.conf\n");
         acl_ldap_readconfig(_PATH_ACL_LDAPCONF);
@@ -57,21 +59,22 @@ static void parse_ldapconf()
                 exit(EXIT_FAILURE);
             }
         } else {
-            printf("afp_ldap.conf is not ok.\n");
-            exit(EXIT_FAILURE);
+            printf("afp_ldap.conf is not ok, not using LDAP. Only local UUID testing available.\n");
         }
+#else
+        printf("Built without LDAP support, only local UUID testing available.\n");
+#endif
         inited = 1;
     }
 }
 
 int main( int argc, char **argv)
 {
-    int ret, i, c;
+    int ret, c;
     int verbose = 0;
+    atalk_uuid_t uuid;
     int logsetup = 0;
-    uuid_t uuid;
     uuidtype_t type;
-    char *uuidstring = NULL;
     char *name = NULL;
 
     while ((c = getopt(argc, argv, ":vu:g:i:")) != -1) {
@@ -92,9 +95,7 @@ int main( int argc, char **argv)
             printf("Searching user: %s\n", optarg);
             ret = getuuidfromname( optarg, UUID_USER, uuid);
             if (ret == 0) {
-                uuid_bin2string( uuid, &uuidstring);
-                printf("User: %s ==> UUID: %s\n", optarg, uuidstring);
-                free(uuidstring);
+                printf("User: %s ==> UUID: %s\n", optarg, uuid_bin2string(uuid));
             } else {
                 printf("User %s not found.\n", optarg);
             }
@@ -107,9 +108,7 @@ int main( int argc, char **argv)
             printf("Searching group: %s\n", optarg);
             ret = getuuidfromname( optarg, UUID_GROUP, uuid);
             if (ret == 0) {
-                uuid_bin2string( uuid, &uuidstring);
-                printf("Group: %s ==> UUID: %s\n", optarg, uuidstring);
-                free(uuidstring);
+                printf("Group: %s ==> UUID: %s\n", optarg, uuid_bin2string(uuid));
             } else {
                 printf("Group %s not found.\n", optarg);
             }
@@ -123,10 +122,17 @@ int main( int argc, char **argv)
             uuid_string2bin(optarg, uuid);
             ret = getnamefromuuid( uuid, &name, &type);
             if (ret == 0) {
-                if (type == UUID_USER)
+                switch (type) {
+                case UUID_LOCAL:
+                    printf("local UUID: %s\n", optarg);
+                    break;
+                case UUID_USER:
                     printf("UUID: %s ==> User: %s\n", optarg, name);
-                else
+                    break;
+                case UUID_GROUP:
                     printf("UUID: %s ==> Group: %s\n", optarg, name);
+                    break;
+                }
                 free(name);
             } else {
                 printf("UUID: %s not found.\n", optarg);
@@ -144,4 +150,3 @@ int main( int argc, char **argv)
     return 0;
 }
 
-#endif  /* HAVE_NFSv4_ACLS */

@@ -1,6 +1,7 @@
 /* 
  * Netatalk 2002 (c)
  * Copyright (C) 1990, 1993 Regents of The University of Michigan
+ * Copyright (C) 2010 Frank Lahm
  * All Rights Reserved. See COPYRIGHT
  */
 
@@ -18,6 +19,10 @@
  *
  * Initial version written by Rafal Lewczuk <rlewczuk@pronet.pl>
  *
+ * Starting with Netatalk 2.2 searching by name criteria utilizes the
+ * CNID database in conjunction with an enhanced cnid_dbd. This requires
+ * the use of cnidscheme:dbd for the searched volume, the new functionality
+ * is not built into cnidscheme:cdb.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -30,29 +35,22 @@
 #include <ctype.h>
 #include <string.h>
 #include <time.h>
-
-#if STDC_HEADERS
 #include <string.h>
-#else
-#ifndef HAVE_MEMCPY
-#define memcpy(d,s,n) bcopy ((s), (d), (n))
-#define memmove(d,s,n) bcopy ((s), (d), (n))
-#endif /* ! HAVE_MEMCPY */
-#endif
-
 #include <sys/file.h>
 #include <netinet/in.h>
 
 #include <atalk/afp.h>
 #include <atalk/adouble.h>
 #include <atalk/logger.h>
-#ifdef CNID_DB
 #include <atalk/cnid.h>
-#endif /* CNID_DB */
+#include <atalk/cnid_dbd_private.h>
 #include <atalk/util.h>
+#include <atalk/bstradd.h>
+#include <atalk/unicode.h>
 
 #include "desktop.h"
 #include "directory.h"
+#include "dircache.h"
 #include "file.h"
 #include "volume.h"
 #include "globals.h"
@@ -144,6 +142,7 @@ static int addstack(char *uname, struct dir *dir, int pidx)
 	/* Put new element. Allocate and copy lname and path. */
 	ds = dstack + dsidx++;
 	ds->dir = dir;
+    dir->d_flags |= DIRF_CACHELOCK;
 	ds->pidx = pidx;
 	ds->checked = 0;
 	if (pidx >= 0) {
@@ -176,6 +175,7 @@ static int reducestack(void)
 	while (dsidx > 0) {
 		if (dstack[dsidx-1].checked) {
 			dsidx--;
+            dstack[dsidx].dir->d_flags &= ~DIRF_CACHELOCK;
 			free(dstack[dsidx].path);
 		} else
 			return dsidx - 1;
@@ -189,6 +189,7 @@ static void clearstack(void)
 	save_cidx = -1;
 	while (dsidx > 0) {
 		dsidx--;
+        dstack[dsidx].dir->d_flags &= ~DIRF_CACHELOCK;
 		free(dstack[dsidx].path);
 	}
 } 
@@ -479,18 +480,29 @@ static int rslt_add ( struct vol *vol, struct path *path, char **buf, int ext)
 #define VETO_STR \
         "./../.AppleDouble/.AppleDB/Network Trash Folder/TheVolumeSettingsFolder/TheFindByContentFolder/.AppleDesktop/.Parent/"
 
-/* This function performs search. It is called directly from afp_catsearch 
- * vol - volume we are searching on ...
- * dir - directory we are starting from ...
- * c1, c2 - search criteria
- * rmatches - maximum number of matches we can return
- * pos - position we've stopped recently
- * rbuf - output buffer
- * rbuflen - output buffer length
+/*!
+ * This function performs a filesystem search
+ *
+ * Uses globals c1, c2, the search criteria
+ *
+ * @param vol       (r)  volume we are searching on ...
+ * @param dir       (rw) directory we are starting from ...
+ * @param rmatches  (r)  maximum number of matches we can return
+ * @param pos       (r)  position we've stopped recently
+ * @param rbuf      (w)  output buffer
+ * @param nrecs     (w)  number of matches
+ * @param rsize     (w)  length of data written to output buffer
+ * @param ext       (r)  extended search flag
  */
 #define NUM_ROUNDS 200
-static int catsearch(struct vol *vol, struct dir *dir,  
-		     int rmatches, u_int32_t *pos, char *rbuf, u_int32_t *nrecs, int *rsize, int ext)
+static int catsearch(struct vol *vol,
+                     struct dir *dir,  
+                     int rmatches,
+                     uint32_t *pos,
+                     char *rbuf,
+                     uint32_t *nrecs,
+                     int *rsize,
+                     int ext)
 {
     static u_int32_t cur_pos;    /* Saved position index (ID) - used to remember "position" across FPCatSearch calls */
     static DIR *dirpos; 		 /* UNIX structure describing currently opened directory. */
@@ -503,7 +515,6 @@ static int catsearch(struct vol *vol, struct dir *dir,
 	char *rrbuf = rbuf;
     time_t start_time;
     int num_rounds = NUM_ROUNDS;
-    int cached;
     int cwd = -1;
     int error;
         
@@ -540,14 +551,14 @@ static int catsearch(struct vol *vol, struct dir *dir,
     start_time = time(NULL);
 
 	while ((cidx = reducestack()) != -1) {
-		cached = 1;
-
 		error = lchdir(dstack[cidx].path);
 
-		if (!error && dirpos == NULL) {
+		if (!error && dirpos == NULL)
 			dirpos = opendir(".");
-			cached = (dstack[cidx].dir->d_child != NULL);
-		}
+
+		if (dirpos == NULL)
+			dirpos = opendir(dstack[cidx].path);
+
 		if (error || dirpos == NULL) {
 			switch (errno) {
 			case EACCES:
@@ -594,18 +605,16 @@ static int catsearch(struct vol *vol, struct dir *dir,
 				   ie if in the same loop the parent dir wasn't in the cache
 				   ALL dirsearch_byname will fail.
 				*/
-				if (cached)
-            		path.d_dir = dirsearch_byname(vol, dstack[cidx].dir, path.u_name);
-            	else
-            		path.d_dir = NULL;
-            	if (!path.d_dir) {
+                int unlen = strlen(path.u_name);
+                path.d_dir = dircache_search_by_name(vol, dstack[cidx].dir, path.u_name, unlen, path.st.st_ctime);
+            	if (path.d_dir == NULL) {
                 	/* path.m_name is set by adddir */
-            	    if (NULL == (path.d_dir = adddir( vol, dstack[cidx].dir, &path) ) ) {
+            	    if (NULL == (path.d_dir = dir_add( vol, dstack[cidx].dir, &path, unlen) ) ) {
 						result = AFPERR_MISC;
 						goto catsearch_end;
 					}
                 }
-                path.m_name = path.d_dir->d_m_name; 
+                path.m_name = cfrombstr(path.d_dir->d_m_name);
                 	
 				if (addstack(path.u_name, path.d_dir, cidx) == -1) {
 					result = AFPERR_MISC;
@@ -667,6 +676,156 @@ catsearch_end: /* Exiting catsearch: error condition */
 	return result;
 } /* catsearch() */
 
+/*!
+ * This function performs a CNID db search
+ *
+ * Uses globals c1, c2, the search criteria
+ *
+ * @param vol       (r)  volume we are searching on ...
+ * @param dir       (rw) directory we are starting from ...
+ * @param uname     (r)  UNIX name of object to search
+ * @param rmatches  (r)  maximum number of matches we can return
+ * @param pos       (r)  position we've stopped recently
+ * @param rbuf      (w)  output buffer
+ * @param nrecs     (w)  number of matches
+ * @param rsize     (w)  length of data written to output buffer
+ * @param ext       (r)  extended search flag
+ */
+static int catsearch_db(struct vol *vol,
+                        struct dir *dir,  
+                        const char *uname,
+                        int rmatches,
+                        uint32_t *pos,
+                        char *rbuf,
+                        uint32_t *nrecs,
+                        int *rsize,
+                        int ext)
+{
+    static char resbuf[DBD_MAX_SRCH_RSLTS * sizeof(cnid_t)];
+    static uint32_t cur_pos;
+    static int num_matches;
+    int ccr ,r;
+	int result = AFP_OK;
+    struct path path;
+	char *rrbuf = rbuf;
+    char buffer[MAXPATHLEN +2];
+    uint16_t flags = CONV_TOLOWER;
+
+    LOG(log_debug, logtype_afpd, "catsearch_db(req pos: %u): {pos: %u, name: %s}",
+        *pos, cur_pos, uname);
+        
+	if (*pos != 0 && *pos != cur_pos) {
+		result = AFPERR_CATCHNG;
+		goto catsearch_end;
+	}
+
+    if (cur_pos == 0 || *pos == 0) {
+        if (convert_charset(vol->v_volcharset,
+                            vol->v_volcharset,
+                            vol->v_maccharset,
+                            uname,
+                            strlen(uname),
+                            buffer,
+                            MAXPATHLEN,
+                            &flags) == (size_t)-1) {
+            LOG(log_error, logtype_afpd, "catsearch_db: conversion error");
+            result = AFPERR_MISC;
+            goto catsearch_end;
+        }
+
+        LOG(log_debug, logtype_afpd, "catsearch_db: %s", buffer);
+
+        if ((num_matches = cnid_find(vol->v_cdb,
+                                     buffer,
+                                     strlen(uname),
+                                     resbuf,
+                                     sizeof(resbuf))) == -1) {
+            result = AFPERR_MISC;
+            goto catsearch_end;
+        }
+    }
+	
+	while (cur_pos < num_matches) {
+        char *name;
+        cnid_t cnid, did;
+        char resolvebuf[12 + MAXPATHLEN + 1];
+        struct dir *dir;
+
+        /* Next CNID to process from buffer */
+        memcpy(&cnid, resbuf + cur_pos * sizeof(cnid_t), sizeof(cnid_t));
+        did = cnid;
+
+        if ((name = cnid_resolve(vol->v_cdb, &did, resolvebuf, 12 + MAXPATHLEN + 1)) == NULL)
+            goto next;
+        LOG(log_debug, logtype_afpd, "catsearch_db: {pos: %u, name:%s, cnid: %u}",
+            cur_pos, name, ntohl(cnid));
+        if ((dir = dirlookup(vol, did)) == NULL)
+            goto next;
+        if (movecwd(vol, dir) < 0 )
+            goto next;
+
+        memset(&path, 0, sizeof(path));
+        path.u_name = name;
+        path.m_name = utompath(vol, name, cnid, utf8_encoding());
+
+        if (of_stat(&path) != 0) {
+            switch (errno) {
+            case EACCES:
+            case ELOOP:
+                goto next;
+            case ENOENT:
+                
+            default:
+                result = AFPERR_MISC;
+                goto catsearch_end;
+            } 
+        }
+        /* For files path.d_dir is the parent dir, for dirs its the dir itself */
+        if (S_ISDIR(path.st.st_mode))
+            if ((dir = dirlookup(vol, cnid)) == NULL)
+                goto next;
+        path.d_dir = dir;
+
+        LOG(log_maxdebug, logtype_afpd,"catsearch_db: dir: %s, cwd: %s, name: %s", 
+            cfrombstr(dir->d_fullpath), getcwdpath(), path.u_name);
+
+        /* At last we can check the search criteria */
+        ccr = crit_check(vol, &path);
+        if ((ccr & 1)) {
+            LOG(log_debug, logtype_afpd,"catsearch_db: match: %s/%s",
+                getcwdpath(), path.u_name);
+            /* bit 1 means that criteria has been met */
+            r = rslt_add(vol, &path, &rrbuf, ext);
+            if (r == 0) {
+                result = AFPERR_MISC;
+                goto catsearch_end;
+            } 
+            *nrecs += r;
+            /* Number of matches limit */
+            if (--rmatches == 0) 
+                goto catsearch_pause;
+            /* Block size limit */
+            if (rrbuf - rbuf >= 448)
+                goto catsearch_pause;
+        }
+    next:
+        cur_pos++;
+    } /* while */
+
+	/* finished */
+	result = AFPERR_EOF;
+    cur_pos = 0;
+	goto catsearch_end;
+
+catsearch_pause:
+    *pos = cur_pos;
+
+catsearch_end: /* Exiting catsearch: error condition */
+	*rsize = rrbuf - rbuf;
+    LOG(log_debug, logtype_afpd, "catsearch_db(req pos: %u): {pos: %u}", *pos, cur_pos);
+	return result;
+}
+
 /* -------------------------- */
 static int catsearch_afp(AFPObj *obj _U_, char *ibuf, size_t ibuflen,
                   char *rbuf, size_t *rbuflen, int ext)
@@ -683,7 +842,8 @@ static int catsearch_afp(AFPObj *obj _U_, char *ibuf, size_t ibuflen,
     size_t	len;
     u_int16_t	namelen;
     u_int16_t	flags;
-    char  	tmppath[256];
+    char  	    tmppath[256];
+    char        *uname;
 
     *rbuflen = 0;
 
@@ -854,11 +1014,13 @@ static int catsearch_afp(AFPObj *obj _U_, char *ibuf, size_t ibuflen,
 		/* length */
 		memcpy(&namelen, spec1, sizeof(namelen));
 		namelen = ntohs (namelen);
-		if (namelen > 255)  /* Safeguard */
-			namelen = 255;
+		if (namelen > UTF8FILELEN_EARLY)  /* Safeguard */
+			namelen = UTF8FILELEN_EARLY;
 
 		memcpy (c1.utf8name, spec1+2, namelen);
-		c1.utf8name[(namelen+1)] =0;
+		c1.utf8name[namelen] = 0;
+        if ((uname = mtoupath(vol, c1.utf8name, 0, utf8_encoding())) == NULL)
+            return AFPERR_PARAM;
 
  		/* convert charset */
 		flags = CONV_PRECOMPOSE;
@@ -869,7 +1031,15 @@ static int catsearch_afp(AFPObj *obj _U_, char *ibuf, size_t ibuflen,
     
     /* Call search */
     *rbuflen = 24;
-    ret = catsearch(vol, vol->v_dir, rmatches, &catpos[0], rbuf+24, &nrecs, &rsize, ext);
+    if ((c1.rbitmap & (1 << FILPBIT_PDINFO))
+        && (strcmp(vol->v_cnidscheme, "dbd") == 0)
+        && (vol->v_flags & AFPVOL_SEARCHDB))
+        /* we've got a name and it's a dbd volume, so search CNID database */
+        ret = catsearch_db(vol, vol->v_root, uname, rmatches, &catpos[0], rbuf+24, &nrecs, &rsize, ext);
+    else
+        /* perform a slow filesystem tree search */
+        ret = catsearch(vol, vol->v_root, rmatches, &catpos[0], rbuf+24, &nrecs, &rsize, ext);
+
     memcpy(rbuf, catpos, sizeof(catpos));
     rbuf += sizeof(catpos);
 

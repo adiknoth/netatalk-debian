@@ -38,7 +38,7 @@ host_triplet = @host@
 target_triplet = @target@
 sbin_PROGRAMS = afpd$(EXEEXT)
 noinst_PROGRAMS = hash$(EXEEXT)
-@USE_NFSv4_ACLS_TRUE@am__append_1 = acls.c
+@HAVE_ACLS_TRUE@am__append_1 = acls.c
 subdir = etc/afpd
 DIST_COMMON = $(noinst_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
@@ -62,7 +62,7 @@ am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
 	$(top_srcdir)/macros/summary.m4 \
 	$(top_srcdir)/macros/tcp-wrappers.m4 \
 	$(top_srcdir)/macros/util.m4 $(top_srcdir)/macros/webmin.m4 \
-	$(top_srcdir)/configure.in
+	$(top_srcdir)/macros/zeroconf.m4 $(top_srcdir)/configure.in
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -71,27 +71,28 @@ CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(sbindir)"
 sbinPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(noinst_PROGRAMS) $(sbin_PROGRAMS)
-am__afpd_SOURCES_DIST = unix.c ofork.c main.c switch.c auth.c volume.c \
-	directory.c file.c enumerate.c desktop.c filedir.c fork.c \
-	appl.c gettok.c mangle.c status.c afp_options.c afp_asp.c \
-	afp_dsi.c messages.c afp_config.c nfsquota.c quota.c uam.c \
-	afs.c uid.c afp_util.c catsearch.c afprun.c hash.c extattrs.c \
-	acls.c
-@USE_NFSv4_ACLS_TRUE@am__objects_1 = afpd-acls.$(OBJEXT)
-am_afpd_OBJECTS = afpd-unix.$(OBJEXT) afpd-ofork.$(OBJEXT) \
-	afpd-main.$(OBJEXT) afpd-switch.$(OBJEXT) afpd-auth.$(OBJEXT) \
-	afpd-volume.$(OBJEXT) afpd-directory.$(OBJEXT) \
-	afpd-file.$(OBJEXT) afpd-enumerate.$(OBJEXT) \
-	afpd-desktop.$(OBJEXT) afpd-filedir.$(OBJEXT) \
-	afpd-fork.$(OBJEXT) afpd-appl.$(OBJEXT) afpd-gettok.$(OBJEXT) \
-	afpd-mangle.$(OBJEXT) afpd-status.$(OBJEXT) \
-	afpd-afp_options.$(OBJEXT) afpd-afp_asp.$(OBJEXT) \
-	afpd-afp_dsi.$(OBJEXT) afpd-messages.$(OBJEXT) \
-	afpd-afp_config.$(OBJEXT) afpd-nfsquota.$(OBJEXT) \
-	afpd-quota.$(OBJEXT) afpd-uam.$(OBJEXT) afpd-afs.$(OBJEXT) \
-	afpd-uid.$(OBJEXT) afpd-afp_util.$(OBJEXT) \
-	afpd-catsearch.$(OBJEXT) afpd-afprun.$(OBJEXT) \
-	afpd-hash.$(OBJEXT) afpd-extattrs.$(OBJEXT) $(am__objects_1)
+am__afpd_SOURCES_DIST = afp_asp.c afp_avahi.c afp_config.c afp_dsi.c \
+	afp_options.c afp_util.c afp_zeroconf.c afprun.c afs.c appl.c \
+	auth.c catsearch.c desktop.c dircache.c directory.c \
+	enumerate.c extattrs.c file.c filedir.c fork.c gettok.c hash.c \
+	main.c mangle.c messages.c nfsquota.c ofork.c quota.c status.c \
+	switch.c uam.c uid.c unix.c volume.c acls.c
+@HAVE_ACLS_TRUE@am__objects_1 = afpd-acls.$(OBJEXT)
+am_afpd_OBJECTS = afpd-afp_asp.$(OBJEXT) afpd-afp_avahi.$(OBJEXT) \
+	afpd-afp_config.$(OBJEXT) afpd-afp_dsi.$(OBJEXT) \
+	afpd-afp_options.$(OBJEXT) afpd-afp_util.$(OBJEXT) \
+	afpd-afp_zeroconf.$(OBJEXT) afpd-afprun.$(OBJEXT) \
+	afpd-afs.$(OBJEXT) afpd-appl.$(OBJEXT) afpd-auth.$(OBJEXT) \
+	afpd-catsearch.$(OBJEXT) afpd-desktop.$(OBJEXT) \
+	afpd-dircache.$(OBJEXT) afpd-directory.$(OBJEXT) \
+	afpd-enumerate.$(OBJEXT) afpd-extattrs.$(OBJEXT) \
+	afpd-file.$(OBJEXT) afpd-filedir.$(OBJEXT) afpd-fork.$(OBJEXT) \
+	afpd-gettok.$(OBJEXT) afpd-hash.$(OBJEXT) afpd-main.$(OBJEXT) \
+	afpd-mangle.$(OBJEXT) afpd-messages.$(OBJEXT) \
+	afpd-nfsquota.$(OBJEXT) afpd-ofork.$(OBJEXT) \
+	afpd-quota.$(OBJEXT) afpd-status.$(OBJEXT) \
+	afpd-switch.$(OBJEXT) afpd-uam.$(OBJEXT) afpd-uid.$(OBJEXT) \
+	afpd-unix.$(OBJEXT) afpd-volume.$(OBJEXT) $(am__objects_1)
 afpd_OBJECTS = $(am_afpd_OBJECTS)
 afpd_DEPENDENCIES = $(top_builddir)/libatalk/cnid/libcnid.la \
 	$(top_builddir)/libatalk/libatalk.la
@@ -123,6 +124,7 @@ ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
+ACL_LIBS = @ACL_LIBS@
 AFS_CFLAGS = @AFS_CFLAGS@
 AFS_LIBS = @AFS_LIBS@
 AMTAR = @AMTAR@
@@ -130,6 +132,10 @@ AR = @AR@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
+AVAHI_CFLAGS = @AVAHI_CFLAGS@
+AVAHI_LIBS = @AVAHI_LIBS@
+AVAHI_TPOLL_CFLAGS = @AVAHI_TPOLL_CFLAGS@
+AVAHI_TPOLL_LIBS = @AVAHI_TPOLL_LIBS@
 AWK = @AWK@
 BDB_BIN = @BDB_BIN@
 BDB_CFLAGS = @BDB_CFLAGS@
@@ -179,7 +185,6 @@ KLDFLAGS = @KLDFLAGS@
 KRB5_CONFIG = @KRB5_CONFIG@
 LDFLAGS = @LDFLAGS@
 LIBADD_DL = @LIBADD_DL@
-LIBATALK_ACLS = @LIBATALK_ACLS@
 LIBGCRYPT_CFLAGS = @LIBGCRYPT_CFLAGS@
 LIBGCRYPT_CONFIG = @LIBGCRYPT_CONFIG@
 LIBGCRYPT_LIBS = @LIBGCRYPT_LIBS@
@@ -211,7 +216,9 @@ PAM_SESSION = @PAM_SESSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
 PKGCONFDIR = @PKGCONFDIR@
+PKG_CONFIG = @PKG_CONFIG@
 PS = @PS@
+PTHREAD_LIBS = @PTHREAD_LIBS@
 QUOTA_LIBS = @QUOTA_LIBS@
 RANLIB = @RANLIB@
 SED = @SED@
@@ -232,6 +239,8 @@ WEBMIN_PORT = @WEBMIN_PORT@
 WEBMIN_USER = @WEBMIN_USER@
 WEBMIN_VERSION = @WEBMIN_VERSION@
 WRAP_LIBS = @WRAP_LIBS@
+ZEROCONF_CFLAGS = @ZEROCONF_CFLAGS@
+ZEROCONF_LIBS = @ZEROCONF_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -289,29 +298,37 @@ target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 pkgconfdir = @PKGCONFDIR@
-afpd_SOURCES = unix.c ofork.c main.c switch.c auth.c volume.c \
-	directory.c file.c enumerate.c desktop.c filedir.c fork.c \
-	appl.c gettok.c mangle.c status.c afp_options.c afp_asp.c \
-	afp_dsi.c messages.c afp_config.c nfsquota.c quota.c uam.c \
-	afs.c uid.c afp_util.c catsearch.c afprun.c hash.c extattrs.c \
-	$(am__append_1)
-afpd_LDADD = $(top_builddir)/libatalk/cnid/libcnid.la $(top_builddir)/libatalk/libatalk.la @QUOTA_LIBS@ @SLP_LIBS@ @WRAP_LIBS@ @LIBADD_DL@
+afpd_SOURCES = afp_asp.c afp_avahi.c afp_config.c afp_dsi.c \
+	afp_options.c afp_util.c afp_zeroconf.c afprun.c afs.c appl.c \
+	auth.c catsearch.c desktop.c dircache.c directory.c \
+	enumerate.c extattrs.c file.c filedir.c fork.c gettok.c hash.c \
+	main.c mangle.c messages.c nfsquota.c ofork.c quota.c status.c \
+	switch.c uam.c uid.c unix.c volume.c $(am__append_1)
+afpd_LDADD = \
+	$(top_builddir)/libatalk/cnid/libcnid.la \
+	$(top_builddir)/libatalk/libatalk.la \
+	@LIBGCRYPT_LIBS@ @ZEROCONF_LIBS@ @QUOTA_LIBS@ @SLP_LIBS@ @WRAP_LIBS@ @LIBADD_DL@ @ACL_LIBS@ @PTHREAD_LIBS@
+
 afpd_LDFLAGS = -export-dynamic 
-afpd_CFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/sys \
-	 @SLP_CFLAGS@ \
-	 -D_PATH_AFPDDEFVOL=\"$(pkgconfdir)/AppleVolumes.default\" \
-	 -D_PATH_AFPDSYSVOL=\"$(pkgconfdir)/AppleVolumes.system\" \
-	 -D_PATH_AFPDPWFILE=\"$(pkgconfdir)/afppasswd\" \
-	 -D_PATH_AFPDCONF=\"$(pkgconfdir)/afpd.conf\" \
-	 -D_PATH_AFPDSIGCONF=\"$(pkgconfdir)/afp_signature.conf\" \
-	 -D_PATH_AFPDUAMPATH=\"$(UAMS_PATH)/\" \
-	 -D_PATH_ACL_LDAPCONF=\"$(pkgconfdir)/afp_ldap.conf\" \
-	 -DAPPLCNAME \
-	 -DSERVERTEXT=\"$(SERVERTEXT)/\"
+afpd_CFLAGS = \
+	-I$(top_srcdir)/include \
+	-I$(top_srcdir)/sys \
+	@SLP_CFLAGS@ @ZEROCONF_CFLAGS@ \
+	-DAPPLCNAME \
+	-DSERVERTEXT=\"$(SERVERTEXT)/\" \
+	-D_PATH_AFPDDEFVOL=\"$(pkgconfdir)/AppleVolumes.default\" \
+	-D_PATH_AFPDSYSVOL=\"$(pkgconfdir)/AppleVolumes.system\" \
+	-D_PATH_AFPDPWFILE=\"$(pkgconfdir)/afppasswd\" \
+	-D_PATH_AFPDCONF=\"$(pkgconfdir)/afpd.conf\" \
+	-D_PATH_AFPDSIGCONF=\"$(pkgconfdir)/afp_signature.conf\" \
+	-D_PATH_AFPDUAMPATH=\"$(UAMS_PATH)/\" \
+	-D_PATH_ACL_LDAPCONF=\"$(pkgconfdir)/afp_ldap.conf\" \
+	-D_PATH_AFPDUUIDCONF=\"$(pkgconfdir)/afp_voluuid.conf\"
 
 noinst_HEADERS = auth.h afp_config.h desktop.h directory.h file.h \
 	 filedir.h fork.h globals.h icon.h mangle.h misc.h status.h switch.h \
-	 uam_auth.h uid.h unix.h volume.h hash.h acls.h acl_mappings.h extattrs.h
+	 uam_auth.h uid.h unix.h volume.h hash.h acls.h acl_mappings.h extattrs.h \
+	 dircache.h afp_zeroconf.h afp_avahi.h
 
 hash_SOURCES = hash.c
 hash_CFLAGS = -DKAZLIB_TEST_MAIN -I$(top_srcdir)/include
@@ -398,16 +415,19 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-acls.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-afp_asp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-afp_avahi.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-afp_config.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-afp_dsi.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-afp_options.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-afp_util.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-afp_zeroconf.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-afprun.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-afs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-appl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-auth.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-catsearch.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-desktop.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-dircache.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-directory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-enumerate.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-extattrs.Po@am__quote@
@@ -451,61 +471,145 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
 
-afpd-unix.o: unix.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-unix.o -MD -MP -MF $(DEPDIR)/afpd-unix.Tpo -c -o afpd-unix.o `test -f 'unix.c' || echo '$(srcdir)/'`unix.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-unix.Tpo $(DEPDIR)/afpd-unix.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='unix.c' object='afpd-unix.o' libtool=no @AMDEPBACKSLASH@
+afpd-afp_asp.o: afp_asp.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afp_asp.o -MD -MP -MF $(DEPDIR)/afpd-afp_asp.Tpo -c -o afpd-afp_asp.o `test -f 'afp_asp.c' || echo '$(srcdir)/'`afp_asp.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-afp_asp.Tpo $(DEPDIR)/afpd-afp_asp.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='afp_asp.c' object='afpd-afp_asp.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-unix.o `test -f 'unix.c' || echo '$(srcdir)/'`unix.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afp_asp.o `test -f 'afp_asp.c' || echo '$(srcdir)/'`afp_asp.c
 
-afpd-unix.obj: unix.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-unix.obj -MD -MP -MF $(DEPDIR)/afpd-unix.Tpo -c -o afpd-unix.obj `if test -f 'unix.c'; then $(CYGPATH_W) 'unix.c'; else $(CYGPATH_W) '$(srcdir)/unix.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-unix.Tpo $(DEPDIR)/afpd-unix.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='unix.c' object='afpd-unix.obj' libtool=no @AMDEPBACKSLASH@
+afpd-afp_asp.obj: afp_asp.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afp_asp.obj -MD -MP -MF $(DEPDIR)/afpd-afp_asp.Tpo -c -o afpd-afp_asp.obj `if test -f 'afp_asp.c'; then $(CYGPATH_W) 'afp_asp.c'; else $(CYGPATH_W) '$(srcdir)/afp_asp.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-afp_asp.Tpo $(DEPDIR)/afpd-afp_asp.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='afp_asp.c' object='afpd-afp_asp.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-unix.obj `if test -f 'unix.c'; then $(CYGPATH_W) 'unix.c'; else $(CYGPATH_W) '$(srcdir)/unix.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afp_asp.obj `if test -f 'afp_asp.c'; then $(CYGPATH_W) 'afp_asp.c'; else $(CYGPATH_W) '$(srcdir)/afp_asp.c'; fi`
 
-afpd-ofork.o: ofork.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-ofork.o -MD -MP -MF $(DEPDIR)/afpd-ofork.Tpo -c -o afpd-ofork.o `test -f 'ofork.c' || echo '$(srcdir)/'`ofork.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-ofork.Tpo $(DEPDIR)/afpd-ofork.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='ofork.c' object='afpd-ofork.o' libtool=no @AMDEPBACKSLASH@
+afpd-afp_avahi.o: afp_avahi.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afp_avahi.o -MD -MP -MF $(DEPDIR)/afpd-afp_avahi.Tpo -c -o afpd-afp_avahi.o `test -f 'afp_avahi.c' || echo '$(srcdir)/'`afp_avahi.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-afp_avahi.Tpo $(DEPDIR)/afpd-afp_avahi.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='afp_avahi.c' object='afpd-afp_avahi.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-ofork.o `test -f 'ofork.c' || echo '$(srcdir)/'`ofork.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afp_avahi.o `test -f 'afp_avahi.c' || echo '$(srcdir)/'`afp_avahi.c
 
-afpd-ofork.obj: ofork.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-ofork.obj -MD -MP -MF $(DEPDIR)/afpd-ofork.Tpo -c -o afpd-ofork.obj `if test -f 'ofork.c'; then $(CYGPATH_W) 'ofork.c'; else $(CYGPATH_W) '$(srcdir)/ofork.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-ofork.Tpo $(DEPDIR)/afpd-ofork.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='ofork.c' object='afpd-ofork.obj' libtool=no @AMDEPBACKSLASH@
+afpd-afp_avahi.obj: afp_avahi.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afp_avahi.obj -MD -MP -MF $(DEPDIR)/afpd-afp_avahi.Tpo -c -o afpd-afp_avahi.obj `if test -f 'afp_avahi.c'; then $(CYGPATH_W) 'afp_avahi.c'; else $(CYGPATH_W) '$(srcdir)/afp_avahi.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-afp_avahi.Tpo $(DEPDIR)/afpd-afp_avahi.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='afp_avahi.c' object='afpd-afp_avahi.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-ofork.obj `if test -f 'ofork.c'; then $(CYGPATH_W) 'ofork.c'; else $(CYGPATH_W) '$(srcdir)/ofork.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afp_avahi.obj `if test -f 'afp_avahi.c'; then $(CYGPATH_W) 'afp_avahi.c'; else $(CYGPATH_W) '$(srcdir)/afp_avahi.c'; fi`
 
-afpd-main.o: main.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-main.o -MD -MP -MF $(DEPDIR)/afpd-main.Tpo -c -o afpd-main.o `test -f 'main.c' || echo '$(srcdir)/'`main.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-main.Tpo $(DEPDIR)/afpd-main.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='main.c' object='afpd-main.o' libtool=no @AMDEPBACKSLASH@
+afpd-afp_config.o: afp_config.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afp_config.o -MD -MP -MF $(DEPDIR)/afpd-afp_config.Tpo -c -o afpd-afp_config.o `test -f 'afp_config.c' || echo '$(srcdir)/'`afp_config.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-afp_config.Tpo $(DEPDIR)/afpd-afp_config.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='afp_config.c' object='afpd-afp_config.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-main.o `test -f 'main.c' || echo '$(srcdir)/'`main.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afp_config.o `test -f 'afp_config.c' || echo '$(srcdir)/'`afp_config.c
 
-afpd-main.obj: main.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-main.obj -MD -MP -MF $(DEPDIR)/afpd-main.Tpo -c -o afpd-main.obj `if test -f 'main.c'; then $(CYGPATH_W) 'main.c'; else $(CYGPATH_W) '$(srcdir)/main.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-main.Tpo $(DEPDIR)/afpd-main.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='main.c' object='afpd-main.obj' libtool=no @AMDEPBACKSLASH@
+afpd-afp_config.obj: afp_config.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afp_config.obj -MD -MP -MF $(DEPDIR)/afpd-afp_config.Tpo -c -o afpd-afp_config.obj `if test -f 'afp_config.c'; then $(CYGPATH_W) 'afp_config.c'; else $(CYGPATH_W) '$(srcdir)/afp_config.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-afp_config.Tpo $(DEPDIR)/afpd-afp_config.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='afp_config.c' object='afpd-afp_config.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-main.obj `if test -f 'main.c'; then $(CYGPATH_W) 'main.c'; else $(CYGPATH_W) '$(srcdir)/main.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afp_config.obj `if test -f 'afp_config.c'; then $(CYGPATH_W) 'afp_config.c'; else $(CYGPATH_W) '$(srcdir)/afp_config.c'; fi`
 
-afpd-switch.o: switch.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-switch.o -MD -MP -MF $(DEPDIR)/afpd-switch.Tpo -c -o afpd-switch.o `test -f 'switch.c' || echo '$(srcdir)/'`switch.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-switch.Tpo $(DEPDIR)/afpd-switch.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='switch.c' object='afpd-switch.o' libtool=no @AMDEPBACKSLASH@
+afpd-afp_dsi.o: afp_dsi.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afp_dsi.o -MD -MP -MF $(DEPDIR)/afpd-afp_dsi.Tpo -c -o afpd-afp_dsi.o `test -f 'afp_dsi.c' || echo '$(srcdir)/'`afp_dsi.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-afp_dsi.Tpo $(DEPDIR)/afpd-afp_dsi.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='afp_dsi.c' object='afpd-afp_dsi.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-switch.o `test -f 'switch.c' || echo '$(srcdir)/'`switch.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afp_dsi.o `test -f 'afp_dsi.c' || echo '$(srcdir)/'`afp_dsi.c
 
-afpd-switch.obj: switch.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-switch.obj -MD -MP -MF $(DEPDIR)/afpd-switch.Tpo -c -o afpd-switch.obj `if test -f 'switch.c'; then $(CYGPATH_W) 'switch.c'; else $(CYGPATH_W) '$(srcdir)/switch.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-switch.Tpo $(DEPDIR)/afpd-switch.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='switch.c' object='afpd-switch.obj' libtool=no @AMDEPBACKSLASH@
+afpd-afp_dsi.obj: afp_dsi.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afp_dsi.obj -MD -MP -MF $(DEPDIR)/afpd-afp_dsi.Tpo -c -o afpd-afp_dsi.obj `if test -f 'afp_dsi.c'; then $(CYGPATH_W) 'afp_dsi.c'; else $(CYGPATH_W) '$(srcdir)/afp_dsi.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-afp_dsi.Tpo $(DEPDIR)/afpd-afp_dsi.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='afp_dsi.c' object='afpd-afp_dsi.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-switch.obj `if test -f 'switch.c'; then $(CYGPATH_W) 'switch.c'; else $(CYGPATH_W) '$(srcdir)/switch.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afp_dsi.obj `if test -f 'afp_dsi.c'; then $(CYGPATH_W) 'afp_dsi.c'; else $(CYGPATH_W) '$(srcdir)/afp_dsi.c'; fi`
+
+afpd-afp_options.o: afp_options.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afp_options.o -MD -MP -MF $(DEPDIR)/afpd-afp_options.Tpo -c -o afpd-afp_options.o `test -f 'afp_options.c' || echo '$(srcdir)/'`afp_options.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-afp_options.Tpo $(DEPDIR)/afpd-afp_options.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='afp_options.c' object='afpd-afp_options.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afp_options.o `test -f 'afp_options.c' || echo '$(srcdir)/'`afp_options.c
+
+afpd-afp_options.obj: afp_options.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afp_options.obj -MD -MP -MF $(DEPDIR)/afpd-afp_options.Tpo -c -o afpd-afp_options.obj `if test -f 'afp_options.c'; then $(CYGPATH_W) 'afp_options.c'; else $(CYGPATH_W) '$(srcdir)/afp_options.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-afp_options.Tpo $(DEPDIR)/afpd-afp_options.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='afp_options.c' object='afpd-afp_options.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afp_options.obj `if test -f 'afp_options.c'; then $(CYGPATH_W) 'afp_options.c'; else $(CYGPATH_W) '$(srcdir)/afp_options.c'; fi`
+
+afpd-afp_util.o: afp_util.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afp_util.o -MD -MP -MF $(DEPDIR)/afpd-afp_util.Tpo -c -o afpd-afp_util.o `test -f 'afp_util.c' || echo '$(srcdir)/'`afp_util.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-afp_util.Tpo $(DEPDIR)/afpd-afp_util.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='afp_util.c' object='afpd-afp_util.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afp_util.o `test -f 'afp_util.c' || echo '$(srcdir)/'`afp_util.c
+
+afpd-afp_util.obj: afp_util.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afp_util.obj -MD -MP -MF $(DEPDIR)/afpd-afp_util.Tpo -c -o afpd-afp_util.obj `if test -f 'afp_util.c'; then $(CYGPATH_W) 'afp_util.c'; else $(CYGPATH_W) '$(srcdir)/afp_util.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-afp_util.Tpo $(DEPDIR)/afpd-afp_util.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='afp_util.c' object='afpd-afp_util.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afp_util.obj `if test -f 'afp_util.c'; then $(CYGPATH_W) 'afp_util.c'; else $(CYGPATH_W) '$(srcdir)/afp_util.c'; fi`
+
+afpd-afp_zeroconf.o: afp_zeroconf.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afp_zeroconf.o -MD -MP -MF $(DEPDIR)/afpd-afp_zeroconf.Tpo -c -o afpd-afp_zeroconf.o `test -f 'afp_zeroconf.c' || echo '$(srcdir)/'`afp_zeroconf.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-afp_zeroconf.Tpo $(DEPDIR)/afpd-afp_zeroconf.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='afp_zeroconf.c' object='afpd-afp_zeroconf.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afp_zeroconf.o `test -f 'afp_zeroconf.c' || echo '$(srcdir)/'`afp_zeroconf.c
+
+afpd-afp_zeroconf.obj: afp_zeroconf.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afp_zeroconf.obj -MD -MP -MF $(DEPDIR)/afpd-afp_zeroconf.Tpo -c -o afpd-afp_zeroconf.obj `if test -f 'afp_zeroconf.c'; then $(CYGPATH_W) 'afp_zeroconf.c'; else $(CYGPATH_W) '$(srcdir)/afp_zeroconf.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-afp_zeroconf.Tpo $(DEPDIR)/afpd-afp_zeroconf.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='afp_zeroconf.c' object='afpd-afp_zeroconf.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afp_zeroconf.obj `if test -f 'afp_zeroconf.c'; then $(CYGPATH_W) 'afp_zeroconf.c'; else $(CYGPATH_W) '$(srcdir)/afp_zeroconf.c'; fi`
+
+afpd-afprun.o: afprun.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afprun.o -MD -MP -MF $(DEPDIR)/afpd-afprun.Tpo -c -o afpd-afprun.o `test -f 'afprun.c' || echo '$(srcdir)/'`afprun.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-afprun.Tpo $(DEPDIR)/afpd-afprun.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='afprun.c' object='afpd-afprun.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afprun.o `test -f 'afprun.c' || echo '$(srcdir)/'`afprun.c
+
+afpd-afprun.obj: afprun.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afprun.obj -MD -MP -MF $(DEPDIR)/afpd-afprun.Tpo -c -o afpd-afprun.obj `if test -f 'afprun.c'; then $(CYGPATH_W) 'afprun.c'; else $(CYGPATH_W) '$(srcdir)/afprun.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-afprun.Tpo $(DEPDIR)/afpd-afprun.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='afprun.c' object='afpd-afprun.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afprun.obj `if test -f 'afprun.c'; then $(CYGPATH_W) 'afprun.c'; else $(CYGPATH_W) '$(srcdir)/afprun.c'; fi`
+
+afpd-afs.o: afs.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afs.o -MD -MP -MF $(DEPDIR)/afpd-afs.Tpo -c -o afpd-afs.o `test -f 'afs.c' || echo '$(srcdir)/'`afs.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-afs.Tpo $(DEPDIR)/afpd-afs.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='afs.c' object='afpd-afs.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afs.o `test -f 'afs.c' || echo '$(srcdir)/'`afs.c
+
+afpd-afs.obj: afs.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afs.obj -MD -MP -MF $(DEPDIR)/afpd-afs.Tpo -c -o afpd-afs.obj `if test -f 'afs.c'; then $(CYGPATH_W) 'afs.c'; else $(CYGPATH_W) '$(srcdir)/afs.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-afs.Tpo $(DEPDIR)/afpd-afs.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='afs.c' object='afpd-afs.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afs.obj `if test -f 'afs.c'; then $(CYGPATH_W) 'afs.c'; else $(CYGPATH_W) '$(srcdir)/afs.c'; fi`
+
+afpd-appl.o: appl.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-appl.o -MD -MP -MF $(DEPDIR)/afpd-appl.Tpo -c -o afpd-appl.o `test -f 'appl.c' || echo '$(srcdir)/'`appl.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-appl.Tpo $(DEPDIR)/afpd-appl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='appl.c' object='afpd-appl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-appl.o `test -f 'appl.c' || echo '$(srcdir)/'`appl.c
+
+afpd-appl.obj: appl.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-appl.obj -MD -MP -MF $(DEPDIR)/afpd-appl.Tpo -c -o afpd-appl.obj `if test -f 'appl.c'; then $(CYGPATH_W) 'appl.c'; else $(CYGPATH_W) '$(srcdir)/appl.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-appl.Tpo $(DEPDIR)/afpd-appl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='appl.c' object='afpd-appl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-appl.obj `if test -f 'appl.c'; then $(CYGPATH_W) 'appl.c'; else $(CYGPATH_W) '$(srcdir)/appl.c'; fi`
 
 afpd-auth.o: auth.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-auth.o -MD -MP -MF $(DEPDIR)/afpd-auth.Tpo -c -o afpd-auth.o `test -f 'auth.c' || echo '$(srcdir)/'`auth.c
@@ -521,19 +625,47 @@ afpd-auth.obj: auth.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-auth.obj `if test -f 'auth.c'; then $(CYGPATH_W) 'auth.c'; else $(CYGPATH_W) '$(srcdir)/auth.c'; fi`
 
-afpd-volume.o: volume.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-volume.o -MD -MP -MF $(DEPDIR)/afpd-volume.Tpo -c -o afpd-volume.o `test -f 'volume.c' || echo '$(srcdir)/'`volume.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-volume.Tpo $(DEPDIR)/afpd-volume.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='volume.c' object='afpd-volume.o' libtool=no @AMDEPBACKSLASH@
+afpd-catsearch.o: catsearch.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-catsearch.o -MD -MP -MF $(DEPDIR)/afpd-catsearch.Tpo -c -o afpd-catsearch.o `test -f 'catsearch.c' || echo '$(srcdir)/'`catsearch.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-catsearch.Tpo $(DEPDIR)/afpd-catsearch.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='catsearch.c' object='afpd-catsearch.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-volume.o `test -f 'volume.c' || echo '$(srcdir)/'`volume.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-catsearch.o `test -f 'catsearch.c' || echo '$(srcdir)/'`catsearch.c
 
-afpd-volume.obj: volume.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-volume.obj -MD -MP -MF $(DEPDIR)/afpd-volume.Tpo -c -o afpd-volume.obj `if test -f 'volume.c'; then $(CYGPATH_W) 'volume.c'; else $(CYGPATH_W) '$(srcdir)/volume.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-volume.Tpo $(DEPDIR)/afpd-volume.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='volume.c' object='afpd-volume.obj' libtool=no @AMDEPBACKSLASH@
+afpd-catsearch.obj: catsearch.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-catsearch.obj -MD -MP -MF $(DEPDIR)/afpd-catsearch.Tpo -c -o afpd-catsearch.obj `if test -f 'catsearch.c'; then $(CYGPATH_W) 'catsearch.c'; else $(CYGPATH_W) '$(srcdir)/catsearch.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-catsearch.Tpo $(DEPDIR)/afpd-catsearch.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='catsearch.c' object='afpd-catsearch.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-volume.obj `if test -f 'volume.c'; then $(CYGPATH_W) 'volume.c'; else $(CYGPATH_W) '$(srcdir)/volume.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-catsearch.obj `if test -f 'catsearch.c'; then $(CYGPATH_W) 'catsearch.c'; else $(CYGPATH_W) '$(srcdir)/catsearch.c'; fi`
+
+afpd-desktop.o: desktop.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-desktop.o -MD -MP -MF $(DEPDIR)/afpd-desktop.Tpo -c -o afpd-desktop.o `test -f 'desktop.c' || echo '$(srcdir)/'`desktop.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-desktop.Tpo $(DEPDIR)/afpd-desktop.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='desktop.c' object='afpd-desktop.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-desktop.o `test -f 'desktop.c' || echo '$(srcdir)/'`desktop.c
+
+afpd-desktop.obj: desktop.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-desktop.obj -MD -MP -MF $(DEPDIR)/afpd-desktop.Tpo -c -o afpd-desktop.obj `if test -f 'desktop.c'; then $(CYGPATH_W) 'desktop.c'; else $(CYGPATH_W) '$(srcdir)/desktop.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-desktop.Tpo $(DEPDIR)/afpd-desktop.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='desktop.c' object='afpd-desktop.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-desktop.obj `if test -f 'desktop.c'; then $(CYGPATH_W) 'desktop.c'; else $(CYGPATH_W) '$(srcdir)/desktop.c'; fi`
+
+afpd-dircache.o: dircache.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-dircache.o -MD -MP -MF $(DEPDIR)/afpd-dircache.Tpo -c -o afpd-dircache.o `test -f 'dircache.c' || echo '$(srcdir)/'`dircache.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-dircache.Tpo $(DEPDIR)/afpd-dircache.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='dircache.c' object='afpd-dircache.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-dircache.o `test -f 'dircache.c' || echo '$(srcdir)/'`dircache.c
+
+afpd-dircache.obj: dircache.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-dircache.obj -MD -MP -MF $(DEPDIR)/afpd-dircache.Tpo -c -o afpd-dircache.obj `if test -f 'dircache.c'; then $(CYGPATH_W) 'dircache.c'; else $(CYGPATH_W) '$(srcdir)/dircache.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-dircache.Tpo $(DEPDIR)/afpd-dircache.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='dircache.c' object='afpd-dircache.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-dircache.obj `if test -f 'dircache.c'; then $(CYGPATH_W) 'dircache.c'; else $(CYGPATH_W) '$(srcdir)/dircache.c'; fi`
 
 afpd-directory.o: directory.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-directory.o -MD -MP -MF $(DEPDIR)/afpd-directory.Tpo -c -o afpd-directory.o `test -f 'directory.c' || echo '$(srcdir)/'`directory.c
@@ -549,20 +681,6 @@ afpd-directory.obj: directory.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-directory.obj `if test -f 'directory.c'; then $(CYGPATH_W) 'directory.c'; else $(CYGPATH_W) '$(srcdir)/directory.c'; fi`
 
-afpd-file.o: file.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-file.o -MD -MP -MF $(DEPDIR)/afpd-file.Tpo -c -o afpd-file.o `test -f 'file.c' || echo '$(srcdir)/'`file.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-file.Tpo $(DEPDIR)/afpd-file.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='file.c' object='afpd-file.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-file.o `test -f 'file.c' || echo '$(srcdir)/'`file.c
-
-afpd-file.obj: file.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-file.obj -MD -MP -MF $(DEPDIR)/afpd-file.Tpo -c -o afpd-file.obj `if test -f 'file.c'; then $(CYGPATH_W) 'file.c'; else $(CYGPATH_W) '$(srcdir)/file.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-file.Tpo $(DEPDIR)/afpd-file.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='file.c' object='afpd-file.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-file.obj `if test -f 'file.c'; then $(CYGPATH_W) 'file.c'; else $(CYGPATH_W) '$(srcdir)/file.c'; fi`
-
 afpd-enumerate.o: enumerate.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-enumerate.o -MD -MP -MF $(DEPDIR)/afpd-enumerate.Tpo -c -o afpd-enumerate.o `test -f 'enumerate.c' || echo '$(srcdir)/'`enumerate.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-enumerate.Tpo $(DEPDIR)/afpd-enumerate.Po
@@ -577,19 +695,33 @@ afpd-enumerate.obj: enumerate.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-enumerate.obj `if test -f 'enumerate.c'; then $(CYGPATH_W) 'enumerate.c'; else $(CYGPATH_W) '$(srcdir)/enumerate.c'; fi`
 
-afpd-desktop.o: desktop.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-desktop.o -MD -MP -MF $(DEPDIR)/afpd-desktop.Tpo -c -o afpd-desktop.o `test -f 'desktop.c' || echo '$(srcdir)/'`desktop.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-desktop.Tpo $(DEPDIR)/afpd-desktop.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='desktop.c' object='afpd-desktop.o' libtool=no @AMDEPBACKSLASH@
+afpd-extattrs.o: extattrs.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-extattrs.o -MD -MP -MF $(DEPDIR)/afpd-extattrs.Tpo -c -o afpd-extattrs.o `test -f 'extattrs.c' || echo '$(srcdir)/'`extattrs.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-extattrs.Tpo $(DEPDIR)/afpd-extattrs.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='extattrs.c' object='afpd-extattrs.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-desktop.o `test -f 'desktop.c' || echo '$(srcdir)/'`desktop.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-extattrs.o `test -f 'extattrs.c' || echo '$(srcdir)/'`extattrs.c
 
-afpd-desktop.obj: desktop.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-desktop.obj -MD -MP -MF $(DEPDIR)/afpd-desktop.Tpo -c -o afpd-desktop.obj `if test -f 'desktop.c'; then $(CYGPATH_W) 'desktop.c'; else $(CYGPATH_W) '$(srcdir)/desktop.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-desktop.Tpo $(DEPDIR)/afpd-desktop.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='desktop.c' object='afpd-desktop.obj' libtool=no @AMDEPBACKSLASH@
+afpd-extattrs.obj: extattrs.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-extattrs.obj -MD -MP -MF $(DEPDIR)/afpd-extattrs.Tpo -c -o afpd-extattrs.obj `if test -f 'extattrs.c'; then $(CYGPATH_W) 'extattrs.c'; else $(CYGPATH_W) '$(srcdir)/extattrs.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-extattrs.Tpo $(DEPDIR)/afpd-extattrs.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='extattrs.c' object='afpd-extattrs.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-desktop.obj `if test -f 'desktop.c'; then $(CYGPATH_W) 'desktop.c'; else $(CYGPATH_W) '$(srcdir)/desktop.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-extattrs.obj `if test -f 'extattrs.c'; then $(CYGPATH_W) 'extattrs.c'; else $(CYGPATH_W) '$(srcdir)/extattrs.c'; fi`
+
+afpd-file.o: file.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-file.o -MD -MP -MF $(DEPDIR)/afpd-file.Tpo -c -o afpd-file.o `test -f 'file.c' || echo '$(srcdir)/'`file.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-file.Tpo $(DEPDIR)/afpd-file.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='file.c' object='afpd-file.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-file.o `test -f 'file.c' || echo '$(srcdir)/'`file.c
+
+afpd-file.obj: file.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-file.obj -MD -MP -MF $(DEPDIR)/afpd-file.Tpo -c -o afpd-file.obj `if test -f 'file.c'; then $(CYGPATH_W) 'file.c'; else $(CYGPATH_W) '$(srcdir)/file.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-file.Tpo $(DEPDIR)/afpd-file.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='file.c' object='afpd-file.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-file.obj `if test -f 'file.c'; then $(CYGPATH_W) 'file.c'; else $(CYGPATH_W) '$(srcdir)/file.c'; fi`
 
 afpd-filedir.o: filedir.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-filedir.o -MD -MP -MF $(DEPDIR)/afpd-filedir.Tpo -c -o afpd-filedir.o `test -f 'filedir.c' || echo '$(srcdir)/'`filedir.c
@@ -619,20 +751,6 @@ afpd-fork.obj: fork.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-fork.obj `if test -f 'fork.c'; then $(CYGPATH_W) 'fork.c'; else $(CYGPATH_W) '$(srcdir)/fork.c'; fi`
 
-afpd-appl.o: appl.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-appl.o -MD -MP -MF $(DEPDIR)/afpd-appl.Tpo -c -o afpd-appl.o `test -f 'appl.c' || echo '$(srcdir)/'`appl.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-appl.Tpo $(DEPDIR)/afpd-appl.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='appl.c' object='afpd-appl.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-appl.o `test -f 'appl.c' || echo '$(srcdir)/'`appl.c
-
-afpd-appl.obj: appl.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-appl.obj -MD -MP -MF $(DEPDIR)/afpd-appl.Tpo -c -o afpd-appl.obj `if test -f 'appl.c'; then $(CYGPATH_W) 'appl.c'; else $(CYGPATH_W) '$(srcdir)/appl.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-appl.Tpo $(DEPDIR)/afpd-appl.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='appl.c' object='afpd-appl.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-appl.obj `if test -f 'appl.c'; then $(CYGPATH_W) 'appl.c'; else $(CYGPATH_W) '$(srcdir)/appl.c'; fi`
-
 afpd-gettok.o: gettok.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-gettok.o -MD -MP -MF $(DEPDIR)/afpd-gettok.Tpo -c -o afpd-gettok.o `test -f 'gettok.c' || echo '$(srcdir)/'`gettok.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-gettok.Tpo $(DEPDIR)/afpd-gettok.Po
@@ -646,216 +764,6 @@ afpd-gettok.obj: gettok.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='gettok.c' object='afpd-gettok.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-gettok.obj `if test -f 'gettok.c'; then $(CYGPATH_W) 'gettok.c'; else $(CYGPATH_W) '$(srcdir)/gettok.c'; fi`
-
-afpd-mangle.o: mangle.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-mangle.o -MD -MP -MF $(DEPDIR)/afpd-mangle.Tpo -c -o afpd-mangle.o `test -f 'mangle.c' || echo '$(srcdir)/'`mangle.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-mangle.Tpo $(DEPDIR)/afpd-mangle.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mangle.c' object='afpd-mangle.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-mangle.o `test -f 'mangle.c' || echo '$(srcdir)/'`mangle.c
-
-afpd-mangle.obj: mangle.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-mangle.obj -MD -MP -MF $(DEPDIR)/afpd-mangle.Tpo -c -o afpd-mangle.obj `if test -f 'mangle.c'; then $(CYGPATH_W) 'mangle.c'; else $(CYGPATH_W) '$(srcdir)/mangle.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-mangle.Tpo $(DEPDIR)/afpd-mangle.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mangle.c' object='afpd-mangle.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-mangle.obj `if test -f 'mangle.c'; then $(CYGPATH_W) 'mangle.c'; else $(CYGPATH_W) '$(srcdir)/mangle.c'; fi`
-
-afpd-status.o: status.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-status.o -MD -MP -MF $(DEPDIR)/afpd-status.Tpo -c -o afpd-status.o `test -f 'status.c' || echo '$(srcdir)/'`status.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-status.Tpo $(DEPDIR)/afpd-status.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='status.c' object='afpd-status.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-status.o `test -f 'status.c' || echo '$(srcdir)/'`status.c
-
-afpd-status.obj: status.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-status.obj -MD -MP -MF $(DEPDIR)/afpd-status.Tpo -c -o afpd-status.obj `if test -f 'status.c'; then $(CYGPATH_W) 'status.c'; else $(CYGPATH_W) '$(srcdir)/status.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-status.Tpo $(DEPDIR)/afpd-status.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='status.c' object='afpd-status.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-status.obj `if test -f 'status.c'; then $(CYGPATH_W) 'status.c'; else $(CYGPATH_W) '$(srcdir)/status.c'; fi`
-
-afpd-afp_options.o: afp_options.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afp_options.o -MD -MP -MF $(DEPDIR)/afpd-afp_options.Tpo -c -o afpd-afp_options.o `test -f 'afp_options.c' || echo '$(srcdir)/'`afp_options.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-afp_options.Tpo $(DEPDIR)/afpd-afp_options.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='afp_options.c' object='afpd-afp_options.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afp_options.o `test -f 'afp_options.c' || echo '$(srcdir)/'`afp_options.c
-
-afpd-afp_options.obj: afp_options.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afp_options.obj -MD -MP -MF $(DEPDIR)/afpd-afp_options.Tpo -c -o afpd-afp_options.obj `if test -f 'afp_options.c'; then $(CYGPATH_W) 'afp_options.c'; else $(CYGPATH_W) '$(srcdir)/afp_options.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-afp_options.Tpo $(DEPDIR)/afpd-afp_options.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='afp_options.c' object='afpd-afp_options.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afp_options.obj `if test -f 'afp_options.c'; then $(CYGPATH_W) 'afp_options.c'; else $(CYGPATH_W) '$(srcdir)/afp_options.c'; fi`
-
-afpd-afp_asp.o: afp_asp.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afp_asp.o -MD -MP -MF $(DEPDIR)/afpd-afp_asp.Tpo -c -o afpd-afp_asp.o `test -f 'afp_asp.c' || echo '$(srcdir)/'`afp_asp.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-afp_asp.Tpo $(DEPDIR)/afpd-afp_asp.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='afp_asp.c' object='afpd-afp_asp.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afp_asp.o `test -f 'afp_asp.c' || echo '$(srcdir)/'`afp_asp.c
-
-afpd-afp_asp.obj: afp_asp.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afp_asp.obj -MD -MP -MF $(DEPDIR)/afpd-afp_asp.Tpo -c -o afpd-afp_asp.obj `if test -f 'afp_asp.c'; then $(CYGPATH_W) 'afp_asp.c'; else $(CYGPATH_W) '$(srcdir)/afp_asp.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-afp_asp.Tpo $(DEPDIR)/afpd-afp_asp.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='afp_asp.c' object='afpd-afp_asp.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afp_asp.obj `if test -f 'afp_asp.c'; then $(CYGPATH_W) 'afp_asp.c'; else $(CYGPATH_W) '$(srcdir)/afp_asp.c'; fi`
-
-afpd-afp_dsi.o: afp_dsi.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afp_dsi.o -MD -MP -MF $(DEPDIR)/afpd-afp_dsi.Tpo -c -o afpd-afp_dsi.o `test -f 'afp_dsi.c' || echo '$(srcdir)/'`afp_dsi.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-afp_dsi.Tpo $(DEPDIR)/afpd-afp_dsi.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='afp_dsi.c' object='afpd-afp_dsi.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afp_dsi.o `test -f 'afp_dsi.c' || echo '$(srcdir)/'`afp_dsi.c
-
-afpd-afp_dsi.obj: afp_dsi.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afp_dsi.obj -MD -MP -MF $(DEPDIR)/afpd-afp_dsi.Tpo -c -o afpd-afp_dsi.obj `if test -f 'afp_dsi.c'; then $(CYGPATH_W) 'afp_dsi.c'; else $(CYGPATH_W) '$(srcdir)/afp_dsi.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-afp_dsi.Tpo $(DEPDIR)/afpd-afp_dsi.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='afp_dsi.c' object='afpd-afp_dsi.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afp_dsi.obj `if test -f 'afp_dsi.c'; then $(CYGPATH_W) 'afp_dsi.c'; else $(CYGPATH_W) '$(srcdir)/afp_dsi.c'; fi`
-
-afpd-messages.o: messages.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-messages.o -MD -MP -MF $(DEPDIR)/afpd-messages.Tpo -c -o afpd-messages.o `test -f 'messages.c' || echo '$(srcdir)/'`messages.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-messages.Tpo $(DEPDIR)/afpd-messages.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='messages.c' object='afpd-messages.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-messages.o `test -f 'messages.c' || echo '$(srcdir)/'`messages.c
-
-afpd-messages.obj: messages.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-messages.obj -MD -MP -MF $(DEPDIR)/afpd-messages.Tpo -c -o afpd-messages.obj `if test -f 'messages.c'; then $(CYGPATH_W) 'messages.c'; else $(CYGPATH_W) '$(srcdir)/messages.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-messages.Tpo $(DEPDIR)/afpd-messages.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='messages.c' object='afpd-messages.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-messages.obj `if test -f 'messages.c'; then $(CYGPATH_W) 'messages.c'; else $(CYGPATH_W) '$(srcdir)/messages.c'; fi`
-
-afpd-afp_config.o: afp_config.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afp_config.o -MD -MP -MF $(DEPDIR)/afpd-afp_config.Tpo -c -o afpd-afp_config.o `test -f 'afp_config.c' || echo '$(srcdir)/'`afp_config.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-afp_config.Tpo $(DEPDIR)/afpd-afp_config.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='afp_config.c' object='afpd-afp_config.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afp_config.o `test -f 'afp_config.c' || echo '$(srcdir)/'`afp_config.c
-
-afpd-afp_config.obj: afp_config.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afp_config.obj -MD -MP -MF $(DEPDIR)/afpd-afp_config.Tpo -c -o afpd-afp_config.obj `if test -f 'afp_config.c'; then $(CYGPATH_W) 'afp_config.c'; else $(CYGPATH_W) '$(srcdir)/afp_config.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-afp_config.Tpo $(DEPDIR)/afpd-afp_config.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='afp_config.c' object='afpd-afp_config.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afp_config.obj `if test -f 'afp_config.c'; then $(CYGPATH_W) 'afp_config.c'; else $(CYGPATH_W) '$(srcdir)/afp_config.c'; fi`
-
-afpd-nfsquota.o: nfsquota.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-nfsquota.o -MD -MP -MF $(DEPDIR)/afpd-nfsquota.Tpo -c -o afpd-nfsquota.o `test -f 'nfsquota.c' || echo '$(srcdir)/'`nfsquota.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-nfsquota.Tpo $(DEPDIR)/afpd-nfsquota.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='nfsquota.c' object='afpd-nfsquota.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-nfsquota.o `test -f 'nfsquota.c' || echo '$(srcdir)/'`nfsquota.c
-
-afpd-nfsquota.obj: nfsquota.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-nfsquota.obj -MD -MP -MF $(DEPDIR)/afpd-nfsquota.Tpo -c -o afpd-nfsquota.obj `if test -f 'nfsquota.c'; then $(CYGPATH_W) 'nfsquota.c'; else $(CYGPATH_W) '$(srcdir)/nfsquota.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-nfsquota.Tpo $(DEPDIR)/afpd-nfsquota.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='nfsquota.c' object='afpd-nfsquota.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-nfsquota.obj `if test -f 'nfsquota.c'; then $(CYGPATH_W) 'nfsquota.c'; else $(CYGPATH_W) '$(srcdir)/nfsquota.c'; fi`
-
-afpd-quota.o: quota.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-quota.o -MD -MP -MF $(DEPDIR)/afpd-quota.Tpo -c -o afpd-quota.o `test -f 'quota.c' || echo '$(srcdir)/'`quota.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-quota.Tpo $(DEPDIR)/afpd-quota.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='quota.c' object='afpd-quota.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-quota.o `test -f 'quota.c' || echo '$(srcdir)/'`quota.c
-
-afpd-quota.obj: quota.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-quota.obj -MD -MP -MF $(DEPDIR)/afpd-quota.Tpo -c -o afpd-quota.obj `if test -f 'quota.c'; then $(CYGPATH_W) 'quota.c'; else $(CYGPATH_W) '$(srcdir)/quota.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-quota.Tpo $(DEPDIR)/afpd-quota.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='quota.c' object='afpd-quota.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-quota.obj `if test -f 'quota.c'; then $(CYGPATH_W) 'quota.c'; else $(CYGPATH_W) '$(srcdir)/quota.c'; fi`
-
-afpd-uam.o: uam.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-uam.o -MD -MP -MF $(DEPDIR)/afpd-uam.Tpo -c -o afpd-uam.o `test -f 'uam.c' || echo '$(srcdir)/'`uam.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-uam.Tpo $(DEPDIR)/afpd-uam.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uam.c' object='afpd-uam.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-uam.o `test -f 'uam.c' || echo '$(srcdir)/'`uam.c
-
-afpd-uam.obj: uam.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-uam.obj -MD -MP -MF $(DEPDIR)/afpd-uam.Tpo -c -o afpd-uam.obj `if test -f 'uam.c'; then $(CYGPATH_W) 'uam.c'; else $(CYGPATH_W) '$(srcdir)/uam.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-uam.Tpo $(DEPDIR)/afpd-uam.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uam.c' object='afpd-uam.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-uam.obj `if test -f 'uam.c'; then $(CYGPATH_W) 'uam.c'; else $(CYGPATH_W) '$(srcdir)/uam.c'; fi`
-
-afpd-afs.o: afs.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afs.o -MD -MP -MF $(DEPDIR)/afpd-afs.Tpo -c -o afpd-afs.o `test -f 'afs.c' || echo '$(srcdir)/'`afs.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-afs.Tpo $(DEPDIR)/afpd-afs.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='afs.c' object='afpd-afs.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afs.o `test -f 'afs.c' || echo '$(srcdir)/'`afs.c
-
-afpd-afs.obj: afs.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afs.obj -MD -MP -MF $(DEPDIR)/afpd-afs.Tpo -c -o afpd-afs.obj `if test -f 'afs.c'; then $(CYGPATH_W) 'afs.c'; else $(CYGPATH_W) '$(srcdir)/afs.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-afs.Tpo $(DEPDIR)/afpd-afs.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='afs.c' object='afpd-afs.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afs.obj `if test -f 'afs.c'; then $(CYGPATH_W) 'afs.c'; else $(CYGPATH_W) '$(srcdir)/afs.c'; fi`
-
-afpd-uid.o: uid.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-uid.o -MD -MP -MF $(DEPDIR)/afpd-uid.Tpo -c -o afpd-uid.o `test -f 'uid.c' || echo '$(srcdir)/'`uid.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-uid.Tpo $(DEPDIR)/afpd-uid.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uid.c' object='afpd-uid.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-uid.o `test -f 'uid.c' || echo '$(srcdir)/'`uid.c
-
-afpd-uid.obj: uid.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-uid.obj -MD -MP -MF $(DEPDIR)/afpd-uid.Tpo -c -o afpd-uid.obj `if test -f 'uid.c'; then $(CYGPATH_W) 'uid.c'; else $(CYGPATH_W) '$(srcdir)/uid.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-uid.Tpo $(DEPDIR)/afpd-uid.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uid.c' object='afpd-uid.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-uid.obj `if test -f 'uid.c'; then $(CYGPATH_W) 'uid.c'; else $(CYGPATH_W) '$(srcdir)/uid.c'; fi`
-
-afpd-afp_util.o: afp_util.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afp_util.o -MD -MP -MF $(DEPDIR)/afpd-afp_util.Tpo -c -o afpd-afp_util.o `test -f 'afp_util.c' || echo '$(srcdir)/'`afp_util.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-afp_util.Tpo $(DEPDIR)/afpd-afp_util.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='afp_util.c' object='afpd-afp_util.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afp_util.o `test -f 'afp_util.c' || echo '$(srcdir)/'`afp_util.c
-
-afpd-afp_util.obj: afp_util.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afp_util.obj -MD -MP -MF $(DEPDIR)/afpd-afp_util.Tpo -c -o afpd-afp_util.obj `if test -f 'afp_util.c'; then $(CYGPATH_W) 'afp_util.c'; else $(CYGPATH_W) '$(srcdir)/afp_util.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-afp_util.Tpo $(DEPDIR)/afpd-afp_util.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='afp_util.c' object='afpd-afp_util.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afp_util.obj `if test -f 'afp_util.c'; then $(CYGPATH_W) 'afp_util.c'; else $(CYGPATH_W) '$(srcdir)/afp_util.c'; fi`
-
-afpd-catsearch.o: catsearch.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-catsearch.o -MD -MP -MF $(DEPDIR)/afpd-catsearch.Tpo -c -o afpd-catsearch.o `test -f 'catsearch.c' || echo '$(srcdir)/'`catsearch.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-catsearch.Tpo $(DEPDIR)/afpd-catsearch.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='catsearch.c' object='afpd-catsearch.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-catsearch.o `test -f 'catsearch.c' || echo '$(srcdir)/'`catsearch.c
-
-afpd-catsearch.obj: catsearch.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-catsearch.obj -MD -MP -MF $(DEPDIR)/afpd-catsearch.Tpo -c -o afpd-catsearch.obj `if test -f 'catsearch.c'; then $(CYGPATH_W) 'catsearch.c'; else $(CYGPATH_W) '$(srcdir)/catsearch.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-catsearch.Tpo $(DEPDIR)/afpd-catsearch.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='catsearch.c' object='afpd-catsearch.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-catsearch.obj `if test -f 'catsearch.c'; then $(CYGPATH_W) 'catsearch.c'; else $(CYGPATH_W) '$(srcdir)/catsearch.c'; fi`
-
-afpd-afprun.o: afprun.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afprun.o -MD -MP -MF $(DEPDIR)/afpd-afprun.Tpo -c -o afpd-afprun.o `test -f 'afprun.c' || echo '$(srcdir)/'`afprun.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-afprun.Tpo $(DEPDIR)/afpd-afprun.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='afprun.c' object='afpd-afprun.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afprun.o `test -f 'afprun.c' || echo '$(srcdir)/'`afprun.c
-
-afpd-afprun.obj: afprun.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afprun.obj -MD -MP -MF $(DEPDIR)/afpd-afprun.Tpo -c -o afpd-afprun.obj `if test -f 'afprun.c'; then $(CYGPATH_W) 'afprun.c'; else $(CYGPATH_W) '$(srcdir)/afprun.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-afprun.Tpo $(DEPDIR)/afpd-afprun.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='afprun.c' object='afpd-afprun.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afprun.obj `if test -f 'afprun.c'; then $(CYGPATH_W) 'afprun.c'; else $(CYGPATH_W) '$(srcdir)/afprun.c'; fi`
 
 afpd-hash.o: hash.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-hash.o -MD -MP -MF $(DEPDIR)/afpd-hash.Tpo -c -o afpd-hash.o `test -f 'hash.c' || echo '$(srcdir)/'`hash.c
@@ -871,19 +779,173 @@ afpd-hash.obj: hash.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-hash.obj `if test -f 'hash.c'; then $(CYGPATH_W) 'hash.c'; else $(CYGPATH_W) '$(srcdir)/hash.c'; fi`
 
-afpd-extattrs.o: extattrs.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-extattrs.o -MD -MP -MF $(DEPDIR)/afpd-extattrs.Tpo -c -o afpd-extattrs.o `test -f 'extattrs.c' || echo '$(srcdir)/'`extattrs.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-extattrs.Tpo $(DEPDIR)/afpd-extattrs.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='extattrs.c' object='afpd-extattrs.o' libtool=no @AMDEPBACKSLASH@
+afpd-main.o: main.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-main.o -MD -MP -MF $(DEPDIR)/afpd-main.Tpo -c -o afpd-main.o `test -f 'main.c' || echo '$(srcdir)/'`main.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-main.Tpo $(DEPDIR)/afpd-main.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='main.c' object='afpd-main.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-extattrs.o `test -f 'extattrs.c' || echo '$(srcdir)/'`extattrs.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-main.o `test -f 'main.c' || echo '$(srcdir)/'`main.c
 
-afpd-extattrs.obj: extattrs.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-extattrs.obj -MD -MP -MF $(DEPDIR)/afpd-extattrs.Tpo -c -o afpd-extattrs.obj `if test -f 'extattrs.c'; then $(CYGPATH_W) 'extattrs.c'; else $(CYGPATH_W) '$(srcdir)/extattrs.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-extattrs.Tpo $(DEPDIR)/afpd-extattrs.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='extattrs.c' object='afpd-extattrs.obj' libtool=no @AMDEPBACKSLASH@
+afpd-main.obj: main.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-main.obj -MD -MP -MF $(DEPDIR)/afpd-main.Tpo -c -o afpd-main.obj `if test -f 'main.c'; then $(CYGPATH_W) 'main.c'; else $(CYGPATH_W) '$(srcdir)/main.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-main.Tpo $(DEPDIR)/afpd-main.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='main.c' object='afpd-main.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-extattrs.obj `if test -f 'extattrs.c'; then $(CYGPATH_W) 'extattrs.c'; else $(CYGPATH_W) '$(srcdir)/extattrs.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-main.obj `if test -f 'main.c'; then $(CYGPATH_W) 'main.c'; else $(CYGPATH_W) '$(srcdir)/main.c'; fi`
+
+afpd-mangle.o: mangle.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-mangle.o -MD -MP -MF $(DEPDIR)/afpd-mangle.Tpo -c -o afpd-mangle.o `test -f 'mangle.c' || echo '$(srcdir)/'`mangle.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-mangle.Tpo $(DEPDIR)/afpd-mangle.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mangle.c' object='afpd-mangle.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-mangle.o `test -f 'mangle.c' || echo '$(srcdir)/'`mangle.c
+
+afpd-mangle.obj: mangle.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-mangle.obj -MD -MP -MF $(DEPDIR)/afpd-mangle.Tpo -c -o afpd-mangle.obj `if test -f 'mangle.c'; then $(CYGPATH_W) 'mangle.c'; else $(CYGPATH_W) '$(srcdir)/mangle.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-mangle.Tpo $(DEPDIR)/afpd-mangle.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mangle.c' object='afpd-mangle.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-mangle.obj `if test -f 'mangle.c'; then $(CYGPATH_W) 'mangle.c'; else $(CYGPATH_W) '$(srcdir)/mangle.c'; fi`
+
+afpd-messages.o: messages.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-messages.o -MD -MP -MF $(DEPDIR)/afpd-messages.Tpo -c -o afpd-messages.o `test -f 'messages.c' || echo '$(srcdir)/'`messages.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-messages.Tpo $(DEPDIR)/afpd-messages.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='messages.c' object='afpd-messages.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-messages.o `test -f 'messages.c' || echo '$(srcdir)/'`messages.c
+
+afpd-messages.obj: messages.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-messages.obj -MD -MP -MF $(DEPDIR)/afpd-messages.Tpo -c -o afpd-messages.obj `if test -f 'messages.c'; then $(CYGPATH_W) 'messages.c'; else $(CYGPATH_W) '$(srcdir)/messages.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-messages.Tpo $(DEPDIR)/afpd-messages.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='messages.c' object='afpd-messages.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-messages.obj `if test -f 'messages.c'; then $(CYGPATH_W) 'messages.c'; else $(CYGPATH_W) '$(srcdir)/messages.c'; fi`
+
+afpd-nfsquota.o: nfsquota.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-nfsquota.o -MD -MP -MF $(DEPDIR)/afpd-nfsquota.Tpo -c -o afpd-nfsquota.o `test -f 'nfsquota.c' || echo '$(srcdir)/'`nfsquota.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-nfsquota.Tpo $(DEPDIR)/afpd-nfsquota.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='nfsquota.c' object='afpd-nfsquota.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-nfsquota.o `test -f 'nfsquota.c' || echo '$(srcdir)/'`nfsquota.c
+
+afpd-nfsquota.obj: nfsquota.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-nfsquota.obj -MD -MP -MF $(DEPDIR)/afpd-nfsquota.Tpo -c -o afpd-nfsquota.obj `if test -f 'nfsquota.c'; then $(CYGPATH_W) 'nfsquota.c'; else $(CYGPATH_W) '$(srcdir)/nfsquota.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-nfsquota.Tpo $(DEPDIR)/afpd-nfsquota.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='nfsquota.c' object='afpd-nfsquota.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-nfsquota.obj `if test -f 'nfsquota.c'; then $(CYGPATH_W) 'nfsquota.c'; else $(CYGPATH_W) '$(srcdir)/nfsquota.c'; fi`
+
+afpd-ofork.o: ofork.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-ofork.o -MD -MP -MF $(DEPDIR)/afpd-ofork.Tpo -c -o afpd-ofork.o `test -f 'ofork.c' || echo '$(srcdir)/'`ofork.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-ofork.Tpo $(DEPDIR)/afpd-ofork.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='ofork.c' object='afpd-ofork.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-ofork.o `test -f 'ofork.c' || echo '$(srcdir)/'`ofork.c
+
+afpd-ofork.obj: ofork.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-ofork.obj -MD -MP -MF $(DEPDIR)/afpd-ofork.Tpo -c -o afpd-ofork.obj `if test -f 'ofork.c'; then $(CYGPATH_W) 'ofork.c'; else $(CYGPATH_W) '$(srcdir)/ofork.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-ofork.Tpo $(DEPDIR)/afpd-ofork.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='ofork.c' object='afpd-ofork.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-ofork.obj `if test -f 'ofork.c'; then $(CYGPATH_W) 'ofork.c'; else $(CYGPATH_W) '$(srcdir)/ofork.c'; fi`
+
+afpd-quota.o: quota.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-quota.o -MD -MP -MF $(DEPDIR)/afpd-quota.Tpo -c -o afpd-quota.o `test -f 'quota.c' || echo '$(srcdir)/'`quota.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-quota.Tpo $(DEPDIR)/afpd-quota.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='quota.c' object='afpd-quota.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-quota.o `test -f 'quota.c' || echo '$(srcdir)/'`quota.c
+
+afpd-quota.obj: quota.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-quota.obj -MD -MP -MF $(DEPDIR)/afpd-quota.Tpo -c -o afpd-quota.obj `if test -f 'quota.c'; then $(CYGPATH_W) 'quota.c'; else $(CYGPATH_W) '$(srcdir)/quota.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-quota.Tpo $(DEPDIR)/afpd-quota.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='quota.c' object='afpd-quota.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-quota.obj `if test -f 'quota.c'; then $(CYGPATH_W) 'quota.c'; else $(CYGPATH_W) '$(srcdir)/quota.c'; fi`
+
+afpd-status.o: status.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-status.o -MD -MP -MF $(DEPDIR)/afpd-status.Tpo -c -o afpd-status.o `test -f 'status.c' || echo '$(srcdir)/'`status.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-status.Tpo $(DEPDIR)/afpd-status.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='status.c' object='afpd-status.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-status.o `test -f 'status.c' || echo '$(srcdir)/'`status.c
+
+afpd-status.obj: status.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-status.obj -MD -MP -MF $(DEPDIR)/afpd-status.Tpo -c -o afpd-status.obj `if test -f 'status.c'; then $(CYGPATH_W) 'status.c'; else $(CYGPATH_W) '$(srcdir)/status.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-status.Tpo $(DEPDIR)/afpd-status.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='status.c' object='afpd-status.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-status.obj `if test -f 'status.c'; then $(CYGPATH_W) 'status.c'; else $(CYGPATH_W) '$(srcdir)/status.c'; fi`
+
+afpd-switch.o: switch.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-switch.o -MD -MP -MF $(DEPDIR)/afpd-switch.Tpo -c -o afpd-switch.o `test -f 'switch.c' || echo '$(srcdir)/'`switch.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-switch.Tpo $(DEPDIR)/afpd-switch.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='switch.c' object='afpd-switch.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-switch.o `test -f 'switch.c' || echo '$(srcdir)/'`switch.c
+
+afpd-switch.obj: switch.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-switch.obj -MD -MP -MF $(DEPDIR)/afpd-switch.Tpo -c -o afpd-switch.obj `if test -f 'switch.c'; then $(CYGPATH_W) 'switch.c'; else $(CYGPATH_W) '$(srcdir)/switch.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-switch.Tpo $(DEPDIR)/afpd-switch.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='switch.c' object='afpd-switch.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-switch.obj `if test -f 'switch.c'; then $(CYGPATH_W) 'switch.c'; else $(CYGPATH_W) '$(srcdir)/switch.c'; fi`
+
+afpd-uam.o: uam.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-uam.o -MD -MP -MF $(DEPDIR)/afpd-uam.Tpo -c -o afpd-uam.o `test -f 'uam.c' || echo '$(srcdir)/'`uam.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-uam.Tpo $(DEPDIR)/afpd-uam.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uam.c' object='afpd-uam.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-uam.o `test -f 'uam.c' || echo '$(srcdir)/'`uam.c
+
+afpd-uam.obj: uam.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-uam.obj -MD -MP -MF $(DEPDIR)/afpd-uam.Tpo -c -o afpd-uam.obj `if test -f 'uam.c'; then $(CYGPATH_W) 'uam.c'; else $(CYGPATH_W) '$(srcdir)/uam.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-uam.Tpo $(DEPDIR)/afpd-uam.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uam.c' object='afpd-uam.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-uam.obj `if test -f 'uam.c'; then $(CYGPATH_W) 'uam.c'; else $(CYGPATH_W) '$(srcdir)/uam.c'; fi`
+
+afpd-uid.o: uid.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-uid.o -MD -MP -MF $(DEPDIR)/afpd-uid.Tpo -c -o afpd-uid.o `test -f 'uid.c' || echo '$(srcdir)/'`uid.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-uid.Tpo $(DEPDIR)/afpd-uid.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uid.c' object='afpd-uid.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-uid.o `test -f 'uid.c' || echo '$(srcdir)/'`uid.c
+
+afpd-uid.obj: uid.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-uid.obj -MD -MP -MF $(DEPDIR)/afpd-uid.Tpo -c -o afpd-uid.obj `if test -f 'uid.c'; then $(CYGPATH_W) 'uid.c'; else $(CYGPATH_W) '$(srcdir)/uid.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-uid.Tpo $(DEPDIR)/afpd-uid.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uid.c' object='afpd-uid.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-uid.obj `if test -f 'uid.c'; then $(CYGPATH_W) 'uid.c'; else $(CYGPATH_W) '$(srcdir)/uid.c'; fi`
+
+afpd-unix.o: unix.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-unix.o -MD -MP -MF $(DEPDIR)/afpd-unix.Tpo -c -o afpd-unix.o `test -f 'unix.c' || echo '$(srcdir)/'`unix.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-unix.Tpo $(DEPDIR)/afpd-unix.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='unix.c' object='afpd-unix.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-unix.o `test -f 'unix.c' || echo '$(srcdir)/'`unix.c
+
+afpd-unix.obj: unix.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-unix.obj -MD -MP -MF $(DEPDIR)/afpd-unix.Tpo -c -o afpd-unix.obj `if test -f 'unix.c'; then $(CYGPATH_W) 'unix.c'; else $(CYGPATH_W) '$(srcdir)/unix.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-unix.Tpo $(DEPDIR)/afpd-unix.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='unix.c' object='afpd-unix.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-unix.obj `if test -f 'unix.c'; then $(CYGPATH_W) 'unix.c'; else $(CYGPATH_W) '$(srcdir)/unix.c'; fi`
+
+afpd-volume.o: volume.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-volume.o -MD -MP -MF $(DEPDIR)/afpd-volume.Tpo -c -o afpd-volume.o `test -f 'volume.c' || echo '$(srcdir)/'`volume.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-volume.Tpo $(DEPDIR)/afpd-volume.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='volume.c' object='afpd-volume.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-volume.o `test -f 'volume.c' || echo '$(srcdir)/'`volume.c
+
+afpd-volume.obj: volume.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-volume.obj -MD -MP -MF $(DEPDIR)/afpd-volume.Tpo -c -o afpd-volume.obj `if test -f 'volume.c'; then $(CYGPATH_W) 'volume.c'; else $(CYGPATH_W) '$(srcdir)/volume.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-volume.Tpo $(DEPDIR)/afpd-volume.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='volume.c' object='afpd-volume.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-volume.obj `if test -f 'volume.c'; then $(CYGPATH_W) 'volume.c'; else $(CYGPATH_W) '$(srcdir)/volume.c'; fi`
 
 afpd-acls.o: acls.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-acls.o -MD -MP -MF $(DEPDIR)/afpd-acls.Tpo -c -o afpd-acls.o `test -f 'acls.c' || echo '$(srcdir)/'`acls.c

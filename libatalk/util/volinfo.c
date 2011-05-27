@@ -139,16 +139,32 @@ static char * make_path_absolute(char *path, size_t bufsize)
     char 	abspath[MAXPATHLEN];
     char	*p;
 
-    if (stat(path, &st) != 0) {
-        return NULL;
-    }
+    strlcpy(abspath, path, sizeof(abspath));
 
-    strlcpy (abspath, path, sizeof(abspath));
+    /* we might be called from `ad cp ...` with non existing target */
+    if (stat(abspath, &st) != 0) {
+        if (errno != ENOENT)
+            return NULL;
 
-    if (!S_ISDIR(st.st_mode)) {
-        if (NULL == (p=strrchr(abspath, '/')) )
+        if (NULL == (p = strrchr(abspath, '/')) )
+            /* single component `ad cp SOURCEFILE TARGETFILE`, use "." instead */
             strcpy(abspath, ".");
         else
+            /* try without the last path element */
+            *p = '\0';
+
+        if (stat(abspath, &st) != 0) {
+            return NULL;
+        }
+    }
+
+    if (S_ISREG(st.st_mode)) {
+        /* single file copy SOURCE */
+        if (NULL == (p = strrchr(abspath, '/')) )
+            /* no path, use "." instead */
+            strcpy(abspath, ".");
+        else
+            /* try without the last path element */
             *p = '\0';
     }
 
@@ -272,13 +288,15 @@ static int parseline ( char *buf, struct volinfo *vol)
         }
         break;
       case CNIDDBDPORT:
-        vol->v_dbd_port = atoi(value);
+        if ((vol->v_dbd_port = strdup(value)) == NULL) {
+	    fprintf (stderr, "strdup: %s", strerror(errno));
+            return -1;            
+        }
         break;
       case CNID_DBPATH:
-        if ((vol->v_dbpath = strdup(value)) == NULL) {
-	    fprintf (stderr, "strdup: %s", strerror(errno));
-            return -1;
-        }
+          if ((vol->v_dbpath = malloc(MAXPATHLEN+1)) == NULL)
+              return -1;
+          strcpy(vol->v_dbpath, value);
         break;
       case ADOUBLE_VER:
         if (strcasecmp(value, "v1") == 0) {
@@ -328,7 +346,7 @@ int loadvolinfo (char *path, struct volinfo *vol)
     char   volinfofile[MAXPATHLEN];
     char   buf[MAXPATHLEN];
     struct flock lock;
-    int    fd;
+    int    fd, len;
     FILE   *fp;
 
     if ( !path || !vol)
@@ -342,9 +360,16 @@ int loadvolinfo (char *path, struct volinfo *vol)
         return -1;
 
     if ((vol->v_path = strdup(volinfofile)) == NULL ) {
-	fprintf (stderr, "strdup: %s", strerror(errno));
+        fprintf (stderr, "strdup: %s", strerror(errno));
         return (-1);
     }
+    /* Remove trailing slashes */
+    len = strlen(vol->v_path);
+    while (len && (vol->v_path[len-1] == '/')) {
+        vol->v_path[len-1] = 0;
+        len--;
+    }
+
     strlcat(volinfofile, ".AppleDesktop/", sizeof(volinfofile));
     strlcat(volinfofile, VOLINFOFILE, sizeof(volinfofile));
 
@@ -387,7 +412,60 @@ int loadvolinfo (char *path, struct volinfo *vol)
     if ((vol->v_flags & AFPVOL_INV_DOTS))
         vol->v_ad_options |= ADVOL_INVDOTS;
 
+    vol->retaincount = 1;
+
     fclose(fp);
+    return 0;
+}
+
+/*!
+ * Allocate a struct volinfo object for refcounting usage with retain and close, and
+ * call loadvolinfo with it
+ */
+struct volinfo *allocvolinfo(char *path)
+{
+    struct volinfo *p = malloc(sizeof(struct volinfo));
+    if (p == NULL)
+        return NULL;
+
+    if (loadvolinfo(path, p) == -1)
+        return NULL;
+
+    p->malloced = 1;
+
+    return p;
+}
+
+void retainvolinfo(struct volinfo *vol)
+{
+    vol->retaincount++;
+}
+
+/*!
+ * Decrement retain count, free resources when retaincount reaches 0
+ */
+int closevolinfo(struct volinfo *volinfo)
+{
+    if (volinfo->retaincount <= 0)
+        abort();
+
+    volinfo->retaincount--;
+
+    if (volinfo->retaincount == 0) {
+        free(volinfo->v_name); volinfo->v_name = NULL;
+        free(volinfo->v_path); volinfo->v_path = NULL;
+        free(volinfo->v_cnidscheme); volinfo->v_cnidscheme = NULL;
+        free(volinfo->v_dbpath); volinfo->v_dbpath = NULL;
+        free(volinfo->v_volcodepage); volinfo->v_volcodepage = NULL;
+        free(volinfo->v_maccodepage); volinfo->v_maccodepage = NULL;
+        free(volinfo->v_dbd_host); volinfo->v_dbd_host = NULL;
+        free(volinfo->v_dbd_port); volinfo->v_dbd_port = NULL;
+        if (volinfo->malloced) {
+            volinfo->malloced = 0;
+            free(volinfo);
+        }
+    }
+
     return 0;
 }
 

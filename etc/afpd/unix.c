@@ -1,6 +1,4 @@
 /*
- * $Id: unix.c,v 1.61 2010-02-10 14:05:37 franklahm Exp $
- *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
  */
@@ -38,17 +36,16 @@ char *strchr (), *strrchr ();
 #include <atalk/afp.h>
 #include <atalk/util.h>
 #include <atalk/unix.h>
+#include <atalk/acl.h>
 
 #include "auth.h"
 #include "directory.h"
 #include "volume.h"
 #include "unix.h"
 #include "fork.h"
-
-#ifdef HAVE_NFSv4_ACLS
-extern void acltoownermode(char *path, struct stat *st,uid_t uid, struct maccess *ma);
+#ifdef HAVE_ACLS
+#include "acls.h"
 #endif
-
 
 /*
  * Get the free space on a partition.
@@ -160,6 +157,7 @@ mode_t mode;
 }
 
 #ifdef accessmode
+
 #undef accessmode
 #endif
 /*
@@ -172,9 +170,8 @@ mode_t mode;
  * dir parameter is used by AFS
  */
 void accessmode(char *path, struct maccess *ma, struct dir *dir _U_, struct stat *st)
-
 {
-struct stat     sb;
+    struct stat     sb;
 
     ma->ma_user = ma->ma_owner = ma->ma_world = ma->ma_group = 0;
     if (!st) {
@@ -183,9 +180,8 @@ struct stat     sb;
         st = &sb;
     }
     utommode( st, ma );
-#ifdef HAVE_NFSv4_ACLS
-    /* 10.5 Finder looks at OS 9 mode, so we must do some mapping */
-    acltoownermode( path, st, uuid, ma);
+#ifdef HAVE_ACLS
+    acltoownermode(path, st, ma);
 #endif
 }
 

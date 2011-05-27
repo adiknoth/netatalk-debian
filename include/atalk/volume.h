@@ -1,5 +1,5 @@
 /*
- * $Id: volume.h,v 1.17 2010-04-10 08:24:54 franklahm Exp $
+ * $Id: volume.h,v 1.16 2010/03/31 09:47:32 franklahm Exp $
  *
  * Copyright (c) 1990,1994 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -27,9 +27,7 @@ struct vol {
     u_int16_t       v_vid;
     int             v_flags;
     char            *v_path;
-    struct dir      *v_dir, *v_root;
-    struct dir      *v_curdir;  /* cache */
-    hash_t          *v_hash;
+    struct dir      *v_root;
     time_t          v_mtime;
 
     charset_t       v_volcharset;
@@ -87,7 +85,7 @@ struct vol {
     char            *v_postexec;
     int             v_root_preexec_close;
     int             v_preexec_close;
-
+    char            *v_uuid;    /* For TimeMachine zeroconf record */
 #ifdef FORCE_UIDGID
     char            *v_forceuid;
     char            *v_forcegid;
@@ -108,7 +106,7 @@ struct vol {
 
 /*
   Flags that alter volume behaviour.
-  Keep in sync with include/atalk/volinfo.h and libatalk/util/volinfo.c
+  Keep in sync with libatalk/util/volinfo.c
 */
 #define AFPVOL_A2VOL     (1 << 5)   /* prodos volume */
 #define AFPVOL_CRLF      (1 << 6)   /* cr/lf translation */
@@ -135,8 +133,13 @@ struct vol {
 
 #define AFPVOL_CACHE     (1 << 21)   /* Use adouble v2 CNID caching. Default: yes */
 #define AFPVOL_INV_DOTS  (1 << 22)   /* dots files are invisible */
-#define AFPVOL_TM        (1 << 24)   /* Supports TimeMachine */
-#define AFPVOL_ACLS      (1 << 25)   /* Volume supports ACLS */
+#define AFPVOL_TM        (1 << 23)   /* Supports TimeMachine */
+#define AFPVOL_ACLS      (1 << 24)   /* Volume supports ACLS */
+#define AFPVOL_SEARCHDB  (1 << 25)   /* Use fast CNID db search instead of filesystem */
+/* Found this in branch dir-rewrite, maybe we want to use it sometimes */
+#if 0
+#define AFPVOL_CDROM     (1 << XX)   /* Ejectable media eg CD -> in memory CNID db */
+#endif
 
 /* Extended Attributes vfs indirection  */
 #define AFPVOL_EA_NONE           0   /* No EAs */
@@ -194,11 +197,7 @@ int wincheck(const struct vol *vol, const char *path);
 #define VOLPBIT_XBTOTAL 10
 #define VOLPBIT_BSIZE   11        /* block size */
 
-#ifdef AFP3x
 #define utf8_encoding() (afp_version >= 30)
-#else
-#define utf8_encoding() (0)
-#endif
 
 #define vol_noadouble(vol) (((vol)->v_flags & AFPVOL_NOADOUBLE) ? 1 : 0)
 #define vol_nodev(vol) (((vol)->v_flags & AFPVOL_NODEV) ? 1 : 0)

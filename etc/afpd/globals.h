@@ -24,7 +24,13 @@
 #include <atalk/unicode.h>
 #include <atalk/uam.h>
 
-#define MACFILELEN 31
+/* #define DOSFILELEN 12 */             /* Type1, DOS-compat*/
+#define MACFILELEN 31                   /* Type2, HFS-compat */
+#define UTF8FILELEN_EARLY 255           /* Type3, early Mac OS X 10.0-10.4.? */
+/* #define UTF8FILELEN_NAME_MAX 765 */  /* Type3, 10.4.?- , getconf NAME_MAX */
+/* #define UTF8FILELEN_SPEC 0xFFFF */   /* Type3, spec on document */
+/* #define HFSPLUSFILELEN 510 */        /* HFS+ spec, 510byte = 255codepoint */
+
 #define MAXUSERLEN 256
 
 #define OPTION_DEBUG         (1 << 0)
@@ -35,6 +41,8 @@
 #define OPTION_NOSLP         (1 << 5)
 #define OPTION_ANNOUNCESSH   (1 << 6)
 #define OPTION_UUID          (1 << 7)
+#define OPTION_ACL2MACCESS   (1 << 8)
+#define OPTION_NOZEROCONF    (1 << 9)
 
 #ifdef FORCE_UIDGID
 /* set up a structure for this */
@@ -54,14 +62,19 @@ struct afp_volume_name {
 };
 
 struct afp_options {
-    int connections, transports, tickleval, timeout, server_notif, flags;
+    int connections, transports, tickleval, timeout, server_notif, flags, dircachesize;
+    int sleep;                  /* Maximum time allowed to sleep (in tickles) */
+    int disconnected;           /* Maximum time in disconnected state (in tickles) */
+    unsigned int tcp_sndbuf, tcp_rcvbuf;
     unsigned char passwdbits, passwdminlen, loginmaxfail;
     u_int32_t server_quantum;
+    int dsireadbuf; /* scale factor for sizefof(dsi->buffer) = server_quantum * dsireadbuf */
     char hostname[MAXHOSTNAMELEN + 1], *server, *ipaddr, *port, *configfile;
     struct at_addr ddpaddr;
     char *uampath, *fqdn;
     char *pidfile;
     char *sigconffile;
+    char *uuidconf;
     struct afp_volume_name defaultvol, systemvol, uservol;
     int  closevol;
 
@@ -75,7 +88,6 @@ struct afp_options {
     charset_t maccharset, unixcharset; 
     mode_t umask;
     mode_t save_mask;
-    int    sleep;
 #ifdef ADMIN_GRP
     gid_t admingid;
 #endif /* ADMIN_GRP */
@@ -83,26 +95,27 @@ struct afp_options {
 
     /* default value for winbind authentication */
     char *ntdomain, *ntseparator;
+    char *logconfig;
 };
 
 #define AFPOBJ_TMPSIZ (MAXPATHLEN)
 typedef struct _AFPObj {
     int proto;
     unsigned long servernum;
-    void *handle, *config;
+    void *handle;               /* either (DSI *) or (ASP *) */
+    void *config; 
     struct afp_options options;
     char *Obj, *Type, *Zone;
     char username[MAXUSERLEN];
     void (*logout)(void), (*exit)(int);
     int (*reply)(void *, int);
     int (*attention)(void *, AFPUserBytes);
-    void (*sleep)(void);
     /* to prevent confusion, only use these in afp_* calls */
     char oldtmp[AFPOBJ_TMPSIZ + 1], newtmp[AFPOBJ_TMPSIZ + 1];
     void *uam_cookie; /* cookie for uams */
     struct session_info  sinfo;
     uid_t uid; 	/* client running user id */
-
+    int ipc_fd; /* anonymous PF_UNIX socket for IPC with afpd parent */
 #ifdef FORCE_UIDGID
     int                 force_uid;
     uidgidset		uidgid;
@@ -141,6 +154,9 @@ extern int  parseline  (int, char *);
 /* afp_util.c */
 extern const char *AfpNum2name (int );
 extern const char *AfpErr2name(int err);
+
+/* directory.c */
+extern struct dir rootParent;
 
 #ifndef NO_DDP
 extern void afp_over_asp (AFPObj *);

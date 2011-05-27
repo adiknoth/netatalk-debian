@@ -37,9 +37,8 @@ host_triplet = @host@
 target_triplet = @target@
 subdir = contrib/shell_utils
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(srcdir)/afpd-mtab.pl.in $(srcdir)/apple_cp.in \
-	$(srcdir)/apple_dump.in $(srcdir)/apple_mv.in \
-	$(srcdir)/apple_rm.in $(srcdir)/asip-status.pl.in
+	$(srcdir)/afpd-mtab.pl.in $(srcdir)/apple_dump.in \
+	$(srcdir)/asip-status.pl.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
 	$(top_srcdir)/macros/cnid-backend.m4 \
@@ -60,13 +59,12 @@ am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
 	$(top_srcdir)/macros/summary.m4 \
 	$(top_srcdir)/macros/tcp-wrappers.m4 \
 	$(top_srcdir)/macros/util.m4 $(top_srcdir)/macros/webmin.m4 \
-	$(top_srcdir)/configure.in
+	$(top_srcdir)/macros/zeroconf.m4 $(top_srcdir)/configure.in
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
-CONFIG_CLEAN_FILES = afpd-mtab.pl apple_cp apple_dump apple_mv \
-	apple_rm asip-status.pl
+CONFIG_CLEAN_FILES = afpd-mtab.pl apple_dump asip-status.pl
 am__installdirs = "$(DESTDIR)$(bindir)"
 binSCRIPT_INSTALL = $(INSTALL_SCRIPT)
 SCRIPTS = $(bin_SCRIPTS)
@@ -74,6 +72,7 @@ SOURCES =
 DIST_SOURCES =
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
+ACL_LIBS = @ACL_LIBS@
 AFS_CFLAGS = @AFS_CFLAGS@
 AFS_LIBS = @AFS_LIBS@
 AMTAR = @AMTAR@
@@ -81,6 +80,10 @@ AR = @AR@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
+AVAHI_CFLAGS = @AVAHI_CFLAGS@
+AVAHI_LIBS = @AVAHI_LIBS@
+AVAHI_TPOLL_CFLAGS = @AVAHI_TPOLL_CFLAGS@
+AVAHI_TPOLL_LIBS = @AVAHI_TPOLL_LIBS@
 AWK = @AWK@
 BDB_BIN = @BDB_BIN@
 BDB_CFLAGS = @BDB_CFLAGS@
@@ -130,7 +133,6 @@ KLDFLAGS = @KLDFLAGS@
 KRB5_CONFIG = @KRB5_CONFIG@
 LDFLAGS = @LDFLAGS@
 LIBADD_DL = @LIBADD_DL@
-LIBATALK_ACLS = @LIBATALK_ACLS@
 LIBGCRYPT_CFLAGS = @LIBGCRYPT_CFLAGS@
 LIBGCRYPT_CONFIG = @LIBGCRYPT_CONFIG@
 LIBGCRYPT_LIBS = @LIBGCRYPT_LIBS@
@@ -162,7 +164,9 @@ PAM_SESSION = @PAM_SESSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
 PKGCONFDIR = @PKGCONFDIR@
+PKG_CONFIG = @PKG_CONFIG@
 PS = @PS@
+PTHREAD_LIBS = @PTHREAD_LIBS@
 QUOTA_LIBS = @QUOTA_LIBS@
 RANLIB = @RANLIB@
 SED = @SED@
@@ -183,6 +187,8 @@ WEBMIN_PORT = @WEBMIN_PORT@
 WEBMIN_USER = @WEBMIN_USER@
 WEBMIN_VERSION = @WEBMIN_VERSION@
 WRAP_LIBS = @WRAP_LIBS@
+ZEROCONF_CFLAGS = @ZEROCONF_CFLAGS@
+ZEROCONF_LIBS = @ZEROCONF_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -244,7 +250,6 @@ GENERATED_FILES = lp2pap.sh
 TEMPLATE_FILES = lp2pap.sh.tmpl
 PERLSCRIPTS = \
 	afpd-mtab.pl \
-	apple_cp apple_mv apple_rm  \
 	asip-status.pl \
 	apple_dump
 
@@ -287,13 +292,7 @@ $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 afpd-mtab.pl: $(top_builddir)/config.status $(srcdir)/afpd-mtab.pl.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
-apple_cp: $(top_builddir)/config.status $(srcdir)/apple_cp.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 apple_dump: $(top_builddir)/config.status $(srcdir)/apple_dump.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
-apple_mv: $(top_builddir)/config.status $(srcdir)/apple_mv.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
-apple_rm: $(top_builddir)/config.status $(srcdir)/apple_rm.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 asip-status.pl: $(top_builddir)/config.status $(srcdir)/asip-status.pl.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@

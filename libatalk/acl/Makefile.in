@@ -36,6 +36,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
+@HAVE_LDAP_TRUE@am__append_1 = ldap.c ldap_config.c
+@HAVE_LDAP_TRUE@am__append_2 = -lldap
 subdir = libatalk/acl
 DIST_COMMON = $(noinst_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
@@ -59,7 +61,7 @@ am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
 	$(top_srcdir)/macros/summary.m4 \
 	$(top_srcdir)/macros/tcp-wrappers.m4 \
 	$(top_srcdir)/macros/util.m4 $(top_srcdir)/macros/webmin.m4 \
-	$(top_srcdir)/configure.in
+	$(top_srcdir)/macros/zeroconf.m4 $(top_srcdir)/configure.in
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -67,14 +69,14 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libacl_la_LIBADD =
-am__libacl_la_SOURCES_DIST = ldap.c uuid.c cache.c ldap_config.c
-@USE_NFSv4_ACLS_TRUE@am_libacl_la_OBJECTS = ldap.lo uuid.lo cache.lo \
-@USE_NFSv4_ACLS_TRUE@	ldap_config.lo
+am__libacl_la_SOURCES_DIST = cache.c unix.c uuid.c ldap.c \
+	ldap_config.c
+@HAVE_LDAP_TRUE@am__objects_1 = ldap.lo ldap_config.lo
+am_libacl_la_OBJECTS = cache.lo unix.lo uuid.lo $(am__objects_1)
 libacl_la_OBJECTS = $(am_libacl_la_OBJECTS)
 libacl_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(libacl_la_LDFLAGS) $(LDFLAGS) -o $@
-@USE_NFSv4_ACLS_TRUE@am_libacl_la_rpath =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -94,6 +96,7 @@ ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
+ACL_LIBS = @ACL_LIBS@
 AFS_CFLAGS = @AFS_CFLAGS@
 AFS_LIBS = @AFS_LIBS@
 AMTAR = @AMTAR@
@@ -101,6 +104,10 @@ AR = @AR@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
+AVAHI_CFLAGS = @AVAHI_CFLAGS@
+AVAHI_LIBS = @AVAHI_LIBS@
+AVAHI_TPOLL_CFLAGS = @AVAHI_TPOLL_CFLAGS@
+AVAHI_TPOLL_LIBS = @AVAHI_TPOLL_LIBS@
 AWK = @AWK@
 BDB_BIN = @BDB_BIN@
 BDB_CFLAGS = @BDB_CFLAGS@
@@ -150,7 +157,6 @@ KLDFLAGS = @KLDFLAGS@
 KRB5_CONFIG = @KRB5_CONFIG@
 LDFLAGS = @LDFLAGS@
 LIBADD_DL = @LIBADD_DL@
-LIBATALK_ACLS = @LIBATALK_ACLS@
 LIBGCRYPT_CFLAGS = @LIBGCRYPT_CFLAGS@
 LIBGCRYPT_CONFIG = @LIBGCRYPT_CONFIG@
 LIBGCRYPT_LIBS = @LIBGCRYPT_LIBS@
@@ -182,7 +188,9 @@ PAM_SESSION = @PAM_SESSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
 PKGCONFDIR = @PKGCONFDIR@
+PKG_CONFIG = @PKG_CONFIG@
 PS = @PS@
+PTHREAD_LIBS = @PTHREAD_LIBS@
 QUOTA_LIBS = @QUOTA_LIBS@
 RANLIB = @RANLIB@
 SED = @SED@
@@ -203,6 +211,8 @@ WEBMIN_PORT = @WEBMIN_PORT@
 WEBMIN_USER = @WEBMIN_USER@
 WEBMIN_VERSION = @WEBMIN_VERSION@
 WRAP_LIBS = @WRAP_LIBS@
+ZEROCONF_CFLAGS = @ZEROCONF_CFLAGS@
+ZEROCONF_LIBS = @ZEROCONF_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -260,14 +270,9 @@ target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 noinst_HEADERS = aclldap.h cache.h
-@USE_NFSv4_ACLS_TRUE@noinst_LTLIBRARIES = libacl.la
-@USE_NFSv4_ACLS_TRUE@libacl_la_SOURCES = \
-@USE_NFSv4_ACLS_TRUE@	ldap.c		\
-@USE_NFSv4_ACLS_TRUE@	uuid.c		\
-@USE_NFSv4_ACLS_TRUE@	cache.c		\
-@USE_NFSv4_ACLS_TRUE@	ldap_config.c
-
-@USE_NFSv4_ACLS_TRUE@libacl_la_LDFLAGS = -lldap
+noinst_LTLIBRARIES = libacl.la
+libacl_la_SOURCES = cache.c unix.c uuid.c $(am__append_1)
+libacl_la_LDFLAGS = $(am__append_2)
 all: all-am
 
 .SUFFIXES:
@@ -311,7 +316,7 @@ clean-noinstLTLIBRARIES:
 	  rm -f "$${dir}/so_locations"; \
 	done
 libacl.la: $(libacl_la_OBJECTS) $(libacl_la_DEPENDENCIES) 
-	$(libacl_la_LINK) $(am_libacl_la_rpath) $(libacl_la_OBJECTS) $(libacl_la_LIBADD) $(LIBS)
+	$(libacl_la_LINK)  $(libacl_la_OBJECTS) $(libacl_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -322,6 +327,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cache.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldap.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ldap_config.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/unix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uuid.Plo@am__quote@
 
 .c.o:

@@ -62,7 +62,7 @@ am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
 	$(top_srcdir)/macros/summary.m4 \
 	$(top_srcdir)/macros/tcp-wrappers.m4 \
 	$(top_srcdir)/macros/util.m4 $(top_srcdir)/macros/webmin.m4 \
-	$(top_srcdir)/configure.in
+	$(top_srcdir)/macros/zeroconf.m4 $(top_srcdir)/configure.in
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -77,7 +77,7 @@ am_cnid_dbd_OBJECTS = dbif.$(OBJEXT) pack.$(OBJEXT) comm.$(OBJEXT) \
 	dbd_get.$(OBJEXT) dbd_resolve.$(OBJEXT) dbd_lookup.$(OBJEXT) \
 	dbd_update.$(OBJEXT) dbd_delete.$(OBJEXT) \
 	dbd_getstamp.$(OBJEXT) dbd_rebuild_add.$(OBJEXT) \
-	dbd_dbcheck.$(OBJEXT)
+	dbd_dbcheck.$(OBJEXT) dbd_search.$(OBJEXT)
 cnid_dbd_OBJECTS = $(am_cnid_dbd_OBJECTS)
 cnid_dbd_DEPENDENCIES = $(top_builddir)/libatalk/libatalk.la
 am_cnid_metad_OBJECTS = cnid_metad.$(OBJEXT) usockfd.$(OBJEXT) \
@@ -111,6 +111,7 @@ ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
+ACL_LIBS = @ACL_LIBS@
 AFS_CFLAGS = @AFS_CFLAGS@
 AFS_LIBS = @AFS_LIBS@
 AMTAR = @AMTAR@
@@ -118,6 +119,10 @@ AR = @AR@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
+AVAHI_CFLAGS = @AVAHI_CFLAGS@
+AVAHI_LIBS = @AVAHI_LIBS@
+AVAHI_TPOLL_CFLAGS = @AVAHI_TPOLL_CFLAGS@
+AVAHI_TPOLL_LIBS = @AVAHI_TPOLL_LIBS@
 AWK = @AWK@
 BDB_BIN = @BDB_BIN@
 BDB_CFLAGS = @BDB_CFLAGS@
@@ -167,7 +172,6 @@ KLDFLAGS = @KLDFLAGS@
 KRB5_CONFIG = @KRB5_CONFIG@
 LDFLAGS = @LDFLAGS@
 LIBADD_DL = @LIBADD_DL@
-LIBATALK_ACLS = @LIBATALK_ACLS@
 LIBGCRYPT_CFLAGS = @LIBGCRYPT_CFLAGS@
 LIBGCRYPT_CONFIG = @LIBGCRYPT_CONFIG@
 LIBGCRYPT_LIBS = @LIBGCRYPT_LIBS@
@@ -199,7 +203,9 @@ PAM_SESSION = @PAM_SESSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
 PKGCONFDIR = @PKGCONFDIR@
+PKG_CONFIG = @PKG_CONFIG@
 PS = @PS@
+PTHREAD_LIBS = @PTHREAD_LIBS@
 QUOTA_LIBS = @QUOTA_LIBS@
 RANLIB = @RANLIB@
 SED = @SED@
@@ -220,6 +226,8 @@ WEBMIN_PORT = @WEBMIN_PORT@
 WEBMIN_USER = @WEBMIN_USER@
 WEBMIN_VERSION = @WEBMIN_VERSION@
 WRAP_LIBS = @WRAP_LIBS@
+ZEROCONF_CFLAGS = @ZEROCONF_CFLAGS@
+ZEROCONF_LIBS = @ZEROCONF_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -279,11 +287,11 @@ top_srcdir = @top_srcdir@
 cnid_dbd_SOURCES = dbif.c pack.c comm.c db_param.c main.c \
                    dbd_add.c dbd_get.c dbd_resolve.c dbd_lookup.c \
                    dbd_update.c dbd_delete.c dbd_getstamp.c \
-                   dbd_rebuild_add.c dbd_dbcheck.c
+                   dbd_rebuild_add.c dbd_dbcheck.c dbd_search.c
 
-cnid_dbd_LDADD = $(top_builddir)/libatalk/libatalk.la @BDB_LIBS@
+cnid_dbd_LDADD = $(top_builddir)/libatalk/libatalk.la @BDB_LIBS@ @ACL_LIBS@
 cnid_metad_SOURCES = cnid_metad.c usockfd.c db_param.c
-cnid_metad_LDADD = $(top_builddir)/libatalk/libatalk.la
+cnid_metad_LDADD = $(top_builddir)/libatalk/libatalk.la @ACL_LIBS@
 dbd_SOURCES = cmd_dbd.c \
 	cmd_dbd_scanvol.c \
 	dbif.c pack.c \
@@ -295,7 +303,7 @@ dbd_SOURCES = cmd_dbd.c \
 	dbd_resolve.c \
 	dbd_update.c
 
-dbd_LDADD = $(top_builddir)/libatalk/libatalk.la @BDB_LIBS@
+dbd_LDADD = $(top_builddir)/libatalk/libatalk.la @BDB_LIBS@ @ACL_LIBS@
 noinst_HEADERS = dbif.h pack.h db_param.h dbd.h usockfd.h comm.h cmd_dbd.h
 EXTRA_DIST = README
 AM_CFLAGS = @BDB_CFLAGS@ -D_PATH_CNID_DBD=\"$(sbindir)/cnid_dbd\"
@@ -417,6 +425,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dbd_lookup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dbd_rebuild_add.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dbd_resolve.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dbd_search.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dbd_update.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dbif.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@
