@@ -1,361 +1,387 @@
-Format-Specification: http://svn.debian.org/wsvn/dep/web/deps/dep5.mdwn?rev=135
-Name: Netatalk
-Contact: netatalk-devel@lists.sourceforge.net
-	http://lists.sourceforge.net/lists/listinfo/netatalk-devel
+Format: http://svn.debian.org/wsvn/dep/web/deps/dep5.mdwn?rev=174
+Upstream-Name: Netatalk
+Upstream-Contact: <netatalk-devel@lists.sourceforge.net>
+ http://lists.sourceforge.net/lists/listinfo/netatalk-devel
 Source: http://netatalk.sourceforge.net/
 
+File: *
 Copyright: 1990-1997, Regents of The University of Michigan
-License: other-BSD-UMICH
+License: MIT~UMICH
 
-Files: ./etc/cnid_dbd/*
-Copyright: 2003, 2005, Joerg Lenneis
-License: other-GPL-2
+Files: bin/cnid/cnid2_create.in
+ libatalk/cnid/dbd/*
+ etc/cnid_dbd/*
+Copyright: 2003,2005, Joerg Lenneis
+ 2009-2010, Frank Lahm <franklahm@gmail.com>
+License: GPL-2
 
-Files: ./libatalk/unicode/charsets/*
+Files: libatalk/unicode/charsets/*
 Copyright: 2004, TSUBAKIMOTO Hiroya <zorac@4000do.co.jp>
 License: GPL-2+
 
-Files: Makefile.in
+Files: */Makefile.in
 Copyright: 1994-2008, Free Software Foundation, Inc.
-License: other-GAP-FSF-notice
+License: GAP~Makefile.in
 
-Files: ./bin/cnid/ad.c,
-	./bin/cnid/ad.h,
-	./bin/cnid/ad_cp.c,
-	./bin/cnid/ad_ls.c,
-	./bin/cnid/ad_util.c,
-	./bin/misc/uuidtest.c,
-	./etc/afpd/acl_mappings.h,
-	./etc/afpd/acls.c,
-	./etc/afpd/acls.h,
-	./etc/afpd/extattrs.c,
-	./etc/afpd/extattrs.h,
-	./etc/cnid_dbd/cmd_dbd.c,
-	./etc/cnid_dbd/cmd_dbd_scanvol.c,
-	./include/atalk/acl.h,
-	./include/atalk/ea.h,
-	./include/atalk/unix.h,
-	./include/atalk/uuid.h,
-	./libatalk/acl/aclldap.h,
-	./libatalk/acl/cache.c,
-	./libatalk/acl/cache.h,
-	./libatalk/acl/ldap.c,
-	./libatalk/acl/ldap_config.c,
-	./libatalk/acl/uuid.c,
-	./libatalk/util/locking.c,
-	./libatalk/util/socket.c,
-	./libatalk/util/unix.c,
-	./libatalk/vfs/acl.c,
-	./libatalk/vfs/ea.c,
-	./libatalk/vfs/ea_sys.c
+Files: bin/ad/*
+ bin/misc/uuidtest.c
+ etc/afpd/acl_mappings.h
+ etc/afpd/acls.*
+ etc/afpd/dircache.*
+ etc/afpd/extattrs.*
+ etc/cnid_dbd/cmd_dbd.c
+ etc/cnid_dbd/cmd_dbd_scanvol.c
+ include/atalk/acl.h
+ include/atalk/bstradd.h
+ include/atalk/ea.h
+ include/atalk/errchk.h
+ include/atalk/queue.h
+ include/atalk/unix.h
+ include/atalk/uuid.h
+ libatalk/acl/aclldap.h
+ libatalk/acl/cache.c
+ libatalk/acl/cache.h
+ libatalk/acl/ldap.c
+ libatalk/acl/ldap_config.c
+ libatalk/acl/unix.c
+ libatalk/acl/uuid.c
+ libatalk/bstring/bstradd.c
+ libatalk/util/locking.c
+ libatalk/util/queue.c
+ libatalk/util/socket.c
+ libatalk/util/unix.c
+ libatalk/vfs/acl.c
+ libatalk/vfs/ea.c
+ libatalk/vfs/ea_sys.c
 Copyright: 2008-2010, Frank Lahm <franklahm@gmail.com>
 License: GPL-2+
 
-Files: ./bin/cnid/cnid2_create.in,
-	./libatalk/cnid/dbd/cnid_dbd.c,
-	./libatalk/cnid/dbd/cnid_dbd.h
-Copyright: 2003, Joerg Lenneis
-License: other-GPL-2
-
-Files: ./etc/afpd/nfsquota.c
+Files: etc/afpd/nfsquota.c
 Copyright: 1980, 1990, 1993, The Regents of the University of California
 License: None
  FIXME
 
-Files: ./bin/afppasswd/afppasswd.c,
-	./etc/afpd/afp_config.c,
-	./etc/afpd/messages.c,
-	./etc/afpd/uam.c,
-	./etc/afpd/uam_auth.h,
-	./etc/papd/uam.c,
-	./etc/papd/uam_auth.h,
-	./include/atalk/dsi.h,
-	./include/atalk/netddp.h,
-	./include/atalk/server_child.h,
-	./include/atalk/uam.h,
-	./libatalk/adouble/ad_lock.c,
-	./libatalk/adouble/ad_size.c,
-	./libatalk/asp/asp_attn.c,
-	./libatalk/cnid/cdb/cnid_cdb_add.c,
-	./libatalk/cnid/cdb/cnid_cdb_delete.c,
-	./libatalk/cnid/cdb/cnid_cdb_meta.c,
-	./libatalk/cnid/cdb/cnid_cdb_open.c,
-	./libatalk/cnid/last/cnid_last.c,
-	./libatalk/cnid/tdb/cnid_tdb_add.c,
-	./libatalk/cnid/tdb/cnid_tdb_delete.c,
-	./libatalk/cnid/tdb/cnid_tdb_open.c,
-	./libatalk/dsi/dsi_attn.c,
-	./libatalk/dsi/dsi_close.c,
-	./libatalk/dsi/dsi_cmdreply.c,
-	./libatalk/dsi/dsi_getsess.c,
-	./libatalk/dsi/dsi_getstat.c,
-	./libatalk/dsi/dsi_init.c,
-	./libatalk/dsi/dsi_opensess.c,
-	./libatalk/dsi/dsi_private.h,
-	./libatalk/dsi/dsi_read.c,
-	./libatalk/dsi/dsi_stream.c,
-	./libatalk/dsi/dsi_tcp.c,
-	./libatalk/dsi/dsi_tickle.c,
-	./libatalk/dsi/dsi_write.c,
-	./libatalk/util/server_child.c
+Files: bin/afppasswd/afppasswd.c
+ etc/afpd/afp_config.c
+ etc/afpd/messages.c
+ etc/afpd/uam.c
+ etc/afpd/uam_auth.h
+ etc/papd/uam.c
+ etc/papd/uam_auth.h
+ include/atalk/dsi.h
+ include/atalk/netddp.h
+ include/atalk/server_child.h
+ include/atalk/uam.h
+ libatalk/adouble/ad_lock.c
+ libatalk/adouble/ad_size.c
+ libatalk/asp/asp_attn.c
+ libatalk/cnid/cdb/cnid_cdb_add.c
+ libatalk/cnid/cdb/cnid_cdb_delete.c
+ libatalk/cnid/cdb/cnid_cdb_meta.c
+ libatalk/cnid/cdb/cnid_cdb_open.c
+ libatalk/cnid/last/cnid_last.c
+ libatalk/cnid/tdb/cnid_tdb_add.c
+ libatalk/cnid/tdb/cnid_tdb_delete.c
+ libatalk/cnid/tdb/cnid_tdb_open.c
+ libatalk/dsi/dsi_attn.c
+ libatalk/dsi/dsi_close.c
+ libatalk/dsi/dsi_cmdreply.c
+ libatalk/dsi/dsi_getsess.c
+ libatalk/dsi/dsi_getstat.c
+ libatalk/dsi/dsi_init.c
+ libatalk/dsi/dsi_opensess.c
+ libatalk/dsi/dsi_private.h
+ libatalk/dsi/dsi_read.c
+ libatalk/dsi/dsi_stream.c
+ libatalk/dsi/dsi_tcp.c
+ libatalk/dsi/dsi_tickle.c
+ libatalk/dsi/dsi_write.c
+ libatalk/util/server_child.c
 Copyright: 1997-1999, Adrian Sun <asun@u.washington.edu>
-License: other-BSD-asun
+License: MIT~short
 
-Files: ./etc/afpd/afp_asp.c,
-	./etc/afpd/afp_dsi.c,
-	./etc/afpd/afp_options.c,
-	./etc/uams/uams_dhx2_pam.c,
-	./etc/uams/uams_dhx2_passwd.c,
-	./etc/uams/uams_dhx_pam.c,
-	./etc/uams/uams_dhx_passwd.c,
-	./etc/uams/uams_pam.c,
-	./etc/uams/uams_passwd.c,
-	./etc/uams/uams_pgp.c,
-	./etc/uams/uams_randnum.c,
-	./libatalk/adouble/ad_open.c,
-	./libatalk/netddp/netddp_open.c,
-	./libatalk/netddp/netddp_recvfrom.c,
-	./libatalk/netddp/netddp_sendto.c,
-	./libatalk/util/getiface.c,
-	./libatalk/util/server_lock.c
+Files: etc/afpd/afp_asp.c
+ etc/afpd/afp_dsi.c
+ etc/afpd/afp_options.c
+ etc/uams/uams_dhx2_pam.c
+ etc/uams/uams_dhx2_passwd.c
+ etc/uams/uams_dhx_pam.c
+ etc/uams/uams_dhx_passwd.c
+ etc/uams/uams_pam.c
+ etc/uams/uams_passwd.c
+ etc/uams/uams_pgp.c
+ etc/uams/uams_randnum.c
+ libatalk/adouble/ad_open.c
+ libatalk/netddp/netddp_open.c
+ libatalk/netddp/netddp_recvfrom.c
+ libatalk/netddp/netddp_sendto.c
+ libatalk/util/getiface.c
+ libatalk/util/server_lock.c
 Copyright: 1990-1991, 1993, Regents of The University of Michigan
-	1997, 1999-2000, Adrian Sun <asun@u.washington.edu>
-License: other-BSD-UMICH and other-BSD-asun
+ 1997, 1999-2000, Adrian Sun <asun@u.washington.edu>
+License: MIT~UMICH and MIT~short
 
-Files: ./libatalk/unicode/charsets/generic_mb.c,
-	./libatalk/unicode/charsets/mac_centraleurope.c,
-	./libatalk/unicode/charsets/mac_cyrillic.c,
-	./libatalk/unicode/charsets/mac_hebrew.c,
-	./libatalk/unicode/charsets/mac_roman.c,
-	./libatalk/unicode/charsets/mac_turkish.c,
-	./libatalk/unicode/iconv.c,
-	./libatalk/unicode/utf8.c
+Files: libatalk/unicode/charsets/generic_mb.c
+ libatalk/unicode/charsets/mac_centraleurope.c
+ libatalk/unicode/charsets/mac_cyrillic.c
+ libatalk/unicode/charsets/mac_hebrew.c
+ libatalk/unicode/charsets/mac_roman.c
+ libatalk/unicode/charsets/mac_turkish.c
+ libatalk/unicode/iconv.c
+ libatalk/unicode/utf8.c
 Copyright: 2001, Andrew Tridgell
-	2002-2003, Jelmer Vernooij
+ 2002-2003, Jelmer Vernooij
 License: GPL-2+
 
-Files: ./etc/cnid_dbd/db_param.c,
-	./etc/cnid_dbd/dbd.h,
-	./etc/cnid_dbd/dbd_lookup.c,
-	./etc/cnid_dbd/dbd_update.c,
-	./etc/cnid_dbd/dbif.c,
-	./etc/cnid_dbd/dbif.h,
-	./etc/cnid_dbd/main.c
-Copyright: 2003, Joerg Lenneis
-	2009, Frank Lahm <franklahm@gmail.com>
-License: other-GPL-2
+Files: libatalk/unicode/charsets/mac_centraleurope.h
+ libatalk/unicode/charsets/mac_cyrillic.h
+ libatalk/unicode/charsets/mac_greek.h
+ libatalk/unicode/charsets/mac_hebrew.h
+ libatalk/unicode/charsets/mac_turkish.h
+Copyright: 1999-2001, Free Software Foundation, Inc
+License: LGPL-2+~LIBICONV
 
-Files: ./libatalk/unicode/charsets/mac_centraleurope.h,
-	./libatalk/unicode/charsets/mac_cyrillic.h,
-	./libatalk/unicode/charsets/mac_greek.h,
-	./libatalk/unicode/charsets/mac_hebrew.h,
-	./libatalk/unicode/charsets/mac_turkish.h,
-	./libatalk/util/strcasestr.c
-Copyright: 1994, 1996-1997, 1999-2001, Free Software Foundation, Inc
-License: LGPL-2+
-
-Files: ./bin/afile/*
-Copyright: 2001, Sebastian Rittau
-License: FreeBSD
-
-Files: ./etc/afpd/afprun.c,
-	./include/atalk/tdb.h,
-	./libatalk/unicode/byteorder.h,
-	./libatalk/util/fault.c,
-	./libatalk/util/strlcpy.c
+Files: etc/afpd/afprun.c
+ include/atalk/tdb.h
+ libatalk/unicode/byteorder.h
+ libatalk/util/fault.c
+ libatalk/util/strlcpy.c
 Copyright: 1992-1999, Andrew Tridgell
 License: GPL-2+
 
-Files: ./contrib/a2boot/a2boot.c,
-	./contrib/timelord/timelord.c
+Files: contrib/a2boot/a2boot.c
+ contrib/timelord/timelord.c
 Copyright: 1990, The University of Melbourne
-	1990, 1992, 1994, Regents of The University of Michigan
-License: other-CAP and other-BSD-UMICH
+ 1990, 1992, 1994, Regents of The University of Michigan
+License: MIT~UMICH
 
-Files: ./etc/afpd/hash.c,
-	./etc/afpd/hash.h,
-	./include/atalk/hash.h
+Files: etc/afpd/hash.c
+ etc/afpd/hash.h
+ include/atalk/hash.h
 Copyright: 1997, Kaz Kylheku <kaz@ashi.footprints.net>
-License: other-hash
+License: MIT~Kaz
 
-Files: ./include/atalk/cnid.h,
-	./libatalk/cnid/cnid.c,
-	./libatalk/cnid/cnid_init.c
-Copyright: 2003, Rafal Lewczuk <rlewczuk@pronet.pl>
-	2003, the Netatalk Team
-License: other-GPL-2-and-maybe-later-too
-
-Files: ./libatalk/compat/getusershell.c,
-	./libatalk/compat/mktemp.c,
-	./libatalk/compat/strcasecmp.c
+Files: libatalk/compat/getusershell.c
+ libatalk/compat/mktemp.c
+ libatalk/compat/strcasecmp.c
 Copyright: 1985, 1987, Regents of the University of California
-License: other-BSD-4-UC
- FIXME
+License: other-BSD-UC
 
-Files: ./etc/papd/lp.c,
-	./etc/papd/printcap.c
-Copyright: 1983, 1990, 1994, Regents of The University of Michigan
-License: other-BSD-4
- FIXME
+Files: etc/papd/lp.c
+ etc/papd/printcap.c
+Copyright: 1983, Regents of the University of California
+Copyright: 1990,1994, Regents of The University of Michigan
+License: BSD-4-clause
 
-Files: ./config.*,
-	./compile,
-	./depcomp,
-	./missing
-Copyright: 1992-2007, Free Software Foundation
-License: GPL-2+ or other-sa-Autoconf
+Files: include/atalk/ftw.*
+Copyright: 1992,1996-2004,2006-2008,2010 Free Software Foundation, Inc
+License: LGPL-2.1+~C
 
-Files: ./aclocal.m4
+Files: libatalk/cnid/cnid.c
+ libatalk/cnid/cnid_init.c
+Copyright: 2003, Rafal Lewczuk <rlewczuk@pronet.pl>
+ 2003, the Netatalk Team
+License: GPL-2~maybe-later-too
+
+Files: etc/afpd/catsearch.c
+Copyright: 1990,1993, Regents of The University of Michigan
+ 2010, Frank Lahm <franklahm@gmail.com>
+License: MIT~UMICH
+
+Files: etc/cnid_dbd/dbd_search.c
+Copyright: 2010, Frank Lahm <franklahm@gmail.com>
+License: MIT~UMICH
+
+Files: bin/ad/ad_cp.c
+ bin/ad/ad_util.c
+Copyright: 1988, 1993-1994, The Regents of the University of California
+ 2010, Frank Lahm <franklahm@googlemail.com>
+License: BSD-3-clause~4
+
+Files: aclocal.m4
+ config.*
+ compile
+ depcomp
+ missing
+Copyright: 1992-2008, Free Software Foundation
+License: GPL-2+ with Autoconf exception
+ As a special exception to the GNU General Public License, if you
+ distribute this file as part of a program that contains a
+ configuration script generated by Autoconf, you may include it under
+ the same distribution terms that you use for the rest of that program.
+
+Files: ltmain.sh
 Copyright: 1996-2008, Free Software Foundation, Inc
-License: other-GAP-FSF-notice, and GPL-2+ or other-sa-Autoconf
+License: GPL-2+ with Libtool exception
+ As a special exception to the GNU General Public License, if you
+ distribute this file as part of a program or library that is built
+ using GNU Libtool, you may include this file under the same
+ distribution terms that you use for the rest of that program.
 
-Files: ./ltmain.sh
-Copyright: 1996-2001, 2003-2005, Free Software Foundation, Inc
-License: GPL-2+ or other-sa-Libtool
-
-Files: ./libatalk/compat/strstr.c
+Files: libatalk/compat/strstr.c
 Copyright: 1990, The Regents of the University of California
-License: other-BSD-4
- FIXME
+License: BSD-4-clause
 
-Files: ./configure
+Files: configure
 Copyright: 1992-1996, 1998-2006, Free Software Foundation, Inc
-License: other-GAP-FSF
+License: GAP~configure
 
-Files: ./libatalk/adouble/ad_sendfile.c
+Files: libatalk/adouble/ad_sendfile.c
 Copyright: 1999, Adrian Sun <asun@u.washington.edu>
-	2002, Jeremy Allison
-License: other-BSD-asun and GPL-2+
+ 2002, Jeremy Allison
+License: MIT~short and GPL-2+
 
-Files: ./libatalk/vfs/sys_ea.c
+Files: libatalk/vfs/sys_ea.c
 Copyright: 1992-1998, Andrew Tridgell
-	1998-2005, Jeremy Allison
-	2001, Andreas Gruenbacher
-	2001-2002, Silicon Graphics, Inc.
-	2005, Timur Bakeyev
-	2006-2007, Bjoern Jacke
+ 1998-2005, Jeremy Allison
+ 2001, Andreas Gruenbacher
+ 2001-2002, Silicon Graphics, Inc.
+ 2005, Timur Bakeyev
+ 2006-2007, Bjoern Jacke
 License: GPL-2+
 
-Files: ./libatalk/tdb/tdb.c
+Files: libatalk/tdb/tdb.c
 Copyright: 1999-2000, Andrew Tridgell
-	2000, Luke Kenneth Casson Leighton
-	2000, Paul `Rusty' Russell
-	2000-2003, Jeremy Allison
+ 2000, Luke Kenneth Casson Leighton
+ 2000, Paul `Rusty' Russell
+ 2000-2003, Jeremy Allison
 License: GPL-2+
 
-Files: ./libatalk/unicode/charcnv.c
+Files: libatalk/unicode/charcnv.c
 Copyright: 2001, Andrew Tridgell
-	2001, Igor Vergeichik <iverg@mail.ru>
-	2001, Simo Sorce
-	2003, Martin Pool
+ 2001, Igor Vergeichik <iverg@mail.ru>
+ 2001, Simo Sorce
+ 2003, Martin Pool
 License: GPL-2+
 
-Files: ./libatalk/unicode/charsets/mac_greek.c
+Files: libatalk/unicode/charsets/mac_greek.c
 Copyright: 2001, Andrew Tridgell
-	2002-2003, Jelmer Vernooij
-	2006, Panos Christeas
+ 2002-2003, Jelmer Vernooij
+ 2006, Panos Christeas
 License: GPL-2+
 
-Files: ./libatalk/tdb/spinlock.c
+Files: libatalk/tdb/spinlock.c
 Copyright: Anton Blanchard 2001
 License: GPL-2+
 
-Files: ./etc/papd/print_cups.c
+Files: etc/papd/print_cups.c
 Copyright: 1999-2003, Michael R Sweet
-	2004, Bjoern Fernhomberg
+ 2004, Bjoern Fernhomberg
 License: GPL-2+
 
-Files: ./bin/uniconv/iso8859_1_adapted.c,
-	./bin/uniconv/uniconv.c,
-	./libatalk/util/volinfo.c
+Files: bin/uniconv/iso8859_1_adapted.c
+ bin/uniconv/uniconv.c
+ libatalk/util/volinfo.c
 Copyright: 2002-2004, Bjoern Fernhomberg
 License: GPL-2+
 
-Files: ./include/atalk/vfs.h
+Files: include/atalk/vfs.h
 Copyright: 2004, Didier Gautheron
 License: GPL-2+
 
-Files: ./libatalk/vfs/vfs.c
+Files: libatalk/vfs/vfs.c
 Copyright: 2004, Didier Gautheron
-	2009, Frank Lahm
+ 2009, Frank Lahm
 License: GPL-2+
 
-Files: ./contrib/shell_utils/apple_dump.in
+Files: contrib/shell_utils/apple_dump.in
 Copyright: 2009-2010, HAT <hat@fa2.so-net.ne.jp>
 License: GPL-2+
 
-Files: ./install-sh
-Copyright: 1994, X Consortium
-License: Expat and other-X
+Files: 
+ libatalk/util/strcasestr.c
+Copyright: 1994,1996-1997, Free Software Foundation, Inc
+License: LGPL-2+~C
 
-Files: ./etc/uams/uams_guest.c
+Files: install-sh
+Copyright: 1994, X Consortium
+License: Expat~X with X exception
+ Except as contained in this notice, the name of the X Consortium shall
+ not be used in advertising or otherwise to promote the sale, use or
+ other dealings in this Software without prior written authorization
+ from the X Consortium.
+
+Files: etc/uams/uams_guest.c
 Copyright: 2001, (see COPYING)
 License: UNKNOWN
  FIXME
 
-Files: ./etc/afpd/mangle.c
+Files: libatalk/bstring/bstrlib.c
+Copyright: 2002-2008, Paul Hsieh <http://www.pobox.com/~qed/>
+License: BSD-3-clause~bstrlib or GPL-2
+ This source file is part of the bstring string library.  This code was
+ written by Paul Hsieh in 2002-2008, and is covered by the BSD open
+ source license and the GPL. Refer to the accompanying documentation for
+ details on usage and license.
+Comment:
+ The file apparently is part of the 'Better String Library' located at
+ http://bstring.cvs.sourceforge.net/ where the referenced 'BSD' license
+ is BSD-3-clause and the referenced 'GPL' license is GPL-2.
+
+Files: etc/afpd/mangle.c
 Copyright: 2002. Joe Marcus Clarke (marcus@marcuscom.com)
-License: other-BSD-UMICH
+License: MIT~UMICH
 
-Files: ./etc/uams/uams_gss.c
+Files: etc/uams/uams_gss.c
 Copyright: 1990,1993, Regents of The University of Michigan
-	1999, Adrian Sun <asun@u.washington.edu>
-	2003, The Reed Institute
-	2004, Bjoern Fernhomberg
-License: other-BSD-UMICH and other-BSD-asun
+ 1999, Adrian Sun <asun@u.washington.edu>
+ 2003, The Reed Institute
+ 2004, Bjoern Fernhomberg
+License: MIT~UMICH and MIT~short
 
-Files: ./etc/afpd/afp_util.c
+Files: etc/afpd/afp_util.c
 Copyright: 1990,1993, Regents of The University of Michigan
-	1999, Adrian Sun <asun@u.washington.edu>
-	2002, netatalk
-License: other-BSD-UMICH and other-BSD-asun and UNKNOWN
+ 1999, Adrian Sun <asun@u.washington.edu>
+ 2002, netatalk
+License: MIT~UMICH and MIT~short and UNKNOWN
  FIXME
 
-Files: ./libatalk/compat/pselect.c
+Files: include/atalk/cnid.h
+Copyright: 2003, Rafal Lewczuk <rlewczuk@pronet.pl>
+ 2003, the Netatalk Team
+ 2010, Frank Lahm <franklahm@gmail.com>
+License: GPL-2~maybe-later-too
+
+Files: libatalk/compat/pselect.c
 Copyright: 2000, Massachusetts Institute of Technology
-License: other-MIT
+License: MIT~advertising
 
-Files: ./libatalk/compat/snprintf.c
+Files: libatalk/compat/snprintf.c
 Copyright: 1988-2000, Patrick Powell, San Diego, CA <papowell@astart.com>
-License: other-snprintf
+License: SNPRINTF
 
-Files: ./sys/netatalk/phase2.h
+Files: sys/netatalk/phase2.h
 Copyright: 1988, Regents of the University of California
-	1990-1991, Regents of The University of Michigan
-License: UNKNOWN and other-BSD-UMICH
+ 1990-1991, Regents of The University of Michigan
+License: UNKNOWN and MIT~UMICH
  FIXME
 
-Files: ./etc/uams/uams_krb4/send_to_kdc.c
+Files: etc/uams/uams_krb4/send_to_kdc.c
 Copyright: 1987-1988, the Massachusetts Institute of Technology
-	1990,1994, Regents of The University of Michigan
-License: UNKNOWN and other-BSD-UMICH
+ 1990,1994, Regents of The University of Michigan
+License: UNKNOWN and MIT~UMICH
  FIXME
 
-Files: ./libatalk/compat/rquota_xdr.c
+Files: libatalk/compat/rquota_xdr.c
 Copyright: 1980, 1990 Regents of the University of California
 License: UNKNOWN
  FIXME
 
-Files: ./distrib/initscripts/rc.atalk.suse.tmpl
+Files: distrib/initscripts/rc.atalk.suse.tmpl
 Copyright: 1996-2001, SuSE GmbH Nuernberg, Germany.
 License: None
  FIXME
 
-Files: ./man/man1/netatalk-config.1
-Copyright: \(co 1998, Owen Taylor
-License: other-GAP
+Files: man/man1/netatalk-config.1
+Copyright: 1998, Owen Taylor
+License: GAP
 
-Files: ./debian/*
+Files: debian/*
 Copyright: 2003-2005, Sebastian Rittau <srittau@debian.org>
-	2004, 2006-2010, Jonas Smedegaard <dr@jones.dk>
+ 2004, 2006-2010, Jonas Smedegaard <dr@jones.dk>
 License: GPL-2+
 
-License: other-BSD-UMICH
- See COPYRIGHT.
- .
- A file "COPYRIGHT" at the root of the project tarball describes the as
- tied to files with University of Michigan as copyright holder.
- .
+License: MIT~UMICH
  Permission to use, copy, modify, and distribute this software and its
  documentation for any purpose and without fee is hereby granted,
  provided that the above copyright notice appears in all copies and that
@@ -366,12 +392,7 @@ License: other-BSD-UMICH
  permission. This software is supplied as is without expressed or
  implied warranties of any kind.
 
-License: other-BSD-asun
- See COPYRIGHT.
- .
- A file "COPYRIGHT" at the root of the project tarball describes the as
- tied to files with Adrian Sun as copyright holder.
- .
+License: MIT~short
  Permission to use, copy, modify, and distribute this software and its
  documentation for any purpose and without fee is hereby granted,
  provided that the above copyright notice appears in all copies and that
@@ -379,25 +400,23 @@ License: other-BSD-asun
  supporting documentation. This software is supplied as is without
  expressed or implied warranties of any kind.
 
-License: FreeBSD
- Redistribution and use in source and binary forms, with or without
- modification, are permitted provided that the following conditions are
- met:
-    1. Redistributions of source code must retain the above copyright
-       notice, this list of conditions and the following disclaimer.
-    2. Redistributions in binary form must reproduce the above copyright
-       notice, this list of conditions and the following disclaimer in
-       the documentation and/or other materials provided with the
-       distribution.
-    3. Neither the name of the author nor the names of its contributors
-       may be used to endorse or promote products derived from this
-       software without specific prior written permission.
+License: MIT~advertising
+ Permission to use, copy, modify, and distribute this software and its
+ documentation for any purpose and without fee is hereby granted,
+ provided that both the above copyright notice and this permission
+ notice appear in all copies, that both the above copyright notice and
+ this permission notice appear in all supporting documentation, and that
+ the name of M.I.T. not be used in advertising or publicity pertaining
+ to distribution of the software without specific, written prior
+ permission.  M.I.T. makes no representations about the suitability of
+ this software for any purpose.  It is provided "as is" without express
+ or implied warranty.
  .
- THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
- ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS
- BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ THIS SOFTWARE IS PROVIDED BY M.I.T. ``AS IS''.  M.I.T. DISCLAIMS ALL
+ EXPRESS OR IMPLIED WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING,
+ BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL M.I.T. BE LIABLE
+ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
@@ -405,18 +424,18 @@ License: FreeBSD
  OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-License: other-CAP
- Permission to use, copy, modify, and distribute this software and its
- documentation for any purpose and without fee is hereby granted,
- provided that the above copyright notice appears in all copies and that
- both that copyright notice and this permission notice appear in
- supporting documentation, and that the name of The University of
- Michigan not be used in advertising or publicity pertaining to
- distribution of the software without specific, written prior
- permission. This software is supplied as is without expressed or
- implied warranties of any kind.
+License: MIT~Kaz
+ All rights are reserved by the author, with the following exceptions:
+ Permission is granted to freely reproduce and distribute this software,
+ possibly in exchange for a fee, provided that this copyright notice
+ appears intact. Permission is also granted to adapt this software to
+ produce derivative works, as long as the modified versions carry this
+ copyright notice and additional notices stating that the work has been
+ modified. This source code may be translated into executable form and
+ incorporated into proprietary software; there is no requirement for
+ such software to contain a copyright notice related to this source.
 
-License: Expat
+License: Expat~X
  Permission is hereby granted, free of charge, to any person obtaining a
  copy of this software and associated documentation files (the
  "Software"), to deal in the Software without restriction, including
@@ -431,21 +450,12 @@ License: Expat
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
  OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
- IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
- CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
- TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
- SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-License-Comment
- Some files differ from above by replacing "the authors or copyright
- holders" with more specific term.
+ IN NO EVENT SHALL THE X CONSORTIUM BE LIABLE FOR ANY CLAIM, DAMAGES OR
+ OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ OTHER DEALINGS IN THE SOFTWARE.
 
-License: other-X
- Except as contained in this notice, the name of the X Consortium shall
- not be used in advertising or otherwise to promote the sale, use or
- other dealings in this Software without prior written authorization
- from the X Consortium.
-
-License: other-snprintf
+License: SNPRINTF
  You may use, copy, distribute, or otherwise incorporate this software
  and documentation into any product or other item,  provided that the
  copyright in the documentation and source code as well as the source
@@ -457,76 +467,23 @@ License: other-snprintf
  object code identification strings as is appropriately noted in the
  source code.
 
-License: other-hash
- All rights are reserved by the author, with the following exceptions:
- Permission is granted to freely reproduce and distribute this software,
- possibly in exchange for a fee, provided that this copyright notice
- appears intact. Permission is also granted to adapt this software to
- produce derivative works, as long as the modified versions carry this
- copyright notice and additional notices stating that the work has been
- modified. This source code may be translated into executable form and
- incorporated into proprietary software; there is no requirement for
- such software to contain a copyright notice related to this source.
-
-License: other-MIT
- Permission to use, copy, modify, and distribute this software and its
- documentation for any purpose and without fee is hereby granted,
- provided that both the above copyright notice and this permission
- notice appear in all copies, that both the above copyright notice and
- this permission notice appear in all supporting documentation, and that
- the name of M.I.T. not be used in advertising or publicity pertaining
- to distribution of the software without specific, written prior
- permission.  M.I.T. makes no representations about the suitability of
- this software for any purpose.  It is provided "as is" without express
- or implied warranty.
-
- THIS SOFTWARE IS PROVIDED BY M.I.T. ``AS IS''.  M.I.T. DISCLAIMS ALL
- EXPRESS OR IMPLIED WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING,
- BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
- FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL M.I.T. BE LIABLE
- FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
- BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-License: other-sa-Autoconf
- As a special exception to the GNU General Public License, if you
- distribute this file as part of a program that contains a
- configuration script generated by Autoconf, you may include it under
- the same distribution terms that you use for the rest of that program.
-
-License: other-sa-Libtool
- As a special exception to the GNU General Public License, if you
- distribute this file as part of a program or library that is built
- using GNU Libtool, you may include this file under the same
- distribution terms that you use for the rest of that program.
-
-License: other-GAP
+License: GAP
  Permission to use, copy, modify, and distribute this software and its
  documentation for any purpose and without fee is hereby granted,
  provided that the above copyright notice appear in all copies and that
  both that copyright notice and this permission notice appear in
  supporting documentation.
 
-License: other-GAP-FSF
- This file is free software; the Free Software Foundation gives
- unlimited permission to copy, distribute and modify it.
-License-Comment
- Some files differ from above by replacing "this file" with more
- specific term.
+License: GAP~configure
+ This configure script is free software; the Free Software Foundation
+ gives unlimited permission to copy, distribute and modify it.
 
-License: other-GAP-FSF-notice
+License: GAP~Makefile.in
  This file is free software; the Free Software Foundation gives
  unlimited permission to copy and/or distribute it, with or without
  modifications, as long as this notice is preserved.
-License-Comment
- Some files differ from above by replacing "this file" with more
- specific term.
 
-License: other-BSD-4
+License: BSD-4-clause
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are
  met:
@@ -542,7 +499,7 @@ License: other-BSD-4
  4. Neither the name of the University nor the names of its contributors
     may be used to endorse or promote products derived from this
     software without specific prior written permission.
-
+ .
  THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -555,7 +512,7 @@ License: other-BSD-4
  OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-License: other-BSD-4-UC
+License: other-BSD-UC
  Redistribution and use in source and binary forms are permitted
  provided that: (1) source distributions retain this entire copyright
  notice and comment, and (2) distributions including binaries display
@@ -570,7 +527,78 @@ License: other-BSD-4-UC
  WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 
-License: LGPL-2+
+License: BSD-3-clause~bstrlib
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are
+ met:
+ .
+    Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+ .
+    Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the distribution.
+ .
+    Neither the name of bstrlib nor the names of its contributors may be
+    used to endorse or promote products derived from this software
+    without specific prior written permission.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+ IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+ PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+License: BSD-3-clause~4
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+ 1. Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+ 2. Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the distribution.
+ 4. Neither the name of the University nor the names of its contributors
+    may be used to endorse or promote products derived from this software
+    without specific prior written permission.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ SUCH DAMAGE.
+
+License: LGPL-2.1+~C
+ The GNU C Library is free software; you can redistribute it and/or
+ modify it under the terms of the GNU Lesser General Public License as
+ published by the Free Software Foundation; either version 2.1 of the
+ License, or (at your option) any later version.
+ .
+ The GNU C Library is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ Lesser General Public License for more details.
+Comment:
+ On Debian systems the 'GNU Lesser General Public License' version 2.1
+ is located in '/usr/share/common-licenses/LGPL-2'.
+ .
+ You should have received a copy of the 'GNU Lesser General Public
+ License' along with this program.  If not, see
+ <http://www.gnu.org/licenses/>.
+
+License: LGPL-2+~LIBICONV
  The GNU LIBICONV Library is free software; you can redistribute it
  and/or modify it under the terms of the GNU Library General Public
  License as published by the Free Software Foundation; either version 2
@@ -580,14 +608,24 @@ License: LGPL-2+
  useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  Library General Public License for more details.
-License-Comment
- On Debian GNU systems, the complete text of the GNU Library General
- Public License (LGPL) version 2 can be found in
- '/usr/share/common-licenses/LGPL-2'.
+Comment:
+ On Debian systems the 'GNU Library General Public License' version 2 is
+ located in '/usr/share/common-licenses/LGPL-2'.
  .
- You should have received a copy of the GNU Library General Public
- License along with this program.  If not, see
+ You should have received a copy of the 'GNU Library General Public
+ License' along with this program.  If not, see
  <http://www.gnu.org/licenses/>.
+
+License: LGPL-2+~C
+ The GNU C Library is free software; you can redistribute it and/or
+ modify it under the terms of the GNU Library General Public License as
+ published by the Free Software Foundation; either version 2 of the
+ License, or (at your option) any later version.
+ .
+ The GNU C Library is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ Library General Public License for more details.
 
 License: GPL-2+
  This program is free software; you can redistribute it and/or modify it
@@ -599,36 +637,21 @@ License: GPL-2+
  WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  General Public License for more details.
-License-Comment
- On Debian GNU systems, the complete text of the GNU General Public
- License (GPL) version 2 or later can be found in
- '/usr/share/common-licenses/GPL'.
+Comment:
+ On Debian systems the 'GNU General Public License' version 2 is located
+ in '/usr/share/common-licenses/GPL-2'.
  .
- You should have received a copy of the GNU General Public License
- along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ You should have received a copy of the GNU General Public License along
+ with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-License: other-GPL-2-and-maybe-later-too
+License: GPL-2~maybe-later-too
  This program is free software; you can redistribute and/or modify it
  under the terms of the GNU General Public License as published by the
  Free Software Foundation version 2 of the License or later version if
  explicitly stated by any of above copyright holders.
-License-Comment
- On Debian GNU systems, the complete text of the GNU General Public
- License (GPL) version 2 can be found in
- '/usr/share/common-licenses/GPL-2'.
- .
- You should have received a copy of the GNU General Public License
- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-License: other-GPL-2
+License: GPL-2
  See COPYING.
-License-Comment
- A file "COPYING" at the root of the project tarball contain the
- complete of the GNU General Public License (GPL) version 2.
- .
- On Debian GNU systems, the complete text of the GNU General Public
- License (GPL) version 2 can be found in
- '/usr/share/common-licenses/GPL-2'.
- .
- You should have received a copy of the GNU General Public License
- along with this program.  If not, see <http://www.gnu.org/licenses/>.
+Comment:
+ A file "COPYING" at the root of the project tarball contains the 'GNU
+ General Public License' version 2.
