@@ -113,6 +113,7 @@ binary-post-install/netatalk::
 	rm -r debian/netatalk/usr/include
 	rm -r debian/netatalk/usr/share/aclocal
 	rm -r debian/netatalk/var
+	rm debian/netatalk/usr/lib/netatalk/*.la
 
 # Create patch to get in sync with upstream CVS
 get-orig-vcs: patchfile = 000_cvs_$(shell date '+%Y%m%d').patch
