@@ -45,6 +45,7 @@ DEB_CONFIGURE_EXTRA_FLAGS := \
 	--with-cnid-dbd-txn			\
 	--with-libgcrypt-dir			\
 	--with-cracklib=/var/cache/cracklib/cracklib_dict	\
+	--enable-ddp \
 	--enable-debian
 
 DEB_INSTALL_EXAMPLES_netatalk = debian/examples/*
