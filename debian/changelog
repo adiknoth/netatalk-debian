@@ -1,3 +1,40 @@
+netatalk (2.2~beta4-1) unstable; urgency=low
+
+  * New upstream release.
+    + Fixes "Internal Error" after ad_open on sparc.
+      Closes: bug#606005. Thanks to Alfredo Sola.
+  * Adjust references to unofficial packages in README.Debian.
+  * Use dversionmangle (not uversionmangle) in watch file. Fix add
+    leading dash (-) to upstream version in mangling.
+  * Update patches:
+    + Drop patches 107 and 294 (Zeroconf support): Implemented
+      (differently) upstream now.
+    + Drop patches 109 and 112 (avoid broken XFS linkage) obsolete.
+    + Drop patch 200 (hostname resolving): adopted upstream.
+    + Refresh patch 205.
+  * Rewrite copyright file using draft 174 of DEP-5 format.
+  * Build-depend on and recommend unversioned (i.e. default) BerkeleyDB
+    packages.
+    Closes: bug#621413. Thanks to Ondřej Surý.
+    Simplify suggestions on older versioned BerkeleyDB packages.
+  * Stop installing some documentation dropped upstream, and let CDBS
+    automagically handle some of the remains.
+  * Update control file:
+    + Bump policy compliance to standards-version 3.9.2.
+    + Shorten Vcs-* URLs.
+  * Add patches 115 and (for automade file) 214 to avoid installing
+    unneeded /default dir.
+    Closes: bug#628119. Thanks to Russell Muetzelfeldt and Luk Claes.
+  * Don't ship .la files. Closes: bug#621849. Thanks to Andreas Metzler
+    and Luk Claes.
+  * Stop renaming afile and achfile, dropped upstream.
+  * Explicitly enable DDP (AppleTalk), now disabled by default.
+  * Enable Zeroconf, should be stable now.
+  * Simplify package relations:
+    + Drop (build-)dependency fallback unneeded even for oldstable.
+
+ -- Jonas Smedegaard <dr@jones.dk>  Sun, 05 Jun 2011 21:04:21 +0200
+
 netatalk (2.1.4-1) unstable; urgency=low
 
   * New upstream release.

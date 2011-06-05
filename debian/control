@@ -7,20 +7,21 @@ Build-Depends: cdbs (>= 0.4.70~),
  devscripts (>= 2.10.7~),
  debhelper (>= 6),
  dh-buildinfo,
- libdb4.8-dev,
+ libdb-dev,
  libwrap0-dev,
  libpam0g-dev,
  libcups2-dev,
  libkrb5-dev,
  libltdl3-dev,
- libgcrypt11-dev | libgcrypt-dev,
- libcrack2-dev | cracklib-dev,
- d-shlibs (>> 0.19),
+ libgcrypt11-dev,
+ libcrack2-dev,
+ libavahi-client-dev,
+ d-shlibs,
  hardening-includes
 Build-Conflicts: libavahi-compat-libdnssd-dev
-Vcs-Git: git://git.debian.org/git/collab-maint/netatalk.git
-Vcs-Browser: http://git.debian.org/?p=collab-maint/netatalk.git;a=summary
-Standards-Version: 3.9.0
+Vcs-Git: git://git.debian.org/git/collab-maint/netatalk
+Vcs-Browser: http://git.debian.org/?p=collab-maint/netatalk.git
+Standards-Version: 3.9.2
 Homepage: http://netatalk.sourceforge.net/
 
 Package: netatalk
