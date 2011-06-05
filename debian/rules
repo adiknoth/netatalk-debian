@@ -45,20 +45,13 @@ DEB_CONFIGURE_EXTRA_FLAGS := \
 	--with-cnid-dbd-txn			\
 	--with-libgcrypt-dir			\
 	--with-cracklib=/var/cache/cracklib/cracklib_dict	\
-	--enable-ddp \
+	--disable-srvloc --enable-zeroconf	\
+	--enable-ddp				\
 	--enable-debian
 
 DEB_INSTALL_EXAMPLES_netatalk = debian/examples/*
 
 openssl_build_depends = libssl-dev
-
-# Zeroconf is cool, but not yet stable, so disabled by default
-# Always disable SLP, as it was never really used by Apple
-ifneq (,$(findstring zeroconf,$(DEB_BUILD_OPTIONS)))
-DEB_CONFIGURE_EXTRA_FLAGS += --disable-srvloc --enable-zeroconf
-else
-DEB_CONFIGURE_EXTRA_FLAGS += --disable-srvloc --disable-zeroconf
-endif
 
 # libgcrypt is GPL-compatible, but openssl supports randnum auth
 ifneq (,$(findstring openssl,$(DEB_BUILD_OPTIONS)))
@@ -130,9 +123,7 @@ get-orig-vcs: get-orig-source
 # Needed for by upstream build process
 CDBS_BUILD_DEPENDS += , libdb-dev, libwrap0-dev, libpam0g-dev, libcups2-dev, libkrb5-dev, libltdl3-dev
 CDBS_BUILD_DEPENDS += , libgcrypt11-dev | libgcrypt-dev, libcrack2-dev | cracklib-dev
-ifneq (,$(findstring zeroconf,$(DEB_BUILD_OPTIONS)))
 CDBS_BUILD_DEPENDS += , libavahi-client-dev (>= 0.6)
-endif
 ifneq (,$(findstring openssl,$(DEB_BUILD_OPTIONS)))
 CDBS_BUILD_DEPENDS += , $(openssl_build_depends)
 endif
