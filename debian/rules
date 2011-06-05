@@ -122,14 +122,14 @@ get-orig-vcs: get-orig-source
 
 # Needed for by upstream build process
 CDBS_BUILD_DEPENDS += , libdb-dev, libwrap0-dev, libpam0g-dev, libcups2-dev, libkrb5-dev, libltdl3-dev
-CDBS_BUILD_DEPENDS += , libgcrypt11-dev | libgcrypt-dev, libcrack2-dev | cracklib-dev
-CDBS_BUILD_DEPENDS += , libavahi-client-dev (>= 0.6)
+CDBS_BUILD_DEPENDS += , libgcrypt11-dev, libcrack2-dev
+CDBS_BUILD_DEPENDS += , libavahi-client-dev
 ifneq (,$(findstring openssl,$(DEB_BUILD_OPTIONS)))
 CDBS_BUILD_DEPENDS += , $(openssl_build_depends)
 endif
 
 # Needed for our packaging routines
-CDBS_BUILD_DEPENDS += , d-shlibs (>> 0.19), hardening-includes
+CDBS_BUILD_DEPENDS += , d-shlibs, hardening-includes
 
 # Needed (always/often/seldom) at runtime
 #  * netbase needed by network-facing daemons
