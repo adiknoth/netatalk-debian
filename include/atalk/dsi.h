@@ -14,6 +14,7 @@
 #include <netinet/in.h>
 #include <atalk/afp.h>
 #include <atalk/server_child.h>
+#include <atalk/globals.h>
 #include <netatalk/endian.h>
 
 #ifdef __OpenBSD__
@@ -59,6 +60,7 @@ struct dsi_block {
 /* child and parent processes might interpret a couple of these
  * differently. */
 typedef struct DSI {
+  AFPObj *AFPobj;
   dsi_proto protocol;
   struct dsi_block header;
   struct sockaddr_storage server, client;
@@ -156,6 +158,8 @@ typedef struct DSI {
 #define DSI_NOREPLY          (1 << 6) /* in dsi_write we generate our own replies */
 #define DSI_RECONSOCKET      (1 << 7) /* we have a new socket from primary reconnect */
 #define DSI_RECONINPROG      (1 << 8) /* used in the new session in reconnect */
+#define DSI_AFP_LOGGED_OUT   (1 << 9) /* client called afp_logout, quit on next EOF from socket */
+#define DSI_GOT_ECONNRESET   (1 << 10) /* got ECONNRESET from client => exit */
 
 /* basic initialization: dsi_init.c */
 extern DSI *dsi_init (const dsi_proto /*protocol*/,
@@ -184,6 +188,7 @@ extern ssize_t dsi_stream_write (DSI *, void *, const size_t, const int mode);
 extern size_t dsi_stream_read (DSI *, void *, const size_t);
 extern int dsi_stream_send (DSI *, void *, size_t);
 extern int dsi_stream_receive (DSI *, void *, const size_t, size_t *);
+extern int dsi_disconnect(DSI *dsi);
 
 #ifdef WITH_SENDFILE
 extern ssize_t dsi_stream_read_file(DSI *, int, off_t off, const size_t len);

@@ -37,20 +37,9 @@
 #endif
 
 #include <atalk/directory.h>
+#include <atalk/globals.h>
 
-#include "globals.h"
 #include "volume.h"
-
-#define DIRF_FSMASK	(3<<0)
-#define DIRF_NOFS	(0<<0)
-#define DIRF_AFS	(1<<0)
-#define DIRF_UFS	(2<<0)
-
-#define DIRF_OFFCNT    (1<<4) /* offsprings count is valid */
-#define DIRF_CNID	   (1<<5) /* renumerate id */
-#define DIRF_CACHELOCK (1<<6) /* lock in cache, don't remove in dircache_eviction, for catsearch */
-
-#define AFPDIR_READ	(1<<0)
 
 /* directory bits */
 #define DIRPBIT_ATTR	0
@@ -110,13 +99,15 @@ typedef int (*dir_loop)(struct dirent *, char *, void *);
 
 extern void        dir_free_invalid_q(void);
 extern struct dir  *dir_new(const char *mname, const char *uname, const struct vol *,
-                            cnid_t pdid, cnid_t did, bstring fullpath, time_t ctime);
+                            cnid_t pdid, cnid_t did, bstring fullpath, struct stat *);
 extern void        dir_free (struct dir *);
 extern struct dir  *dir_add(struct vol *, const struct dir *, struct path *, int);
 extern int         dir_modify(const struct vol *vol, struct dir *dir, cnid_t pdid, cnid_t did,
                               const char *new_mname, const char *new_uname, bstring pdir_fullpath);
 extern int         dir_remove(const struct vol *vol, struct dir *dir);
 extern struct dir  *dirlookup (const struct vol *, cnid_t);
+extern struct dir *dirlookup_bypath(const struct vol *vol, const char *path);
+
 extern int         movecwd (const struct vol *, struct dir *);
 extern struct path *cname (struct vol *, struct dir *, char **);
 

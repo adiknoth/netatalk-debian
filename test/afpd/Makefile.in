@@ -83,6 +83,8 @@ am__test_SOURCES_DIST = test.c subtests.c afpfunc_helpers.c \
 	$(top_builddir)/etc/afpd/directory.c \
 	$(top_builddir)/etc/afpd/enumerate.c \
 	$(top_builddir)/etc/afpd/extattrs.c \
+	$(top_builddir)/etc/afpd/fce_api.c \
+	$(top_builddir)/etc/afpd/fce_util.c \
 	$(top_builddir)/etc/afpd/file.c \
 	$(top_builddir)/etc/afpd/filedir.c \
 	$(top_builddir)/etc/afpd/fork.c \
@@ -107,7 +109,8 @@ am_test_OBJECTS = test-test.$(OBJEXT) test-subtests.$(OBJEXT) \
 	test-afp_zeroconf.$(OBJEXT) test-catsearch.$(OBJEXT) \
 	test-desktop.$(OBJEXT) test-dircache.$(OBJEXT) \
 	test-directory.$(OBJEXT) test-enumerate.$(OBJEXT) \
-	test-extattrs.$(OBJEXT) test-file.$(OBJEXT) \
+	test-extattrs.$(OBJEXT) test-fce_api.$(OBJEXT) \
+	test-fce_util.$(OBJEXT) test-file.$(OBJEXT) \
 	test-filedir.$(OBJEXT) test-fork.$(OBJEXT) \
 	test-gettok.$(OBJEXT) test-hash.$(OBJEXT) \
 	test-mangle.$(OBJEXT) test-messages.$(OBJEXT) \
@@ -209,6 +212,7 @@ LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
+MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
 MKDIR_P = @MKDIR_P@
 NETATALK_VERSION = @NETATALK_VERSION@
@@ -333,6 +337,8 @@ test_SOURCES = test.c subtests.c afpfunc_helpers.c \
 	$(top_builddir)/etc/afpd/directory.c \
 	$(top_builddir)/etc/afpd/enumerate.c \
 	$(top_builddir)/etc/afpd/extattrs.c \
+	$(top_builddir)/etc/afpd/fce_api.c \
+	$(top_builddir)/etc/afpd/fce_util.c \
 	$(top_builddir)/etc/afpd/file.c \
 	$(top_builddir)/etc/afpd/filedir.c \
 	$(top_builddir)/etc/afpd/fork.c \
@@ -369,7 +375,7 @@ all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .c .lo .o .obj
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -394,9 +400,9 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 
-$(top_srcdir)/configure:  $(am__configure_deps)
+$(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-$(ACLOCAL_M4):  $(am__aclocal_m4_deps)
+$(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 
 clean-checkPROGRAMS:
@@ -432,6 +438,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test-directory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test-enumerate.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test-extattrs.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test-fce_api.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test-fce_util.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test-file.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test-filedir.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test-fork.Po@am__quote@
@@ -722,6 +730,34 @@ test-extattrs.obj: $(top_builddir)/etc/afpd/extattrs.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_builddir)/etc/afpd/extattrs.c' object='test-extattrs.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -c -o test-extattrs.obj `if test -f '$(top_builddir)/etc/afpd/extattrs.c'; then $(CYGPATH_W) '$(top_builddir)/etc/afpd/extattrs.c'; else $(CYGPATH_W) '$(srcdir)/$(top_builddir)/etc/afpd/extattrs.c'; fi`
+
+test-fce_api.o: $(top_builddir)/etc/afpd/fce_api.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -MT test-fce_api.o -MD -MP -MF $(DEPDIR)/test-fce_api.Tpo -c -o test-fce_api.o `test -f '$(top_builddir)/etc/afpd/fce_api.c' || echo '$(srcdir)/'`$(top_builddir)/etc/afpd/fce_api.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/test-fce_api.Tpo $(DEPDIR)/test-fce_api.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_builddir)/etc/afpd/fce_api.c' object='test-fce_api.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -c -o test-fce_api.o `test -f '$(top_builddir)/etc/afpd/fce_api.c' || echo '$(srcdir)/'`$(top_builddir)/etc/afpd/fce_api.c
+
+test-fce_api.obj: $(top_builddir)/etc/afpd/fce_api.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -MT test-fce_api.obj -MD -MP -MF $(DEPDIR)/test-fce_api.Tpo -c -o test-fce_api.obj `if test -f '$(top_builddir)/etc/afpd/fce_api.c'; then $(CYGPATH_W) '$(top_builddir)/etc/afpd/fce_api.c'; else $(CYGPATH_W) '$(srcdir)/$(top_builddir)/etc/afpd/fce_api.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/test-fce_api.Tpo $(DEPDIR)/test-fce_api.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_builddir)/etc/afpd/fce_api.c' object='test-fce_api.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -c -o test-fce_api.obj `if test -f '$(top_builddir)/etc/afpd/fce_api.c'; then $(CYGPATH_W) '$(top_builddir)/etc/afpd/fce_api.c'; else $(CYGPATH_W) '$(srcdir)/$(top_builddir)/etc/afpd/fce_api.c'; fi`
+
+test-fce_util.o: $(top_builddir)/etc/afpd/fce_util.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -MT test-fce_util.o -MD -MP -MF $(DEPDIR)/test-fce_util.Tpo -c -o test-fce_util.o `test -f '$(top_builddir)/etc/afpd/fce_util.c' || echo '$(srcdir)/'`$(top_builddir)/etc/afpd/fce_util.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/test-fce_util.Tpo $(DEPDIR)/test-fce_util.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_builddir)/etc/afpd/fce_util.c' object='test-fce_util.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -c -o test-fce_util.o `test -f '$(top_builddir)/etc/afpd/fce_util.c' || echo '$(srcdir)/'`$(top_builddir)/etc/afpd/fce_util.c
+
+test-fce_util.obj: $(top_builddir)/etc/afpd/fce_util.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -MT test-fce_util.obj -MD -MP -MF $(DEPDIR)/test-fce_util.Tpo -c -o test-fce_util.obj `if test -f '$(top_builddir)/etc/afpd/fce_util.c'; then $(CYGPATH_W) '$(top_builddir)/etc/afpd/fce_util.c'; else $(CYGPATH_W) '$(srcdir)/$(top_builddir)/etc/afpd/fce_util.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/test-fce_util.Tpo $(DEPDIR)/test-fce_util.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_builddir)/etc/afpd/fce_util.c' object='test-fce_util.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -c -o test-fce_util.obj `if test -f '$(top_builddir)/etc/afpd/fce_util.c'; then $(CYGPATH_W) '$(top_builddir)/etc/afpd/fce_util.c'; else $(CYGPATH_W) '$(srcdir)/$(top_builddir)/etc/afpd/fce_util.c'; fi`
 
 test-file.o: $(top_builddir)/etc/afpd/file.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -MT test-file.o -MD -MP -MF $(DEPDIR)/test-file.Tpo -c -o test-file.o `test -f '$(top_builddir)/etc/afpd/file.c' || echo '$(srcdir)/'`$(top_builddir)/etc/afpd/file.c

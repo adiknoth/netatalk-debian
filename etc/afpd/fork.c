@@ -26,13 +26,12 @@
 #include <atalk/atp.h>
 #include <atalk/asp.h>
 #include <atalk/afp.h>
-
 #include <atalk/util.h>
 #include <atalk/cnid.h>
+#include <atalk/globals.h>
 
 #include "fork.h"
 #include "file.h"
-#include "globals.h"
 #include "directory.h"
 #include "desktop.h"
 #include "volume.h"
@@ -1336,6 +1335,12 @@ static int write_fork(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf, s
     ad_tmplock(ofork->of_ad, eid, ADLOCK_CLR, saveoff, reqcount,  ofork->of_refnum);
     if ( ad_meta_fileno( ofork->of_ad ) != -1 ) /* META */
         ofork->of_flags |= AFPFORK_DIRTY;
+
+    /* we have modified any fork, remember until close_fork */
+    ofork->of_flags |= AFPFORK_MODIFIED;
+
+    /* update write count */
+    ofork->of_vol->v_written += reqcount;
 
     *rbuflen = set_off_t (offset, rbuf, is64);
     return( AFP_OK );

@@ -98,11 +98,12 @@
 static int srvfd;
 static int rqstfd;
 static volatile sig_atomic_t sigchild = 0;
+static uint maxvol;
 
 #define MAXSPAWN   3                   /* Max times respawned in.. */
 #define TESTTIME   42                  /* this much seconds apfd client tries to  *
                                         * to reconnect every 5 secondes, catch it */
-#define MAXVOLS    512
+#define MAXVOLS    4096
 #define DEFAULTHOST  "localhost"
 #define DEFAULTPORT  "4700"
 
@@ -141,7 +142,7 @@ static void sigterm_handler(int sig)
 static struct server *test_usockfn(struct volinfo *volinfo)
 {
     int i;
-    for (i = 0; i < MAXVOLS; i++) {
+    for (i = 0; i < maxvol; i++) {
         if ((srv[i].volinfo) && (strcmp(srv[i].volinfo->v_path, volinfo->v_path) == 0)) {
             return &srv[i];
         }
@@ -177,14 +178,16 @@ static int maybe_start_dbd(char *dbdpn, struct volinfo *volinfo)
 
     time(&t);
     if (!up) {
-        /* find an empty slot */
-        for (i = 0; i < MAXVOLS; i++) {
-            if (srv[i].volinfo == NULL) {
+        /* find an empty slot (i < maxvol) or the first free slot (i == maxvol)*/
+        for (i = 0; i <= maxvol; i++) {
+            if (srv[i].volinfo == NULL && i < MAXVOLS) {
                 up = &srv[i];
                 up->volinfo = volinfo;
                 retainvolinfo(volinfo);
                 up->tm = t;
                 up->count = 0;
+                if (i == maxvol)
+                    maxvol++;
                 break;
             }
         }
@@ -403,6 +406,26 @@ static void set_signal(void)
     sigprocmask(SIG_BLOCK, &set, NULL);
 }
 
+static int setlimits(void)
+{
+    struct rlimit rlim;
+
+    if (getrlimit(RLIMIT_NOFILE, &rlim) != 0) {
+        LOG(log_error, logtype_afpd, "setlimits: %s", strerror(errno));
+        exit(1);
+    }
+    if (rlim.rlim_cur != RLIM_INFINITY && rlim.rlim_cur < 65535) {
+        rlim.rlim_cur = 65535;
+        if (rlim.rlim_max != RLIM_INFINITY && rlim.rlim_max < 65535)
+            rlim.rlim_max = 65535;
+        if (setrlimit(RLIMIT_NOFILE, &rlim) != 0) {
+            LOG(log_error, logtype_afpd, "setlimits: %s", strerror(errno));
+            exit(1);
+        }
+    }
+    return 0;
+}
+
 /* ------------------ */
 int main(int argc, char *argv[])
 {
@@ -483,6 +506,8 @@ int main(int argc, char *argv[])
         daemon_exit(1);
     }
 
+    (void)setlimits();
+
     /* Check PID lockfile and become a daemon */
     switch(server_lock("cnid_metad", _PATH_CNID_METAD_LOCK, debug)) {
     case -1: /* error */
@@ -523,7 +548,7 @@ int main(int argc, char *argv[])
         rqstfd = usockfd_check(srvfd, &set);
         /* Collect zombie processes and log what happened to them */
         if (sigchild) while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
-            for (i = 0; i < MAXVOLS; i++) {
+            for (i = 0; i < maxvol; i++) {
                 if (srv[i].pid == pid) {
                     srv[i].pid = 0;
                     close(srv[i].control_fd);
@@ -579,7 +604,8 @@ int main(int argc, char *argv[])
 
         /* Load .volinfo file */
         if ((volinfo = allocvolinfo(volpath)) == NULL) {
-            LOG(log_severe, logtype_cnid, "allocvolinfo: %s", strerror(errno));
+            LOG(log_severe, logtype_cnid, "allocvolinfo(\"%s\"): %s",
+                volpath, strerror(errno));
             goto loop_end;
         }
 

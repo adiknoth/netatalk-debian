@@ -94,8 +94,14 @@
 /* Whether ACLs support is available */
 #undef HAVE_ACLS
 
+/* Whether acl_from_mode() is available */
+#undef HAVE_ACL_FROM_MODE
+
 /* Whether acl_get_perm_np() is available */
 #undef HAVE_ACL_GET_PERM_NP
+
+/* Define to 1 if you have the <acl/libacl.h> header file. */
+#undef HAVE_ACL_LIBACL_H
 
 /* Define to 1 if you have the `add_proplist_entry' function. */
 #undef HAVE_ADD_PROPLIST_ENTRY

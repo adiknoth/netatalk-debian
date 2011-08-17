@@ -66,15 +66,16 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libutil_la_LIBADD =
-am__libutil_la_SOURCES_DIST = atalk_addr.c bprint.c fault.c getiface.c \
-	locking.c logger.c module.c queue.c server_child.c \
+am__libutil_la_SOURCES_DIST = atalk_addr.c bprint.c cnid.c fault.c \
+	getiface.c locking.c logger.c module.c queue.c server_child.c \
 	server_ipc.c server_lock.c socket.c strcasestr.c \
 	strdicasecmp.c strlcpy.c volinfo.c unix.c ftw.c
 @HAVE_ATFUNCS_TRUE@am__objects_1 = ftw.lo
-am_libutil_la_OBJECTS = atalk_addr.lo bprint.lo fault.lo getiface.lo \
-	locking.lo logger.lo module.lo queue.lo server_child.lo \
-	server_ipc.lo server_lock.lo socket.lo strcasestr.lo \
-	strdicasecmp.lo strlcpy.lo volinfo.lo unix.lo $(am__objects_1)
+am_libutil_la_OBJECTS = atalk_addr.lo bprint.lo cnid.lo fault.lo \
+	getiface.lo locking.lo logger.lo module.lo queue.lo \
+	server_child.lo server_ipc.lo server_lock.lo socket.lo \
+	strcasestr.lo strdicasecmp.lo strlcpy.lo volinfo.lo unix.lo \
+	$(am__objects_1)
 libutil_la_OBJECTS = $(am_libutil_la_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -163,6 +164,7 @@ LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
+MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
 MKDIR_P = @MKDIR_P@
 NETATALK_VERSION = @NETATALK_VERSION@
@@ -269,7 +271,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 noinst_LTLIBRARIES = libutil.la
 AM_CFLAGS = -I$(top_srcdir)/sys
-libutil_la_SOURCES = atalk_addr.c bprint.c fault.c getiface.c \
+libutil_la_SOURCES = atalk_addr.c bprint.c cnid.c fault.c getiface.c \
 	locking.c logger.c module.c queue.c server_child.c \
 	server_ipc.c server_lock.c socket.c strcasestr.c \
 	strdicasecmp.c strlcpy.c volinfo.c unix.c $(am__append_1)
@@ -277,7 +279,7 @@ all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .c .lo .o .obj
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -302,9 +304,9 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 
-$(top_srcdir)/configure:  $(am__configure_deps)
+$(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-$(ACLOCAL_M4):  $(am__aclocal_m4_deps)
+$(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 
 clean-noinstLTLIBRARIES:
@@ -326,6 +328,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/atalk_addr.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bprint.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cnid.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fault.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ftw.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getiface.Plo@am__quote@
