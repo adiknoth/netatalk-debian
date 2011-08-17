@@ -36,7 +36,7 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 bin_PROGRAMS = afpldaptest$(EXEEXT)
-noinst_PROGRAMS = netacnv$(EXEEXT) logger_test$(EXEEXT)
+noinst_PROGRAMS = netacnv$(EXEEXT) logger_test$(EXEEXT) fce$(EXEEXT)
 subdir = bin/misc
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -74,6 +74,12 @@ afpldaptest_DEPENDENCIES = $(top_builddir)/libatalk/libatalk.la
 afpldaptest_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(afpldaptest_CFLAGS) \
 	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+fce_SOURCES = fce.c
+fce_OBJECTS = fce-fce.$(OBJEXT)
+fce_DEPENDENCIES = $(top_builddir)/libatalk/libatalk.la
+fce_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
+	--mode=link $(CCLD) $(fce_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
 am_logger_test_OBJECTS = logger_test.$(OBJEXT)
 logger_test_OBJECTS = $(am_logger_test_OBJECTS)
 logger_test_DEPENDENCIES = $(top_builddir)/libatalk/libatalk.la
@@ -92,9 +98,9 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(afpldaptest_SOURCES) $(logger_test_SOURCES) \
+SOURCES = $(afpldaptest_SOURCES) fce.c $(logger_test_SOURCES) \
 	$(netacnv_SOURCES)
-DIST_SOURCES = $(afpldaptest_SOURCES) $(logger_test_SOURCES) \
+DIST_SOURCES = $(afpldaptest_SOURCES) fce.c $(logger_test_SOURCES) \
 	$(netacnv_SOURCES)
 ETAGS = etags
 CTAGS = ctags
@@ -169,6 +175,7 @@ LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
+MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
 MKDIR_P = @MKDIR_P@
 NETATALK_VERSION = @NETATALK_VERSION@
@@ -278,6 +285,9 @@ netacnv_SOURCES = netacnv.c
 netacnv_LDADD = $(top_builddir)/libatalk/libatalk.la
 logger_test_SOURCES = logger_test.c
 logger_test_LDADD = $(top_builddir)/libatalk/libatalk.la
+fce_SOOURCE = fce.c
+fce_LDADD = $(top_builddir)/libatalk/libatalk.la
+fce_CFLAGS = -I$(top_srcdir)/include
 afpldaptest_SOURCES = uuidtest.c
 afpldaptest_CFLAGS = -D_PATH_ACL_LDAPCONF=\"$(pkgconfdir)/afp_ldap.conf\"
 afpldaptest_LDADD = $(top_builddir)/libatalk/libatalk.la
@@ -285,7 +295,7 @@ all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .c .lo .o .obj
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -310,9 +320,9 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 
-$(top_srcdir)/configure:  $(am__configure_deps)
+$(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-$(ACLOCAL_M4):  $(am__aclocal_m4_deps)
+$(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 install-binPROGRAMS: $(bin_PROGRAMS)
 	@$(NORMAL_INSTALL)
@@ -352,6 +362,9 @@ clean-noinstPROGRAMS:
 afpldaptest$(EXEEXT): $(afpldaptest_OBJECTS) $(afpldaptest_DEPENDENCIES) 
 	@rm -f afpldaptest$(EXEEXT)
 	$(afpldaptest_LINK) $(afpldaptest_OBJECTS) $(afpldaptest_LDADD) $(LIBS)
+fce$(EXEEXT): $(fce_OBJECTS) $(fce_DEPENDENCIES) 
+	@rm -f fce$(EXEEXT)
+	$(fce_LINK) $(fce_OBJECTS) $(fce_LDADD) $(LIBS)
 logger_test$(EXEEXT): $(logger_test_OBJECTS) $(logger_test_DEPENDENCIES) 
 	@rm -f logger_test$(EXEEXT)
 	$(LINK) $(logger_test_OBJECTS) $(logger_test_LDADD) $(LIBS)
@@ -366,6 +379,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpldaptest-uuidtest.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fce-fce.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/logger_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netacnv.Po@am__quote@
 
@@ -403,6 +417,20 @@ afpldaptest-uuidtest.obj: uuidtest.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uuidtest.c' object='afpldaptest-uuidtest.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpldaptest_CFLAGS) $(CFLAGS) -c -o afpldaptest-uuidtest.obj `if test -f 'uuidtest.c'; then $(CYGPATH_W) 'uuidtest.c'; else $(CYGPATH_W) '$(srcdir)/uuidtest.c'; fi`
+
+fce-fce.o: fce.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fce_CFLAGS) $(CFLAGS) -MT fce-fce.o -MD -MP -MF $(DEPDIR)/fce-fce.Tpo -c -o fce-fce.o `test -f 'fce.c' || echo '$(srcdir)/'`fce.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/fce-fce.Tpo $(DEPDIR)/fce-fce.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='fce.c' object='fce-fce.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fce_CFLAGS) $(CFLAGS) -c -o fce-fce.o `test -f 'fce.c' || echo '$(srcdir)/'`fce.c
+
+fce-fce.obj: fce.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fce_CFLAGS) $(CFLAGS) -MT fce-fce.obj -MD -MP -MF $(DEPDIR)/fce-fce.Tpo -c -o fce-fce.obj `if test -f 'fce.c'; then $(CYGPATH_W) 'fce.c'; else $(CYGPATH_W) '$(srcdir)/fce.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/fce-fce.Tpo $(DEPDIR)/fce-fce.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='fce.c' object='fce-fce.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fce_CFLAGS) $(CFLAGS) -c -o fce-fce.obj `if test -f 'fce.c'; then $(CYGPATH_W) 'fce.c'; else $(CYGPATH_W) '$(srcdir)/fce.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

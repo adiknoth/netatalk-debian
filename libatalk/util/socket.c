@@ -21,14 +21,16 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
-#ifndef _XOPEN_SOURCE
-# define _XOPEN_SOURCE 600
-#endif
-#ifndef __EXTENSIONS__
-# define __EXTENSIONS__
-#endif
-#ifndef _GNU_SOURCE
-# define _GNU_SOURCE
+#if !defined(__FreeBSD__)
+# ifndef _XOPEN_SOURCE
+#  define _XOPEN_SOURCE 600
+# endif
+# ifndef __EXTENSIONS__
+#  define __EXTENSIONS__
+# endif
+# ifndef _GNU_SOURCE
+#  define _GNU_SOURCE
+# endif
 #endif
 #include <unistd.h>
 #include <fcntl.h>
@@ -128,10 +130,11 @@ ssize_t readt(int socket, void *data, const size_t length, int setnonblocking, i
                         goto exit;
 
                     default: /* -1 */
-                        if (errno == EINTR) {
+                        switch (errno) {
+                        case EINTR:
                             (void)gettimeofday(&now, NULL);
                             if (now.tv_sec >= end.tv_sec && now.tv_usec >= end.tv_usec) {
-                                LOG(log_warning, logtype_afpd, "select timeout %d s", timeout);
+                                LOG(log_debug, logtype_afpd, "select timeout %d s", timeout);
                                 goto exit;
                             }
                             if (now.tv_usec > end.tv_usec) {
@@ -143,10 +146,16 @@ ssize_t readt(int socket, void *data, const size_t length, int setnonblocking, i
                             }
                             FD_SET(socket, &rfds);
                             continue;
+                        case EBADF:
+                            /* possibly entered disconnected state, don't spam log here */
+                            LOG(log_debug, logtype_afpd, "select: %s", strerror(errno));
+                            stored = -1;
+                            goto exit;
+                        default:
+                            LOG(log_error, logtype_afpd, "select: %s", strerror(errno));
+                            stored = -1;
+                            goto exit;
                         }
-                        LOG(log_error, logtype_afpd, "select: %s", strerror(errno));
-                        stored = -1;
-                        goto exit;
                     }
                 } /* while (select) */
                 continue;
@@ -486,7 +495,8 @@ void fdset_add_fd(struct pollfd **fdsetp,
  * Remove a fd from our pollfd array
  *
  * 1. Search fd
- * 2. If we remove the last array elemnt, just decrease count
+ * 2a 
+ * 2b If we remove the last array elemnt, just decrease count
  * 3. If found move all following elements down by one
  * 4. Decrease count of used elements in array
  *
@@ -507,9 +517,15 @@ void fdset_del_fd(struct pollfd **fdsetp,
     struct pollfd *fdset = *fdsetp;
     struct polldata *polldata = *polldatap;
 
+    if (*fdset_usedp < 1)
+        return;
+
     for (int i = 0; i < *fdset_usedp; i++) {
         if (fdset[i].fd == fd) { /* 1 */
-            if (i < (*fdset_usedp - 1)) { /* 2 */
+            if (i == 0 && *fdset_usedp == 1) { /* 2a */
+                fdset[i].fd = -1;
+                memset(&polldata[i], 0, sizeof(struct polldata));
+            } else if (i < (*fdset_usedp - 1)) { /* 2b */
                 memmove(&fdset[i], &fdset[i+1], (*fdset_usedp - 1) * sizeof(struct pollfd)); /* 3 */
                 memmove(&polldata[i], &polldata[i+1], (*fdset_usedp - 1) * sizeof(struct polldata)); /* 3 */
             }

@@ -1,3 +1,25 @@
+Changes in 2.2
+==============
+
+* NEW: afpd: new volume option "nonetids"
+* NEW: afpd: ACL access check caching
+* NEW: afpd: FCE event notifications
+* NEW: afpd: new option "-mimicmodel" for specifying Bonjour model registration
+* UPD: Support for Berkeley DB 5.1
+* UPD: case-conversion is based on Unicode 6.0.0
+* UPD: cnid_metad: allow up to 4096 volumes
+* UPD: afpd: only forward SIGTERM and SIGUSR1 from parent to childs
+* UPD: afpd: use internal function instead of popening du -sh in order to
+       calculate the used size of a volume for option "volsizelimit"
+* UPD: afpd: Add negative UUID caching, enhance local UUID handling
+* FIX: afpd: configuration reload with SIGHUP
+* FIX: afpd: crashes in the dircache
+* FIX: afpd: Correct afp logout vs dsi eof behaviour
+* FIX: afpd: new catsearch was broken
+* FIX: afpd: only use volume UUIDs in master afpd
+* FIX: dbd: Multiple fixes, reliable locking
+* FIX: ad file suite: fix an error that resulted in CNID database inconsistencies
+
 Changes in 2.2beta4
 ===================
 
@@ -102,6 +124,8 @@ Changes in 2.1.6
 * FIX: Solaris: configure script failed to enable DDP module
 * FIX: AppleDouble buffer overrun by extremely long filename
 * UPD: afpd: return version info with machine type in DSIGetStatus
+* UPD: dbd: use on-disk temporary rebuild db instead of in-memory db
+* UPD: suse: initscript update
 
 Changes in 2.1.5
 ================

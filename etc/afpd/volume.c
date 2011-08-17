@@ -35,6 +35,8 @@ char *strchr (), *strrchr ();
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <inttypes.h>
+#include <time.h>
 
 #include <atalk/asp.h>
 #include <atalk/dsi.h>
@@ -47,13 +49,14 @@ char *strchr (), *strrchr ();
 #include <atalk/uuid.h>
 #include <atalk/bstrlib.h>
 #include <atalk/bstradd.h>
-
+#include <atalk/ftw.h>
+#include <atalk/globals.h>
+#include <atalk/fce_api.h>
 
 #ifdef CNID_DB
 #include <atalk/cnid.h>
 #endif /* CNID_DB*/
 
-#include "globals.h"
 #include "directory.h"
 #include "file.h"
 #include "volume.h"
@@ -68,17 +71,6 @@ extern int afprun(int root, char *cmd, int *outfd);
 #ifndef MIN
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif /* ! MIN */
-
-#ifndef NO_LARGE_VOL_SUPPORT
-#if BYTE_ORDER == BIG_ENDIAN
-#define hton64(x)       (x)
-#define ntoh64(x)       (x)
-#else /* BYTE_ORDER == BIG_ENDIAN */
-#define hton64(x)       ((u_int64_t) (htonl(((x) >> 32) & 0xffffffffLL)) | \
-                         (u_int64_t) ((htonl(x) & 0xffffffffLL) << 32))
-#define ntoh64(x)       (hton64(x))
-#endif /* BYTE_ORDER == BIG_ENDIAN */
-#endif /* ! NO_LARGE_VOL_SUPPORT */
 
 #ifndef UUID_PRINTABLE_STRING_LENGTH
 #define UUID_PRINTABLE_STRING_LENGTH 37
@@ -511,11 +503,8 @@ static void volset(struct vol_option *options, struct vol_option *save,
                 options[VOLOPT_FLAGS].i_value |= AFPVOL_TM;
             else if (strcasecmp(p, "searchdb") == 0)
                 options[VOLOPT_FLAGS].i_value |= AFPVOL_SEARCHDB;
-/* Found this in branch dir-rewrite, maybe we want to use it sometimes */
-#if 0
-            else if (strcasecmp(p, "cdrom") == 0)
-                options[VOLOPT_FLAGS].i_value |= AFPVOL_CDROM | AFPVOL_RO;
-#endif
+            else if (strcasecmp(p, "nonetids") == 0)
+                options[VOLOPT_FLAGS].i_value |= AFPVOL_NONETIDS;
             p = strtok(NULL, ",");
         }
 
@@ -674,7 +663,14 @@ static int creatvol(AFPObj *obj, struct passwd *pwd,
     if ( (flags & CONV_REQMANGLE) || (tmpvlen > AFPVOL_MACNAMELEN)) {
         if (tmpvlen + suffixlen > AFPVOL_MACNAMELEN) {
             flags = CONV_FORCE;
-            tmpvlen = convert_charset(obj->options.unixcharset, obj->options.maccharset, 0, name, vlen, tmpname, AFPVOL_MACNAMELEN - suffixlen, &flags);
+            tmpvlen = convert_charset(obj->options.unixcharset,
+                                      obj->options.maccharset,
+                                      0,
+                                      name,
+                                      vlen,
+                                      tmpname,
+                                      AFPVOL_MACNAMELEN - suffixlen,
+                                      &flags);
             tmpname[tmpvlen >= 0 ? tmpvlen : 0] = 0;
         }
         strcat(tmpname, suffix);
@@ -682,14 +678,24 @@ static int creatvol(AFPObj *obj, struct passwd *pwd,
     }
 
     /* Secondly convert name from maccharset to UCS2 */
-    if ( 0 >= ( macvlen = convert_string(obj->options.maccharset, CH_UCS2, tmpname, tmpvlen, mactmpname, AFPVOL_U8MNAMELEN*2)) )
+    if ( 0 >= ( macvlen = convert_string(obj->options.maccharset,
+                                         CH_UCS2,
+                                         tmpname,
+                                         tmpvlen,
+                                         mactmpname,
+                                         AFPVOL_U8MNAMELEN*2)) )
         return -1;
 
     LOG(log_maxdebug, logtype_afpd, "createvol: Volume '%s' ->  Longname: '%s'", name, tmpname);
 
     /* check duplicate */
     for ( volume = Volumes; volume; volume = volume->v_next ) {
-        if (( strcasecmp_w( volume->v_u8mname, u8mtmpname ) == 0 ) || ( strcasecmp_w( volume->v_macname, mactmpname ) == 0 )){
+        if ((utf8_encoding() && (strcasecmp_w(volume->v_u8mname, u8mtmpname) == 0))
+             ||
+            (!utf8_encoding() && (strcasecmp_w(volume->v_macname, mactmpname) == 0))) {
+            LOG (log_error, logtype_afpd,
+                 "Duplicate volume name, check AppleVolumes files: previous: \"%s\", new: \"%s\"",
+                 volume->v_localname, name);
             if (volume->v_deleted) {
                 volume->v_new = hide = 1;
             }
@@ -869,8 +875,8 @@ static int creatvol(AFPObj *obj, struct passwd *pwd,
         check_ea_sys_support(volume);
     initvol_vfs(volume);
 
-    /* get/store uuid from file */
-    if (volume->v_flags & AFPVOL_TM) {
+    /* get/store uuid from file in afpd master*/
+    if ((parent_or_child == 0) && (volume->v_flags & AFPVOL_TM)) {
         char *uuid = get_vol_uuid(obj, volume->v_localname);
         if (!uuid) {
             LOG(log_error, logtype_afpd, "Volume '%s': couldn't get UUID",
@@ -1199,12 +1205,22 @@ static int readvolfile(AFPObj *obj, struct afp_volume_name *p1, char *p2, int us
         p1->mtime = st.st_mtime;
     }
 
-    if ((read_lock(fd, 0, SEEK_SET, 0)) != 0) {
-        LOG(log_error, logtype_afpd, "readvolfile: can't lock volume file \"%s\"", path);
-        if ( fclose( fp ) != 0 ) {
-            LOG(log_error, logtype_afpd, "readvolfile: fclose: %s", strerror(errno) );
+    /* try putting a read lock on the volume file twice, sleep 1 second if first attempt fails */
+    int retries = 2;
+    while (1) {
+        if ((read_lock(fd, 0, SEEK_SET, 0)) != 0) {
+            retries--;
+            if (!retries) {
+                LOG(log_error, logtype_afpd, "readvolfile: can't lock volume file \"%s\"", path);
+                if ( fclose( fp ) != 0 ) {
+                    LOG(log_error, logtype_afpd, "readvolfile: fclose: %s", strerror(errno) );
+                }
+                return -1;
+            }
+            sleep(1);
+            continue;
         }
-        return -1;
+        break;
     }
 
     memset(save_options, 0, sizeof(save_options));
@@ -1414,12 +1430,72 @@ static void volume_unlink(struct vol *volume)
     }
 }
 
+static off_t getused_size; /* result of getused() */
+
+/*!
+  nftw callback for getused()
+ */
+static int getused_stat(const char *path,
+                        const struct stat *statp,
+                        int tflag,
+                        struct FTW *ftw)
+{
+    off_t low, high;
+
+    if (tflag == FTW_F || tflag == FTW_D) {
+        getused_size += statp->st_blocks * 512;
+    }
+
+    return 0;
+}
+
+#define GETUSED_CACHETIME 5
+/*!
+ * Calculate used size of a volume with nftw
+ *
+ * The result is cached, we're try to avoid frequently calling nftw()
+ *
+ * 1) Call nftw an refresh if:
+ * 1a) - we're called the first time 
+ * 1b) - volume modification date is not yet set and the last time we've been called is
+ *       longer then 30 sec ago
+ * 1c) - the last volume modification is less then 30 sec old
+ *
+ * @param vol     (rw) volume to calculate
+ */
+static int getused(struct vol *vol)
+{
+    static time_t vol_mtime = 0;
+    int ret = 0;
+    time_t now = time(NULL);
+
+    if (!vol_mtime
+        || (!vol->v_mtime && ((vol_mtime + GETUSED_CACHETIME) < now))
+        || (vol->v_mtime && ((vol_mtime + GETUSED_CACHETIME) < vol->v_mtime))
+        ) {
+        vol_mtime = now;
+        getused_size = 0;
+        vol->v_written = 0;
+        ret = nftw(vol->v_path, getused_stat, NULL, 20, FTW_PHYS); /* 2 */
+        LOG(log_debug, logtype_afpd, "volparams: from nftw: %" PRIu64 " bytes",
+            getused_size);
+    } else {
+        getused_size += vol->v_written;
+        vol->v_written = 0;
+        LOG(log_debug, logtype_afpd, "volparams: cached used: %" PRIu64 " bytes",
+            getused_size);
+    }
+
+    return ret;
+}
+
 static int getvolspace(struct vol *vol,
                        u_int32_t *bfree, u_int32_t *btotal,
                        VolSpace *xbfree, VolSpace *xbtotal, u_int32_t *bsize)
 {
     int         spaceflag, rc;
     u_int32_t   maxsize;
+    VolSpace    used;
 #ifndef NO_QUOTA_SUPPORT
     VolSpace    qfree, qtotal;
 #endif
@@ -1458,50 +1534,35 @@ static int getvolspace(struct vol *vol,
 
 getvolspace_done:
     if (vol->v_limitsize) {
-        bstring cmdstr;
-        if ((cmdstr = bformat("du -sh \"%s\" 2> /dev/null | cut -f1", vol->v_path)) == NULL)
+        if (getused(vol) != 0)
             return AFPERR_MISC;
-
-        FILE *cmd = popen(cfrombstr(cmdstr), "r");
-        bdestroy(cmdstr);
-        if (cmd == NULL)
-            return AFPERR_MISC;
-
-        char buf[100];
-        fgets(buf, 100, cmd);
-
-        if (pclose(cmd) == -1)
-            return AFPERR_MISC;
-
-        size_t multi = 0;
-        if (buf[strlen(buf) - 2] == 'G' || buf[strlen(buf) - 2] == 'g')
-            /* GB */
-            multi = 1024 * 1024 * 1024;
-        else if (buf[strlen(buf) - 2] == 'M' || buf[strlen(buf) - 2] == 'm')
-            /* MB */
-            multi = 1024 * 1024;
-        else if (buf[strlen(buf) - 2] == 'K' || buf[strlen(buf) - 2] == 'k')
-            /* MB */
-            multi = 1024;
-
-        char *p;
-        if (p = strchr(buf, ','))
-            /* ignore fraction */
-            *p = 0;
-        else
-            /* remove G|M|K char */
-            buf[strlen(buf) - 2] = 0;
-        /* now buf contains only digits */
-        long long used = atoll(buf) * multi;
-        LOG(log_debug, logtype_afpd, "volparams: used on volume: %llu bytes", used);
+        LOG(log_debug, logtype_afpd, "volparams: used on volume: %" PRIu64 " bytes",
+            getused_size);
+        vol->v_tm_used = getused_size;
 
         *xbtotal = min(*xbtotal, (vol->v_limitsize * 1024 * 1024));
-        *xbfree = min(*xbfree, *xbtotal < used ? 0 : *xbtotal - used);
+        *xbfree = min(*xbfree, *xbtotal < getused_size ? 0 : *xbtotal - getused_size);
     }
 
     *bfree = min( *xbfree, maxsize);
     *btotal = min( *xbtotal, maxsize);
     return( AFP_OK );
+}
+
+#define FCE_TM_DELTA 10  /* send notification every 10 seconds */
+void vol_fce_tm_event(void)
+{
+    static time_t last;
+    time_t now = time(NULL);
+    struct vol  *vol = Volumes;
+
+    if ((last + FCE_TM_DELTA) < now) {
+        last = now;
+        for ( ; vol; vol = vol->v_next ) {
+            if (vol->v_flags & AFPVOL_TM)
+                (void)fce_register_tm_size(vol->v_path, vol->v_tm_used + vol->v_written);
+        }
+    }
 }
 
 /* -----------------------
@@ -1614,7 +1675,8 @@ static int getvolparams( u_int16_t bitmap, struct vol *vol, struct stat *st, cha
                         ashort |= VOLPBIT_ATTR_UNIXPRIV;
                     if (vol->v_flags & AFPVOL_TM)
                         ashort |= VOLPBIT_ATTR_TM;
-
+                    if (vol->v_flags & AFPVOL_NONETIDS)
+                        ashort |= VOLPBIT_ATTR_NONETIDS;
                     if (afp_version >= 32) {
                         if (vol->v_vfs_ea)
                             ashort |= VOLPBIT_ATTR_EXT_ATTRS;
@@ -2230,7 +2292,7 @@ int afp_openvol(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf, size_t 
                        DIRDID_ROOT_PARENT,
                        DIRDID_ROOT,
                        bfromcstr(volume->v_path),
-                       st.st_ctime)
+                       &st)
             ) == NULL) {
         free(vol_mname);
         LOG(log_error, logtype_afpd, "afp_openvol(%s): malloc: %s", volume->v_path, strerror(errno) );
@@ -2477,12 +2539,6 @@ int  pollvoltime(AFPObj *obj)
 void setvoltime(AFPObj *obj, struct vol *vol)
 {
     struct timeval  tv;
-
-    /* just looking at vol->v_mtime is broken seriously since updates
-     * from other users afpd processes never are seen.
-     * This is not the most elegant solution (a shared memory between
-     * the afpd processes would come closer)
-     * [RS] */
 
     if ( gettimeofday( &tv, NULL ) < 0 ) {
         LOG(log_error, logtype_afpd, "setvoltime(%s): gettimeofday: %s", vol->v_path, strerror(errno) );

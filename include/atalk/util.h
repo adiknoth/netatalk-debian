@@ -18,7 +18,9 @@
 #endif /* HAVE_UNISTD_H */
 #include <poll.h>
 #include <netatalk/at.h>
+
 #include <atalk/unicode.h>
+#include <atalk/bstrlib.h>
 
 /* exit error codes */
 #define EXITERR_CLNT 1  /* client related error */
@@ -45,6 +47,15 @@
 #endif /* NDEBUG */
 
 #define STRCMP(a,b,c) (strcmp(a,c) b 0)
+
+#if BYTE_ORDER == BIG_ENDIAN
+#define hton64(x)       (x)
+#define ntoh64(x)       (x)
+#else /* BYTE_ORDER == BIG_ENDIAN */
+#define hton64(x)       ((uint64_t) (htonl(((x) >> 32) & 0xffffffffLL)) | \
+                         (uint64_t) ((htonl(x) & 0xffffffffLL) << 32))
+#define ntoh64(x)       (hton64(x))
+#endif /* BYTE_ORDER == BIG_ENDIAN */
 
 #ifdef WITH_SENDFILE
 extern ssize_t sys_sendfile (int __out_fd, int __in_fd, off_t *__offset,size_t __count);
@@ -136,7 +147,7 @@ extern void apply_ip_mask(struct sockaddr *ai, int maskbits);
 extern int compare_ip(const struct sockaddr *sa1, const struct sockaddr *sa2);
 
 /* Structures and functions dealing with dynamic pollfd arrays */
-enum fdtype {IPC_FD, LISTEN_FD};
+enum fdtype {IPC_FD, LISTEN_FD, DISASOCIATED_IPC_FD};
 struct polldata {
     enum fdtype fdtype; /* IPC fd or listening socket fd                 */
     void *data;         /* pointer to AFPconfig for listening socket and *
@@ -167,3 +178,9 @@ extern char *stripped_slashes_basename(char *p);
 extern int lchdir(const char *dir);
 extern void randombytes(void *buf, int n);
 #endif  /* _ATALK_UTIL_H */
+
+/******************************************************************
+ * cnid.c
+ *****************************************************************/
+
+extern bstring rel_path_in_vol(const char *path, const char *volpath);

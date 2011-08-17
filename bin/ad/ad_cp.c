@@ -387,6 +387,10 @@ static int copy(const char *path,
     if (alarmed)
         return -1;
 
+    /* This currently doesn't work with "." */
+    if (strcmp(path, ".") == 0) {
+        ERROR("\".\" not supported");
+    }
     const char *dir = strrchr(path, '/');
     if (dir == NULL)
         dir = path;
@@ -837,8 +841,14 @@ static int setfile(const struct stat *fs, int fd)
     islink = !fdval && S_ISLNK(fs->st_mode);
     mode = fs->st_mode & (S_ISUID | S_ISGID | S_ISVTX | S_IRWXU | S_IRWXG | S_IRWXO);
 
+#if defined(__FreeBSD__)
+    TIMESPEC_TO_TIMEVAL(&tv[0], &fs->st_atimespec);
+    TIMESPEC_TO_TIMEVAL(&tv[1], &fs->st_mtimespec);
+#else
     TIMESPEC_TO_TIMEVAL(&tv[0], &fs->st_atim);
     TIMESPEC_TO_TIMEVAL(&tv[1], &fs->st_mtim);
+#endif
+
     if (utimes(to.p_path, tv)) {
         SLOG("utimes: %s", to.p_path);
         rval = 1;

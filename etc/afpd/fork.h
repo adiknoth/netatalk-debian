@@ -46,6 +46,7 @@ struct ofork {
 #define AFPFORK_ACCRD   (1<<4)
 #define AFPFORK_ACCWR   (1<<5)
 #define AFPFORK_ACCMASK (AFPFORK_ACCRD | AFPFORK_ACCWR)
+#define AFPFORK_MODIFIED (1<<6) /* used in FCE for modified files */
 
 #ifdef AFS
 extern struct ofork *writtenfork;
@@ -70,6 +71,7 @@ extern int          of_stat      (struct path *);
 extern int          of_statdir   (struct vol *vol, struct path *);
 extern int          of_closefork (struct ofork *ofork);
 extern void         of_closevol  (const struct vol *vol);
+extern void         of_close_all_forks(void);
 extern struct adouble *of_ad     (const struct vol *, struct path *, struct adouble *);
 
 #ifdef HAVE_ATFUNCS

@@ -37,7 +37,7 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 sbin_PROGRAMS = afpd$(EXEEXT)
-noinst_PROGRAMS = hash$(EXEEXT)
+noinst_PROGRAMS = hash$(EXEEXT) fce$(EXEEXT)
 @HAVE_ACLS_TRUE@am__append_1 = acls.c
 subdir = etc/afpd
 DIST_COMMON = $(noinst_HEADERS) $(srcdir)/Makefile.am \
@@ -74,9 +74,10 @@ PROGRAMS = $(noinst_PROGRAMS) $(sbin_PROGRAMS)
 am__afpd_SOURCES_DIST = afp_asp.c afp_avahi.c afp_config.c afp_dsi.c \
 	afp_options.c afp_util.c afp_zeroconf.c afprun.c afs.c appl.c \
 	auth.c catsearch.c desktop.c dircache.c directory.c \
-	enumerate.c extattrs.c file.c filedir.c fork.c gettok.c hash.c \
-	main.c mangle.c messages.c nfsquota.c ofork.c quota.c status.c \
-	switch.c uam.c uid.c unix.c volume.c acls.c
+	enumerate.c extattrs.c fce_api.c fce_util.c file.c filedir.c \
+	fork.c gettok.c hash.c main.c mangle.c messages.c nfsquota.c \
+	ofork.c quota.c status.c switch.c uam.c uid.c unix.c volume.c \
+	acls.c
 @HAVE_ACLS_TRUE@am__objects_1 = afpd-acls.$(OBJEXT)
 am_afpd_OBJECTS = afpd-afp_asp.$(OBJEXT) afpd-afp_avahi.$(OBJEXT) \
 	afpd-afp_config.$(OBJEXT) afpd-afp_dsi.$(OBJEXT) \
@@ -86,6 +87,7 @@ am_afpd_OBJECTS = afpd-afp_asp.$(OBJEXT) afpd-afp_avahi.$(OBJEXT) \
 	afpd-catsearch.$(OBJEXT) afpd-desktop.$(OBJEXT) \
 	afpd-dircache.$(OBJEXT) afpd-directory.$(OBJEXT) \
 	afpd-enumerate.$(OBJEXT) afpd-extattrs.$(OBJEXT) \
+	afpd-fce_api.$(OBJEXT) afpd-fce_util.$(OBJEXT) \
 	afpd-file.$(OBJEXT) afpd-filedir.$(OBJEXT) afpd-fork.$(OBJEXT) \
 	afpd-gettok.$(OBJEXT) afpd-hash.$(OBJEXT) afpd-main.$(OBJEXT) \
 	afpd-mangle.$(OBJEXT) afpd-messages.$(OBJEXT) \
@@ -98,6 +100,12 @@ afpd_DEPENDENCIES = $(top_builddir)/libatalk/cnid/libcnid.la \
 	$(top_builddir)/libatalk/libatalk.la
 afpd_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(afpd_CFLAGS) $(CFLAGS) $(afpd_LDFLAGS) \
+	$(LDFLAGS) -o $@
+am_fce_OBJECTS = fce-fce_api.$(OBJEXT) fce-fce_util.$(OBJEXT)
+fce_OBJECTS = $(am_fce_OBJECTS)
+fce_DEPENDENCIES = $(top_builddir)/libatalk/libatalk.la
+fce_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
+	--mode=link $(CCLD) $(fce_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 am_hash_OBJECTS = hash-hash.$(OBJEXT)
 hash_OBJECTS = $(am_hash_OBJECTS)
@@ -117,8 +125,8 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(afpd_SOURCES) $(hash_SOURCES)
-DIST_SOURCES = $(am__afpd_SOURCES_DIST) $(hash_SOURCES)
+SOURCES = $(afpd_SOURCES) $(fce_SOURCES) $(hash_SOURCES)
+DIST_SOURCES = $(am__afpd_SOURCES_DIST) $(fce_SOURCES) $(hash_SOURCES)
 HEADERS = $(noinst_HEADERS)
 ETAGS = etags
 CTAGS = ctags
@@ -193,6 +201,7 @@ LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
+MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
 MKDIR_P = @MKDIR_P@
 NETATALK_VERSION = @NETATALK_VERSION@
@@ -301,9 +310,10 @@ pkgconfdir = @PKGCONFDIR@
 afpd_SOURCES = afp_asp.c afp_avahi.c afp_config.c afp_dsi.c \
 	afp_options.c afp_util.c afp_zeroconf.c afprun.c afs.c appl.c \
 	auth.c catsearch.c desktop.c dircache.c directory.c \
-	enumerate.c extattrs.c file.c filedir.c fork.c gettok.c hash.c \
-	main.c mangle.c messages.c nfsquota.c ofork.c quota.c status.c \
-	switch.c uam.c uid.c unix.c volume.c $(am__append_1)
+	enumerate.c extattrs.c fce_api.c fce_util.c file.c filedir.c \
+	fork.c gettok.c hash.c main.c mangle.c messages.c nfsquota.c \
+	ofork.c quota.c status.c switch.c uam.c uid.c unix.c volume.c \
+	$(am__append_1)
 afpd_LDADD = \
 	$(top_builddir)/libatalk/cnid/libcnid.la \
 	$(top_builddir)/libatalk/libatalk.la \
@@ -325,18 +335,21 @@ afpd_CFLAGS = \
 	-D_PATH_ACL_LDAPCONF=\"$(pkgconfdir)/afp_ldap.conf\" \
 	-D_PATH_AFPDUUIDCONF=\"$(pkgconfdir)/afp_voluuid.conf\"
 
-noinst_HEADERS = auth.h afp_config.h desktop.h directory.h file.h \
-	 filedir.h fork.h globals.h icon.h mangle.h misc.h status.h switch.h \
+noinst_HEADERS = auth.h afp_config.h desktop.h directory.h fce_api_internal.h file.h \
+	 filedir.h fork.h icon.h mangle.h misc.h status.h switch.h \
 	 uam_auth.h uid.h unix.h volume.h hash.h acls.h acl_mappings.h extattrs.h \
 	 dircache.h afp_zeroconf.h afp_avahi.h
 
 hash_SOURCES = hash.c
 hash_CFLAGS = -DKAZLIB_TEST_MAIN -I$(top_srcdir)/include
+fce_SOURCES = fce_api.c fce_util.c
+fce_CFLAGS = -DFCE_TEST_MAIN -I$(top_srcdir)/include
+fce_LDADD = $(top_builddir)/libatalk/libatalk.la
 all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .c .lo .o .obj
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -361,9 +374,9 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 
-$(top_srcdir)/configure:  $(am__configure_deps)
+$(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-$(ACLOCAL_M4):  $(am__aclocal_m4_deps)
+$(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 
 clean-noinstPROGRAMS:
@@ -403,6 +416,9 @@ clean-sbinPROGRAMS:
 afpd$(EXEEXT): $(afpd_OBJECTS) $(afpd_DEPENDENCIES) 
 	@rm -f afpd$(EXEEXT)
 	$(afpd_LINK) $(afpd_OBJECTS) $(afpd_LDADD) $(LIBS)
+fce$(EXEEXT): $(fce_OBJECTS) $(fce_DEPENDENCIES) 
+	@rm -f fce$(EXEEXT)
+	$(fce_LINK) $(fce_OBJECTS) $(fce_LDADD) $(LIBS)
 hash$(EXEEXT): $(hash_OBJECTS) $(hash_DEPENDENCIES) 
 	@rm -f hash$(EXEEXT)
 	$(hash_LINK) $(hash_OBJECTS) $(hash_LDADD) $(LIBS)
@@ -431,6 +447,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-directory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-enumerate.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-extattrs.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-fce_api.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-fce_util.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-file.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-filedir.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-fork.Po@am__quote@
@@ -448,6 +466,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-uid.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-volume.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fce-fce_api.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fce-fce_util.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hash-hash.Po@am__quote@
 
 .c.o:
@@ -709,6 +729,34 @@ afpd-extattrs.obj: extattrs.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-extattrs.obj `if test -f 'extattrs.c'; then $(CYGPATH_W) 'extattrs.c'; else $(CYGPATH_W) '$(srcdir)/extattrs.c'; fi`
 
+afpd-fce_api.o: fce_api.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-fce_api.o -MD -MP -MF $(DEPDIR)/afpd-fce_api.Tpo -c -o afpd-fce_api.o `test -f 'fce_api.c' || echo '$(srcdir)/'`fce_api.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-fce_api.Tpo $(DEPDIR)/afpd-fce_api.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='fce_api.c' object='afpd-fce_api.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-fce_api.o `test -f 'fce_api.c' || echo '$(srcdir)/'`fce_api.c
+
+afpd-fce_api.obj: fce_api.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-fce_api.obj -MD -MP -MF $(DEPDIR)/afpd-fce_api.Tpo -c -o afpd-fce_api.obj `if test -f 'fce_api.c'; then $(CYGPATH_W) 'fce_api.c'; else $(CYGPATH_W) '$(srcdir)/fce_api.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-fce_api.Tpo $(DEPDIR)/afpd-fce_api.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='fce_api.c' object='afpd-fce_api.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-fce_api.obj `if test -f 'fce_api.c'; then $(CYGPATH_W) 'fce_api.c'; else $(CYGPATH_W) '$(srcdir)/fce_api.c'; fi`
+
+afpd-fce_util.o: fce_util.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-fce_util.o -MD -MP -MF $(DEPDIR)/afpd-fce_util.Tpo -c -o afpd-fce_util.o `test -f 'fce_util.c' || echo '$(srcdir)/'`fce_util.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-fce_util.Tpo $(DEPDIR)/afpd-fce_util.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='fce_util.c' object='afpd-fce_util.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-fce_util.o `test -f 'fce_util.c' || echo '$(srcdir)/'`fce_util.c
+
+afpd-fce_util.obj: fce_util.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-fce_util.obj -MD -MP -MF $(DEPDIR)/afpd-fce_util.Tpo -c -o afpd-fce_util.obj `if test -f 'fce_util.c'; then $(CYGPATH_W) 'fce_util.c'; else $(CYGPATH_W) '$(srcdir)/fce_util.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-fce_util.Tpo $(DEPDIR)/afpd-fce_util.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='fce_util.c' object='afpd-fce_util.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-fce_util.obj `if test -f 'fce_util.c'; then $(CYGPATH_W) 'fce_util.c'; else $(CYGPATH_W) '$(srcdir)/fce_util.c'; fi`
+
 afpd-file.o: file.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-file.o -MD -MP -MF $(DEPDIR)/afpd-file.Tpo -c -o afpd-file.o `test -f 'file.c' || echo '$(srcdir)/'`file.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/afpd-file.Tpo $(DEPDIR)/afpd-file.Po
@@ -960,6 +1008,34 @@ afpd-acls.obj: acls.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='acls.c' object='afpd-acls.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-acls.obj `if test -f 'acls.c'; then $(CYGPATH_W) 'acls.c'; else $(CYGPATH_W) '$(srcdir)/acls.c'; fi`
+
+fce-fce_api.o: fce_api.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fce_CFLAGS) $(CFLAGS) -MT fce-fce_api.o -MD -MP -MF $(DEPDIR)/fce-fce_api.Tpo -c -o fce-fce_api.o `test -f 'fce_api.c' || echo '$(srcdir)/'`fce_api.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/fce-fce_api.Tpo $(DEPDIR)/fce-fce_api.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='fce_api.c' object='fce-fce_api.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fce_CFLAGS) $(CFLAGS) -c -o fce-fce_api.o `test -f 'fce_api.c' || echo '$(srcdir)/'`fce_api.c
+
+fce-fce_api.obj: fce_api.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fce_CFLAGS) $(CFLAGS) -MT fce-fce_api.obj -MD -MP -MF $(DEPDIR)/fce-fce_api.Tpo -c -o fce-fce_api.obj `if test -f 'fce_api.c'; then $(CYGPATH_W) 'fce_api.c'; else $(CYGPATH_W) '$(srcdir)/fce_api.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/fce-fce_api.Tpo $(DEPDIR)/fce-fce_api.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='fce_api.c' object='fce-fce_api.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fce_CFLAGS) $(CFLAGS) -c -o fce-fce_api.obj `if test -f 'fce_api.c'; then $(CYGPATH_W) 'fce_api.c'; else $(CYGPATH_W) '$(srcdir)/fce_api.c'; fi`
+
+fce-fce_util.o: fce_util.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fce_CFLAGS) $(CFLAGS) -MT fce-fce_util.o -MD -MP -MF $(DEPDIR)/fce-fce_util.Tpo -c -o fce-fce_util.o `test -f 'fce_util.c' || echo '$(srcdir)/'`fce_util.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/fce-fce_util.Tpo $(DEPDIR)/fce-fce_util.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='fce_util.c' object='fce-fce_util.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fce_CFLAGS) $(CFLAGS) -c -o fce-fce_util.o `test -f 'fce_util.c' || echo '$(srcdir)/'`fce_util.c
+
+fce-fce_util.obj: fce_util.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fce_CFLAGS) $(CFLAGS) -MT fce-fce_util.obj -MD -MP -MF $(DEPDIR)/fce-fce_util.Tpo -c -o fce-fce_util.obj `if test -f 'fce_util.c'; then $(CYGPATH_W) 'fce_util.c'; else $(CYGPATH_W) '$(srcdir)/fce_util.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/fce-fce_util.Tpo $(DEPDIR)/fce-fce_util.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='fce_util.c' object='fce-fce_util.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fce_CFLAGS) $(CFLAGS) -c -o fce-fce_util.obj `if test -f 'fce_util.c'; then $(CYGPATH_W) 'fce_util.c'; else $(CYGPATH_W) '$(srcdir)/fce_util.c'; fi`
 
 hash-hash.o: hash.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hash_CFLAGS) $(CFLAGS) -MT hash-hash.o -MD -MP -MF $(DEPDIR)/hash-hash.Tpo -c -o hash-hash.o `test -f 'hash.c' || echo '$(srcdir)/'`hash.c
