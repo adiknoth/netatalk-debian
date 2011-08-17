@@ -3,5 +3,4 @@
 201_etc2ps_paths.diff
 202_psf_8_paths.diff
 205_applevolumes_default_homedir.diff
-213_CVE-2008-5718.patch
 214_default-dir_autotools.patch
