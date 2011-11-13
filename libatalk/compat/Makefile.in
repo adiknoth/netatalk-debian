@@ -65,9 +65,9 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libcompat_la_LIBADD =
-am_libcompat_la_OBJECTS = mktemp.lo getusershell.lo strcasecmp.lo \
-	strstr.lo strdup.lo inet_aton.lo rquota_xdr.lo pselect.lo \
-	snprintf.lo
+am_libcompat_la_OBJECTS = misc.lo mktemp.lo getusershell.lo \
+	strcasecmp.lo strstr.lo strdup.lo inet_aton.lo rquota_xdr.lo \
+	pselect.lo snprintf.lo
 libcompat_la_OBJECTS = $(am_libcompat_la_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -263,6 +263,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 noinst_LTLIBRARIES = libcompat.la
 libcompat_la_SOURCES = \
+	misc.c \
 	mktemp.c	\
 	getusershell.c	\
 	strcasecmp.c	\
@@ -326,6 +327,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getusershell.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/inet_aton.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/misc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mktemp.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pselect.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rquota_xdr.Plo@am__quote@

@@ -625,7 +625,7 @@ install-config-files: $(CONFFILES) $(GENFILES)
 			echo "not overwriting $$f"; \
 		fi; \
 	done
-@USE_DEBIAN_TRUE@	$(mkinstalldirs) $(DESTDIR)/default
+@USE_DEBIAN_TRUE@	$(mkinstalldirs) $(DESTDIR)/etc/default
 @USE_DEBIAN_TRUE@	if test "x$(OVERWRITE_CONFIG)" = "xyes" -o ! -f /etc/default/netatalk; then \
 @USE_DEBIAN_TRUE@		echo "$(INSTALL_DATA) $(srcdir)/netatalk.conf $(DESTDIR)/etc/default/netatalk"; \
 @USE_DEBIAN_TRUE@		$(INSTALL_DATA) $(srcdir)/netatalk.conf $(DESTDIR)/etc/default/netatalk; \

@@ -346,8 +346,6 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-@USE_PAM_FALSE@uninstall-local:
-@USE_PAM_FALSE@install-data-local:
 clean: clean-am
 
 clean-am: clean-generic clean-libtool mostlyclean-am
@@ -441,6 +439,8 @@ uninstall-am: uninstall-local
 @USE_PAM_TRUE@		echo rm -f $(DESTDIR)$(pkgconfdir)/$$f; \
 @USE_PAM_TRUE@		rm -f $(DESTDIR)$(pkgconfdir)/$$f; \
 @USE_PAM_TRUE@	done
+@USE_PAM_FALSE@install-data-local:
+@USE_PAM_FALSE@uninstall-local:
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

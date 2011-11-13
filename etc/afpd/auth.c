@@ -69,22 +69,6 @@ gid_t   *groups;
 
 int ngroups;
 
-/*
- * These numbers are scattered throughout the code.
- */
-static struct afp_versions  afp_versions[] = {
-#ifndef NO_DDP
-    { "AFPVersion 1.1", 11 },
-    { "AFPVersion 2.0", 20 },
-    { "AFPVersion 2.1", 21 },
-#endif /* ! NO_DDP */
-    { "AFP2.2", 22 },
-    { "AFPX03", 30 },
-    { "AFP3.1", 31 },
-    { "AFP3.2", 32 },
-    { "AFP3.3", 33 }
-};
-
 static struct uam_mod uam_modules = {NULL, NULL, &uam_modules, &uam_modules};
 static struct uam_obj uam_login = {"", "", 0, {{NULL, NULL, NULL, NULL }}, &uam_login,
                                    &uam_login};
@@ -250,15 +234,28 @@ static int set_auth_switch(int expired)
     return AFP_OK;
 }
 
+#define GROUPSTR_BUFSIZE 1024
+static const char *print_groups(int ngroups, gid_t *groups)
+{
+    static char groupsstr[GROUPSTR_BUFSIZE];
+    int i;
+    char *s = groupsstr;
+
+    if (ngroups == 0)
+        return "-";
+
+    for (i = 0; (i < ngroups) && (s < &groupsstr[GROUPSTR_BUFSIZE]); i++) {
+        s += snprintf(s, &groupsstr[GROUPSTR_BUFSIZE] - s, " %u", groups[i]);
+    }
+
+    return groupsstr;
+}
+
 static int login(AFPObj *obj, struct passwd *pwd, void (*logout)(void), int expired)
 {
 #ifdef ADMIN_GRP
     int admin = 0;
 #endif /* ADMIN_GRP */
-
-#if 0
-    set_processname("afpd");
-#endif
 
     if ( pwd->pw_uid == 0 ) {   /* don't allow root login */
         LOG(log_error, logtype_afpd, "login: root login denied!" );
@@ -391,28 +388,7 @@ static int login(AFPObj *obj, struct passwd *pwd, void (*logout)(void), int expi
     }
 #endif /* TRU64 */
 
-    if (ngroups > 0) {
-        #define GROUPSTR_BUFSIZE 1024
-        char groupsstr[GROUPSTR_BUFSIZE];
-        char *s = groupsstr;
-        int j = GROUPSTR_BUFSIZE;
-
-        int n = snprintf(groupsstr, GROUPSTR_BUFSIZE, "%u", groups[0]);
-        j -= n;
-        s += n;
-
-        for (int i = 1; i < ngroups; i++) {
-            n = snprintf(s, j, ", %u", groups[i]);
-            if (n == j) {
-                /* Buffer full */
-                LOG(log_debug, logtype_afpd, "login: group string buffer overflow");
-                break;
-            }
-            j -= n;
-            s += n;
-        }
-        LOG(log_debug, logtype_afpd, "login: %u supplementary groups: %s", ngroups, groupsstr);
-    }
+    LOG(log_debug, logtype_afpd, "login: supplementary groups: %s", print_groups(ngroups, groups));
 
     /* There's probably a better way to do this, but for now, we just play root */
 #ifdef ADMIN_GRP

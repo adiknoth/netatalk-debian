@@ -78,7 +78,7 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = macusers shell_utils timelord a2boot printing
+DIST_SUBDIRS = macusers misc shell_utils timelord a2boot printing
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ACL_LIBS = @ACL_LIBS@
@@ -255,7 +255,7 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = macusers shell_utils $(am__append_1) $(am__append_2) \
+SUBDIRS = macusers misc shell_utils $(am__append_1) $(am__append_2) \
 	$(am__append_3)
 all: all-recursive
 
