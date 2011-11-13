@@ -149,6 +149,12 @@ Files: etc/afpd/afprun.c
 Copyright: 1992-1999, Andrew Tridgell
 License: GPL-2+
 
+Files: contrib/shell_utils/apple_dump.in
+ contrib/shell_utils/make-casetable.pl
+ contrib/shell_utils/make-precompose.h.pl
+Copyright: 2008-2011, HAT <hat@fa2.so-net.ne.jp>
+License: GPL-2+
+
 Files: contrib/a2boot/a2boot.c
  contrib/timelord/timelord.c
 Copyright: 1990, The University of Melbourne
@@ -176,6 +182,12 @@ License: BSD-4-clause
 Files: include/atalk/ftw.*
 Copyright: 1992,1996-2004,2006-2008,2010 Free Software Foundation, Inc
 License: LGPL-2.1+~C
+
+Files: etc/afpd/fce_api.c
+ etc/afpd/fce_util.c
+Copyright: 2010, Mark Williams
+License: UNKNOWN
+ FIXME
 
 Files: libatalk/cnid/cnid.c
  libatalk/cnid/cnid_init.c
@@ -282,10 +294,6 @@ License: GPL-2+
 Files: libatalk/vfs/vfs.c
 Copyright: 2004, Didier Gautheron
  2009, Frank Lahm
-License: GPL-2+
-
-Files: contrib/shell_utils/apple_dump.in
-Copyright: 2009-2010, HAT <hat@fa2.so-net.ne.jp>
 License: GPL-2+
 
 Files: 
