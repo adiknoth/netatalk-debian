@@ -1,6 +1,4 @@
 114_fix_macusers_ps_parsing.patch
-115_default-dir.patch
 201_etc2ps_paths.diff
 202_psf_8_paths.diff
 205_applevolumes_default_homedir.diff
-214_default-dir_autotools.patch
