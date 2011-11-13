@@ -14,6 +14,7 @@
 
 @SET_MAKE@
 
+
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
@@ -61,11 +62,19 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
-am__installdirs = "$(DESTDIR)$(sysvdir)"
+am__installdirs = "$(DESTDIR)$(sysvdir)" "$(DESTDIR)$(servicedir)"
 sysvSCRIPT_INSTALL = $(INSTALL_SCRIPT)
 SCRIPTS = $(sysv_SCRIPTS)
 SOURCES =
 DIST_SOURCES =
+am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
+am__vpath_adj = case $$p in \
+    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
+    *) f=$$p;; \
+  esac;
+am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
+serviceDATA_INSTALL = $(INSTALL_DATA)
+DATA = $(service_DATA)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ACL_LIBS = @ACL_LIBS@
@@ -246,7 +255,8 @@ SUFFIXES = .tmpl .
 pkgconfdir = @PKGCONFDIR@
 GENERATED_FILES = \
 	rc.afpd.netbsd		\
-	rc.atalk.redhat		\
+	rc.atalk.redhat-sysv	\
+	rc.atalk.redhat-systemd	\
 	rc.atalk.tru64		\
 	rc.atalk.bsd		\
 	rc.atalkd.netbsd	\
@@ -256,11 +266,13 @@ GENERATED_FILES = \
 	rc.timelord.netbsd	\
 	rc.atalk.sysv		\
 	rc.atalk.gentoo		\
-	rc.atalk.debian
+	rc.atalk.debian		\
+	service.atalk.redhat-systemd
 
 TEMPLATES = \
 	rc.afpd.netbsd.tmpl		\
-	rc.atalk.redhat.tmpl		\
+	rc.atalk.redhat-sysv.tmpl	\
+	rc.atalk.redhat-systemd.tmpl	\
 	rc.atalk.tru64.tmpl		\
 	rc.atalk.bsd.tmpl		\
 	rc.atalkd.netbsd.tmpl		\
@@ -270,15 +282,11 @@ TEMPLATES = \
 	rc.timelord.netbsd.tmpl		\
 	rc.atalk.sysv.tmpl		\
 	rc.atalk.gentoo.tmpl		\
-	rc.atalk.debian.tmpl
+	rc.atalk.debian.tmpl		\
+	service.atalk.redhat-systemd.tmpl
 
-CLEANFILES = $(GENERATED_FILES) $(sysv_SCRIPTS) afpd atalkd cnid_metad papd timelord
-EXTRA_DIST = $(TEMPLATES) rc.atalk.cobalt
-
-#
-# checking for "cobalt" style sysv scripts:
-#
-@USE_COBALT_TRUE@sysvdir = /etc/rc.d/init.d
+CLEANFILES = $(GENERATED_FILES) $(sysv_SCRIPTS) $(service_DATA) afpd atalkd cnid_metad papd timelord
+EXTRA_DIST = $(TEMPLATES)
 #	-rc-update del $(sysv_SCRIPTS) default
 #	rm -f $(DESTDIR)$(sysvdir)/$(sysv_SCRIPTS)
 
@@ -298,9 +306,14 @@ EXTRA_DIST = $(TEMPLATES) rc.atalk.cobalt
 @USE_NETBSD_TRUE@sysvdir = /etc/rc.d
 
 #
+# checking for "redhat" style systemd scripts:
+#
+@USE_REDHAT_SYSTEMD_TRUE@sysvdir = $(pkglibexecdir)
+
+#
 # checking for "redhat" style sysv scripts:
 #
-@USE_REDHAT_TRUE@sysvdir = /etc/rc.d/init.d
+@USE_REDHAT_SYSV_TRUE@sysvdir = /etc/rc.d/init.d
 
 #
 # checking for Solaris init scripts
@@ -316,14 +329,16 @@ EXTRA_DIST = $(TEMPLATES) rc.atalk.cobalt
 # checking for "tru64" style sysv scripts:
 #
 @USE_TRU64_TRUE@sysvdir = /etc/init.d
-@USE_COBALT_TRUE@sysv_SCRIPTS = netatalk
 @USE_DEBIAN_TRUE@sysv_SCRIPTS = netatalk
 @USE_GENTOO_TRUE@sysv_SCRIPTS = netatalk
 @USE_NETBSD_TRUE@sysv_SCRIPTS = afpd atalkd cnid_metad papd timelord
-@USE_REDHAT_TRUE@sysv_SCRIPTS = netatalk
+@USE_REDHAT_SYSTEMD_TRUE@sysv_SCRIPTS = netatalk.sh
+@USE_REDHAT_SYSV_TRUE@sysv_SCRIPTS = netatalk
 @USE_SOLARIS_TRUE@sysv_SCRIPTS = netatalk
 @USE_SUSE_TRUE@sysv_SCRIPTS = netatalk
 @USE_TRU64_TRUE@sysv_SCRIPTS = netatalk
+@USE_REDHAT_SYSTEMD_TRUE@servicedir = /lib/systemd/system
+@USE_REDHAT_SYSTEMD_TRUE@service_DATA = netatalk.service
 all: all-am
 
 .SUFFIXES:
@@ -382,6 +397,23 @@ mostlyclean-libtool:
 
 clean-libtool:
 	-rm -rf .libs _libs
+install-serviceDATA: $(service_DATA)
+	@$(NORMAL_INSTALL)
+	test -z "$(servicedir)" || $(MKDIR_P) "$(DESTDIR)$(servicedir)"
+	@list='$(service_DATA)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f=$(am__strip_dir) \
+	  echo " $(serviceDATA_INSTALL) '$$d$$p' '$(DESTDIR)$(servicedir)/$$f'"; \
+	  $(serviceDATA_INSTALL) "$$d$$p" "$(DESTDIR)$(servicedir)/$$f"; \
+	done
+
+uninstall-serviceDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(service_DATA)'; for p in $$list; do \
+	  f=$(am__strip_dir) \
+	  echo " rm -f '$(DESTDIR)$(servicedir)/$$f'"; \
+	  rm -f "$(DESTDIR)$(servicedir)/$$f"; \
+	done
 tags: TAGS
 TAGS:
 
@@ -417,9 +449,9 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(SCRIPTS)
+all-am: Makefile $(SCRIPTS) $(DATA)
 installdirs:
-	for dir in "$(DESTDIR)$(sysvdir)"; do \
+	for dir in "$(DESTDIR)$(sysvdir)" "$(DESTDIR)$(servicedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -446,8 +478,8 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-@USE_COBALT_FALSE@@USE_DEBIAN_FALSE@@USE_GENTOO_FALSE@@USE_NETBSD_FALSE@@USE_REDHAT_FALSE@@USE_SOLARIS_FALSE@@USE_SUSE_FALSE@@USE_TRU64_FALSE@@USE_UNDEF_FALSE@install-data-hook:
-@USE_COBALT_FALSE@@USE_NETBSD_FALSE@@USE_TRU64_FALSE@@USE_UNDEF_FALSE@uninstall-hook:
+@USE_DEBIAN_FALSE@@USE_GENTOO_FALSE@@USE_NETBSD_FALSE@@USE_REDHAT_SYSTEMD_FALSE@@USE_REDHAT_SYSV_FALSE@@USE_SOLARIS_FALSE@@USE_SUSE_FALSE@@USE_TRU64_FALSE@@USE_UNDEF_FALSE@install-data-hook:
+@USE_NETBSD_FALSE@@USE_TRU64_FALSE@@USE_UNDEF_FALSE@uninstall-hook:
 clean: clean-am
 
 clean-am: clean-generic clean-libtool mostlyclean-am
@@ -466,7 +498,7 @@ info: info-am
 
 info-am:
 
-install-data-am: install-sysvSCRIPTS
+install-data-am: install-serviceDATA install-sysvSCRIPTS
 	@$(NORMAL_INSTALL)
 	$(MAKE) $(AM_MAKEFLAGS) install-data-hook
 
@@ -502,7 +534,7 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-sysvSCRIPTS
+uninstall-am: uninstall-serviceDATA uninstall-sysvSCRIPTS
 	@$(NORMAL_INSTALL)
 	$(MAKE) $(AM_MAKEFLAGS) uninstall-hook
 
@@ -515,11 +547,11 @@ uninstall-am: uninstall-sysvSCRIPTS
 	install-dvi-am install-exec install-exec-am install-html \
 	install-html-am install-info install-info-am install-man \
 	install-pdf install-pdf-am install-ps install-ps-am \
-	install-strip install-sysvSCRIPTS installcheck installcheck-am \
-	installdirs maintainer-clean maintainer-clean-generic \
-	mostlyclean mostlyclean-generic mostlyclean-libtool pdf pdf-am \
-	ps ps-am uninstall uninstall-am uninstall-hook \
-	uninstall-sysvSCRIPTS
+	install-serviceDATA install-strip install-sysvSCRIPTS \
+	installcheck installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-generic \
+	mostlyclean-libtool pdf pdf-am ps ps-am uninstall uninstall-am \
+	uninstall-hook uninstall-serviceDATA uninstall-sysvSCRIPTS
 
 
 #
@@ -530,6 +562,8 @@ uninstall-am: uninstall-sysvSCRIPTS
 	sed -e s@:BINDIR:@${bindir}@ \
 	    -e s@:SBINDIR:@${sbindir}@ \
 	    -e s@:ETCDIR:@${pkgconfdir}@ \
+	    -e s@:PKGLIBEXECDIR:@${pkglibexecdir}@ \
+	    -e s@:NETATALK_VERSION:@${NETATALK_VERSION}@ \
 	    <$< >$@
 
 # overwrite automake uninstall
@@ -538,16 +572,32 @@ uninstall-am: uninstall-sysvSCRIPTS
 
 uninstall: uninstall-startup
 
-@USE_REDHAT_TRUE@$(sysv_SCRIPTS): rc.atalk.redhat
-@USE_REDHAT_TRUE@	cp -f rc.atalk.redhat $(sysv_SCRIPTS)
-@USE_REDHAT_TRUE@	chmod a+x $(sysv_SCRIPTS)
+@USE_REDHAT_SYSV_TRUE@$(sysv_SCRIPTS): rc.atalk.redhat-sysv
+@USE_REDHAT_SYSV_TRUE@	cp -f rc.atalk.redhat-sysv $(sysv_SCRIPTS)
+@USE_REDHAT_SYSV_TRUE@	chmod a+x $(sysv_SCRIPTS)
 
-@USE_REDHAT_TRUE@install-data-hook:
-@USE_REDHAT_TRUE@	-chkconfig --add $(sysv_SCRIPTS)
+@USE_REDHAT_SYSV_TRUE@install-data-hook:
+@USE_REDHAT_SYSV_TRUE@	-chkconfig --add $(sysv_SCRIPTS)
 
-@USE_REDHAT_TRUE@uninstall-startup:
-@USE_REDHAT_TRUE@	-chkconfig --del $(sysv_SCRIPTS)
-@USE_REDHAT_TRUE@	rm -f $(DESTDIR)$(sysvdir)/$(sysv_SCRIPTS)
+@USE_REDHAT_SYSV_TRUE@uninstall-startup:
+@USE_REDHAT_SYSV_TRUE@	-chkconfig --del $(sysv_SCRIPTS)
+@USE_REDHAT_SYSV_TRUE@	rm -f $(DESTDIR)$(sysvdir)/$(sysv_SCRIPTS)
+
+@USE_REDHAT_SYSTEMD_TRUE@$(sysv_SCRIPTS): rc.atalk.redhat-systemd
+@USE_REDHAT_SYSTEMD_TRUE@	cp -f rc.atalk.redhat-systemd $(sysv_SCRIPTS)
+@USE_REDHAT_SYSTEMD_TRUE@	chmod a+x $(sysv_SCRIPTS)
+
+@USE_REDHAT_SYSTEMD_TRUE@$(service_DATA): service.atalk.redhat-systemd
+@USE_REDHAT_SYSTEMD_TRUE@	cp -f service.atalk.redhat-systemd $(service_DATA)
+
+@USE_REDHAT_SYSTEMD_TRUE@install-data-hook:
+@USE_REDHAT_SYSTEMD_TRUE@	-systemctl daemon-reload
+
+@USE_REDHAT_SYSTEMD_TRUE@uninstall-startup:
+@USE_REDHAT_SYSTEMD_TRUE@	-systemctl disable $(service_DATA)
+@USE_REDHAT_SYSTEMD_TRUE@	rm -f $(DESTDIR)$(sysvdir)/$(sysv_SCRIPTS)	\
+@USE_REDHAT_SYSTEMD_TRUE@		$(DESTDIR)$(servicedir)/$(service_DATA)
+@USE_REDHAT_SYSTEMD_TRUE@	-systemctl daemon-reload
 
 @USE_SUSE_TRUE@$(sysv_SCRIPTS): rc.atalk.suse
 @USE_SUSE_TRUE@	cp -f rc.atalk.suse $(sysv_SCRIPTS)
@@ -559,16 +609,6 @@ uninstall: uninstall-startup
 @USE_SUSE_TRUE@uninstall-startup:
 @USE_SUSE_TRUE@	-insserv -d $(sysv_SCRIPTS)
 @USE_SUSE_TRUE@	rm -f $(DESTDIR)$(sysvdir)/$(sysv_SCRIPTS)
-
-@USE_COBALT_TRUE@$(sysv_SCRIPTS): rc.atalk.cobalt
-@USE_COBALT_TRUE@	cp -f rc.atalk.cobalt $(sysv_SCRIPTS)
-@USE_COBALT_TRUE@	chmod a+x $(sysv_SCRIPTS)
-
-@USE_COBALT_TRUE@install-data-hook:
-
-@USE_COBALT_TRUE@uninstall-hook:
-
-@USE_COBALT_TRUE@uninstall-startup: uninstall-am
 
 @USE_TRU64_TRUE@$(sysv_SCRIPTS): rc.atalk.tru64
 @USE_TRU64_TRUE@	cp -f rc.atalk.tru64 $(sysv_SCRIPTS)

@@ -14,8 +14,7 @@
 
 @SET_MAKE@
 
-# Makefile for contrib/shell_utils/
-
+# Makefile for contrib/misc/
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
@@ -35,9 +34,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-subdir = contrib/shell_utils
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(srcdir)/apple_dump.in $(srcdir)/asip-status.pl.in
+subdir = contrib/misc
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
 	$(top_srcdir)/macros/cnid-backend.m4 \
@@ -63,10 +61,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
-CONFIG_CLEAN_FILES = apple_dump asip-status.pl
-am__installdirs = "$(DESTDIR)$(bindir)"
-binSCRIPT_INSTALL = $(INSTALL_SCRIPT)
-SCRIPTS = $(bin_SCRIPTS)
+CONFIG_CLEAN_FILES =
 SOURCES =
 DIST_SOURCES =
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -245,21 +240,10 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-pkgconfdir = @PKGCONFDIR@
-GENERATED_FILES = lp2pap.sh
-TEMPLATE_FILES = lp2pap.sh.tmpl
-PERLSCRIPTS = \
-	asip-status.pl \
-	apple_dump
-
-SUFFIXES = .tmpl .
-CLEANFILES = $(GENERATED_FILES)
-bin_SCRIPTS = $(PERLSCRIPTS) $(GENERATED_FILES)
-EXTRA_DIST = $(TEMPLATE_FILES) make-casetable.pl make-precompose.h.pl
+EXTRA_DIST = cnid.lua
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .tmpl .
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -269,9 +253,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  contrib/shell_utils/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  contrib/misc/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  contrib/shell_utils/Makefile
+	  $(AUTOMAKE) --foreign  contrib/misc/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -289,29 +273,6 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-apple_dump: $(top_builddir)/config.status $(srcdir)/apple_dump.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
-asip-status.pl: $(top_builddir)/config.status $(srcdir)/asip-status.pl.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
-install-binSCRIPTS: $(bin_SCRIPTS)
-	@$(NORMAL_INSTALL)
-	test -z "$(bindir)" || $(MKDIR_P) "$(DESTDIR)$(bindir)"
-	@list='$(bin_SCRIPTS)'; for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  if test -f $$d$$p; then \
-	    f=`echo "$$p" | sed 's|^.*/||;$(transform)'`; \
-	    echo " $(binSCRIPT_INSTALL) '$$d$$p' '$(DESTDIR)$(bindir)/$$f'"; \
-	    $(binSCRIPT_INSTALL) "$$d$$p" "$(DESTDIR)$(bindir)/$$f"; \
-	  else :; fi; \
-	done
-
-uninstall-binSCRIPTS:
-	@$(NORMAL_UNINSTALL)
-	@list='$(bin_SCRIPTS)'; for p in $$list; do \
-	  f=`echo "$$p" | sed 's|^.*/||;$(transform)'`; \
-	  echo " rm -f '$(DESTDIR)$(bindir)/$$f'"; \
-	  rm -f "$(DESTDIR)$(bindir)/$$f"; \
-	done
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -353,11 +314,8 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(SCRIPTS)
+all-am: Makefile
 installdirs:
-	for dir in "$(DESTDIR)$(bindir)"; do \
-	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
-	done
 install: install-am
 install-exec: install-exec-am
 install-data: install-data-am
@@ -375,7 +333,6 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
-	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -405,7 +362,7 @@ install-data-am:
 
 install-dvi: install-dvi-am
 
-install-exec-am: install-binSCRIPTS
+install-exec-am:
 
 install-html: install-html-am
 
@@ -435,28 +392,21 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-binSCRIPTS
+uninstall-am:
 
 .MAKE: install-am install-strip
 
 .PHONY: all all-am check check-am clean clean-generic clean-libtool \
 	distclean distclean-generic distclean-libtool distdir dvi \
 	dvi-am html html-am info info-am install install-am \
-	install-binSCRIPTS install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am install-man \
-	install-pdf install-pdf-am install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	uninstall uninstall-am uninstall-binSCRIPTS
+	install-data install-data-am install-dvi install-dvi-am \
+	install-exec install-exec-am install-html install-html-am \
+	install-info install-info-am install-man install-pdf \
+	install-pdf-am install-ps install-ps-am install-strip \
+	installcheck installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-generic \
+	mostlyclean-libtool pdf pdf-am ps ps-am uninstall uninstall-am
 
-
-.tmpl:
-	sed -e s@:BINDIR:@${bindir}@ \
-		-e s@:SBINDIR:@${sbindir}@ \
-		-e s@:ETCDIR:@${pkgconfdir}@ \
-		<$< >$@
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

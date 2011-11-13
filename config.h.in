@@ -398,6 +398,9 @@
 /* Define to 1 if you have the `nsl' library (-lnsl). */
 #undef HAVE_LIBNSL
 
+/* define if you have libquota */
+#undef HAVE_LIBQUOTA
+
 /* Define to 1 if you have the `security' library (-lsecurity). */
 #undef HAVE_LIBSECURITY
 

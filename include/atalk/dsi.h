@@ -10,16 +10,14 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <signal.h>
-
+#include <sys/socket.h>
 #include <netinet/in.h>
+
 #include <atalk/afp.h>
 #include <atalk/server_child.h>
 #include <atalk/globals.h>
 #include <netatalk/endian.h>
 
-#ifdef __OpenBSD__
-#include <sys/socket.h>
-#endif
 
 /* What a DSI packet looks like:
  0                               32
@@ -159,7 +157,9 @@ typedef struct DSI {
 #define DSI_RECONSOCKET      (1 << 7) /* we have a new socket from primary reconnect */
 #define DSI_RECONINPROG      (1 << 8) /* used in the new session in reconnect */
 #define DSI_AFP_LOGGED_OUT   (1 << 9) /* client called afp_logout, quit on next EOF from socket */
+#if 0
 #define DSI_GOT_ECONNRESET   (1 << 10) /* got ECONNRESET from client => exit */
+#endif
 
 /* basic initialization: dsi_init.c */
 extern DSI *dsi_init (const dsi_proto /*protocol*/,

@@ -374,7 +374,7 @@ static void remove_eafiles(const char *name, struct ea *ea)
     if ((dp = opendir(".")) == NULL) {
         dbd_log(LOGSTD, "Couldn't open the directory '%s/%s': %s",
                 cwdbuf, ADv2_DIRNAME, strerror(errno));
-        return;
+        goto exit;
     }
 
     while ((ep = readdir(dp))) {
@@ -388,9 +388,14 @@ static void remove_eafiles(const char *name, struct ea *ea)
         } /* if */
     } /* while */
 
+exit:
     if (dp)
         closedir(dp);
-
+    if ((chdir("..")) != 0) {
+        dbd_log(LOGSTD, "Couldn't chdir to '%s': %s", cwdbuf, strerror(errno));
+        /* we can't proceed */
+        longjmp(jmp, 1); /* this jumps back to cmd_dbd_scanvol() */
+    }    
 }
 
 /*
@@ -706,7 +711,7 @@ static cnid_t check_cnid(const char *name, cnid_t did, struct stat *st, int adfi
             ad_flush(&ad);
         }
         else
-            ad_cnid = ad_getid(&ad, st->st_dev, st->st_ino, did, stamp);
+            ad_cnid = ad_getid(&ad, st->st_dev, st->st_ino, 0, stamp);
 
         if (ad_cnid == 0)
             dbd_log( LOGSTD, "Bad CNID in adouble file of '%s/%s'", cwdbuf, name);

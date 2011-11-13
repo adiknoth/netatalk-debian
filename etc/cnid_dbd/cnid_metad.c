@@ -40,6 +40,7 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/time.h>
+#include <sys/resource.h>
 #include <sys/wait.h>
 #include <sys/uio.h>
 #include <sys/un.h>
@@ -252,13 +253,12 @@ static int maybe_start_dbd(char *dbdpn, struct volinfo *volinfo)
         sprintf(buf2, "%i", rqstfd);
 
         if (up->count == MAXSPAWN) {
-            /* there's a pb with the db inform child
-             * it will run recover, delete the db whatever
-             */
-            LOG(log_error, logtype_cnid, "try with -d %s", up->volinfo->v_path);
+            /* there's a pb with the db inform child, it will delete the db */
+            LOG(log_warning, logtype_cnid,
+                "Multiple attempts to start CNID db daemon for \"%s\" failed, wiping the slate clean...",
+                up->volinfo->v_path);
             ret = execlp(dbdpn, dbdpn, "-d", volpath, buf1, buf2, logconfig, NULL);
-        }
-        else {
+        } else {
             ret = execlp(dbdpn, dbdpn, volpath, buf1, buf2, logconfig, NULL);
         }
         /* Yikes! We're still here, so exec failed... */
@@ -490,6 +490,17 @@ int main(int argc, char *argv[])
         }
     }
 
+    /* Check for PID lockfile */
+    if (check_lockfile("cnid_metad", _PATH_CNID_METAD_LOCK))
+        return -1;
+
+    if (!debug && daemonize(0, 0) != 0)
+        exit(EXITERR_SYS);
+
+    /* Create PID lockfile */
+    if (create_lockfile("cnid_metad", _PATH_CNID_METAD_LOCK))
+        return -1;
+
     if (loglevel) {
         strlcpy(logconfig + 8, loglevel, 13);
         free(loglevel);
@@ -507,16 +518,6 @@ int main(int argc, char *argv[])
     }
 
     (void)setlimits();
-
-    /* Check PID lockfile and become a daemon */
-    switch(server_lock("cnid_metad", _PATH_CNID_METAD_LOCK, debug)) {
-    case -1: /* error */
-        daemon_exit(EXITERR_SYS);
-    case 0: /* child */
-        break;
-    default: /* server */
-        exit(0);
-    }
 
     if ((srvfd = tsockfd_create(host, port, 10)) < 0)
         daemon_exit(1);

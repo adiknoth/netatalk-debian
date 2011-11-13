@@ -51,12 +51,15 @@ static int argc = 0;
 static char **argv = NULL;
 #endif /* TRU64 */
 
-unsigned char	nologin = 0;
+#define AFP_LISTENERS 32
+#define FDSET_SAFETY  5
 
+unsigned char	nologin = 0;
 struct afp_options default_options;
 static AFPConfig *configs;
 static server_child *server_children;
 static sig_atomic_t reloadconfig = 0;
+static sig_atomic_t gotsigchld = 0;
 
 /* Two pointers to dynamic allocated arrays which store pollfds and associated data */
 static struct pollfd *fdset;
@@ -92,9 +95,25 @@ static void fd_set_listening_sockets(void)
     for (config = configs; config; config = config->next) {
         if (config->fd < 0) /* for proxies */
             continue;
-        fdset_add_fd(&fdset, &polldata, &fdset_used, &fdset_size, config->fd, LISTEN_FD, config);
+        fdset_add_fd(default_options.connections + AFP_LISTENERS + FDSET_SAFETY,
+                     &fdset,
+                     &polldata,
+                     &fdset_used,
+                     &fdset_size,
+                     config->fd,
+                     LISTEN_FD,
+                     config);
     }
-    fdset_add_fd(&fdset, &polldata, &fdset_used, &fdset_size, disasociated_ipc_fd, DISASOCIATED_IPC_FD, NULL);
+
+    if (default_options.flags & OPTION_KEEPSESSIONS)
+        fdset_add_fd(default_options.connections + AFP_LISTENERS + FDSET_SAFETY,
+                     &fdset,
+                     &polldata,
+                     &fdset_used,
+                     &fdset_size,
+                     disasociated_ipc_fd,
+                     DISASOCIATED_IPC_FD,
+                     NULL);
 }
  
 static void fd_reset_listening_sockets(void)
@@ -106,7 +125,9 @@ static void fd_reset_listening_sockets(void)
             continue;
         fdset_del_fd(&fdset, &polldata, &fdset_used, &fdset_size, config->fd);
     }
-    fdset_del_fd(&fdset, &polldata, &fdset_used, &fdset_size, disasociated_ipc_fd);
+
+    if (default_options.flags & OPTION_KEEPSESSIONS)
+        fdset_del_fd(&fdset, &polldata, &fdset_used, &fdset_size, disasociated_ipc_fd);
 }
 
 /* ------------------ */
@@ -127,7 +148,12 @@ static void afp_goaway(int sig)
             LOG(log_note, logtype_afpd, "AFP Server shutting down on SIGTERM");
             break;
         case SIGQUIT:
-            LOG(log_note, logtype_afpd, "AFP Server shutting down on SIGQUIT, NOT disconnecting clients");
+            if (default_options.flags & OPTION_KEEPSESSIONS) {
+                LOG(log_note, logtype_afpd, "AFP Server shutting down on SIGQUIT, NOT disconnecting clients");
+            } else {
+                LOG(log_note, logtype_afpd, "AFP Server shutting down on SIGQUIT");
+                sig = SIGTERM;
+            }
             break;
         }
         if (server_children)
@@ -154,13 +180,18 @@ static void afp_goaway(int sig)
         reloadconfig = 1;
         break;
 
+    case SIGCHLD:
+        /* w/ a configuration file, we can force a re-read if we want */
+        gotsigchld = 1;
+        break;
+
     default :
         LOG(log_error, logtype_afpd, "afp_goaway: bad signal" );
     }
     return;
 }
 
-static void child_handler(int sig _U_)
+static void child_handler(void)
 {
     int fd;
     int status, i;
@@ -227,29 +258,30 @@ int main(int ac, char **av)
     set_auth_parameters( ac, av );
 #endif /* TRU64 */
 
-    /* Log SIGBUS/SIGSEGV SBT */
-    fault_setup(NULL);
-
-    /* Default log setup: log to syslog */
-    setuplog("default log_note");
-
+    /* Parse argv args and initialize default options */
     afp_options_init(&default_options);
     if (!afp_options_parse(ac, av, &default_options))
         exit(EXITERR_CONF);
 
-    /* Save the user's current umask for use with CNID (and maybe some 
-     * other things, too). */
+    if (check_lockfile("afpd", default_options.pidfile) != 0)
+        exit(EXITERR_SYS);
+
+    if (!(default_options.flags & OPTION_DEBUG) && (daemonize(0, 0) != 0))
+        exit(EXITERR_SYS);
+
+    if (create_lockfile("afpd", default_options.pidfile) != 0)
+        exit(EXITERR_SYS);
+
+    /* Log SIGBUS/SIGSEGV SBT */
+    fault_setup(NULL);
+
+    /* Default log setup: log to syslog */
+    set_processname("afpd");
+    setuplog("default log_note");
+
+    /* Save the user's current umask */
     default_options.save_mask = umask( default_options.umask );
 
-    switch(server_lock("afpd", default_options.pidfile,
-                       default_options.flags & OPTION_DEBUG)) {
-    case -1: /* error */
-        exit(EXITERR_SYS);
-    case 0: /* child */
-        break;
-    default: /* server */
-        exit(0);
-    }
     atexit(afp_exit);
 
     /* install child handler for asp and dsi. we do this before afp_goaway
@@ -273,7 +305,8 @@ int main(int ac, char **av)
     }
 #endif
     
-    sv.sa_handler = child_handler;
+    sv.sa_handler = afp_goaway; /* handler for all sigs */
+
     sigemptyset( &sv.sa_mask );
     sigaddset(&sv.sa_mask, SIGALRM);
     sigaddset(&sv.sa_mask, SIGHUP);
@@ -286,7 +319,6 @@ int main(int ac, char **av)
         exit(EXITERR_SYS);
     }
 
-    sv.sa_handler = afp_goaway;
     sigemptyset( &sv.sa_mask );
     sigaddset(&sv.sa_mask, SIGALRM);
     sigaddset(&sv.sa_mask, SIGTERM);
@@ -365,7 +397,12 @@ int main(int ac, char **av)
     cnid_init();
 
     /* watch atp, dsi sockets and ipc parent/child file descriptor. */
-    disasociated_ipc_fd = ipc_server_uds(_PATH_AFP_IPC);
+
+    if (default_options.flags & OPTION_KEEPSESSIONS) {
+        LOG(log_note, logtype_afpd, "Activating continous service");
+        disasociated_ipc_fd = ipc_server_uds(_PATH_AFP_IPC);
+    }
+
     fd_set_listening_sockets();
 
     /* set limits */
@@ -374,6 +411,7 @@ int main(int ac, char **av)
     afp_child_t *child;
     int fd[2];  /* we only use one, but server_child_add expects [2] */
     pid_t pid;
+    int saveerrno;
 
     /* wait for an appleshare connection. parent remains in the loop
      * while the children get handled by afp_over_{asp,dsi}.  this is
@@ -386,7 +424,13 @@ int main(int ac, char **av)
         pthread_sigmask(SIG_UNBLOCK, &sigs, NULL);
         ret = poll(fdset, fdset_used, -1);
         pthread_sigmask(SIG_BLOCK, &sigs, NULL);
-        int saveerrno = errno;
+        saveerrno = errno;
+
+        if (gotsigchld) {
+            gotsigchld = 0;
+            child_handler();
+            continue;
+        }
 
         if (reloadconfig) {
             nologin++;
@@ -433,7 +477,14 @@ int main(int ac, char **av)
                     /* config->server_start is afp_config.c:dsi_start() for DSI */
                     if (child = config->server_start(config, configs, server_children)) {
                         /* Add IPC fd to select fd set */
-                        fdset_add_fd(&fdset, &polldata, &fdset_used, &fdset_size, child->ipc_fds[0], IPC_FD, child);
+                        fdset_add_fd(default_options.connections + AFP_LISTENERS + FDSET_SAFETY,
+                                     &fdset,
+                                     &polldata,
+                                     &fdset_used,
+                                     &fdset_size,
+                                     child->ipc_fds[0],
+                                     IPC_FD,
+                                     child);
                     }
                     break;
 
@@ -441,11 +492,11 @@ int main(int ac, char **av)
                     child = (afp_child_t *)polldata[i].data;
                     LOG(log_debug, logtype_afpd, "main: IPC request from child[%u]", child->pid);
 
-                    if ((ret = ipc_server_read(server_children, child->ipc_fds[0])) == 0) {
+                    if (ipc_server_read(server_children, child->ipc_fds[0]) != 0) {
                         fdset_del_fd(&fdset, &polldata, &fdset_used, &fdset_size, child->ipc_fds[0]);
                         close(child->ipc_fds[0]);
                         child->ipc_fds[0] = -1;
-                        if (child->disasociated) {
+                        if ((default_options.flags & OPTION_KEEPSESSIONS) && child->disasociated) {
                             LOG(log_note, logtype_afpd, "main: removing reattached child[%u]", child->pid);
                             server_child_remove(server_children, CHILD_DSIFORK, child->pid);
                         }
@@ -461,15 +512,23 @@ int main(int ac, char **av)
                     if (readt(fd[0], &pid, sizeof(pid_t), 0, 1) != sizeof(pid_t)) {
                         LOG(log_error, logtype_afpd, "main: readt: %s", strerror(errno));
                         close(fd[0]);
+                        break;
                     }
-                    LOG(log_note, logtype_afpd, "main: IPC reconnect from [%u]", pid);
+                    LOG(log_note, logtype_afpd, "main: IPC reconnect from pid [%u]", pid);
                     if ((child = server_child_add(server_children, CHILD_DSIFORK, pid, fd)) == NULL) {
                         LOG(log_error, logtype_afpd, "main: server_child_add");
                         close(fd[0]);
                         break;
                     }
                     child->disasociated = 1;
-                    fdset_add_fd(&fdset, &polldata, &fdset_used, &fdset_size, fd[0], IPC_FD, child);
+                    fdset_add_fd(default_options.connections + AFP_LISTENERS + FDSET_SAFETY,
+                                 &fdset,
+                                 &polldata,
+                                 &fdset_used,
+                                 &fdset_size,
+                                 fd[0],
+                                 IPC_FD,
+                                 child);
                     break;
 
                 default:

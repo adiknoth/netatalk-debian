@@ -986,12 +986,12 @@ USE_PGP_TRUE
 USE_PGP_FALSE
 DEFAULT_HOOK_TRUE
 DEFAULT_HOOK_FALSE
-USE_COBALT_TRUE
-USE_COBALT_FALSE
 USE_NETBSD_TRUE
 USE_NETBSD_FALSE
-USE_REDHAT_TRUE
-USE_REDHAT_FALSE
+USE_REDHAT_SYSV_TRUE
+USE_REDHAT_SYSV_FALSE
+USE_REDHAT_SYSTEMD_TRUE
+USE_REDHAT_SYSTEMD_FALSE
 USE_SUSE_TRUE
 USE_SUSE_FALSE
 USE_SHADOWPW_TRUE
@@ -1636,10 +1636,11 @@ Optional Features:
   --disable-shell-check   disable checking for a valid shell
   --disable-tcp-wrappers  disable TCP wrappers support
   --disable-locking       disable system locking
-  --enable-redhat         use redhat-style sysv configuration
+  --enable-redhat         obsoleted
+  --enable-redhat-sysv    use redhat-style sysv (upstart) configuration
+  --enable-redhat-systemd use redhat-style systemd (>=Fedora15) configuration
   --enable-suse           use suse-style sysv configuration
   --enable-gentoo         use gentoo-style sysv configuration
-  --enable-cobalt         use cobalt-style sysv configuration
   --enable-netbsd         use NetBSD-style rc.d configuration
   --enable-debian         use debian-style sysv configuration
   --enable-timelord       enable compilation of timelord server
@@ -4908,7 +4909,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 4911 "configure"' > conftest.$ac_ext
+  echo '#line 4912 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -7960,11 +7961,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7963: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7964: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7967: \$? = $ac_status" >&5
+   echo "$as_me:7968: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -8250,11 +8251,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8253: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8254: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:8257: \$? = $ac_status" >&5
+   echo "$as_me:8258: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -8354,11 +8355,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8357: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8358: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:8361: \$? = $ac_status" >&5
+   echo "$as_me:8362: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -10731,7 +10732,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 10734 "configure"
+#line 10735 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -10831,7 +10832,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 10834 "configure"
+#line 10835 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -13232,11 +13233,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13235: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13236: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:13239: \$? = $ac_status" >&5
+   echo "$as_me:13240: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -13336,11 +13337,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13339: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13340: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13343: \$? = $ac_status" >&5
+   echo "$as_me:13344: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -14934,11 +14935,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14937: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14938: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:14941: \$? = $ac_status" >&5
+   echo "$as_me:14942: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -15038,11 +15039,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15041: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15042: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:15045: \$? = $ac_status" >&5
+   echo "$as_me:15046: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -17258,11 +17259,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:17261: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:17262: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:17265: \$? = $ac_status" >&5
+   echo "$as_me:17266: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -17548,11 +17549,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:17551: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:17552: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:17555: \$? = $ac_status" >&5
+   echo "$as_me:17556: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -17652,11 +17653,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:17655: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:17656: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:17659: \$? = $ac_status" >&5
+   echo "$as_me:17660: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -22948,7 +22949,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 22951 "configure"
+#line 22952 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -27906,6 +27907,76 @@ fi
 
 done
 
+	{ echo "$as_me:$LINENO: checking for getfsquota in -lquota" >&5
+echo $ECHO_N "checking for getfsquota in -lquota... $ECHO_C" >&6; }
+if test "${ac_cv_lib_quota_getfsquota+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lquota -lprop -lrpcsvc $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char getfsquota ();
+int
+main ()
+{
+return getfsquota ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  ac_cv_lib_quota_getfsquota=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_lib_quota_getfsquota=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_lib_quota_getfsquota" >&5
+echo "${ECHO_T}$ac_cv_lib_quota_getfsquota" >&6; }
+if test $ac_cv_lib_quota_getfsquota = yes; then
+  QUOTA_LIBS="-lquota -lprop -lrpcsvc"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBQUOTA 1
+_ACEOF
+
+fi
+
 	else
 		netatalk_cv_quotasupport="no"
 
@@ -29478,15 +29549,38 @@ echo "${ECHO_T}no" >&6; }
 fi
 
 
-
 # Check whether --enable-redhat was given.
 if test "${enable_redhat+set}" = set; then
   enableval=$enable_redhat;
+	echo "ERROR: --enable-redhat is obsoleted. Use --enable-redhat-sysv or --enable-redhat-systemd."
+	echo "exit 1"
+	exit 1
+
+
+fi
+
+
+# Check whether --enable-redhat-sysv was given.
+if test "${enable_redhat_sysv+set}" = set; then
+  enableval=$enable_redhat_sysv;
 	if test "$enableval" = "yes"; then
-		sysv_style=redhat
+		sysv_style=redhat-sysv
 	fi
 	{ echo "$as_me:$LINENO: result: enabling redhat-style sysv support" >&5
 echo "${ECHO_T}enabling redhat-style sysv support" >&6; }
+
+
+fi
+
+
+# Check whether --enable-redhat-systemd was given.
+if test "${enable_redhat_systemd+set}" = set; then
+  enableval=$enable_redhat_systemd;
+	if test "$enableval" = "yes"; then
+		sysv_style=redhat-systemd
+	fi
+	{ echo "$as_me:$LINENO: result: enabling redhat-style systemd support" >&5
+echo "${ECHO_T}enabling redhat-style systemd support" >&6; }
 
 
 fi
@@ -29514,17 +29608,6 @@ if test "${enable_gentoo+set}" = set; then
 	{ echo "$as_me:$LINENO: result: enabling gentoo-style sysv support" >&5
 echo "${ECHO_T}enabling gentoo-style sysv support" >&6; }
 
-
-fi
-
-
-# Check whether --enable-cobalt was given.
-if test "${enable_cobalt+set}" = set; then
-  enableval=$enable_cobalt; if test "$enableval" = "yes"; then
-		sysv_style=cobalt
-	fi
-	{ echo "$as_me:$LINENO: result: enabling cobalt-style sysv support" >&5
-echo "${ECHO_T}enabling cobalt-style sysv support" >&6; }
 
 fi
 
@@ -29802,6 +29885,7 @@ _ACEOF
 
 case "$host_os" in
 	*aix*)				this_os=aix ;;
+	*kfreebsd*-gnu)			this_os=kfreebsd-gnu ;;
 	*freebsd*) 			this_os=freebsd ;;
 	*hpux11*)			this_os=hpux11 ;;
 	*irix*)				this_os=irix ;;
@@ -29823,6 +29907,12 @@ esac
 
 case "$this_os" in
 	linux)
+cat >>confdefs.h <<\_ACEOF
+#define _GNU_SOURCE 1
+_ACEOF
+
+        ;;
+     kfreebsd-gnu)
 cat >>confdefs.h <<\_ACEOF
 #define _GNU_SOURCE 1
 _ACEOF
@@ -29850,6 +29940,31 @@ fi
 if test x"$this_os" = "xfreebsd"; then
 	{ echo "$as_me:$LINENO: result:  * FreeBSD specific configuration" >&5
 echo "${ECHO_T} * FreeBSD specific configuration" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define BSD4_4 1
+_ACEOF
+
+
+cat >>confdefs.h <<\_ACEOF
+#define FREEBSD 1
+_ACEOF
+
+
+cat >>confdefs.h <<\_ACEOF
+#define SENDFILE_FLAVOR_BSD 1
+_ACEOF
+
+
+cat >>confdefs.h <<\_ACEOF
+#define OPEN_NOFOLLOW_ERRNO EMLINK
+_ACEOF
+
+fi
+
+if test x"$this_os" = "xkfreebsd-gnu"; then
+	{ echo "$as_me:$LINENO: result:  * GNU/kFreeBSD specific configuration" >&5
+echo "${ECHO_T} * GNU/kFreeBSD specific configuration" >&6; }
 
 cat >>confdefs.h <<\_ACEOF
 #define BSD4_4 1
@@ -33387,7 +33502,7 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
 fi
 { echo "$as_me:$LINENO: result: $netatalk_cv_HAVE_ACL_GET_PERM_NP" >&5
 echo "${ECHO_T}$netatalk_cv_HAVE_ACL_GET_PERM_NP" >&6; }
-			if test x"netatalk_cv_HAVE_ACL_GET_PERM_NP" = x"yes"; then
+			if test x"$netatalk_cv_HAVE_ACL_GET_PERM_NP" = x"yes"; then
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_ACL_GET_PERM_NP 1
@@ -35908,14 +36023,6 @@ else
   DEFAULT_HOOK_FALSE=
 fi
 
- if test x$sysv_style = xcobalt; then
-  USE_COBALT_TRUE=
-  USE_COBALT_FALSE='#'
-else
-  USE_COBALT_TRUE='#'
-  USE_COBALT_FALSE=
-fi
-
  if test x$sysv_style = xnetbsd; then
   USE_NETBSD_TRUE=
   USE_NETBSD_FALSE='#'
@@ -35924,12 +36031,20 @@ else
   USE_NETBSD_FALSE=
 fi
 
- if test x$sysv_style = xredhat; then
-  USE_REDHAT_TRUE=
-  USE_REDHAT_FALSE='#'
+ if test x$sysv_style = xredhat-sysv; then
+  USE_REDHAT_SYSV_TRUE=
+  USE_REDHAT_SYSV_FALSE='#'
 else
-  USE_REDHAT_TRUE='#'
-  USE_REDHAT_FALSE=
+  USE_REDHAT_SYSV_TRUE='#'
+  USE_REDHAT_SYSV_FALSE=
+fi
+
+ if test x$sysv_style = xredhat-systemd; then
+  USE_REDHAT_SYSTEMD_TRUE=
+  USE_REDHAT_SYSTEMD_FALSE='#'
+else
+  USE_REDHAT_SYSTEMD_TRUE='#'
+  USE_REDHAT_SYSTEMD_FALSE=
 fi
 
  if test x$sysv_style = xsuse; then
@@ -36014,7 +36129,7 @@ fi
 
 
 
-ac_config_files="$ac_config_files Makefile bin/Makefile bin/ad/Makefile bin/adv1tov2/Makefile bin/aecho/Makefile bin/afppasswd/Makefile bin/cnid/Makefile bin/cnid/cnid2_create bin/getzones/Makefile bin/megatron/Makefile bin/misc/Makefile bin/nbp/Makefile bin/pap/Makefile bin/psorder/Makefile bin/uniconv/Makefile config/Makefile config/pam/Makefile contrib/Makefile contrib/macusers/Makefile contrib/macusers/macusers contrib/printing/Makefile contrib/shell_utils/Makefile contrib/shell_utils/afpd-mtab.pl contrib/shell_utils/apple_dump contrib/shell_utils/asip-status.pl contrib/timelord/Makefile contrib/a2boot/Makefile distrib/Makefile distrib/config/Makefile distrib/config/netatalk-config distrib/initscripts/Makefile distrib/m4/Makefile doc/Makefile etc/Makefile etc/afpd/Makefile etc/atalkd/Makefile etc/cnid_dbd/Makefile etc/uams/Makefile etc/uams/uams_krb4/Makefile etc/papd/Makefile etc/psf/Makefile include/Makefile include/atalk/Makefile libatalk/Makefile libatalk/acl/Makefile libatalk/adouble/Makefile libatalk/asp/Makefile libatalk/atp/Makefile libatalk/bstring/Makefile libatalk/cnid/Makefile libatalk/cnid/cdb/Makefile libatalk/cnid/last/Makefile libatalk/cnid/dbd/Makefile libatalk/cnid/tdb/Makefile libatalk/compat/Makefile libatalk/dsi/Makefile libatalk/nbp/Makefile libatalk/netddp/Makefile libatalk/util/Makefile libatalk/tdb/Makefile libatalk/unicode/Makefile libatalk/unicode/charsets/Makefile libatalk/vfs/Makefile macros/Makefile man/Makefile man/man1/Makefile man/man3/Makefile man/man4/Makefile man/man5/Makefile man/man8/Makefile sys/Makefile sys/generic/Makefile sys/generic/sys/Makefile sys/netatalk/Makefile sys/netbsd/Makefile sys/netbsd/netatalk/Makefile sys/solaris/Makefile sys/sunos/Makefile sys/ultrix/Makefile test/Makefile test/afpd/Makefile"
+ac_config_files="$ac_config_files Makefile bin/Makefile bin/ad/Makefile bin/adv1tov2/Makefile bin/aecho/Makefile bin/afppasswd/Makefile bin/cnid/Makefile bin/cnid/cnid2_create bin/getzones/Makefile bin/megatron/Makefile bin/misc/Makefile bin/nbp/Makefile bin/pap/Makefile bin/psorder/Makefile bin/uniconv/Makefile config/Makefile config/pam/Makefile contrib/Makefile contrib/macusers/Makefile contrib/macusers/macusers contrib/misc/Makefile contrib/printing/Makefile contrib/shell_utils/Makefile contrib/shell_utils/apple_dump contrib/shell_utils/asip-status.pl contrib/timelord/Makefile contrib/a2boot/Makefile distrib/Makefile distrib/config/Makefile distrib/config/netatalk-config distrib/initscripts/Makefile distrib/m4/Makefile doc/Makefile etc/Makefile etc/afpd/Makefile etc/atalkd/Makefile etc/cnid_dbd/Makefile etc/uams/Makefile etc/uams/uams_krb4/Makefile etc/papd/Makefile etc/psf/Makefile include/Makefile include/atalk/Makefile libatalk/Makefile libatalk/acl/Makefile libatalk/adouble/Makefile libatalk/asp/Makefile libatalk/atp/Makefile libatalk/bstring/Makefile libatalk/cnid/Makefile libatalk/cnid/cdb/Makefile libatalk/cnid/last/Makefile libatalk/cnid/dbd/Makefile libatalk/cnid/tdb/Makefile libatalk/compat/Makefile libatalk/dsi/Makefile libatalk/nbp/Makefile libatalk/netddp/Makefile libatalk/util/Makefile libatalk/tdb/Makefile libatalk/unicode/Makefile libatalk/unicode/charsets/Makefile libatalk/vfs/Makefile macros/Makefile man/Makefile man/man1/Makefile man/man3/Makefile man/man4/Makefile man/man5/Makefile man/man8/Makefile sys/Makefile sys/generic/Makefile sys/generic/sys/Makefile sys/netatalk/Makefile sys/netbsd/Makefile sys/netbsd/netatalk/Makefile sys/solaris/Makefile sys/sunos/Makefile sys/ultrix/Makefile test/Makefile test/afpd/Makefile"
 
 ac_config_commands="$ac_config_commands default"
 
@@ -36296,13 +36411,6 @@ echo "$as_me: error: conditional \"DEFAULT_HOOK\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${USE_COBALT_TRUE}" && test -z "${USE_COBALT_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"USE_COBALT\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"USE_COBALT\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
 if test -z "${USE_NETBSD_TRUE}" && test -z "${USE_NETBSD_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"USE_NETBSD\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -36310,10 +36418,17 @@ echo "$as_me: error: conditional \"USE_NETBSD\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${USE_REDHAT_TRUE}" && test -z "${USE_REDHAT_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"USE_REDHAT\" was never defined.
+if test -z "${USE_REDHAT_SYSV_TRUE}" && test -z "${USE_REDHAT_SYSV_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"USE_REDHAT_SYSV\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"USE_REDHAT\" was never defined.
+echo "$as_me: error: conditional \"USE_REDHAT_SYSV\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${USE_REDHAT_SYSTEMD_TRUE}" && test -z "${USE_REDHAT_SYSTEMD_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"USE_REDHAT_SYSTEMD\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"USE_REDHAT_SYSTEMD\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -36876,9 +36991,9 @@ do
     "contrib/Makefile") CONFIG_FILES="$CONFIG_FILES contrib/Makefile" ;;
     "contrib/macusers/Makefile") CONFIG_FILES="$CONFIG_FILES contrib/macusers/Makefile" ;;
     "contrib/macusers/macusers") CONFIG_FILES="$CONFIG_FILES contrib/macusers/macusers" ;;
+    "contrib/misc/Makefile") CONFIG_FILES="$CONFIG_FILES contrib/misc/Makefile" ;;
     "contrib/printing/Makefile") CONFIG_FILES="$CONFIG_FILES contrib/printing/Makefile" ;;
     "contrib/shell_utils/Makefile") CONFIG_FILES="$CONFIG_FILES contrib/shell_utils/Makefile" ;;
-    "contrib/shell_utils/afpd-mtab.pl") CONFIG_FILES="$CONFIG_FILES contrib/shell_utils/afpd-mtab.pl" ;;
     "contrib/shell_utils/apple_dump") CONFIG_FILES="$CONFIG_FILES contrib/shell_utils/apple_dump" ;;
     "contrib/shell_utils/asip-status.pl") CONFIG_FILES="$CONFIG_FILES contrib/shell_utils/asip-status.pl" ;;
     "contrib/timelord/Makefile") CONFIG_FILES="$CONFIG_FILES contrib/timelord/Makefile" ;;
@@ -37300,12 +37415,12 @@ USE_PGP_TRUE!$USE_PGP_TRUE$ac_delim
 USE_PGP_FALSE!$USE_PGP_FALSE$ac_delim
 DEFAULT_HOOK_TRUE!$DEFAULT_HOOK_TRUE$ac_delim
 DEFAULT_HOOK_FALSE!$DEFAULT_HOOK_FALSE$ac_delim
-USE_COBALT_TRUE!$USE_COBALT_TRUE$ac_delim
-USE_COBALT_FALSE!$USE_COBALT_FALSE$ac_delim
 USE_NETBSD_TRUE!$USE_NETBSD_TRUE$ac_delim
 USE_NETBSD_FALSE!$USE_NETBSD_FALSE$ac_delim
-USE_REDHAT_TRUE!$USE_REDHAT_TRUE$ac_delim
-USE_REDHAT_FALSE!$USE_REDHAT_FALSE$ac_delim
+USE_REDHAT_SYSV_TRUE!$USE_REDHAT_SYSV_TRUE$ac_delim
+USE_REDHAT_SYSV_FALSE!$USE_REDHAT_SYSV_FALSE$ac_delim
+USE_REDHAT_SYSTEMD_TRUE!$USE_REDHAT_SYSTEMD_TRUE$ac_delim
+USE_REDHAT_SYSTEMD_FALSE!$USE_REDHAT_SYSTEMD_FALSE$ac_delim
 USE_SUSE_TRUE!$USE_SUSE_TRUE$ac_delim
 USE_SUSE_FALSE!$USE_SUSE_FALSE$ac_delim
 USE_SHADOWPW_TRUE!$USE_SHADOWPW_TRUE$ac_delim
@@ -38019,12 +38134,8 @@ echo "${ECHO_T}         none" >&6; }
 	fi
 	{ echo "$as_me:$LINENO: result:     AFP:" >&5
 echo "${ECHO_T}    AFP:" >&6; }
-	{ echo "$as_me:$LINENO: result:          AFP 3.x calls activated: $afp3" >&5
-echo "${ECHO_T}         AFP 3.x calls activated: $afp3" >&6; }
-	if test "x$afp3" = "xyes"; then
-		{ echo "$as_me:$LINENO: result:          Large file support (>2GB) for AFP3: $wx_largefile" >&5
+	{ echo "$as_me:$LINENO: result:          Large file support (>2GB) for AFP3: $wx_largefile" >&5
 echo "${ECHO_T}         Large file support (>2GB) for AFP3: $wx_largefile" >&6; }
-	fi
 	{ echo "$as_me:$LINENO: result:          Extended Attributes: $neta_cv_eas" >&5
 echo "${ECHO_T}         Extended Attributes: $neta_cv_eas" >&6; }
 	{ echo "$as_me:$LINENO: result:     CNID:" >&5
@@ -38072,8 +38183,12 @@ echo "${ECHO_T}         guest" >&6; }
 echo "${ECHO_T}    Options:" >&6; }
 	{ echo "$as_me:$LINENO: result:          DDP (AppleTalk) support: $netatalk_cv_ddp_enabled" >&5
 echo "${ECHO_T}         DDP (AppleTalk) support: $netatalk_cv_ddp_enabled" >&6; }
-	{ echo "$as_me:$LINENO: result:          CUPS support:            $netatalk_cv_use_cups" >&5
+	if test "x$netatalk_cv_ddp_enabled" = "xyes"; then
+		{ echo "$as_me:$LINENO: result:          CUPS support:            $netatalk_cv_use_cups" >&5
 echo "${ECHO_T}         CUPS support:            $netatalk_cv_use_cups" >&6; }
+		{ echo "$as_me:$LINENO: result:          Apple 2 boot support:    $compile_a2boot" >&5
+echo "${ECHO_T}         Apple 2 boot support:    $compile_a2boot" >&6; }
+	fi
 	{ echo "$as_me:$LINENO: result:          SLP support:             $netatalk_cv_srvloc" >&5
 echo "${ECHO_T}         SLP support:             $netatalk_cv_srvloc" >&6; }
 	{ echo "$as_me:$LINENO: result:          Zeroconf support:        $netatalk_cv_zeroconf" >&5
@@ -38092,10 +38207,10 @@ echo "${ECHO_T}         cracklib support:        $netatalk_cv_with_cracklib" >&6
 echo "${ECHO_T}         dropbox kludge:          $netatalk_cv_dropkludge" >&6; }
 	{ echo "$as_me:$LINENO: result:          force volume uid/gid:    $netatalk_cv_force_uidgid" >&5
 echo "${ECHO_T}         force volume uid/gid:    $netatalk_cv_force_uidgid" >&6; }
-	{ echo "$as_me:$LINENO: result:          Apple 2 boot support:    $compile_a2boot" >&5
-echo "${ECHO_T}         Apple 2 boot support:    $compile_a2boot" >&6; }
 	{ echo "$as_me:$LINENO: result:          ACL support:             $with_acl_support" >&5
 echo "${ECHO_T}         ACL support:             $with_acl_support" >&6; }
+	{ echo "$as_me:$LINENO: result:          LDAP support:            $with_ldap" >&5
+echo "${ECHO_T}         LDAP support:            $with_ldap" >&6; }
 	if test x"$use_pam_so" = x"yes" -a x"$netatalk_cv_install_pam" = x"no"; then
 		{ echo "$as_me:$LINENO: result: " >&5
 echo "${ECHO_T}" >&6; }
