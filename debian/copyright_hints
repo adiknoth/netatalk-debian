@@ -30,6 +30,7 @@ Files: AUTHORS
  bin/megatron/updcrc.c
  bin/megatron/updcrc.h
  bin/misc/Makefile.am
+ bin/misc/fce.c
  bin/misc/logger_test.c
  bin/misc/netacnv.c
  bin/nbp/Makefile.am
@@ -53,11 +54,12 @@ Files: AUTHORS
  contrib/macusers/Makefile.am
  contrib/macusers/README.macusers
  contrib/macusers/macusers.in
+ contrib/misc/Makefile.am
+ contrib/misc/cnid.lua
  contrib/printing/Makefile.am
  contrib/printing/add_netatalk_printer
  contrib/printing/netatalk.template
  contrib/shell_utils/Makefile.am
- contrib/shell_utils/afpd-mtab.pl.in
  contrib/shell_utils/asip-status.pl.in
  contrib/shell_utils/lp2pap.sh.tmpl
  contrib/timelord/VERSION
@@ -79,7 +81,6 @@ Files: AUTHORS
  debian/patches/201_etc2ps_paths.diff
  debian/patches/202_psf_8_paths.diff
  debian/patches/205_applevolumes_default_homedir.diff
- debian/patches/213_CVE-2008-5718.patch
  debian/patches/README
  debian/patches/series
  debian/source/format
@@ -91,16 +92,17 @@ Files: AUTHORS
  distrib/initscripts/Makefile.am
  distrib/initscripts/rc.afpd.netbsd.tmpl
  distrib/initscripts/rc.atalk.bsd.tmpl
- distrib/initscripts/rc.atalk.cobalt
  distrib/initscripts/rc.atalk.debian.tmpl
  distrib/initscripts/rc.atalk.gentoo.tmpl
- distrib/initscripts/rc.atalk.redhat.tmpl
+ distrib/initscripts/rc.atalk.redhat-systemd.tmpl
+ distrib/initscripts/rc.atalk.redhat-sysv.tmpl
  distrib/initscripts/rc.atalk.sysv.tmpl
  distrib/initscripts/rc.atalk.tru64.tmpl
  distrib/initscripts/rc.atalkd.netbsd.tmpl
  distrib/initscripts/rc.cnid_metad.netbsd.tmpl
  distrib/initscripts/rc.papd.netbsd.tmpl
  distrib/initscripts/rc.timelord.netbsd.tmpl
+ distrib/initscripts/service.atalk.redhat-systemd.tmpl
  distrib/m4/Makefile.am
  distrib/m4/netatalk.m4
  doc/DEVELOPER
@@ -114,6 +116,7 @@ Files: AUTHORS
  etc/afpd/afp_zeroconf.c
  etc/afpd/afp_zeroconf.h
  etc/afpd/desktop.c
+ etc/afpd/fce_api_internal.h
  etc/afpd/filedir.h
  etc/afpd/mangle.h
  etc/afpd/misc.h
@@ -144,6 +147,7 @@ Files: AUTHORS
  include/atalk/bstrlib.h
  include/atalk/cnid_dbd_private.h
  include/atalk/cnid_private.h
+ include/atalk/fce_api.h
  include/atalk/ldapconfig.h
  include/atalk/list.h
  include/atalk/logger.h
@@ -192,6 +196,7 @@ Files: AUTHORS
  libatalk/cnid/tdb/cnid_tdb_update.c
  libatalk/compat/Makefile.am
  libatalk/compat/inet_aton.c
+ libatalk/compat/misc.c
  libatalk/compat/strdup.c
  libatalk/dsi/Makefile.am
  libatalk/dsi/README
@@ -203,7 +208,8 @@ Files: AUTHORS
  libatalk/unicode/charsets/Makefile.am
  libatalk/unicode/charsets/generic_mb.h
  libatalk/unicode/precompose.h
- libatalk/unicode/ucs2_casetable.h
+ libatalk/unicode/utf16_case.c
+ libatalk/unicode/utf16_casetable.h
  libatalk/util/Makefile.am
  libatalk/util/atalk_addr.c
  libatalk/util/bprint.c
@@ -247,6 +253,7 @@ Files: AUTHORS
  man/man1/getzones.1
  man/man1/hqx2bin.1
  man/man1/macbinary.1
+ man/man1/macusers.1
  man/man1/megatron.1
  man/man1/nbp.1
  man/man1/nbplkup.1
@@ -347,7 +354,6 @@ Files: bin/aecho/aecho.c
  etc/afpd/fork.c
  etc/afpd/fork.h
  etc/afpd/gettok.c
- etc/afpd/globals.h
  etc/afpd/icon.h
  etc/afpd/main.c
  etc/afpd/ofork.c
@@ -400,6 +406,7 @@ Files: bin/aecho/aecho.c
  include/atalk/compat.h
  include/atalk/ddp.h
  include/atalk/directory.h
+ include/atalk/globals.h
  include/atalk/nbp.h
  include/atalk/pap.h
  include/atalk/rtmp.h
@@ -474,6 +481,7 @@ Files: bin/Makefile.in
  config/pam/Makefile.in
  contrib/Makefile.in
  contrib/macusers/Makefile.in
+ contrib/misc/Makefile.in
  contrib/printing/Makefile.in
  contrib/shell_utils/Makefile.in
  distrib/Makefile.in
@@ -745,6 +753,15 @@ Copyright: 1990, The University of
 License: UNKNOWN
  FIXME
 
+Files: contrib/shell_utils/apple_dump.in
+ contrib/shell_utils/make-casetable.pl
+ contrib/shell_utils/make-precompose.h.pl
+Copyright: 2008-2011, HAT <hat@fa2.so-net.ne.jp>
+ 2009-2010, HAT <hat@fa2.so-net.ne.jp>
+ 2011, HAT <hat@fa2.so-net.ne.jp>
+License: GPL-2+
+ FIXME
+
 Files: etc/cnid_dbd/cnid_metad.c
  etc/cnid_dbd/dbd.h
  etc/cnid_dbd/dbd_update.c
@@ -766,6 +783,13 @@ Files: libatalk/compat/getusershell.c
 Copyright: 1985, Regents of the University of California
  1987, Regents of the University of California
 License: UNKNOWN
+ FIXME
+
+Files: bin/ad/ad_util.c
+ libatalk/util/cnid.c
+Copyright: 1991, 1993-1994,
+ 2009, Frank Lahm <franklahm@gmail.com>
+License: BSD (3 clause)
  FIXME
 
 Files: etc/papd/lp.c
@@ -795,18 +819,18 @@ Copyright: 1992,1996-1999,2003-2004, Free Software Foundation, Inc
 License: LGPL-2.1+
  FIXME
 
+Files: etc/afpd/fce_api.c
+ etc/afpd/fce_util.c
+Copyright: 2010, Mark Williams
+License: UNKNOWN
+ FIXME
+
 Files: libatalk/cnid/cnid.c
  libatalk/cnid/cnid_init.c
 Copyright: 2003, Rafal Lewczuk <rlewczuk@pronet.pl>
  2003, the Netatalk Team
  holders
 License: UNKNOWN
- FIXME
-
-Files: bin/ad/ad_util.c
-Copyright: 1991, 1993-1994,
- 2009, Frank Lahm <franklahm@gmail.com>
-License: BSD (3 clause)
  FIXME
 
 Files: bin/ad/ad_cp.c
@@ -857,7 +881,8 @@ License: GPL-2+
  FIXME
 
 Files: aclocal.m4
-Copyright: 1996-1997, 2000-2001, 2003, 2005,
+Copyright: 1996, 1998, 2000-2005
+ 1996-1997, 2000-2001, 2003, 2005,
  1996-2004,
  1996-2008,
  1997, 1999-2001, 2003-2005,
@@ -982,11 +1007,6 @@ Copyright: 2010, Frank Lahm
 License: GPL-2+
  FIXME
 
-Files: contrib/shell_utils/apple_dump.in
-Copyright: 2009-2010, HAT <hat@fa2.so-net.ne.jp>
-License: GPL-2+
- FIXME
-
 Files: libatalk/util/strcasestr.c
 Copyright: != VAL(b));
  1994, 1996-1997, Free Software Foundation, Inc
@@ -1034,7 +1054,7 @@ License: UNKNOWN
  FIXME
 
 Files: etc/afpd/afp_options.c
-Copyright: *120;
+Copyright: * 120;
  1990,1993, Regents of The University of Michigan
  1997, Adrian Sun (asun@zoology.washington.edu)
 License: UNKNOWN

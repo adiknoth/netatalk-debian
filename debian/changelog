@@ -1,3 +1,26 @@
+netatalk (2.2.1-1) unstable; urgency=low
+
+  * New upstream release.
+    + Closes: bug#637025.
+    + Fixes FTBFS on GNU/kFreeBSD.
+      Closes: bug#630349. Thanks to Petr Salinger.
+  * Fix typo in comment.
+  * Update patches:
+    + Drop patch 213 (CVE-2008-5718): fixed upstream since 2.0.5.
+    + Drop patches 115 and 214 (default → etc/default): fixed upstream
+      since 2.2.1.
+    + Unfuzz patch 114.
+    + Add patch cherry-picked from upstream git, to fix EA header
+      related file move/delete errors.
+      Closes: bug#648792. Thanks to Tim Miller Dyck.
+  * Update copyright file: Add/extend a few files sections.
+  * Update package relations:
+    + Tighten build-dependency on cdbs slightly.
+    + Relax build-depend unversioned on debhelper and devscripts (needed
+      versions satisfied even in oldstable).
+
+ -- Jonas Smedegaard <dr@jones.dk>  Wed, 30 Nov 2011 19:05:23 +0700
+
 netatalk (2.2~beta4-1) unstable; urgency=low
 
   * New upstream release.
