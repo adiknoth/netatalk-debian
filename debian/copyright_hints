@@ -48,7 +48,7 @@ Files: AUTHORS
  config/pam/Makefile.am
  config/pam/netatalk.pam.tmpl
  config/papd.conf
- configure.in
+ configure.ac
  contrib/Makefile.am
  contrib/a2boot/VERSION
  contrib/macusers/Makefile.am
@@ -77,7 +77,7 @@ Files: AUTHORS
  debian/netatalk.logcheck.ignore.server
  debian/netatalk.logcheck.violations.ignore
  debian/netatalk.pam
- debian/patches/020111013~cea5233.patch
+ debian/patches/101_start_avahi-daemon_before_atalkd.patch
  debian/patches/114_fix_macusers_ps_parsing.patch
  debian/patches/201_etc2ps_paths.diff
  debian/patches/202_psf_8_paths.diff
@@ -95,17 +95,21 @@ Files: AUTHORS
  distrib/initscripts/rc.atalk.bsd.tmpl
  distrib/initscripts/rc.atalk.debian.tmpl
  distrib/initscripts/rc.atalk.gentoo.tmpl
- distrib/initscripts/rc.atalk.redhat-systemd.tmpl
  distrib/initscripts/rc.atalk.redhat-sysv.tmpl
+ distrib/initscripts/rc.atalk.systemd.tmpl
  distrib/initscripts/rc.atalk.sysv.tmpl
  distrib/initscripts/rc.atalk.tru64.tmpl
  distrib/initscripts/rc.atalkd.netbsd.tmpl
  distrib/initscripts/rc.cnid_metad.netbsd.tmpl
  distrib/initscripts/rc.papd.netbsd.tmpl
  distrib/initscripts/rc.timelord.netbsd.tmpl
- distrib/initscripts/service.atalk.redhat-systemd.tmpl
+ distrib/initscripts/service.atalk.systemd.tmpl
  distrib/m4/Makefile.am
  distrib/m4/netatalk.m4
+ distrib/systemd/Makefile.am
+ distrib/systemd/README
+ distrib/systemd/netatalk-afpd.service
+ distrib/systemd/netatalk-cnid_metad.service
  doc/DEVELOPER
  doc/Makefile.am
  doc/README.AppleTalk
@@ -144,7 +148,6 @@ Files: AUTHORS
  etc/uams/uams_krb4/lifetime.c
  include/Makefile.am
  include/atalk/Makefile.am
- include/atalk/boolean.h
  include/atalk/bstrlib.h
  include/atalk/cnid_dbd_private.h
  include/atalk/cnid_private.h
@@ -489,6 +492,7 @@ Files: bin/Makefile.in
  distrib/config/Makefile.in
  distrib/initscripts/Makefile.in
  distrib/m4/Makefile.in
+ distrib/systemd/Makefile.in
  doc/Makefile.in
  etc/Makefile.in
  etc/afpd/Makefile.in
@@ -549,7 +553,6 @@ Files: bin/ad/ad.c
  bin/ad/ad_ls.c
  bin/misc/uuidtest.c
  etc/afpd/acl_mappings.h
- etc/afpd/acls.c
  etc/afpd/acls.h
  etc/afpd/dircache.c
  etc/afpd/dircache.h
@@ -568,7 +571,6 @@ Files: bin/ad/ad.c
  libatalk/acl/cache.h
  libatalk/acl/ldap.c
  libatalk/acl/ldap_config.c
- libatalk/acl/unix.c
  libatalk/acl/uuid.c
  libatalk/bstring/bstradd.c
  libatalk/util/locking.c
@@ -585,8 +587,8 @@ Files: bin/ad/ad.c
  test/afpd/test.c
  test/afpd/test.h
 Copyright: 2008-2009, Frank Lahm <franklahm@gmail.com>
-  2008-2010, Frank Lahm <franklahm@gmail.com>
   2009, Frank Lahm <franklahm@gmail.com>
+  2009,2011, Frank Lahm <franklahm@gmail.com>
   2010, Frank Lahm <franklahm@gmail.com>
 License: GPL-2+
  FIXME
@@ -809,6 +811,21 @@ Copyright: 1983, Regents of the University of California
 License: BSD (4 clause)
  FIXME
 
+Files: include/atalk/queue.h
+ include/atalk/standards.h
+Copyright: 2010, Frank Lahm
+  2011, Frank Lahm
+License: GPL-2+
+ FIXME
+
+Files: etc/afpd/acls.c
+ libatalk/acl/unix.c
+Copyright: 2008-2010, Frank Lahm <franklahm@gmail.com>
+  2010, Frank Lahm <franklahm@gmail.com>
+  2011, Laura Mueller <laura-mueller@uni-duesseldorf.de>
+License: GPL-2+
+ FIXME
+
 Files: bin/ad/ad_mv.c
  bin/ad/ad_rm.c
 Copyright: 2010, Frank Lahm <franklahm@googlemail.com>
@@ -984,11 +1001,6 @@ Copyright: 2004, Didier Gautheron
 License: GPL-2+
  FIXME
 
-Files: include/atalk/queue.h
-Copyright: 2010, Frank Lahm
-License: GPL-2+
- FIXME
-
 Files: depcomp
 Copyright: 1999-2000, 2003-2007, Free Software
 License: GPL-2+
@@ -1064,7 +1076,7 @@ License: UNKNOWN
  FIXME
 
 Files: libatalk/unicode/util_unistr.c
-Copyright: == toupper_w(*s)) return (ucs2_t *)s;
+Copyright: == tolower_w(*s)) return (ucs2_t *)s;
 License: UNKNOWN
  FIXME
 
@@ -1170,7 +1182,7 @@ Copyright: 1980, 1990 Regents of the University of California. All
 License: UNKNOWN
  FIXME
 
-Files: distrib/initscripts/rc.atalk.suse.tmpl
+Files: distrib/initscripts/rc.atalk.suse-sysv.tmpl
 Copyright: 1996-2001, SuSE GmbH Nuernberg, Germany.
 License: UNKNOWN
  FIXME
