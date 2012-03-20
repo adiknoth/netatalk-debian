@@ -133,7 +133,7 @@ CDBS_BUILD_DEPENDS += , d-shlibs, hardening-includes
 
 # Needed (always/often/seldom) at runtime
 #  * netbase needed by network-facing daemons
-#  * libpam-modules, libpam-cracklib and cracklib-runtime needed by daemons afpd and papd
+#  * libpam-modules, libpam-cracklib, cracklib-runtime and avahi-daemon needed by daemons afpd and papd
 #  * lsof and procps needed by script macusers
 #  * rc needed by script acleandir.rc
 #  * db-util needed by script cnid_maint
@@ -142,5 +142,5 @@ CDBS_BUILD_DEPENDS += , d-shlibs, hardening-includes
 #  * db4.2-util needed by example script netatalk_update.sh for upgrades
 #    from 2.0.4~beta2-4 and earlier: can be dropped after Squeeze+1
 CDBS_DEPENDS = netbase, libpam-modules
-CDBS_RECOMMENDS = lsof, rc, db-util, procps, cracklib-runtime, libpam-cracklib
+CDBS_RECOMMENDS = lsof, rc, db-util, procps, cracklib-runtime, libpam-cracklib, avahi-daemon
 CDBS_SUGGESTS = texlive-base-bin, groff, quota, db4.2-util
