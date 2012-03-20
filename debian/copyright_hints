@@ -1,4 +1,4 @@
-Format: http://svn.debian.org/wsvn/dep/web/deps/dep5.mdwn?rev=174
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: FIXME
 Upstream-Contact: FIXME
 Source: FIXME
@@ -77,6 +77,7 @@ Files: AUTHORS
  debian/netatalk.logcheck.ignore.server
  debian/netatalk.logcheck.violations.ignore
  debian/netatalk.pam
+ debian/patches/020111013~cea5233.patch
  debian/patches/114_fix_macusers_ps_parsing.patch
  debian/patches/201_etc2ps_paths.diff
  debian/patches/202_psf_8_paths.diff
@@ -453,14 +454,14 @@ Files: bin/aecho/aecho.c
  sys/netatalk/endian.h
  sys/ultrix/at_ultrix.c
 Copyright: 1990,1992, Regents of The University of Michigan
- 1990,1993, Regents of The University of Michigan
- 1990,1994, Regents of The University of Michigan
- 1990,1995, Regents of The University of Michigan
- 1990,1996, Regents of The University of Michigan
- 1990,1997, Regents of The University of Michigan
- 1990-1991, Regents of The University of Michigan
- 1995, Regents of The University of Michigan
- 1996, Regents of The University of Michigan
+  1990,1993, Regents of The University of Michigan
+  1990,1994, Regents of The University of Michigan
+  1990,1995, Regents of The University of Michigan
+  1990,1996, Regents of The University of Michigan
+  1990,1997, Regents of The University of Michigan
+  1990-1991, Regents of The University of Michigan
+  1995, Regents of The University of Michigan
+  1996, Regents of The University of Michigan
 License: UNKNOWN
  FIXME
 
@@ -538,7 +539,7 @@ Files: bin/Makefile.in
  test/Makefile.in
  test/afpd/Makefile.in
 Copyright: 1980, 1990, 1993
- 1994-2002
+  1994-2002
 License: UNKNOWN
  FIXME
 
@@ -584,9 +585,9 @@ Files: bin/ad/ad.c
  test/afpd/test.c
  test/afpd/test.h
 Copyright: 2008-2009, Frank Lahm <franklahm@gmail.com>
- 2008-2010, Frank Lahm <franklahm@gmail.com>
- 2009, Frank Lahm <franklahm@gmail.com>
- 2010, Frank Lahm <franklahm@gmail.com>
+  2008-2010, Frank Lahm <franklahm@gmail.com>
+  2009, Frank Lahm <franklahm@gmail.com>
+  2010, Frank Lahm <franklahm@gmail.com>
 License: GPL-2+
  FIXME
 
@@ -617,9 +618,9 @@ Files: etc/afpd/afp_config.c
  libatalk/dsi/dsi_write.c
  libatalk/util/server_child.c
 Copyright: 1997, Adrian Sun (asun@zoology.washington.edu)
- 1997-1998, Adrian Sun (asun@zoology.washington.edu)
- 1998, Adrian Sun (asun@zoology.washington.edu)
- 1999, Adrian Sun (asun@zoology.washington.edu)
+  1997-1998, Adrian Sun (asun@zoology.washington.edu)
+  1998, Adrian Sun (asun@zoology.washington.edu)
+  1999, Adrian Sun (asun@zoology.washington.edu)
 License: UNKNOWN
  FIXME
 
@@ -647,8 +648,8 @@ Files: etc/uams/uams_dhx2_pam.c
  etc/uams/uams_randnum.c
  libatalk/adouble/ad_open.c
 Copyright: 1990,1993, Regents of The University of Michigan
- 1990-1991, Regents of The University of Michigan
- 1999, Adrian Sun (asun@u.washington.edu)
+  1990-1991, Regents of The University of Michigan
+  1999, Adrian Sun (asun@u.washington.edu)
 License: UNKNOWN
  FIXME
 
@@ -674,7 +675,7 @@ Files: libatalk/unicode/charsets/generic_mb.c
  libatalk/unicode/iconv.c
  libatalk/unicode/utf8.c
 Copyright: Andrew Tridgell 2001,
- Jelmer Vernooij 2002-2003
+  Jelmer Vernooij 2002-2003
 License: GPL-2+
  FIXME
 
@@ -698,7 +699,7 @@ Files: etc/cnid_dbd/comm.c
  libatalk/cnid/dbd/cnid_dbd.c
  libatalk/cnid/dbd/cnid_dbd.h
 Copyright: Frank Lahm 2010,
- Joerg Lenneis 2003
+  Joerg Lenneis 2003
 License: UNKNOWN
  FIXME
 
@@ -709,9 +710,9 @@ Files: etc/afpd/afp_asp.c
  libatalk/netddp/netddp_sendto.c
  libatalk/util/server_lock.c
 Copyright: 1990,1993, Regents of The University of Michigan
- 1990-1991, Regents of The University of Michigan
- 1997, Adrian Sun (asun@zoology.washington.edu)
- 1999, Adrian Sun (asun@zoology.washington.edu)
+  1990-1991, Regents of The University of Michigan
+  1997, Adrian Sun (asun@zoology.washington.edu)
+  1999, Adrian Sun (asun@zoology.washington.edu)
 License: UNKNOWN
  FIXME
 
@@ -730,7 +731,7 @@ Files: etc/cnid_dbd/db_param.c
  etc/cnid_dbd/dbif.h
  etc/cnid_dbd/main.c
 Copyright: Frank Lahm 2009
- Joerg Lenneis 2003,
+  Joerg Lenneis 2003,
 License: UNKNOWN
  FIXME
 
@@ -747,18 +748,27 @@ Files: contrib/a2boot/COPYRIGHT
  contrib/timelord/COPYRIGHT
  contrib/timelord/timelord.c
 Copyright: 1990, The University of
- 1990, The University of Melbourne
- 1990,1992, Regents of The University of Michigan
- 1990,1994, Regents of The University of Michigan
+  1990, The University of Melbourne
+  1990,1992, Regents of The University of Michigan
+  1990,1994, Regents of The University of Michigan
 License: UNKNOWN
+ FIXME
+
+Files: config.guess
+ config.sub
+ missing
+Copyright: 1992-1999,
+  1992-2005
+  1996-1997, 1999-2000, 2002-2006
+License: GPL-2+
  FIXME
 
 Files: contrib/shell_utils/apple_dump.in
  contrib/shell_utils/make-casetable.pl
  contrib/shell_utils/make-precompose.h.pl
 Copyright: 2008-2011, HAT <hat@fa2.so-net.ne.jp>
- 2009-2010, HAT <hat@fa2.so-net.ne.jp>
- 2011, HAT <hat@fa2.so-net.ne.jp>
+  2009-2010, HAT <hat@fa2.so-net.ne.jp>
+  2011, HAT <hat@fa2.so-net.ne.jp>
 License: GPL-2+
  FIXME
 
@@ -766,7 +776,7 @@ Files: etc/cnid_dbd/cnid_metad.c
  etc/cnid_dbd/dbd.h
  etc/cnid_dbd/dbd_update.c
 Copyright: Frank Lahm 2009-2010
- Joerg Lenneis 2003,
+  Joerg Lenneis 2003,
 License: UNKNOWN
  FIXME
 
@@ -781,29 +791,22 @@ Files: libatalk/compat/getusershell.c
  libatalk/compat/mktemp.c
  libatalk/compat/strcasecmp.c
 Copyright: 1985, Regents of the University of California
- 1987, Regents of the University of California
+  1987, Regents of the University of California
 License: UNKNOWN
  FIXME
 
 Files: bin/ad/ad_util.c
  libatalk/util/cnid.c
 Copyright: 1991, 1993-1994,
- 2009, Frank Lahm <franklahm@gmail.com>
+  2009, Frank Lahm <franklahm@gmail.com>
 License: BSD (3 clause)
  FIXME
 
 Files: etc/papd/lp.c
  etc/papd/printcap.c
 Copyright: 1983, Regents of the University of California
- 1990,1994, Regents of The University of Michigan
+  1990,1994, Regents of The University of Michigan
 License: BSD (4 clause)
- FIXME
-
-Files: config.guess
- config.sub
-Copyright: 1992-1999,
- 1992-2005
-License: GPL-2+
  FIXME
 
 Files: bin/ad/ad_mv.c
@@ -815,7 +818,7 @@ License: GPL-2+
 Files: include/atalk/ftw.h
  libatalk/util/ftw.c
 Copyright: 1992,1996-1999,2003-2004, Free Software Foundation, Inc
- 1996-2004, 2006-2008, 2010 Free Software Foundation, Inc
+  1996-2004, 2006-2008, 2010 Free Software Foundation, Inc
 License: LGPL-2.1+
  FIXME
 
@@ -828,14 +831,14 @@ License: UNKNOWN
 Files: libatalk/cnid/cnid.c
  libatalk/cnid/cnid_init.c
 Copyright: 2003, Rafal Lewczuk <rlewczuk@pronet.pl>
- 2003, the Netatalk Team
- holders
+  2003, the Netatalk Team
+  holders
 License: UNKNOWN
  FIXME
 
 Files: bin/ad/ad_cp.c
 Copyright: 1988, 1993-1994
- 2010, Frank Lahm <franklahm@googlemail.com>
+  2010, Frank Lahm <franklahm@googlemail.com>
 License: BSD (3 clause)
  FIXME
 
@@ -844,60 +847,39 @@ Copyright: 1990, The Regents of the University of California
 License: BSD (4 clause)
  FIXME
 
-Files: missing
-Copyright: 1996-1997, 1999-2000, 2002-2006
-License: GPL
- FIXME
-
-Files: depcomp
-Copyright: 1999-2000, 2003-2007, Free Software
-License: GPL
- FIXME
-
-Files: compile
-Copyright: 1999-2000, 2003-2005, Free Software Foundation, Inc
-License: GPL
- FIXME
-
-Files: debian/rules
-Copyright: 2003-2005, Sebastian Rittau <srittau@debian.org>
- 2004, 2006-2010, Jonas Smedegaard <dr@jones.dk>
-License: GPL
- FIXME
-
 Files: configure
 Copyright: (ISLOWER ? 'A' + ( - 'a') : )
- (ISLOWER ? ( | 0x40) : )
- 1992-1996, 1998-2001,
- 1996-2008,
- 2006, Free Software Foundation, Inc
+  (ISLOWER ? ( | 0x40) : )
+  1992-1996, 1998-2001,
+  1996-2008,
+  2006, Free Software Foundation, Inc
 License: GPL-2+
  FIXME
 
 Files: ltmain.sh
 Copyright: 1996-2001, 2003-2006
- 2008, Free Software Foundation, Inc
+  2008, Free Software Foundation, Inc
 License: GPL-2+
  FIXME
 
 Files: aclocal.m4
 Copyright: 1996, 1998, 2000-2005
- 1996-1997, 2000-2001, 2003, 2005,
- 1996-2004,
- 1996-2008,
- 1997, 1999-2001, 2003-2005,
- 1997, 2000-2001, 2003-2006,
- 1999-2001, 2003-2005,
- 1999-2005,
- 1999-2006,
- 2001, 2003, 2005, Free Software Foundation, Inc
- 2001-2003, 2005 Free Software Foundation, Inc
- 2002-2003, 2005-2007, Free Software Foundation, Inc
- 2003, 2005 Free Software Foundation, Inc
- 2003-2006, Free Software Foundation, Inc
- 2004, Scott James Remnant <scott@netsplit.com>
- 2004-2005, Free Software Foundation, Inc
- 2006, Free Software Foundation, Inc
+  1996-1997, 2000-2001, 2003, 2005,
+  1996-2004,
+  1996-2008,
+  1997, 1999-2001, 2003-2005,
+  1997, 2000-2001, 2003-2006,
+  1999-2001, 2003-2005,
+  1999-2005,
+  1999-2006,
+  2001, 2003, 2005, Free Software Foundation, Inc
+  2001-2003, 2005 Free Software Foundation, Inc
+  2002-2003, 2005-2007, Free Software Foundation, Inc
+  2003, 2005 Free Software Foundation, Inc
+  2003-2006, Free Software Foundation, Inc
+  2004, Scott James Remnant <scott@netsplit.com>
+  2004-2005, Free Software Foundation, Inc
+  2006, Free Software Foundation, Inc
 License: GPL-2+
  FIXME
 
@@ -908,32 +890,32 @@ License: GPL-2+
 
 Files: COPYING
 Copyright: 1989, 1991 Free Software Foundation, Inc
- <year> <name of author>
- HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR
- HOLDERS AND/OR OTHER PARTIES
- disclaimer" for the program, if
- holder saying it may be distributed
- holder who places the Program under this License
- interest in the program
- law:
- the software, and
- year name of author
+  <year> <name of author>
+  HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR
+  HOLDERS AND/OR OTHER PARTIES
+  disclaimer" for the program, if
+  holder saying it may be distributed
+  holder who places the Program under this License
+  interest in the program
+  law:
+  the software, and
+  year name of author
 License: GPL-2+
  FIXME
 
 Files: libatalk/adouble/ad_sendfile.c
 Copyright: 1999, Adrian Sun (asun@zoology.washington.edu)
- Jeremy Allison 2002,
+  Jeremy Allison 2002,
 License: GPL-2+
  FIXME
 
 Files: libatalk/vfs/sys_ea.c
 Copyright: 2001, Andreas Gruenbacher
- 2001-2002, Silicon Graphics, Inc.
- Andrew Tridgell 1992-1998,
- Bjoern Jacke 2006-2007,
- Jeremy Allison 1998-2005,
- Timur Bakeyev 2005,
+  2001-2002, Silicon Graphics, Inc.
+  Andrew Tridgell 1992-1998,
+  Bjoern Jacke 2006-2007,
+  Jeremy Allison 1998-2005,
+  Timur Bakeyev 2005,
 License: GPL-2+
  FIXME
 
@@ -944,24 +926,24 @@ License: GPL-2+
 
 Files: libatalk/tdb/tdb.c
 Copyright: Andrew Tridgell 1999-2000,
- Jeremy Allison 2000-2003
- Luke Kenneth Casson Leighton 2000,
- Paul `Rusty' Russell 2000,
+  Jeremy Allison 2000-2003
+  Luke Kenneth Casson Leighton 2000,
+  Paul `Rusty' Russell 2000,
 License: GPL-2+
  FIXME
 
 Files: libatalk/unicode/charcnv.c
 Copyright: Andrew Tridgell 2001,
- Igor Vergeichik <iverg@mail.ru> 2001,
- Martin Pool 2003,
- Simo Sorce 2001
+  Igor Vergeichik <iverg@mail.ru> 2001,
+  Martin Pool 2003,
+  Simo Sorce 2001
 License: GPL-2+
  FIXME
 
 Files: libatalk/unicode/charsets/mac_greek.c
 Copyright: Andrew Tridgell 2001,
- Jelmer Vernooij 2002-2003,
- Panos Christeas 2006
+  Jelmer Vernooij 2002-2003,
+  Panos Christeas 2006
 License: GPL-2+
  FIXME
 
@@ -972,7 +954,7 @@ License: GPL-2+
 
 Files: etc/papd/print_cups.c
 Copyright: 1999-2003, Michael R Sweet
- 2004, Bjoern Fernhomberg
+  2004, Bjoern Fernhomberg
 License: GPL-2+
  FIXME
 
@@ -998,7 +980,7 @@ License: GPL-2+
 
 Files: libatalk/vfs/vfs.c
 Copyright: 2004, Didier Gautheron
- 2009, Frank Lahm
+  2009, Frank Lahm
 License: GPL-2+
  FIXME
 
@@ -1007,9 +989,25 @@ Copyright: 2010, Frank Lahm
 License: GPL-2+
  FIXME
 
+Files: depcomp
+Copyright: 1999-2000, 2003-2007, Free Software
+License: GPL-2+
+ FIXME
+
+Files: compile
+Copyright: 1999-2000, 2003-2005, Free Software Foundation, Inc
+License: GPL-2+
+ FIXME
+
+Files: debian/rules
+Copyright: 2003-2005, Sebastian Rittau <srittau@debian.org>
+  2004, 2006-2010, Jonas Smedegaard <dr@jones.dk>
+License: GPL-2+
+ FIXME
+
 Files: libatalk/util/strcasestr.c
 Copyright: != VAL(b));
- 1994, 1996-1997, Free Software Foundation, Inc
+  1994, 1996-1997, Free Software Foundation, Inc
 License: LGPL-2+
  FIXME
 
@@ -1025,26 +1023,26 @@ License: UNKNOWN
 
 Files: Makefile.in
 Copyright: 1994-2002,
- COPYING NEWS VERSION services.atalk
+  COPYING NEWS VERSION services.atalk
 License: UNKNOWN
  FIXME
 
 Files: contrib/timelord/Makefile.in
 Copyright: 1994-2002
- README VERSION
+  README VERSION
 License: UNKNOWN
  FIXME
 
 Files: contrib/a2boot/Makefile.in
 Copyright: 1994-2002,
- VERSION
+  VERSION
 License: UNKNOWN
  FIXME
 
 Files: libatalk/bstring/bstrlib.c
 Copyright: (isspace ((unsigned char) c))
- (toupper ((unsigned char) c))
- >> LONG_LOG_BITS_QTY
+  (toupper ((unsigned char) c))
+  >> LONG_LOG_BITS_QTY
 License: UNKNOWN
  FIXME
 
@@ -1055,8 +1053,8 @@ License: UNKNOWN
 
 Files: etc/afpd/afp_options.c
 Copyright: * 120;
- 1990,1993, Regents of The University of Michigan
- 1997, Adrian Sun (asun@zoology.washington.edu)
+  1990,1993, Regents of The University of Michigan
+  1997, Adrian Sun (asun@zoology.washington.edu)
 License: UNKNOWN
  FIXME
 
@@ -1072,14 +1070,14 @@ License: UNKNOWN
 
 Files: libatalk/util/getiface.c
 Copyright: 1990,1993, Regents of The University of Michigan
- 1999-2000, Adrian Sun
+  1999-2000, Adrian Sun
 License: UNKNOWN
  FIXME
 
 Files: COPYRIGHT
 Copyright: 1990,1996, Regents of The University of Michigan
- 1996, Sun Microsystems Computer Co
- 1997-2000, Adrian Sun (asun@cobalt.com)
+  1996, Sun Microsystems Computer Co
+  1997-2000, Adrian Sun (asun@cobalt.com)
 License: UNKNOWN
  FIXME
 
@@ -1090,22 +1088,22 @@ License: UNKNOWN
 
 Files: etc/uams/uams_gss.c
 Copyright: 1990,1993, Regents of The University of Michigan
- 1999, Adrian Sun (asun@u.washington.edu)
- 2003, The Reed Institute
- 2004, Bjoern Fernhomberg
+  1999, Adrian Sun (asun@u.washington.edu)
+  2003, The Reed Institute
+  2004, Bjoern Fernhomberg
 License: UNKNOWN
  FIXME
 
 Files: etc/afpd/afp_util.c
 Copyright: 1990,1993, Regents of The University of Michigan
- 1999, Adrian Sun (asun@zoology.washington.edu)
- 2002, netatalk
+  1999, Adrian Sun (asun@zoology.washington.edu)
+  2002, netatalk
 License: UNKNOWN
  FIXME
 
 Files: libatalk/adouble/ad_lock.c
 Copyright: 1998-1999, Adrian Sun (asun@zoology.washington.edu)
- for more information
+  for more information
 License: UNKNOWN
  FIXME
 
@@ -1116,15 +1114,15 @@ License: UNKNOWN
 
 Files: include/atalk/cnid.h
 Copyright: 2003, Rafal Lewczuk <rlewczuk@pronet.pl>
- 2003, the Netatalk Team
- 2010, Frank Lahm
- holders
+  2003, the Netatalk Team
+  2010, Frank Lahm
+  holders
 License: UNKNOWN
  FIXME
 
 Files: etc/afpd/catsearch.c
 Copyright: 1990, 1993 Regents of The University of Michigan
- 2010, Frank Lahm
+  2010, Frank Lahm
 License: UNKNOWN
  FIXME
 
@@ -1145,8 +1143,8 @@ License: UNKNOWN
 
 Files: libatalk/compat/snprintf.c
 Copyright: 1994-2000, Patrick Powell, San Diego, CA <papowell@astart.com>
- Patrick Powell 1988-2000, "
- in the documentation and source code as well as the
+  Patrick Powell 1988-2000, "
+  in the documentation and source code as well as the
 License: UNKNOWN
  FIXME
 
@@ -1157,13 +1155,13 @@ License: UNKNOWN
 
 Files: sys/netatalk/phase2.h
 Copyright: 1988, Regents of the University of California
- 1990-1991, Regents of The University of Michigan
+  1990-1991, Regents of The University of Michigan
 License: UNKNOWN
  FIXME
 
 Files: etc/uams/uams_krb4/send_to_kdc.c
 Copyright: 1987-1988, the Massachusetts Institute of Technology
- 1990,1994, Regents of The University of Michigan
+  1990,1994, Regents of The University of Michigan
 License: UNKNOWN
  FIXME
 
