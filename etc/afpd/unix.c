@@ -9,6 +9,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <inttypes.h>
 
 /* STDC check */
 #ifdef STDC_HEADERS
@@ -52,14 +53,13 @@ char *strchr (), *strrchr ();
  */
 int ustatfs_getvolspace(const struct vol *vol, VolSpace *bfree, VolSpace *btotal, u_int32_t *bsize)
 {
-    VolSpace maxVolSpace = (~(VolSpace)0);
+    VolSpace maxVolSpace = UINT64_MAX;
 
 #ifdef ultrix
     struct fs_data	sfs;
 #else /*ultrix*/
     struct statfs	sfs;
 #endif /*ultrix*/
-
 
     if ( statfs( vol->v_path, &sfs ) < 0 ) {
         LOG(log_error, logtype_afpd, "ustatfs_getvolspace unable to stat %s", vol->v_path);
@@ -169,7 +169,7 @@ mode_t mode;
  *
  * dir parameter is used by AFS
  */
-void accessmode(char *path, struct maccess *ma, struct dir *dir _U_, struct stat *st)
+void accessmode(const struct vol *vol, char *path, struct maccess *ma, struct dir *dir _U_, struct stat *st)
 {
     struct stat     sb;
 
@@ -181,7 +181,7 @@ void accessmode(char *path, struct maccess *ma, struct dir *dir _U_, struct stat
     }
     utommode( st, ma );
 #ifdef HAVE_ACLS
-    acltoownermode(path, st, ma);
+    acltoownermode(vol, path, st, ma);
 #endif
 }
 
@@ -283,17 +283,17 @@ int setdeskmode(const mode_t mode)
             }
 
             if (S_ISDIR(st.st_mode)) {
-                if ( chmod( modbuf,  (DIRBITS | mode) & ~default_options.umask ) < 0 && errno != EPERM ) {
+                if ( chmod_acl( modbuf,  (DIRBITS | mode) & ~default_options.umask ) < 0 && errno != EPERM ) {
                      LOG(log_error, logtype_afpd, "setdeskmode: chmod %s: %s",fullpathname(modbuf), strerror(errno) );
                 }
-            } else if ( chmod( modbuf,  mode & ~(default_options.umask | EXEC_MODE) ) < 0 && errno != EPERM ) {
+            } else if ( chmod_acl( modbuf,  mode & ~(default_options.umask | EXEC_MODE) ) < 0 && errno != EPERM ) {
                 LOG(log_error, logtype_afpd, "setdeskmode: chmod %s: %s",fullpathname(modbuf), strerror(errno) );
             }
 
         }
         closedir( sub );
         /* XXX: need to preserve special modes */
-        if ( chmod( deskp->d_name,  (DIRBITS | mode) & ~default_options.umask ) < 0 && errno != EPERM ) {
+        if ( chmod_acl( deskp->d_name,  (DIRBITS | mode) & ~default_options.umask ) < 0 && errno != EPERM ) {
             LOG(log_error, logtype_afpd, "setdeskmode: chmod %s: %s",fullpathname(deskp->d_name), strerror(errno) );
         }
     }
@@ -303,7 +303,7 @@ int setdeskmode(const mode_t mode)
         return -1;
     }
     /* XXX: need to preserve special modes */
-    if ( chmod( ".AppleDesktop",  (DIRBITS | mode) & ~default_options.umask ) < 0 && errno != EPERM ) {
+    if ( chmod_acl( ".AppleDesktop",  (DIRBITS | mode) & ~default_options.umask ) < 0 && errno != EPERM ) {
         LOG(log_error, logtype_afpd, "setdeskmode: chmod %s: %s", fullpathname(".AppleDesktop"),strerror(errno) );
     }
     return( 0 );
@@ -393,6 +393,7 @@ int setdirmode(const struct vol *vol, const char *name, mode_t mode)
            int setmode = (osx && *dirp->d_name == '.')?hf_mode:mode;
 
            if (setfilmode(dirp->d_name, setmode, &st, vol->v_umask) < 0) {
+               closedir( dir );
                 LOG(log_error, logtype_afpd, "setdirmode: chmod %s: %s",dirp->d_name, strerror(errno) );
                 return -1;
            }

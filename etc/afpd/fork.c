@@ -844,7 +844,7 @@ static int read_fork(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf, si
     int			eid, xlate = 0;
     u_int16_t		ofrefnum;
     u_char		nlmask, nlchar;
-    
+
     ibuf += 2;
     memcpy(&ofrefnum, ibuf, sizeof( ofrefnum ));
     ibuf += sizeof( u_short );
@@ -893,6 +893,9 @@ static int read_fork(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf, si
         goto afp_read_err;
     }
 
+    LOG(log_debug, logtype_afpd, "afp_read(name: \"%s\", offset: %jd, reqcount: %jd)",
+        of_name(ofork), (intmax_t)offset, (intmax_t)reqcount);
+
     savereqcount = reqcount;
     saveoff = offset;
     if (ad_tmplock(ofork->of_ad, eid, ADLOCK_RD, saveoff, savereqcount,ofork->of_refnum) < 0) {
@@ -900,11 +903,14 @@ static int read_fork(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf, si
         goto afp_read_err;
     }
 
-#define min(a,b)	((a)<(b)?(a):(b))
-    *rbuflen = min( reqcount, *rbuflen );
+    *rbuflen = MIN(reqcount, *rbuflen);
+    LOG(log_debug, logtype_afpd, "afp_read(name: \"%s\", offset: %jd, reqcount: %jd): reading %jd bytes from file",
+        of_name(ofork), (intmax_t)offset, (intmax_t)reqcount, (intmax_t)*rbuflen);
     err = read_file(ofork, eid, offset, nlmask, nlchar, rbuf, rbuflen, xlate);
     if (err < 0)
         goto afp_read_done;
+    LOG(log_debug, logtype_afpd, "afp_read(name: \"%s\", offset: %jd, reqcount: %jd): got %jd bytes from file",
+        of_name(ofork), (intmax_t)offset, (intmax_t)reqcount, (intmax_t)*rbuflen);
 
     /* dsi can stream requests. we can only do this if we're not checking
      * for an end-of-line character. oh well. */
@@ -937,6 +943,7 @@ static int read_fork(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf, si
             int fd;
                         
             fd = ad_readfile_init(ofork->of_ad, eid, &offset, 0);
+
             if (dsi_stream_read_file(dsi, fd, offset, dsi->datasize) < 0) {
                 if (errno == EINVAL || errno == ENOSYS)
                     goto afp_read_loop;
@@ -960,12 +967,6 @@ afp_read_loop:
                 goto afp_read_exit;
 
             offset += *rbuflen;
-#ifdef DEBUG1
-            if (obj->options.flags & OPTION_DEBUG) {
-                printf( "(read) reply: %d, %d\n", *rbuflen, dsi->clientID);
-                bprint(rbuf, *rbuflen);
-            }
-#endif
             /* dsi_read() also returns buffer size of next allocation */
             cc = dsi_read(dsi, rbuf, *rbuflen); /* send it off */
             if (cc < 0)
@@ -1181,7 +1182,7 @@ static ssize_t write_file(struct ofork *ofork, int eid,
 static int write_fork(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf, size_t *rbuflen, int is64)
 {
     struct ofork	*ofork;
-    off_t           	offset, saveoff, reqcount;
+    off_t           offset, saveoff, reqcount, oldsize, newsize;
     int		        endflag, eid, xlate = 0, err = AFP_OK;
     u_int16_t		ofrefnum;
     ssize_t             cc;
@@ -1221,14 +1222,17 @@ static int write_fork(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf, s
         goto afp_write_err;
     }
 
+    oldsize = ad_size(ofork->of_ad, eid);
     if (endflag)
-        offset += ad_size(ofork->of_ad, eid);
+        offset += oldsize;
 
     /* handle bogus parameters */
     if (reqcount < 0 || offset < 0) {
         err = AFPERR_PARAM;
         goto afp_write_err;
     }
+
+    newsize = ((offset + reqcount) > oldsize) ? (offset + reqcount) : oldsize;
 
     /* offset can overflow on 64-bit capable filesystems.
      * report disk full if that's going to happen. */
@@ -1340,7 +1344,7 @@ static int write_fork(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf, s
     ofork->of_flags |= AFPFORK_MODIFIED;
 
     /* update write count */
-    ofork->of_vol->v_written += reqcount;
+    ofork->of_vol->v_appended += (newsize > oldsize) ? (newsize - oldsize) : 0;
 
     *rbuflen = set_off_t (offset, rbuf, is64);
     return( AFP_OK );

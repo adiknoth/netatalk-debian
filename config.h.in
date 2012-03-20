@@ -1,4 +1,4 @@
-/* config.h.in.  Generated from configure.in by autoheader.  */
+/* config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Define if the admin group should be enabled */
 #undef ADMIN_GRP
@@ -539,9 +539,6 @@
 /* Define to 1 if you have the `select' function. */
 #undef HAVE_SELECT
 
-/* Whether sendfile() is available */
-#undef HAVE_SENDFILE
-
 /* Define to 1 if you have the `setea' function. */
 #undef HAVE_SETEA
 
@@ -771,9 +768,6 @@
 /* Define as const if the declaration of iconv() needs const. */
 #undef ICONV_CONST
 
-/* Whether (linux) sendfile() is broken */
-#undef LINUX_BROKEN_SENDFILE_API
-
 /* Define if compiling for MacOS X Server */
 #undef MACOSX_SERVER
 
@@ -842,6 +836,9 @@
 /* Whether linux sendfile() API is available */
 #undef SENDFILE_FLAVOR_LINUX
 
+/* Solaris sendfile() */
+#undef SENDFILE_FLAVOR_SOLARIS
+
 /* Define if shadow passwords should be used */
 #undef SHADOWPW
 
@@ -893,7 +890,7 @@
 /* Version number of package */
 #undef VERSION
 
-/* Whether sendfile should be used */
+/* Whether sendfile() should be used */
 #undef WITH_SENDFILE
 
 /* xattr functions have additional options */
@@ -920,8 +917,14 @@
 /* path to cracklib dictionary */
 #undef _PATH_CRACKLIB
 
+/* Solaris compilation environment */
+#undef _XOPEN_SOURCE
+
 /* Define for Berkeley DB 4 */
 #undef _XOPEN_SOURCE_EXTENDED
+
+/* Solaris compilation environment */
+#undef __EXTENSIONS__
 
 /* Solaris compatibility macro */
 #undef __svr4__

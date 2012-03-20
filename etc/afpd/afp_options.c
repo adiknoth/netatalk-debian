@@ -142,6 +142,8 @@ void afp_options_free(struct afp_options *opt,
 	free(opt->logconfig);
 	if (opt->mimicmodel && (opt->mimicmodel != save->mimicmodel))
 	free(opt->mimicmodel);
+	if (opt->adminauthuser && (opt->adminauthuser != save->adminauthuser))
+	free(opt->adminauthuser);
 }
 
 /* initialize options */
@@ -194,6 +196,7 @@ void afp_options_init(struct afp_options *options)
     options->dsireadbuf = 12;
 	options->mimicmodel = NULL;
     options->fce_fmodwait = 60; /* put fmod events 60 seconds on hold */
+    options->adminauthuser = NULL;
 }
 
 /* parse an afpd.conf line. i'm doing it this way because it's
@@ -428,8 +431,10 @@ int afp_options_parseline(char *buf, struct afp_options *options)
 
     if ((c = getoption(buf, "-port")))
         options->port = strdup(c);
+#ifndef NO_DDP
     if ((c = getoption(buf, "-ddpaddr")))
         atalk_aton(c, &options->ddpaddr);
+#endif
     if ((c = getoption(buf, "-signature")) && (opt = strdup(c)))
         options->signatureopt = opt;
 
@@ -508,6 +513,9 @@ int afp_options_parseline(char *buf, struct afp_options *options)
 
     if ((c = getoption(buf, "-mimicmodel")) && (opt = strdup(c)))
        options->mimicmodel = opt;
+
+    if ((c = getoption(buf, "-adminauthuser")) && (opt = strdup(c)))
+       options->adminauthuser = opt;
 
     return 1;
 }
@@ -643,15 +651,15 @@ static void show_version_extended(void )
 	puts( "No" );
 #endif
 
+	printf( "            EA support:\t" );
+	puts( EA_MODULES );
+
 	printf( "           ACL support:\t" );
 #ifdef HAVE_ACLS
 	puts( "Yes" );
 #else
 	puts( "No" );
 #endif
-
-	printf( "            EA support:\t" );
-	puts( EA_MODULES );
 
 	printf( "          LDAP support:\t" );
 #ifdef HAVE_LDAP

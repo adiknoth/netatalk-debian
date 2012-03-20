@@ -10,15 +10,9 @@
 #include <config.h>
 #endif /* HAVE_CONFIG_H */
 
-#include <sys/types.h>
-/* crypt needs _XOPEN_SOURCE (500) at least on BSD, but that breaks Solaris compile */
-#ifdef NETBSD
-#define _XOPEN_SOURCE 500 /* for crypt() */
-#endif
-#ifdef FREEBSD
-#define _XOPEN_SOURCE /* for crypt() */
-#endif
+#include <atalk/standards.h>
 
+#include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
 /* STDC check */
@@ -115,7 +109,7 @@ static int pwd_login(void *obj, char *username, int ulen, struct passwd **uam_pw
     }
     pwd->pw_passwd = sp->sp_pwdp;
 
-    if (sp && sp->sp_max != -1 && sp->sp_lstchg) {
+    if (sp->sp_max != -1 && sp->sp_lstchg) {
         time_t now = time(NULL) / (60*60*24);
         int32_t expire_days = sp->sp_lstchg - now + sp->sp_max;
         if ( expire_days < 0 ) {
@@ -344,7 +338,7 @@ static int passwd_printer(char	*start, char *stop, char *username, struct papfil
     }
     pwd->pw_passwd = sp->sp_pwdp;
 
-    if (sp && sp->sp_max != -1 && sp->sp_lstchg) {
+    if (sp->sp_max != -1 && sp->sp_lstchg) {
         time_t now = time(NULL) / (60*60*24);
         int32_t expire_days = sp->sp_lstchg - now + sp->sp_max;
         if ( expire_days < 0 ) {
