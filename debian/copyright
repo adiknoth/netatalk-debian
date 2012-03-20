@@ -230,6 +230,13 @@ License: GPL-2+ with Libtool exception
  using GNU Libtool, you may include this file under the same
  distribution terms that you use for the rest of that program.
 
+Files: etc/afpd/acls.c
+ libatalk/acl/unix.c
+Copyright: 2008-2010, Frank Lahm <franklahm@gmail.com>
+  2010, Frank Lahm <franklahm@gmail.com>
+  2011, Laura Mueller <laura-mueller@uni-duesseldorf.de>
+License: GPL-2+
+
 Files: libatalk/compat/strstr.c
 Copyright: 1990, The Regents of the University of California
 License: BSD-4-clause
