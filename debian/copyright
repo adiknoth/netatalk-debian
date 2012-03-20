@@ -12,7 +12,7 @@ Files: bin/cnid/cnid2_create.in
  libatalk/cnid/dbd/*
  etc/cnid_dbd/*
 Copyright: 2003,2005, Joerg Lenneis
- 2009-2010, Frank Lahm <franklahm@gmail.com>
+  2009-2010, Frank Lahm <franklahm@gmail.com>
 License: GPL-2
 
 Files: libatalk/unicode/charsets/*
@@ -118,7 +118,7 @@ Files: etc/afpd/afp_asp.c
  libatalk/util/getiface.c
  libatalk/util/server_lock.c
 Copyright: 1990-1991, 1993, Regents of The University of Michigan
- 1997, 1999-2000, Adrian Sun <asun@u.washington.edu>
+  1997, 1999-2000, Adrian Sun <asun@u.washington.edu>
 License: MIT~UMICH and MIT~short
 
 Files: libatalk/unicode/charsets/generic_mb.c
@@ -130,7 +130,7 @@ Files: libatalk/unicode/charsets/generic_mb.c
  libatalk/unicode/iconv.c
  libatalk/unicode/utf8.c
 Copyright: 2001, Andrew Tridgell
- 2002-2003, Jelmer Vernooij
+  2002-2003, Jelmer Vernooij
 License: GPL-2+
 
 Files: libatalk/unicode/charsets/mac_centraleurope.h
@@ -158,7 +158,7 @@ License: GPL-2+
 Files: contrib/a2boot/a2boot.c
  contrib/timelord/timelord.c
 Copyright: 1990, The University of Melbourne
- 1990, 1992, 1994, Regents of The University of Michigan
+  1990, 1992, 1994, Regents of The University of Michigan
 License: MIT~UMICH
 
 Files: etc/afpd/hash.c
@@ -192,12 +192,12 @@ License: UNKNOWN
 Files: libatalk/cnid/cnid.c
  libatalk/cnid/cnid_init.c
 Copyright: 2003, Rafal Lewczuk <rlewczuk@pronet.pl>
- 2003, the Netatalk Team
+  2003, the Netatalk Team
 License: GPL-2~maybe-later-too
 
 Files: etc/afpd/catsearch.c
 Copyright: 1990,1993, Regents of The University of Michigan
- 2010, Frank Lahm <franklahm@gmail.com>
+  2010, Frank Lahm <franklahm@gmail.com>
 License: MIT~UMICH
 
 Files: etc/cnid_dbd/dbd_search.c
@@ -207,7 +207,7 @@ License: MIT~UMICH
 Files: bin/ad/ad_cp.c
  bin/ad/ad_util.c
 Copyright: 1988, 1993-1994, The Regents of the University of California
- 2010, Frank Lahm <franklahm@googlemail.com>
+  2010, Frank Lahm <franklahm@googlemail.com>
 License: BSD-3-clause~4
 
 Files: aclocal.m4
@@ -240,36 +240,36 @@ License: GAP~configure
 
 Files: libatalk/adouble/ad_sendfile.c
 Copyright: 1999, Adrian Sun <asun@u.washington.edu>
- 2002, Jeremy Allison
+  2002, Jeremy Allison
 License: MIT~short and GPL-2+
 
 Files: libatalk/vfs/sys_ea.c
 Copyright: 1992-1998, Andrew Tridgell
- 1998-2005, Jeremy Allison
- 2001, Andreas Gruenbacher
- 2001-2002, Silicon Graphics, Inc.
- 2005, Timur Bakeyev
- 2006-2007, Bjoern Jacke
+  1998-2005, Jeremy Allison
+  2001, Andreas Gruenbacher
+  2001-2002, Silicon Graphics, Inc.
+  2005, Timur Bakeyev
+  2006-2007, Bjoern Jacke
 License: GPL-2+
 
 Files: libatalk/tdb/tdb.c
 Copyright: 1999-2000, Andrew Tridgell
- 2000, Luke Kenneth Casson Leighton
- 2000, Paul `Rusty' Russell
- 2000-2003, Jeremy Allison
+  2000, Luke Kenneth Casson Leighton
+  2000, Paul `Rusty' Russell
+  2000-2003, Jeremy Allison
 License: GPL-2+
 
 Files: libatalk/unicode/charcnv.c
 Copyright: 2001, Andrew Tridgell
- 2001, Igor Vergeichik <iverg@mail.ru>
- 2001, Simo Sorce
- 2003, Martin Pool
+  2001, Igor Vergeichik <iverg@mail.ru>
+  2001, Simo Sorce
+  2003, Martin Pool
 License: GPL-2+
 
 Files: libatalk/unicode/charsets/mac_greek.c
 Copyright: 2001, Andrew Tridgell
- 2002-2003, Jelmer Vernooij
- 2006, Panos Christeas
+  2002-2003, Jelmer Vernooij
+  2006, Panos Christeas
 License: GPL-2+
 
 Files: libatalk/tdb/spinlock.c
@@ -278,7 +278,7 @@ License: GPL-2+
 
 Files: etc/papd/print_cups.c
 Copyright: 1999-2003, Michael R Sweet
- 2004, Bjoern Fernhomberg
+  2004, Bjoern Fernhomberg
 License: GPL-2+
 
 Files: bin/uniconv/iso8859_1_adapted.c
@@ -293,7 +293,7 @@ License: GPL-2+
 
 Files: libatalk/vfs/vfs.c
 Copyright: 2004, Didier Gautheron
- 2009, Frank Lahm
+  2009, Frank Lahm
 License: GPL-2+
 
 Files: 
@@ -332,22 +332,22 @@ License: MIT~UMICH
 
 Files: etc/uams/uams_gss.c
 Copyright: 1990,1993, Regents of The University of Michigan
- 1999, Adrian Sun <asun@u.washington.edu>
- 2003, The Reed Institute
- 2004, Bjoern Fernhomberg
+  1999, Adrian Sun <asun@u.washington.edu>
+  2003, The Reed Institute
+  2004, Bjoern Fernhomberg
 License: MIT~UMICH and MIT~short
 
 Files: etc/afpd/afp_util.c
 Copyright: 1990,1993, Regents of The University of Michigan
- 1999, Adrian Sun <asun@u.washington.edu>
- 2002, netatalk
+  1999, Adrian Sun <asun@u.washington.edu>
+  2002, netatalk
 License: MIT~UMICH and MIT~short and UNKNOWN
  FIXME
 
 Files: include/atalk/cnid.h
 Copyright: 2003, Rafal Lewczuk <rlewczuk@pronet.pl>
- 2003, the Netatalk Team
- 2010, Frank Lahm <franklahm@gmail.com>
+  2003, the Netatalk Team
+  2010, Frank Lahm <franklahm@gmail.com>
 License: GPL-2~maybe-later-too
 
 Files: libatalk/compat/pselect.c
@@ -360,13 +360,13 @@ License: SNPRINTF
 
 Files: sys/netatalk/phase2.h
 Copyright: 1988, Regents of the University of California
- 1990-1991, Regents of The University of Michigan
+  1990-1991, Regents of The University of Michigan
 License: UNKNOWN and MIT~UMICH
  FIXME
 
 Files: etc/uams/uams_krb4/send_to_kdc.c
 Copyright: 1987-1988, the Massachusetts Institute of Technology
- 1990,1994, Regents of The University of Michigan
+  1990,1994, Regents of The University of Michigan
 License: UNKNOWN and MIT~UMICH
  FIXME
 
@@ -386,7 +386,7 @@ License: GAP
 
 Files: debian/*
 Copyright: 2003-2005, Sebastian Rittau <srittau@debian.org>
- 2004, 2006-2010, Jonas Smedegaard <dr@jones.dk>
+  2004, 2006-2010, Jonas Smedegaard <dr@jones.dk>
 License: GPL-2+
 
 License: MIT~UMICH
