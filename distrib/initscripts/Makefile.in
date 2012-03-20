@@ -56,7 +56,7 @@ am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
 	$(top_srcdir)/macros/summary.m4 \
 	$(top_srcdir)/macros/tcp-wrappers.m4 \
 	$(top_srcdir)/macros/util.m4 $(top_srcdir)/macros/webmin.m4 \
-	$(top_srcdir)/macros/zeroconf.m4 $(top_srcdir)/configure.in
+	$(top_srcdir)/macros/zeroconf.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -256,34 +256,34 @@ pkgconfdir = @PKGCONFDIR@
 GENERATED_FILES = \
 	rc.afpd.netbsd		\
 	rc.atalk.redhat-sysv	\
-	rc.atalk.redhat-systemd	\
+	rc.atalk.systemd	\
 	rc.atalk.tru64		\
 	rc.atalk.bsd		\
 	rc.atalkd.netbsd	\
-	rc.atalk.suse		\
+	rc.atalk.suse-sysv	\
 	rc.cnid_metad.netbsd	\
 	rc.papd.netbsd		\
 	rc.timelord.netbsd	\
 	rc.atalk.sysv		\
 	rc.atalk.gentoo		\
 	rc.atalk.debian		\
-	service.atalk.redhat-systemd
+	service.atalk.systemd
 
 TEMPLATES = \
 	rc.afpd.netbsd.tmpl		\
 	rc.atalk.redhat-sysv.tmpl	\
-	rc.atalk.redhat-systemd.tmpl	\
+	rc.atalk.systemd.tmpl		\
 	rc.atalk.tru64.tmpl		\
 	rc.atalk.bsd.tmpl		\
 	rc.atalkd.netbsd.tmpl		\
-	rc.atalk.suse.tmpl		\
+	rc.atalk.suse-sysv.tmpl		\
 	rc.cnid_metad.netbsd.tmpl	\
 	rc.papd.netbsd.tmpl		\
 	rc.timelord.netbsd.tmpl		\
 	rc.atalk.sysv.tmpl		\
 	rc.atalk.gentoo.tmpl		\
 	rc.atalk.debian.tmpl		\
-	service.atalk.redhat-systemd.tmpl
+	service.atalk.systemd.tmpl
 
 CLEANFILES = $(GENERATED_FILES) $(sysv_SCRIPTS) $(service_DATA) afpd atalkd cnid_metad papd timelord
 EXTRA_DIST = $(TEMPLATES)
@@ -306,11 +306,6 @@ EXTRA_DIST = $(TEMPLATES)
 @USE_NETBSD_TRUE@sysvdir = /etc/rc.d
 
 #
-# checking for "redhat" style systemd scripts:
-#
-@USE_REDHAT_SYSTEMD_TRUE@sysvdir = $(pkglibexecdir)
-
-#
 # checking for "redhat" style sysv scripts:
 #
 @USE_REDHAT_SYSV_TRUE@sysvdir = /etc/rc.d/init.d
@@ -323,7 +318,12 @@ EXTRA_DIST = $(TEMPLATES)
 #
 # checking for "SuSE" style sysv scripts:
 #
-@USE_SUSE_TRUE@sysvdir = /etc/init.d
+@USE_SUSE_SYSV_TRUE@sysvdir = /etc/init.d
+
+#
+# checking for general systemd scripts:
+#
+@USE_SYSTEMD_TRUE@sysvdir = $(pkglibexecdir)
 
 #
 # checking for "tru64" style sysv scripts:
@@ -332,13 +332,13 @@ EXTRA_DIST = $(TEMPLATES)
 @USE_DEBIAN_TRUE@sysv_SCRIPTS = netatalk
 @USE_GENTOO_TRUE@sysv_SCRIPTS = netatalk
 @USE_NETBSD_TRUE@sysv_SCRIPTS = afpd atalkd cnid_metad papd timelord
-@USE_REDHAT_SYSTEMD_TRUE@sysv_SCRIPTS = netatalk.sh
 @USE_REDHAT_SYSV_TRUE@sysv_SCRIPTS = netatalk
 @USE_SOLARIS_TRUE@sysv_SCRIPTS = netatalk
-@USE_SUSE_TRUE@sysv_SCRIPTS = netatalk
+@USE_SUSE_SYSV_TRUE@sysv_SCRIPTS = netatalk
+@USE_SYSTEMD_TRUE@sysv_SCRIPTS = netatalk.sh
 @USE_TRU64_TRUE@sysv_SCRIPTS = netatalk
-@USE_REDHAT_SYSTEMD_TRUE@servicedir = /lib/systemd/system
-@USE_REDHAT_SYSTEMD_TRUE@service_DATA = netatalk.service
+@USE_SYSTEMD_TRUE@servicedir = /lib/systemd/system
+@USE_SYSTEMD_TRUE@service_DATA = netatalk.service
 all: all-am
 
 .SUFFIXES:
@@ -478,7 +478,7 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-@USE_DEBIAN_FALSE@@USE_GENTOO_FALSE@@USE_NETBSD_FALSE@@USE_REDHAT_SYSTEMD_FALSE@@USE_REDHAT_SYSV_FALSE@@USE_SOLARIS_FALSE@@USE_SUSE_FALSE@@USE_TRU64_FALSE@@USE_UNDEF_FALSE@install-data-hook:
+@USE_DEBIAN_FALSE@@USE_GENTOO_FALSE@@USE_NETBSD_FALSE@@USE_REDHAT_SYSV_FALSE@@USE_SOLARIS_FALSE@@USE_SUSE_SYSV_FALSE@@USE_SYSTEMD_FALSE@@USE_TRU64_FALSE@@USE_UNDEF_FALSE@install-data-hook:
 @USE_NETBSD_FALSE@@USE_TRU64_FALSE@@USE_UNDEF_FALSE@uninstall-hook:
 clean: clean-am
 
@@ -583,32 +583,32 @@ uninstall: uninstall-startup
 @USE_REDHAT_SYSV_TRUE@	-chkconfig --del $(sysv_SCRIPTS)
 @USE_REDHAT_SYSV_TRUE@	rm -f $(DESTDIR)$(sysvdir)/$(sysv_SCRIPTS)
 
-@USE_REDHAT_SYSTEMD_TRUE@$(sysv_SCRIPTS): rc.atalk.redhat-systemd
-@USE_REDHAT_SYSTEMD_TRUE@	cp -f rc.atalk.redhat-systemd $(sysv_SCRIPTS)
-@USE_REDHAT_SYSTEMD_TRUE@	chmod a+x $(sysv_SCRIPTS)
+@USE_SYSTEMD_TRUE@$(sysv_SCRIPTS): rc.atalk.systemd
+@USE_SYSTEMD_TRUE@	cp -f rc.atalk.systemd $(sysv_SCRIPTS)
+@USE_SYSTEMD_TRUE@	chmod a+x $(sysv_SCRIPTS)
 
-@USE_REDHAT_SYSTEMD_TRUE@$(service_DATA): service.atalk.redhat-systemd
-@USE_REDHAT_SYSTEMD_TRUE@	cp -f service.atalk.redhat-systemd $(service_DATA)
+@USE_SYSTEMD_TRUE@$(service_DATA): service.atalk.systemd
+@USE_SYSTEMD_TRUE@	cp -f service.atalk.systemd $(service_DATA)
 
-@USE_REDHAT_SYSTEMD_TRUE@install-data-hook:
-@USE_REDHAT_SYSTEMD_TRUE@	-systemctl daemon-reload
+@USE_SYSTEMD_TRUE@install-data-hook:
+@USE_SYSTEMD_TRUE@	-systemctl daemon-reload
 
-@USE_REDHAT_SYSTEMD_TRUE@uninstall-startup:
-@USE_REDHAT_SYSTEMD_TRUE@	-systemctl disable $(service_DATA)
-@USE_REDHAT_SYSTEMD_TRUE@	rm -f $(DESTDIR)$(sysvdir)/$(sysv_SCRIPTS)	\
-@USE_REDHAT_SYSTEMD_TRUE@		$(DESTDIR)$(servicedir)/$(service_DATA)
-@USE_REDHAT_SYSTEMD_TRUE@	-systemctl daemon-reload
+@USE_SYSTEMD_TRUE@uninstall-startup:
+@USE_SYSTEMD_TRUE@	-systemctl disable $(service_DATA)
+@USE_SYSTEMD_TRUE@	rm -f $(DESTDIR)$(sysvdir)/$(sysv_SCRIPTS)	\
+@USE_SYSTEMD_TRUE@		$(DESTDIR)$(servicedir)/$(service_DATA)
+@USE_SYSTEMD_TRUE@	-systemctl daemon-reload
 
-@USE_SUSE_TRUE@$(sysv_SCRIPTS): rc.atalk.suse
-@USE_SUSE_TRUE@	cp -f rc.atalk.suse $(sysv_SCRIPTS)
-@USE_SUSE_TRUE@	chmod a+x $(sysv_SCRIPTS)
+@USE_SUSE_SYSV_TRUE@$(sysv_SCRIPTS): rc.atalk.suse-sysv
+@USE_SUSE_SYSV_TRUE@	cp -f rc.atalk.suse-sysv $(sysv_SCRIPTS)
+@USE_SUSE_SYSV_TRUE@	chmod a+x $(sysv_SCRIPTS)
 
-@USE_SUSE_TRUE@install-data-hook:
-@USE_SUSE_TRUE@	-insserv $(sysv_SCRIPTS)
+@USE_SUSE_SYSV_TRUE@install-data-hook:
+@USE_SUSE_SYSV_TRUE@	-insserv $(sysv_SCRIPTS)
 
-@USE_SUSE_TRUE@uninstall-startup:
-@USE_SUSE_TRUE@	-insserv -d $(sysv_SCRIPTS)
-@USE_SUSE_TRUE@	rm -f $(DESTDIR)$(sysvdir)/$(sysv_SCRIPTS)
+@USE_SUSE_SYSV_TRUE@uninstall-startup:
+@USE_SUSE_SYSV_TRUE@	-insserv -d $(sysv_SCRIPTS)
+@USE_SUSE_SYSV_TRUE@	rm -f $(DESTDIR)$(sysvdir)/$(sysv_SCRIPTS)
 
 @USE_TRU64_TRUE@$(sysv_SCRIPTS): rc.atalk.tru64
 @USE_TRU64_TRUE@	cp -f rc.atalk.tru64 $(sysv_SCRIPTS)

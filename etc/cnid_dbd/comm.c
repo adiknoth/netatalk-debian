@@ -9,17 +9,7 @@
 #include "config.h"
 #endif
 
-#if !defined(__FreeBSD__) && !defined(__NetBSD__)
-#ifndef _XOPEN_SOURCE
-# define _XOPEN_SOURCE 600
-#endif
-#ifndef __EXTENSIONS__
-# define __EXTENSIONS__
-#endif
-#ifndef _GNU_SOURCE
-# define _GNU_SOURCE
-#endif
-#endif
+#include <atalk/standards.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,6 +28,7 @@
 #include <atalk/logger.h>
 #include <atalk/util.h>
 #include <atalk/cnid_dbd_private.h>
+#include <atalk/compat.h>
 
 #include "db_param.h"
 #include "usockfd.h"

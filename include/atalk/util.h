@@ -47,6 +47,12 @@
 #endif /* NDEBUG */
 
 #define STRCMP(a,b,c) (strcmp(a,c) b 0)
+#ifndef MAX
+#define MAX(a,b) ((a) > (b) ? a : b)
+#endif
+#ifndef MIN
+#define MIN(a,b) ((a) < (b) ? a : b)
+#endif
 
 #if BYTE_ORDER == BIG_ENDIAN
 #define hton64(x)       (x)
@@ -68,7 +74,9 @@ extern void freeifacelist(char **);
 
 #define diatolower(x)     _dialowermap[(unsigned char) (x)]
 #define diatoupper(x)     _diacasemap[(unsigned char) (x)]
+#ifndef NO_DDP
 extern int atalk_aton     (char *, struct at_addr *);
+#endif
 extern void bprint        (char *, int);
 extern int strdiacasecmp  (const char *, const char *);
 extern int strndiacasecmp (const char *, const char *, size_t);
@@ -177,6 +185,7 @@ extern int recv_fd(int fd, int nonblocking);
  *****************************************************************/
 
 extern const char *getcwdpath(void);
+extern const char *fullpathname(const char *);
 extern char *stripped_slashes_basename(char *p);
 extern int lchdir(const char *dir);
 extern void randombytes(void *buf, int n);

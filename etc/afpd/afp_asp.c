@@ -88,7 +88,6 @@ static void afp_authprint_remove(AFPObj *obj)
 	    if ((len = read( capfd, addr_filename_buff, 256 )) > 0) {
 		int file_pid;
 		char *p_filepid;
-		close(capfd);
 		addr_filename_buff[len] = 0;
 		if ( (p_filepid = strrchr(addr_filename_buff, ':')) != NULL) {
 		    *p_filepid = '\0';
@@ -116,6 +115,8 @@ static void afp_authprint_remove(AFPObj *obj)
 	    } else {
 		LOG(log_info, logtype_afpd, "couldn't read data from %s", addr_filename );
 	    }
+        if (capfd != -1)
+            close(capfd);
 	} else {
 	    LOG(log_info, logtype_afpd, "%s is not a regular file", addr_filename );
 	}
@@ -280,6 +281,11 @@ void afp_over_asp(AFPObj *obj)
     action.sa_flags = SA_RESTART;
     if ( sigaction( SIGUSR1, &action, NULL ) < 0 ) {
         LOG(log_error, logtype_afpd, "afp_over_asp: sigaction: %s", strerror(errno) );
+        afp_asp_die(EXITERR_SYS);
+    }
+
+    if (dircache_init(obj->options.dircachesize) != 0) {
+        LOG(log_error, logtype_afpd, "afp_over_asp: dircache_init error");
         afp_asp_die(EXITERR_SYS);
     }
 

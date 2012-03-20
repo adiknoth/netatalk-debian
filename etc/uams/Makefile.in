@@ -65,7 +65,7 @@ am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
 	$(top_srcdir)/macros/summary.m4 \
 	$(top_srcdir)/macros/tcp-wrappers.m4 \
 	$(top_srcdir)/macros/util.m4 $(top_srcdir)/macros/webmin.m4 \
-	$(top_srcdir)/macros/zeroconf.m4 $(top_srcdir)/configure.in
+	$(top_srcdir)/macros/zeroconf.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -885,17 +885,19 @@ uninstall-am: uninstall-uamsLTLIBRARIES
 #
 
 install-exec-hook:
-	(cd $(DESTDIR)$(uamsdir)					&& \
+	(if [ -d $(DESTDIR)$(uamsdir) ] ; then \
+		cd $(DESTDIR)$(uamsdir)					&& \
 		rm -f $(uams_LINKS)  					&& \
 		$(LN_S) $(UAMS_CLRTXT_LINK) uams_clrtxt.so		&& \
-		$(dhx_exec_hook)					&& \
-		$(dhx2_exec_hook)					\
-	)
+		$(dhx_exec_hook)						&& \
+		$(dhx2_exec_hook) ; 					\
+	fi)
 
 uninstall-hook:
-	(cd $(DESTDIR)$(uamsdir)					&& \
-		rm -f $(uams_LINKS)			   		\
-	)
+	(if [ -d $(DESTDIR)$(uamsdir) ] ; then \
+		cd $(DESTDIR)$(uamsdir)			&& \
+		rm -f $(uams_LINKS)	;		   	\
+	fi)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

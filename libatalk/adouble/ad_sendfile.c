@@ -45,37 +45,15 @@
 #include <atalk/logger.h>
 #include "ad_private.h"
 
-#if defined(LINUX_BROKEN_SENDFILE_API)
-
-extern int32_t sendfile (int fdout, int fdin, int32_t *offset, u_int32_t count);
+#if defined(SENDFILE_FLAVOR_LINUX)
+#include <sys/sendfile.h>
 
 ssize_t sys_sendfile(int tofd, int fromfd, off_t *offset, size_t count)
 {
-u_int32_t small_total;
-int32_t small_offset;
-int32_t nwritten;
-
-    /*
-     * Fix for broken Linux 2.4 systems with no working sendfile64().
-     * If the offset+count > 2 GB then pretend we don't have the
-     * system call sendfile at all. The upper layer catches this
-     * and uses a normal read. JRA.
-     */
- 
-     if ((sizeof(off_t) >= 8) && (*offset + count > (off_t)0x7FFFFFFF)) {
-         errno = ENOSYS;
-         return -1;
-     }
-     small_offset = (int32_t)*offset;
-     small_total = (u_int32_t)count;
-     nwritten = sendfile(tofd, fromfd, &small_offset, small_total);
-     if (nwritten > = 0)
-         *offset += nwritten;
-     
-    return nwritten;
+    return sendfile(tofd, fromfd, offset, count);
 }
 
-#elif defined(SENDFILE_FLAVOR_LINUX)
+#elif defined(SENDFILE_FLAVOR_SOLARIS)
 #include <sys/sendfile.h>
 
 ssize_t sys_sendfile(int tofd, int fromfd, off_t *offset, size_t count)
@@ -84,26 +62,12 @@ ssize_t sys_sendfile(int tofd, int fromfd, off_t *offset, size_t count)
 }
 
 #elif defined(SENDFILE_FLAVOR_BSD )
-/* FIXME untested */
-#error sendfile semantic broken
-#include <sys/sendfile.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/uio.h>
 ssize_t sys_sendfile(int tofd, int fromfd, off_t *offset, size_t count)
 {
-size_t total=0;
-int    ret;
-
-    total = count;
-    while (total) {
-        ssize_t nwritten;
-        do {
-           ret = sendfile(fromfd, tofd, offset, count, NULL, &nwritten, 0);
-        while (ret == -1 && errno == EINTR);
-        if (ret == -1)
-            return -1;
-        total -= nwritten;
-        offset += nwritten;
-    }
-    return count;
+  return sendfile(fromfd, tofd, *offset, count, NULL, offset, 0);
 }
 
 #else
