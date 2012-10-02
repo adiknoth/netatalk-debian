@@ -1,5 +1,2 @@
-101_start_avahi-daemon_before_atalkd.patch
 114_fix_macusers_ps_parsing.patch
-201_etc2ps_paths.diff
-202_psf_8_paths.diff
 205_applevolumes_default_homedir.diff
