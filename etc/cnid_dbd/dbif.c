@@ -14,8 +14,8 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/cdefs.h>
 #include <unistd.h>
+#include <arpa/inet.h>
 
 #include <db.h>
 
@@ -346,6 +346,12 @@ int get_lock(int cmd, const char *dbpath)
     int ret;
     char lockpath[PATH_MAX];
     struct stat st;
+
+    LOG(log_debug, logtype_cnid, "get_lock(%s, \"%s\")",
+        cmd == LOCK_EXCL ? "LOCK_EXCL" :
+        cmd == LOCK_SHRD ? "LOCK_SHRD" :
+        cmd == LOCK_FREE ? "LOCK_FREE" :
+        cmd == LOCK_UNLOCK ? "LOCK_UNLOCK" : "UNKNOWN" , dbpath ? dbpath : "");
 
     switch (cmd) {
     case LOCK_FREE:
@@ -805,7 +811,12 @@ int dbif_env_remove(const char *path)
     int ret;
     DBD *dbd;
 
-    LOG(log_debug, logtype_cnid, "Reopening BerkeleyDB environment");
+    LOG(log_debug, logtype_cnid, "Trying to remove BerkeleyDB environment");
+
+    if (get_lock(LOCK_EXCL, path) != LOCK_EXCL) {
+        LOG(log_debug, logtype_cnid, "CNID db \"%s\" in use, not removing BerkeleyDB environment", path);
+        return 0;
+    }
     
     if (NULL == (dbd = dbif_init(path, "cnid2.db")))
         return -1;

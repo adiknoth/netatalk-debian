@@ -18,17 +18,11 @@
 
 #include <stdlib.h>
 #include <string.h>
-#ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#endif /* HAVE_UNISTD_H */
 #include <signal.h>
 #include <errno.h>
-
-/* POSIX.1 sys/wait.h check */
 #include <sys/types.h>
-#ifdef HAVE_SYS_WAIT_H
 #include <sys/wait.h>
-#endif /* HAVE_SYS_WAIT_H */
 #include <sys/time.h>
 
 #include <atalk/logger.h>
@@ -60,8 +54,6 @@ typedef struct server_child_fork {
     struct server_child_data *table[CHILD_HASHSIZE];
     void (*cleanup)(const pid_t);
 } server_child_fork;
-
-int parent_or_child; /* 0: parent, 1: child */
 
 static inline void hash_child(struct server_child_data **htable,
                               struct server_child_data *child)
@@ -121,7 +113,7 @@ server_child *server_child_alloc(const int connections, const int nforks)
  * add a child
  * @return pointer to struct server_child_data on success, NULL on error
  */
-afp_child_t *server_child_add(server_child *children, int forkid, pid_t pid, uint ipc_fds[2])
+afp_child_t *server_child_add(server_child *children, int forkid, pid_t pid, int ipc_fd)
 {
     server_child_fork *fork;
     afp_child_t *child = NULL;
@@ -152,8 +144,7 @@ afp_child_t *server_child_add(server_child *children, int forkid, pid_t pid, uin
     child->pid = pid;
     child->valid = 0;
     child->killed = 0;
-    child->ipc_fds[0] = ipc_fds[0];
-    child->ipc_fds[1] = ipc_fds[1];
+    child->ipc_fd = ipc_fd;
 
     hash_child(fork->table, child);
     children->count++;
@@ -181,15 +172,9 @@ int server_child_remove(server_child *children, const int forkid, pid_t pid)
     }
 
     /* In main:child_handler() we need the fd in order to remove it from the pollfd set */
-    fd = child->ipc_fds[0];
-    if (child->ipc_fds[0] != -1) {
-        close(child->ipc_fds[0]);
-        child->ipc_fds[0] = -1;
-    }
-    if (child->ipc_fds[1] != -1) {
-        close(child->ipc_fds[1]);
-        child->ipc_fds[1] = -1;
-    }
+    fd = child->ipc_fd;
+    if (fd != -1)
+        close(fd);
 
     free(child);
     children->count--;
@@ -214,6 +199,7 @@ void server_child_free(server_child *children)
             child = fork->table[j]; /* start at the beginning */
             while (child) {
                 tmp = child->next;
+                close(child->ipc_fd);
                 if (child->clientid) {
                     free(child->clientid);
                 }
@@ -305,12 +291,12 @@ int server_child_transfer_session(server_child *children,
 
     LOG(log_note, logtype_default, "Reconnect: transfering session to child[%u]", pid);
     
-    if (writet(child->ipc_fds[0], &DSI_requestID, 2, 0, 2) != 2) {
+    if (writet(child->ipc_fd, &DSI_requestID, 2, 0, 2) != 2) {
         LOG(log_error, logtype_default, "Reconnect: error sending DSI id to child[%u]", pid);
         EC_STATUS(-1);
         goto EC_CLEANUP;
     }
-    EC_ZERO_LOG(send_fd(child->ipc_fds[0], afp_socket));
+    EC_ZERO_LOG(send_fd(child->ipc_fd, afp_socket));
     EC_ZERO_LOG(kill(pid, SIGURG));
 
     EC_STATUS(1);

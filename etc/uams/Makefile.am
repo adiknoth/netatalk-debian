@@ -1,7 +1,5 @@
 # Makefile.am for etc/uams/
 
-SUBDIRS = uams_krb4
-
 #
 # conditionally build some modules
 #
@@ -128,7 +126,7 @@ uams_LTLIBRARIES =		\
 # link creation
 #
 
-install-exec-hook:
+install-data-hook:
 	(if [ -d $(DESTDIR)$(uamsdir) ] ; then \
 		cd $(DESTDIR)$(uamsdir)					&& \
 		rm -f $(uams_LINKS)  					&& \

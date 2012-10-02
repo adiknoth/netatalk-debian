@@ -1,6 +1,4 @@
 /*
- * $Id: desktop.h,v 1.6 2009-10-15 10:43:13 didg Exp $
- *
  * Copyright (c) 1990,1991 Regents of The University of Michigan.
  * All Rights Reserved.
  *
@@ -26,9 +24,11 @@
 #ifndef AFPD_DESKTOP_H
 #define AFPD_DESKTOP_H 1
 
-#include <sys/cdefs.h>
 #include <atalk/globals.h>
+
 #include "volume.h"
+
+#define APPLEDESKTOP ".AppleDesktop"
 
 struct savedt {
     u_char	sdt_creator[ 4 ];
@@ -42,6 +42,9 @@ typedef unsigned char CreatorType[4];
 extern char	*dtfile (const struct vol *, u_char [], char *);
 extern char	*mtoupath (const struct vol *, char *, cnid_t, int utf8);
 extern char	*utompath (const struct vol *, char *, cnid_t, int utf8);
+
+extern int setdeskmode(const struct vol *vol, const mode_t mode);
+extern int setdeskowner(const struct vol *vol, uid_t uid, gid_t gid);
 
 /* FP functions */
 int afp_opendt (AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf,  size_t *rbuflen);
