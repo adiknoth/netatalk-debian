@@ -15,33 +15,17 @@
 #include <string.h>
 #include <errno.h>
 #include <sys/types.h>
-/* STDC check */
-#if STDC_HEADERS
 #include <string.h>
-#else /* STDC_HEADERS */
-#ifndef HAVE_STRCHR
-#define strchr index
-#define strrchr index
-#endif /* HAVE_STRCHR */
-char *strchr (), *strrchr ();
-#ifndef HAVE_MEMCPY
-#define memcpy(d,s,n) bcopy ((s), (d), (n))
-#define memmove(d,s,n) bcopy ((s), (d), (n))
-#endif /* ! HAVE_MEMCPY */
-#endif /* STDC_HEADERS */
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/param.h>
-#ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#endif /* HAVE_UNISTD_H */
-#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
-#endif /* HAVE_FCNTL_H */
 
 #include <atalk/logger.h>
 #include <atalk/afp.h>
 #include <atalk/compat.h>
+#include <atalk/unix.h>
 
 #include "auth.h"
 #include "volume.h"
@@ -51,8 +35,8 @@ char *strchr (), *strrchr ();
 #include <quota/quota.h>
 
 static int
-getfreespace(struct vol *vol, VolSpace *bfree, VolSpace *btotal,
-    uid_t uid, const char *classq)
+getfreespace(const AFPObj *obj, struct vol *vol, VolSpace *bfree, VolSpace *btotal,
+	     uid_t uid, const char *classq)
 {
 	int retq;
 	struct ufs_quota_entry ufsq[QUOTA_NLIMITS];
@@ -64,16 +48,15 @@ getfreespace(struct vol *vol, VolSpace *bfree, VolSpace *btotal,
 		return -1;
 	}
 
-	if ( seteuid( getuid() ) != 0 )  {
-		LOG(log_info, logtype_afpd, "seteuid(): %s",
-		    strerror(errno));
-		return -1;
-	}
-	if ((retq = getfsquota(vol->v_path, ufsq, uid, classq)) < 0) {
+    become_root();
+
+	if ((retq = getfsquota(obj, vol, ufsq, uid, classq)) < 0) {
 		LOG(log_info, logtype_afpd, "getfsquota(%s, %s): %s",
 		    vol->v_path, classq, strerror(errno));
 	}
-        seteuid( uid );
+
+    unbecome_root();
+
 	if (retq < 1)
 		return retq;
 
@@ -95,19 +78,19 @@ getfreespace(struct vol *vol, VolSpace *bfree, VolSpace *btotal,
 	return 1;
 }
 
-int uquota_getvolspace( struct vol *vol, VolSpace *bfree, VolSpace *btotal, const u_int32_t bsize)
+int uquota_getvolspace(const AFPObj *obj, struct vol *vol, VolSpace *bfree, VolSpace *btotal, const u_int32_t bsize)
 {
 	int uretq, gretq;
 	VolSpace ubfree, ubtotal;
 	VolSpace gbfree, gbtotal;
 
-	uretq = getfreespace(vol, &ubfree, &ubtotal,
-	    uuid, QUOTADICT_CLASS_USER);
+	uretq = getfreespace(obj, vol, &ubfree, &ubtotal,
+			     uuid, QUOTADICT_CLASS_USER);
 	LOG(log_info, logtype_afpd, "getfsquota(%s): %d %d",
 	    vol->v_path, (int)ubfree, (int)ubtotal);
-	if (ngroups >= 1) {
+	if (obj->ngroups >= 1) {
 		gretq = getfreespace(vol, &ubfree, &ubtotal,
-		    groups[0], QUOTADICT_CLASS_GROUP);
+		    obj->groups[0], QUOTADICT_CLASS_GROUP);
 	} else
 		gretq = -1;
 	if (uretq < 1 && gretq < 1) { /* no quota for this fs */
@@ -292,13 +275,13 @@ static int get_linux_xfs_quota(int what, char *path, uid_t euser_id, struct dqbl
 	if ((ret = quotactl(QCMD(Q_XGETQUOTA,(what ? GRPQUOTA : USRQUOTA)), path, euser_id, (caddr_t)&D)))
                return ret;
 
-	dqb->bsize = (u_int64_t)512;
-        dqb->dqb_bsoftlimit  = (u_int64_t)D.d_blk_softlimit;
-        dqb->dqb_bhardlimit  = (u_int64_t)D.d_blk_hardlimit;
-        dqb->dqb_ihardlimit  = (u_int64_t)D.d_ino_hardlimit;
-        dqb->dqb_isoftlimit  = (u_int64_t)D.d_ino_softlimit;
-        dqb->dqb_curinodes   = (u_int64_t)D.d_icount;
-        dqb->dqb_curblocks   = (u_int64_t)D.d_bcount; 
+	dqb->bsize = (uint64_t)512;
+        dqb->dqb_bsoftlimit  = (uint64_t)D.d_blk_softlimit;
+        dqb->dqb_bhardlimit  = (uint64_t)D.d_blk_hardlimit;
+        dqb->dqb_ihardlimit  = (uint64_t)D.d_ino_hardlimit;
+        dqb->dqb_isoftlimit  = (uint64_t)D.d_ino_softlimit;
+        dqb->dqb_curinodes   = (uint64_t)D.d_icount;
+        dqb->dqb_curblocks   = (uint64_t)D.d_bcount; 
 #endif
        return ret;
 }
@@ -518,7 +501,7 @@ special(char *file, int *nfs)
 #endif /* __svr4__ */
 
 
-static int getfsquota(struct vol *vol, const int uid, struct dqblk *dq)
+static int getfsquota(const AFPObj *obj, struct vol *vol, const int uid, struct dqblk *dq)
 
 {
 	struct dqblk dqg;
@@ -558,29 +541,19 @@ static int getfsquota(struct vol *vol, const int uid, struct dqblk *dq)
 #endif /* TRU64 */
 
 #ifdef BSD4_4
-    if ( seteuid( getuid() ) == 0 ) {
+    become_root();
         if ( quotactl( vol->v_path, QCMD(Q_GETQUOTA,USRQUOTA),
                        uid, (char *)dq ) != 0 ) {
             /* try group quotas */
-            if (ngroups >= 1) {
+            if (obj->ngroups >= 1) {
                 if ( quotactl(vol->v_path, QCMD(Q_GETQUOTA, GRPQUOTA),
-                              groups[0], (char *) &dqg) != 0 ) {
-                    seteuid( uid );
+                              obj->groups[0], (char *) &dqg) != 0 ) {
+                    unbecome_root();
                     return( AFPERR_PARAM );
                 }
             }
         }
-        seteuid( uid );
-    }
-
-#elif defined(TRU64)
-    if ( seteuid( getuid() ) == 0 ) {
-        if ( quotactl( vol->v_path, QCMD(Q_GETQUOTA, USRQUOTA),
-                       uid, (char *)dq ) != 0 ) {
-            seteuid( uid );
-            return ( AFPERR_PARAM );
-        }
-        seteuid( uid );
+        unbecome_root();
     }
 
 #else /* BSD4_4 */
@@ -607,12 +580,12 @@ static int getfsquota(struct vol *vol, const int uid, struct dqblk *dq)
     if( 
         /* if overquota, free space is 0 otherwise hard-current */
         ( overquota( dq ) ? 0 : ( dq->dqb_bhardlimit ? dq->dqb_bhardlimit - 
-                                  dq->dqb_curblocks : ~((u_int64_t) 0) ) )
+                                  dq->dqb_curblocks : ~((uint64_t) 0) ) )
 
       >
         
         ( overquota( &dqg ) ? 0 : ( dqg.dqb_bhardlimit ? dqg.dqb_bhardlimit - 
-                                    dqg.dqb_curblocks : ~((u_int64_t) 0) ) )
+                                    dqg.dqb_curblocks : ~((uint64_t) 0) ) )
 
       ) /* if */
     {
@@ -632,7 +605,7 @@ static int getfsquota(struct vol *vol, const int uid, struct dqblk *dq)
 }
 
 
-static int getquota( struct vol *vol, struct dqblk *dq, const u_int32_t bsize)
+static int getquota(const AFPObj *obj, struct vol *vol, struct dqblk *dq, const uint32_t bsize)
 {
     char *p;
 
@@ -707,11 +680,11 @@ static int getquota( struct vol *vol, struct dqblk *dq, const u_int32_t bsize)
 	    return getnfsquota(vol, uuid, bsize, dq);
     } else
 	/* local filesystem */
-	return getfsquota(vol, uuid, dq);
+      return getfsquota(obj, vol, obj->uid, dq);
 	   
 #else /* TRU64 */
-    return vol->v_nfs ? getnfsquota(vol, uuid, bsize, dq) :
-           getfsquota(vol, uuid, dq);
+    return vol->v_nfs ? getnfsquota(vol, obj->uid, bsize, dq) :
+      getfsquota(obj, vol, obj->uid, dq);
 #endif /* TRU64 */
 }
 
@@ -770,14 +743,14 @@ static int overquota( struct dqblk *dqblk)
 #define tobytes(a, b)  dbtob((VolSpace) (a))
 #endif
 
-int uquota_getvolspace( struct vol *vol, VolSpace *bfree, VolSpace *btotal, const u_int32_t bsize)
+int uquota_getvolspace(const AFPObj *obj, struct vol *vol, VolSpace *bfree, VolSpace *btotal, const uint32_t bsize)
 {
-	u_int64_t this_bsize;
+	uint64_t this_bsize;
 	struct dqblk dqblk;
 
 	this_bsize = bsize;
 			
-	if (getquota( vol, &dqblk, bsize) != 0 ) {
+	if (getquota(obj, vol, &dqblk, bsize) != 0 ) {
 		return( AFPERR_PARAM );
 	}
 

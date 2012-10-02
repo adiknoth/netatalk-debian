@@ -1,42 +1,27 @@
 Information for Netatalk Developers
 ===================================
 
-For basic installation instructions, see the INSTALL file.
+For basic installation instructions, see http://netatalk.sourceforge.net .
 
 Netatalk is an implementation of "AFP over TCP".
-Netatalk also support the AppleTalk Protocol Suite for legacy Macs.
-The current release contains support for EtherTalk Phase I and II, 
-DDP, RTMP, NBP, ZIP, AEP, ATP, PAP, ASP, AFP and DSI.
-The complete stack looks like this on a BSD-derived system:
-
-    AFP                          AFP
-     |                            |
-    ASP    PAP                   DSI
-      \   /                       |
-       ATP RTMP NBP ZIP AEP       |
-        |    |   |   |   |        |
-   -+---------------------------------------------------+- (kernel boundary)
-    |                    Socket                         |
-    +-----------------------+------------+--------------+
-    |                       |     TCP    |    UDP       |
-    |          DDP          +------------+--------------+
-    |                       |           IP              |
-    +-----------------------+---------------------------+
-    |                Network-Interface                  |
-    +---------------------------------------------------+
-
 DSI is a session layer used to carry AFP over TCP.
-DDP is in the kernel.  "atalkd" implements RTMP, NBP, ZIP, and AEP.  It
-is the AppleTalk equivalent of Unix "routed".  There is also a
-client-stub library for NBP.  ATP and ASP are implemented as
-libraries.  "papd" allows Macs to spool to "lpd", and "pap" allows Unix
-machines to print to AppleTalk connected printers.  "psf" is a
-PostScript printer filter for "lpd", designed to use "pap".  "psorder"
-is a PostScript reverser, called by "psf" to reverse pages printed to
-face-up stacking printers.  "afpd" provides Macs with an interface to
-the Unix file system.  Refer to the appropriate man pages for
-operational information.
+The complete stack looks like this:
 
+          AFP
+           |
+          DSI
+           |
+           | (port:548)
+           |
+   -+---------------------------+- (kernel boundary)
+    |         Socket            |
+    +------------+--------------+
+    |     TCP    |    UDP       |
+    +------------+--------------+
+    |       IP v4 or v6         |
+    +---------------------------+
+    |     Network-Interface     |
+    +---------------------------+
 
 Compilation
 ===========
@@ -68,23 +53,7 @@ Libtool encapsulates the platform specific dependencies for the
 creation of libraries. It determines if the local platform can support
 shared libraries or if it only supports static libraries.
 
-Netatalk currently requires libtool 1.4 or higher (1.4b for OpenBSD).
-If you are using Tru64 you must apply the following patch to the file
-acinclude.m4 (normally found in /usr/share/libtool/libltdl).
-
---- acinclude.m4.old	Tue Nov 20 15:30:23 2001
-+++ acinclude.m4	Tue Nov 20 15:31:54 2001
-@@ -2226,6 +2226,7 @@
- 
- osf3* | osf4* | osf5*)
-   version_type=osf
-+  need_lib_prefix=no
-   need_version=no
-   soname_spec='${libname}${release}.so'
-   library_names_spec='${libname}${release}.so$versuffix ${libname}${release}.so $libname.so'
-
 Documentation: http://www.gnu.org/software/libtool/
-Program: (see the GNU mirrors) /gnu/libtool/libtool-1.4.tar.gz
 
 2. GNU m4
 GNU m4 is an implementation of the Unix macro processor. It reads
@@ -92,24 +61,32 @@ stdin and copies to stdout expanding defined macros as it processes
 the text.
 
 Documentation: http://www.gnu.org/software/m4/
-Program: (see the GNU mirrors) /gnu/m4/m4-1.4.tar.gz
 
 3. Autoconf
 Autoconf is a package of m4 macros that produce shell scripts to
 configure source code packages.
 
 Documentation: http://www.gnu.org/software/autoconf/
-Program: (see the GNU mirrors) /gnu/autoconf/autoconf-2.52.tar.gz
 
 4. Automake
 Automake is a tool that generates  'Makefile.in' files.
 
 Documentation: http://www.gnu.org/software/automake/
-Program: (see the GNU mirrors) /gnu/automake/automake-1.5.tar.gz
+
+Required
+========
+5. Berkeley DB
+Berkeley DB is a programmatic toolkit that provides fast, reliable,
+scalable, and mission-critical database support to software
+developers. BDB can downloaded from
+http://www.oracle.com/database/berkeley-db/index.html
+Netatalk's CNID database uses the library and header files from BDB.
+Currently, Netatalk supports BDB 4.6 and later.
+
 
 Optional
 ========
-5. OpenSSL and/or Libgcrypt
+6. OpenSSL and/or Libgcrypt
 The OpenSSL Project is a collaborative effort to develop a robust,
 commercial-grade, full-featured, and Open Source toolkit implementing
 the Secure Sockets Layer (SSL v2/v3) and Transport Layer Security (TLS
@@ -117,7 +94,7 @@ v1) protocols as well as a full-strength general purpose cryptography
 library.
 This is required to enable DHX login support.
 
-Get everything at http://www.openssl.org/ 
+Get everything at http://www.openssl.org/
 
 The Libgcrypt is a general purpose cryptographic library based on
 the code from GnuPG.
@@ -125,7 +102,7 @@ This is required to enable DHX2 login support.
 
 Get everything at http://directory.fsf.org/project/libgcrypt/
 
-6. TCP Wrappers 
+7. TCP Wrappers
 Wietse Venema's network logger, also known as TCPD or LOG_TCP. These
 programs log the client host name of incoming telnet, ftp, rsh,
 rlogin, finger etc. requests. Security options are: access control per
@@ -136,7 +113,7 @@ Netatalk uses TCP Wrappers to authorize host access when using
 afpovertcp. It should be noted that if DDP is in use, the connection
 will still be allowed as TCP Wrappers do not impact DDP connections.
 
-7. PAM (Pluggable Authentication Modules) 
+8. PAM (Pluggable Authentication Modules)
 PAM provides a flexible mechanism for authenticating
 users. PAM was invented by SUN Microsystems.
 
@@ -147,14 +124,6 @@ administrator to choose how applications authenticate users.
 You can get the Linux PAM documentation and sources from
 http://www.kernel.org/pub/linux/libs/pam/
 Netatalk also supports other standard PAM implementations such as OpenPAM.
-
-8. Berkeley DB
-Berkeley DB is a programmatic toolkit that provides fast, reliable,
-scalable, and mission-critical database support to software
-developers. BDB can downloaded from
-http://www.oracle.com/database/berkeley-db/index.html
-Netatalk's CNID database uses the library and header files from BDB.
-Currently, Netatalk supports BDB 4.6 and later.
 
 Error checking and logging
 ==========================
@@ -223,3 +192,99 @@ int func(void)
 EC_CLEANUP:
     EC_EXIT;
 }
+
+Ini Parser
+==========
+
+The ini parser is taken from <http://ndevilla.free.fr/iniparser/>.
+It has been slightly modified:
+- case-sensitive
+- "include" directive added
+- iniparser_getstrdup() to complemnt iniparser_getstring(), it return allocated
+  strings which the caller must free as necessary
+- the API has been modifed such that all iniparser_get* funcs take a section and
+  a parameter as sepereta args instead of one string of the form "section:parameter"
+  in the original library
+
+CNID Database Daemons
+=====================
+
+The CNID database daemons cnid_metad and cnid_dbd are a implementation of
+the netatalk CNID database support that attempts to put all functionality
+into separate daemons.
+There is one cnid_dbd daemon per netatalk volume. The underlying database
+structure is based on Berkeley DB and the database format is the same
+as in the cdb CNID backend, so this can be used as a drop-in replacement.
+
+Advantages:
+
+- No locking issues or leftover locks due to crashed afpd daemons any
+  more. Since there is only one thread of control accessing the
+  database, no locking is needed and changes appear atomic.
+
+- Berkeley DB transactions are difficult to get right with several
+  processes attempting to access the CNID database simultanously. This
+  is much easier with a single process and the database can be made nearly
+  crashproof this way (at a performance cost).
+
+- No problems with user permissions and access to underlying database
+  files, the cnid_dbd process runs under a configurable user
+  ID that normally also owns the underlying database
+  and can be contacted by whatever afpd daemon accesses a volume.
+
+- If an afpd process crashes, the CNID database is unaffected. If the
+  process was making changes to the database at the time of the crash,
+  those changes will be rolled back entirely (transactions).
+  If the process was not using the database at the time of the crash,
+  no corrective action is necessary. In any case, database consistency
+  is assured.
+
+Disadvantages:
+
+- Performance in an environment of processes sharing the database
+  (files) is potentially better for two reasons:
+
+  i)  IPC overhead.
+  ii) r/o access to database pages is possible by more than one
+      process at once, r/w access is possible for nonoverlapping regions.
+
+  The current implementation of cnid_dbd uses unix domain sockets as
+  the IPC mechanism. While this is not the fastest possible method, it
+  is very portable and the cnid_dbd IPC mechanisms can be extended to
+  use faster IPC (like mmap) on architectures where it is
+  supported. As a ballpark figure, 20000 requests/replies to the cnid_dbd
+  daemon take about 0.6 seconds on a Pentium III 733 Mhz running Linux
+  Kernel 2.4.18 using unix domain sockets. The requests are "empty"
+  (no database lookups/changes), so this is just the IPC
+  overhead.
+
+  I have not measured the effects of the advantages of simultanous
+  database access.
+
+
+Installation and configuration
+
+There are two executeables that will be built in etc/cnid_dbd and
+installed into the systems binaries directories of netatalk
+cnid_metad and cnid_dbd. cnid_metad should run all the
+time with root permissions. It will be notified when an instance of
+afpd starts up and will in turn make sure that a cnid_dbd daemon is
+started for the volume that afpd wishes to access. The cnid_dbd daemon runs as
+long as necessary and services any
+other instances of afpd that access the volume. You can safely kill it
+with SIGTERM, it will be restarted automatically by cnid_metad as soon
+as the volume is accessed again.
+
+cnid_dbd changes to the Berkeley DB directory on startup and sets
+effective UID and GID to owner and group of that directory. Database and
+supporting files should therefore be writeable by that user/group.
+
+Current shortcomings:
+
+- The parameter file parsing of db_param is very simpleminded. It is
+easy to cause buffer overruns and the like.
+Also, there is no support for blanks (or weird characters) in
+filenames for the usock_file parameter.
+
+- There is no protection against a malicious user connecting to the
+cnid_dbd socket and changing the database.

@@ -24,10 +24,12 @@
 #include <sys/types.h>
 #include <pwd.h>
 #include <grp.h>
+#include <arpa/inet.h>
 
 #include <atalk/logger.h>
 #include <atalk/afp.h>
 #include <atalk/uuid.h>
+#include <atalk/ldapconfig.h>
 #include <atalk/util.h>
 
 #include "aclldap.h"
@@ -71,12 +73,12 @@ void localuuid_from_id(unsigned char *buf, uuidtype_t type, unsigned int id)
  * convert ascii string that can include dashes to binary uuid.
  * caller must provide a buffer.
  */
-void uuid_string2bin( const char *uuidstring, uuidp_t uuid) {
+void uuid_string2bin( const char *uuidstring, unsigned char *uuid) {
     int nibble = 1;
     int i = 0;
     unsigned char c, val = 0;
-
-    while (*uuidstring) {
+    
+    while (*uuidstring && i < UUID_BINSIZE) {
         c = *uuidstring;
         if (c == '-') {
             uuidstring++;
@@ -102,21 +104,30 @@ void uuid_string2bin( const char *uuidstring, uuidp_t uuid) {
 
 /*!
  * Convert 16 byte binary uuid to neat ascii represantation including dashes.
- *
+ * Use defined or default ascii mask for dash placement
  * Returns pointer to static buffer.
  */
-const char *uuid_bin2string(unsigned char *uuid) {
-    static char uuidstring[UUID_STRINGSIZE + 1];
-
+const char *uuid_bin2string(const unsigned char *uuid) {
+    static char uuidstring[64];
+    const char *uuidmask;
     int i = 0;
     unsigned char c;
 
-    while (i < UUID_STRINGSIZE) {
+#ifdef HAVE_LDAP
+    if (ldap_uuid_string)
+        uuidmask = ldap_uuid_string;
+    else
+#endif
+        uuidmask = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx";
+
+    LOG(log_debug, logtype_afpd, "uuid_bin2string{uuid}: mask: %s", uuidmask);
+		
+    while (i < strlen(uuidmask)) {
         c = *uuid;
         uuid++;
         sprintf(uuidstring + i, "%02X", c);
         i += 2;
-        if (i==8 || i==13 || i==18 || i==23)
+        if (uuidmask[i] == '-')
             uuidstring[i++] = '-';
     }
     uuidstring[i] = 0;
@@ -133,7 +144,7 @@ const char *uuid_bin2string(unsigned char *uuid) {
  *   uuid: pointer to uuid_t storage that the caller must provide
  * returns 0 on success !=0 on errror
  */
-int getuuidfromname( const char *name, uuidtype_t type, uuidp_t uuid) {
+int getuuidfromname( const char *name, uuidtype_t type, unsigned char *uuid) {
     int ret = 0;
     uuidtype_t mytype = type;
     char nulluuid[16] = {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0};
@@ -218,6 +229,7 @@ int getnamefromuuid(const uuidp_t uuidp, char **name, uuidtype_t *type) {
     int ret;
     uid_t uid;
     gid_t gid;
+    uint32_t tmp;
     struct passwd *pwd;
     struct group *grp;
 
@@ -239,7 +251,8 @@ int getnamefromuuid(const uuidp_t uuidp, char **name, uuidtype_t *type) {
     /* Check if UUID is a client local one */
     if (memcmp(uuidp, local_user_uuid, 12) == 0) {
         *type = UUID_USER;
-        uid = ntohl(*(uint32_t *)(uuidp + 12));
+        memcpy(&tmp, uuidp + 12, sizeof(uint32_t));
+        uid = ntohl(tmp);
         if ((pwd = getpwuid(uid)) == NULL) {
             /* not found, add negative entry to cache */
             add_cachebyuuid(uuidp, "UUID_ENOENT", UUID_ENOENT, 0);
@@ -255,7 +268,8 @@ int getnamefromuuid(const uuidp_t uuidp, char **name, uuidtype_t *type) {
         return ret;
     } else if (memcmp(uuidp, local_group_uuid, 12) == 0) {
         *type = UUID_GROUP;
-        gid = ntohl(*(uint32_t *)(uuidp + 12));
+        memcpy(&tmp, uuidp + 12, sizeof(uint32_t));
+        gid = ntohl(tmp);
         if ((grp = getgrgid(gid)) == NULL) {
             /* not found, add negative entry to cache */
             add_cachebyuuid(uuidp, "UUID_ENOENT", UUID_ENOENT, 0);

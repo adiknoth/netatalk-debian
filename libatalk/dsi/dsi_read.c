@@ -1,6 +1,4 @@
 /*
- * $Id: dsi_read.c,v 1.7 2009-10-25 06:13:11 didg Exp $
- *
  * Copyright (c) 1997 Adrian Sun (asun@zoology.washington.edu)
  * All rights reserved. See COPYRIGHT.
  */
@@ -11,15 +9,10 @@
 
 #include <stdio.h>
 #include <string.h>
-#ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#endif /* HAVE_UNISTD_H */
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/time.h>
-#ifdef HAVE_SYS_FILIO_H
-#include <sys/filio.h>
-#endif
 
 #include <atalk/dsi.h>
 #include <atalk/util.h>
@@ -30,8 +23,7 @@
  * it will send off the header plus whatever is in its command
  * buffer. it returns the amount of stuff still to be read
  * (constrained by the buffer size). */
-ssize_t dsi_readinit(DSI *dsi, void *buf, const size_t buflen,
-                     const size_t size, const int err)
+ssize_t dsi_readinit(DSI *dsi, void *buf, const size_t buflen, const size_t size, const int err)
 {
     LOG(log_maxdebug, logtype_dsi, "dsi_readinit: sending %zd bytes from buffer, total size: %zd",
         buflen, size);

@@ -27,15 +27,15 @@
 #include <errno.h>
 
 #include <atalk/cnid.h>
-#include <atalk/volinfo.h>
 #include <atalk/logger.h>
 #include <atalk/util.h>
+#include <atalk/netatalk_conf.h>
 
 #include "ad.h"
 
 static void usage_main(void)
 {
-    printf("Usage: ad ls|cp|rm|mv|find [file|dir, ...]\n");
+    printf("Usage: ad ls|cp|rm|mv|set|find [file|dir, ...]\n");
     printf("       ad -v|--version\n");
 }
 
@@ -46,23 +46,33 @@ static void show_version(void)
 
 int main(int argc, char **argv)
 {
-    setuplog("default log_note /dev/tty");
+    AFPObj obj = { 0 };
 
     if (argc < 2) {
         usage_main();
         return 1;
     }
 
+    if (afp_config_parse(&obj, "ad") != 0)
+        return 1;
+
+    setuplog("default:note", "/dev/tty");
+
+    if (load_volumes(&obj, NULL) != 0)
+        return 1;
+
     if (STRCMP(argv[1], ==, "ls"))
-        return ad_ls(argc - 1, argv + 1);
+        return ad_ls(argc - 1, argv + 1, &obj);
     else if (STRCMP(argv[1], ==, "cp"))
-        return ad_cp(argc - 1, argv + 1);
+        return ad_cp(argc - 1, argv + 1, &obj);
     else if (STRCMP(argv[1], ==, "rm"))
-        return ad_rm(argc - 1, argv + 1);
+        return ad_rm(argc - 1, argv + 1, &obj);
     else if (STRCMP(argv[1], ==, "mv"))
-        return ad_mv(argc, argv);
+        return ad_mv(argc, argv, &obj);
+    else if (STRCMP(argv[1], ==, "set"))
+        return ad_set(argc - 1, argv + 1, &obj);
     else if (STRCMP(argv[1], ==, "find"))
-        return ad_find(argc, argv);
+        return ad_find(argc, argv, &obj);
     else if (STRCMP(argv[1], ==, "-v")) {
         show_version();
         return 1;
