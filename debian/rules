@@ -37,17 +37,15 @@ CFLAGS += $(HARDENING_CFLAGS)
 LDFLAGS += $(HARDENING_LDFLAGS)
 
 DEB_CONFIGURE_EXTRA_FLAGS := \
-	--with-shadow --enable-fhs		\
+	--with-shadow 				\
 	--enable-tcp-wrappers			\
-	--enable-timelord --enable-overwrite	\
+	--enable-overwrite			\
 	--with-pkgconfdir=/etc/netatalk		\
-	--enable-krb4-uam --enable-krbV-uam	\
-	--with-cnid-dbd-txn			\
+	--enable-krbV-uam			\
 	--with-libgcrypt-dir			\
 	--with-cracklib=/var/cache/cracklib/cracklib_dict	\
-	--disable-srvloc --enable-zeroconf	\
-	--enable-ddp				\
-	--enable-debian
+	--enable-zeroconf			\
+	--with-init-style=debian
 
 DEB_INSTALL_EXAMPLES_netatalk = debian/examples/*
 
