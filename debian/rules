@@ -45,7 +45,9 @@ DEB_CONFIGURE_EXTRA_FLAGS := \
 	--with-libgcrypt-dir			\
 	--with-cracklib=/var/cache/cracklib/cracklib_dict	\
 	--enable-zeroconf			\
-	--with-init-style=debian
+	--with-init-style=debian		\
+        --with-libevent-header=/usr/include/event2      \
+        --with-libevent-lib=/usr/lib/$(DEB_HOST_MULTIARCH)
 
 DEB_INSTALL_EXAMPLES_netatalk = debian/examples/*
 
@@ -122,6 +124,7 @@ get-orig-vcs: get-orig-source
 CDBS_BUILD_DEPENDS += , libdb-dev, libwrap0-dev, libpam0g-dev, libcups2-dev, libkrb5-dev, libltdl3-dev
 CDBS_BUILD_DEPENDS += , libgcrypt11-dev, libcrack2-dev
 CDBS_BUILD_DEPENDS += , libavahi-client-dev, libldap2-dev, libacl1-dev
+CDBS_BUILD_DEPENDS += , libevent-dev
 ifneq (,$(findstring openssl,$(DEB_BUILD_OPTIONS)))
 CDBS_BUILD_DEPENDS += , $(openssl_build_depends)
 endif
@@ -139,6 +142,6 @@ CDBS_BUILD_DEPENDS += , d-shlibs, hardening-includes
 #  * quota needed by daemon afpd
 #  * db4.2-util needed by example script netatalk_update.sh for upgrades
 #    from 2.0.4~beta2-4 and earlier: can be dropped after Squeeze+1
-CDBS_DEPENDS = netbase, libpam-modules
+CDBS_DEPENDS = netbase, libpam-modules, libevent-2.0-5
 CDBS_RECOMMENDS = lsof, rc, db-util, procps, cracklib-runtime, libpam-cracklib, avahi-daemon
 CDBS_SUGGESTS = texlive-base-bin, groff, quota, db4.2-util
