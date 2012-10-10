@@ -95,7 +95,8 @@ binary-post-install/netatalk::
 # Remove unnecessary files
 binary-post-install/netatalk::
 	rm debian/netatalk/usr/bin/netatalk-config
-	rm debian/netatalk/usr/lib/libatalk.*
+	rm debian/netatalk/usr/lib/libatalk.a
+	rm debian/netatalk/usr/lib/libatalk.la
 	rm debian/netatalk/usr/share/man/man1/afppasswd.1
 	rm -r debian/netatalk/usr/include
 	rm -r debian/netatalk/usr/share/aclocal
