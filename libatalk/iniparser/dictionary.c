@@ -3,7 +3,6 @@
    @file	dictionary.c
    @author	N. Devillard
    @date	Sep 2007
-   @version	$Revision: 1.27 $
    @brief	Implements a dictionary for string variables.
 
    This module implements a simple dictionary object, i.e. a list
@@ -13,12 +12,14 @@
 /*--------------------------------------------------------------------------*/
 
 /*
-	$Id: dictionary.c,v 1.27 2007-11-23 21:39:18 ndevilla Exp $
-	$Revision: 1.27 $
 */
 /*---------------------------------------------------------------------------
    								Includes
  ---------------------------------------------------------------------------*/
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif /* HAVE_CONFIG_H */
+
 #include <atalk/dictionary.h>
 #include <atalk/compat.h>
 
@@ -106,7 +107,7 @@ static char * xstrdup(char * s)
   by comparing the key itself in last resort.
  */
 /*--------------------------------------------------------------------------*/
-unsigned dictionary_hash(char * key)
+unsigned atalkdict_hash(char * key)
 {
 	int			len ;
 	unsigned	hash ;
@@ -135,7 +136,7 @@ unsigned dictionary_hash(char * key)
   dictionary, give size=0.
  */
 /*--------------------------------------------------------------------------*/
-dictionary * dictionary_new(int size)
+dictionary * atalkdict_new(int size)
 {
 	dictionary	*	d ;
 
@@ -161,7 +162,7 @@ dictionary * dictionary_new(int size)
   Deallocate a dictionary object and all memory associated to it.
  */
 /*--------------------------------------------------------------------------*/
-void dictionary_del(dictionary * d)
+void atalkdict_del(dictionary * d)
 {
 	int		i ;
 
@@ -193,12 +194,12 @@ void dictionary_del(dictionary * d)
   dictionary object, you should not try to free it or modify it.
  */
 /*--------------------------------------------------------------------------*/
-const char * dictionary_get(const dictionary * d, const char *section, const char * key, const char * def)
+const char * atalkdict_get(const dictionary * d, const char *section, const char * key, const char * def)
 {
 	unsigned	hash ;
 	int			i ;
 
-	hash = dictionary_hash(makekey(section, key));
+	hash = atalkdict_hash(makekey(section, key));
 	for (i=0 ; i<d->size ; i++) {
         if (d->key[i]==NULL)
             continue ;
@@ -229,8 +230,8 @@ const char * dictionary_get(const dictionary * d, const char *section, const cha
   or the key are considered as errors: the function will return immediately
   in such a case.
 
-  Notice that if you dictionary_set a variable to NULL, a call to
-  dictionary_get will return a NULL value: the variable will be found, and
+  Notice that if you atalkdict_set a variable to NULL, a call to
+  atalkdict_get will return a NULL value: the variable will be found, and
   its value (NULL) is returned. In other words, setting the variable
   content to NULL is equivalent to deleting the variable from the
   dictionary. It is not possible (in this implementation) to have a key in
@@ -239,7 +240,7 @@ const char * dictionary_get(const dictionary * d, const char *section, const cha
   This function returns non-zero in case of failure.
  */
 /*--------------------------------------------------------------------------*/
-int dictionary_set(dictionary * d, char *section, char * key, char * val)
+int atalkdict_set(dictionary * d, char *section, char * key, char * val)
 {
 	int			i ;
 	unsigned	hash ;
@@ -247,7 +248,7 @@ int dictionary_set(dictionary * d, char *section, char * key, char * val)
 	if (d==NULL || section==NULL) return -1 ;
 	
 	/* Compute hash for this key */
-	hash = dictionary_hash(makekey(section, key));
+	hash = atalkdict_hash(makekey(section, key));
 	/* Find if value is already in dictionary */
 	if (d->n>0) {
 		for (i=0 ; i<d->size ; i++) {
@@ -307,7 +308,7 @@ int dictionary_set(dictionary * d, char *section, char * key, char * val)
   key cannot be found.
  */
 /*--------------------------------------------------------------------------*/
-void dictionary_unset(dictionary * d, char *section, char * key)
+void atalkdict_unset(dictionary * d, char *section, char * key)
 {
 	unsigned	hash ;
 	int			i ;
@@ -316,7 +317,7 @@ void dictionary_unset(dictionary * d, char *section, char * key)
 		return;
 	}
 
-	hash = dictionary_hash(makekey(section, key));
+	hash = atalkdict_hash(makekey(section, key));
 	for (i=0 ; i<d->size ; i++) {
         if (d->key[i]==NULL)
             continue ;
@@ -356,7 +357,7 @@ void dictionary_unset(dictionary * d, char *section, char * key)
   output file pointers.
  */
 /*--------------------------------------------------------------------------*/
-void dictionary_dump(dictionary * d, FILE * out)
+void atalkdict_dump(dictionary * d, FILE * out)
 {
 	int		i ;
 

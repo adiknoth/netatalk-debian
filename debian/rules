@@ -25,29 +25,35 @@ include /usr/share/hardening-includes/hardening.make
 
 DEB_UPSTREAM_URL = http://downloads.sourceforge.net/netatalk
 DEB_UPSTREAM_TARBALL_BASENAME_MANGLE = s/~(alpha|beta|rc)/-\1/
-DEB_UPSTREAM_TARBALL_MD5 = 0d9446247e1eb260bf4205ea075958c0
+DEB_UPSTREAM_TARBALL_MD5 = c00dd0b35279d6daac6e3306576cecaf
 
 # Override defaults for old-style update-rc.d
 #  * Start and stop at priority 50 (FIXME: explain reasoning)
 #  * Stop only in runlevel 1 (let system kill it in runlevels 0 and 6)
-DEB_UPDATE_RCD_PARAMS = start 50 2 3 4 5 . stop 50 1 .
+DEB_UPDATE_RCD_PARAMS = start 50 2 3 4 5 . stop 50 0 1 6 .
+DEB_DH_INSTALL_ARGS = --list-missing
 
 # Tighten security - more info at http://wiki.debian.org/Hardening
 CFLAGS += $(HARDENING_CFLAGS)
 LDFLAGS += $(HARDENING_LDFLAGS)
+CPPFLAGS += -D_IPP_PRIVATE_STRUCTURES
 
 DEB_CONFIGURE_EXTRA_FLAGS := \
 	--with-shadow 				\
+	--prefix=/usr 				\
+	--with-uams-path=/usr/lib/netatalk	\
 	--enable-tcp-wrappers			\
-	--enable-overwrite			\
+	--enable-timelord --enable-overwrite	\
 	--with-pkgconfdir=/etc/netatalk		\
-	--enable-krbV-uam			\
+	--enable-krb4-uam --enable-krbV-uam	\
+	--with-cnid-dbd-txn			\
 	--with-libgcrypt-dir			\
 	--with-cracklib=/var/cache/cracklib/cracklib_dict	\
-	--enable-zeroconf			\
+	--disable-srvloc --enable-zeroconf	\
+	--enable-ddp				\
 	--with-init-style=debian		\
-        --with-libevent-header=/usr/include/event2      \
-        --with-libevent-lib=/usr/lib/$(DEB_HOST_MULTIARCH)
+	--localstatedir=/var/lib		\
+	--enable-debian
 
 DEB_INSTALL_EXAMPLES_netatalk = debian/examples/*
 
@@ -77,6 +83,12 @@ install/netatalk::
 clean::
 	rm -f debian/netatalk.init
 
+# install the afppasswd utility (only available for SSL builds)
+install/netatalk::
+	if [ -f "bin/afppasswd/afppasswd" ]; then \
+	  mkdir -p $(CURDIR)/debian/netatalk/usr/bin && cp -ax $(CURDIR)/bin/afppasswd/afppasswd debian/netatalk/usr/bin/afppasswd; \
+	fi
+
 # Rename files w/ manpage references to avoid namespace conflicts
 #  * uniconv → netatalk-uniconv
 #  * install netatalk-uniconv as system binary
@@ -87,20 +99,17 @@ binary-post-install/netatalk::
 	perl -p -e 's/(?<!Title: )(uniconv)\\b/netatalk(?(1)\\-)$$2/g;s/(TH "UNICONV" )"1"/$$1"8"/' <$(man1dir)/uniconv.1 >$(man1dir)/../man8/netatalk-uniconv.8
 	rm $(man1dir)/uniconv.1
 
+# rename the usr/bin/asip-status.pl binary
+binary-post-install/netatalk::
+	mv $(CURDIR)/debian/netatalk/usr/bin/asip-status.pl $(CURDIR)/debian/netatalk/usr/bin/asip-status
+
+# Install the example afp.conf configuration file
+binary-post-install/netatalk::
+	cp -ax debian/afp.conf debian/netatalk/etc/netatalk/afp.conf
+
 # Adjust PAM modules and UAMs loaded by default, depending on ssl support
 binary-post-install/netatalk::
-	perl -i -pe 's/^#AFPD_UAMLIST=.*/#AFPD_UAMLIST="-U $(uamlist)"/' debian/netatalk/etc/default/netatalk
-	perl -i -pe 's/^AFPD_UAMLIST=.*/AFPD_UAMLIST="-U $(uamlist)"/' debian/netatalk/etc/init.d/netatalk
-
-# Remove unnecessary files
-binary-post-install/netatalk::
-	rm debian/netatalk/usr/bin/netatalk-config
-	rm debian/netatalk/usr/lib/libatalk.a
-	rm debian/netatalk/usr/lib/libatalk.la
-	rm debian/netatalk/usr/share/man/man1/afppasswd.1
-	rm -r debian/netatalk/usr/include
-	rm -r debian/netatalk/usr/share/aclocal
-	rm debian/netatalk/usr/lib/netatalk/*.la
+	perl -i -pe 's/^uam list =.*/uam list = $(uamlist)/' debian/netatalk/etc/netatalk/afp.conf
 
 # Create patch to get in sync with upstream CVS
 get-orig-vcs: patchfile = 000_cvs_$(shell date '+%Y%m%d').patch
@@ -124,7 +133,6 @@ get-orig-vcs: get-orig-source
 CDBS_BUILD_DEPENDS += , libdb-dev, libwrap0-dev, libpam0g-dev, libcups2-dev, libkrb5-dev, libltdl3-dev
 CDBS_BUILD_DEPENDS += , libgcrypt11-dev, libcrack2-dev
 CDBS_BUILD_DEPENDS += , libavahi-client-dev, libldap2-dev, libacl1-dev
-CDBS_BUILD_DEPENDS += , libevent-dev
 ifneq (,$(findstring openssl,$(DEB_BUILD_OPTIONS)))
 CDBS_BUILD_DEPENDS += , $(openssl_build_depends)
 endif
@@ -142,6 +150,6 @@ CDBS_BUILD_DEPENDS += , d-shlibs, hardening-includes
 #  * quota needed by daemon afpd
 #  * db4.2-util needed by example script netatalk_update.sh for upgrades
 #    from 2.0.4~beta2-4 and earlier: can be dropped after Squeeze+1
-CDBS_DEPENDS = netbase, libpam-modules, libevent-2.0-5
+CDBS_DEPENDS = netbase, libpam-modules
 CDBS_RECOMMENDS = lsof, rc, db-util, procps, cracklib-runtime, libpam-cracklib, avahi-daemon
 CDBS_SUGGESTS = texlive-base-bin, groff, quota, db4.2-util

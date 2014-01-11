@@ -52,9 +52,12 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 subdir = man/man8
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
+	$(srcdir)/afpd.8.in $(srcdir)/cnid_dbd.8.in \
+	$(srcdir)/cnid_metad.8.in $(srcdir)/netatalk.8.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
+	$(top_srcdir)/macros/ax_pthread.m4 \
 	$(top_srcdir)/macros/cnid-backend.m4 \
 	$(top_srcdir)/macros/config-checks.m4 \
 	$(top_srcdir)/macros/db3-check.m4 \
@@ -82,7 +85,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = afpd.8 cnid_dbd.8 cnid_metad.8 netatalk.8
 CONFIG_CLEAN_VPATH_FILES =
 AM_V_GEN = $(am__v_GEN_@AM_V@)
 am__v_GEN_ = $(am__v_GEN_@AM_DEFAULT_V@)
@@ -151,17 +154,24 @@ BDB_PATH = @BDB_PATH@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
-COMPILE_64BIT_KMODULE = @COMPILE_64BIT_KMODULE@
-COMPILE_KERNEL_GCC = @COMPILE_KERNEL_GCC@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CRYPT_LIBS = @CRYPT_LIBS@
 CYGPATH_W = @CYGPATH_W@
+DBUS_CFLAGS = @DBUS_CFLAGS@
+DBUS_GLIB_CFLAGS = @DBUS_GLIB_CFLAGS@
+DBUS_GLIB_LIBS = @DBUS_GLIB_LIBS@
+DBUS_GTHREAD_CFLAGS = @DBUS_GTHREAD_CFLAGS@
+DBUS_GTHREAD_LIBS = @DBUS_GTHREAD_LIBS@
+DBUS_LIBS = @DBUS_LIBS@
+DBUS_SYS_DIR = @DBUS_SYS_DIR@
 DEFAULT_CNID_SCHEME = @DEFAULT_CNID_SCHEME@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLTOOL = @DLLTOOL@
+DOCBOOK_ROOT = @DOCBOOK_ROOT@
 DSYMUTIL = @DSYMUTIL@
+DTRACE_LIBS = @DTRACE_LIBS@
 DUMPBIN = @DUMPBIN@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
@@ -175,13 +185,12 @@ GSSAPI_LDFLAGS = @GSSAPI_LDFLAGS@
 GSSAPI_LIBS = @GSSAPI_LIBS@
 ICONV_CFLAGS = @ICONV_CFLAGS@
 ICONV_LIBS = @ICONV_LIBS@
+INIT_DIR = @INIT_DIR@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-KCFLAGS = @KCFLAGS@
-KLDFLAGS = @KLDFLAGS@
 KRB5_CFLAGS = @KRB5_CFLAGS@
 KRB5_CONFIG = @KRB5_CONFIG@
 KRB5_LIBS = @KRB5_LIBS@
@@ -235,11 +244,14 @@ PAM_DIRECTIVE = @PAM_DIRECTIVE@
 PAM_LIBS = @PAM_LIBS@
 PAM_PASSWORD = @PAM_PASSWORD@
 PAM_SESSION = @PAM_SESSION@
+PATH_NETATALK_LOCK = @PATH_NETATALK_LOCK@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
 PKGCONFDIR = @PKGCONFDIR@
 PKG_CONFIG = @PKG_CONFIG@
 PS = @PS@
+PTHREAD_CC = @PTHREAD_CC@
+PTHREAD_CFLAGS = @PTHREAD_CFLAGS@
 PTHREAD_LIBS = @PTHREAD_LIBS@
 QUOTA_LIBS = @QUOTA_LIBS@
 RANLIB = @RANLIB@
@@ -250,9 +262,13 @@ SHELL = @SHELL@
 SSL_CFLAGS = @SSL_CFLAGS@
 SSL_LIBS = @SSL_LIBS@
 STRIP = @STRIP@
+TDB_CFLAGS = @TDB_CFLAGS@
+TDB_LIBS = @TDB_LIBS@
 UAMS_PATH = @UAMS_PATH@
 VERSION = @VERSION@
 WRAP_LIBS = @WRAP_LIBS@
+XSLTPROC = @XSLTPROC@
+XSLTPROC_FLAGS = @XSLTPROC_FLAGS@
 ZEROCONF_CFLAGS = @ZEROCONF_CFLAGS@
 ZEROCONF_LIBS = @ZEROCONF_LIBS@
 abs_builddir = @abs_builddir@
@@ -267,6 +283,8 @@ am__leading_dot = @am__leading_dot@
 am__quote = @am__quote@
 am__tar = @am__tar@
 am__untar = @am__untar@
+atalk_cv_have_dtrace = @atalk_cv_have_dtrace@
+ax_pthread_config = @ax_pthread_config@
 bindir = @bindir@
 build = @build@
 build_alias = @build_alias@
@@ -314,17 +332,16 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-pkgconfdir = @PKGCONFDIR@
-SUFFIXES = .tmpl .
-GENERATED_MANS = afpd.8 cnid_dbd.8 cnid_metad.8 netatalk.8
-TEMPLATE_FILES = afpd.8.tmpl cnid_dbd.8.tmpl cnid_metad.8.tmpl netatalk.8.tmpl
-man_MANS = $(GENERATED_MANS)
-CLEANFILES = $(GENERATED_MANS)
-EXTRA_DIST = $(TEMPLATE_FILES)
+man_MANS = \
+	afpd.8 \
+	cnid_dbd.8 \
+	cnid_metad.8 \
+	netatalk.8
+
+DISTCLEANFILES = $(man_MANS)
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .tmpl .
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -355,6 +372,14 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
+afpd.8: $(top_builddir)/config.status $(srcdir)/afpd.8.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+cnid_dbd.8: $(top_builddir)/config.status $(srcdir)/cnid_dbd.8.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+cnid_metad.8: $(top_builddir)/config.status $(srcdir)/cnid_metad.8.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+netatalk.8: $(top_builddir)/config.status $(srcdir)/netatalk.8.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -483,11 +508,11 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
-	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
+	-test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
@@ -574,16 +599,6 @@ uninstall-man: uninstall-man8
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	uninstall uninstall-am uninstall-man uninstall-man8
 
-
-.tmpl:
-	sed -e s@:SBINDIR:@${sbindir}@ \
-	    -e s@:BINDIR:@${bindir}@ \
-	    -e s@:ETCDIR:@${pkgconfdir}@ \
-	    -e s@:LIBDIR:@${libdir}@ \
-	    -e s@:LIBEXECDIR:@${libexecdir}@ \
-	    -e "s@:STATEDIR:@${localstatedir}@g" \
-	    -e s@:NETATALK_VERSION:@${NETATALK_VERSION}@ \
-	    <$< >$@
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

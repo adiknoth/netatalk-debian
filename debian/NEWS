@@ -1,3 +1,12 @@
+netatalk (3.0.3-1) experimental; urgency=low
+
+  * This version of the package comes with many new things. I re-introduced
+    the split-out library package because apparently, Netatalk 3.0 requires
+    a working shared-library setup for libatalk to compile properly. I used
+    the chance to do some further janitor work in debian/.
+
+ -- Martin Loschwitz <madkiss@debian.org>  Wed, 10 Apr 2013 13:29:51 +0200
+
 netatalk (2.1.2-3) unstable; urgency=low
 
   * From now on, default Berkeley DB (currently version 4.8) is used.

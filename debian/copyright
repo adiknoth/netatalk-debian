@@ -176,7 +176,7 @@ License: other-BSD-UC
 Files: etc/papd/lp.c
  etc/papd/printcap.c
 Copyright: 1983, Regents of the University of California
-Copyright: 1990,1994, Regents of The University of Michigan
+  1990,1994, Regents of The University of Michigan
 License: BSD-4-clause
 
 Files: include/atalk/ftw.*

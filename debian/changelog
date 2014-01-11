@@ -1,3 +1,24 @@
+netatalk (3.0.6-1) experimental; urgency=low
+
+  [ Tony Hoyle ]
+  * New upstream version (3.0.6)
+
+ -- Tony Hoyle <tony@hoyle.me.uk>  Sat, 11 Jan 2014 15:22:00 +0000
+
+netatalk (3.0.3-1) experimental; urgency=low
+
+  [ Martin Loschwitz ]
+  * New upstream version (3.0.3)
+  * Added the libatalk4 package
+
+ -- Martin Loschwitz <madkiss@debian.org>  Wed, 10 Apr 2013 13:29:51 +0200
+
+netatalk (2.2.2-1ubuntu1) quantal; urgency=low
+
+  * Define a variable to allow access to CUPS structure fields. Fixes FTBFS.
+
+ -- Ilya Barygin <randomaction@ubuntu.com>  Fri, 05 Oct 2012 22:30:18 +0400
+
 netatalk (2.2.2-1) unstable; urgency=low
 
   * New upstream release.

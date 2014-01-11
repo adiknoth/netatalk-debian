@@ -49,11 +49,11 @@ struct perm {
     gid_t gid;
 };
 
-typedef int (*rf_loop)(struct dirent *, char *, void *, int , mode_t );
+typedef int (*rf_loop)(const struct vol *, struct dirent *, char *, void *, int);
 
 /* ----------------------------- */
 static int 
-for_each_adouble(const char *from, const char *name, rf_loop fn, void *data, int flag, mode_t v_umask)
+for_each_adouble(const char *from, const char *name, rf_loop fn, const struct vol *vol, void *data, int flag)
 {
     char            buf[ MAXPATHLEN + 1];
     char            *m;
@@ -79,7 +79,7 @@ for_each_adouble(const char *from, const char *name, rf_loop fn, void *data, int
         }
         
         strlcat(buf, de->d_name, sizeof(buf));
-        if (fn && (ret = fn(de, buf, data, flag, v_umask))) {
+        if (fn && (ret = fn(vol, de, buf, data, flag))) {
            closedir(dp);
            return ret;
         }
@@ -127,7 +127,7 @@ static int RF_renamedir_adouble(VFS_FUNC_ARGS_RENAMEDIR)
 }
 
 /* ----------------- */
-static int deletecurdir_adouble_loop(struct dirent *de, char *name, void *data _U_, int flag _U_, mode_t v_umask)
+static int deletecurdir_adouble_loop(const struct vol *vol, struct dirent *de, char *name, void *data _U_, int flag _U_)
 {
     struct stat st;
     int         err;
@@ -150,34 +150,33 @@ static int RF_deletecurdir_adouble(VFS_FUNC_ARGS_DELETECURDIR)
 
     /* delete stray .AppleDouble files. this happens to get .Parent files
        as well. */
-    if ((err = for_each_adouble("deletecurdir", ".AppleDouble", deletecurdir_adouble_loop, NULL, 1, vol->v_umask))) 
+    if ((err = for_each_adouble("deletecurdir", ".AppleDouble", deletecurdir_adouble_loop, vol, NULL, 1))) 
         return err;
     return netatalk_rmdir(-1, ".AppleDouble" );
 }
 
 /* ----------------- */
-static int adouble_setfilmode(const char * name, mode_t mode, struct stat *st, mode_t v_umask)
+static int adouble_setfilmode(const struct vol *vol, const char *name, mode_t mode, struct stat *st)
 {
-    return setfilmode(name, ad_hf_mode(mode), st, v_umask);
+    return setfilmode(vol, name, ad_hf_mode(mode), st);
 }
 
 static int RF_setfilmode_adouble(VFS_FUNC_ARGS_SETFILEMODE)
 {
-    return adouble_setfilmode(vol->ad_path(name, ADFLAGS_HF ), mode, st, vol->v_umask);
+    return adouble_setfilmode(vol, vol->ad_path(name, ADFLAGS_HF ), mode, st);
 }
 
 /* ----------------- */
 static int RF_setdirunixmode_adouble(VFS_FUNC_ARGS_SETDIRUNIXMODE)
 {
     const char *adouble = vol->ad_path(name, ADFLAGS_DIR );
-    int  dropbox = vol->v_flags;
 
     if (dir_rx_set(mode)) {
         if (chmod_acl(ad_dir(adouble), (DIRBITS | mode) & ~vol->v_umask) < 0 ) 
             return -1;
     }
 
-    if (adouble_setfilmode(vol->ad_path(name, ADFLAGS_DIR ), mode, st, vol->v_umask) < 0) 
+    if (adouble_setfilmode(vol, vol->ad_path(name, ADFLAGS_DIR ), mode, st) < 0) 
         return -1;
 
     if (!dir_rx_set(mode)) {
@@ -188,18 +187,18 @@ static int RF_setdirunixmode_adouble(VFS_FUNC_ARGS_SETDIRUNIXMODE)
 }
 
 /* ----------------- */
-static int setdirmode_adouble_loop(struct dirent *de _U_, char *name, void *data, int flag, mode_t v_umask)
+static int setdirmode_adouble_loop(const struct vol *vol, struct dirent *de _U_, char *name, void *data, int flag)
 {
     mode_t hf_mode = *(mode_t *)data;
     struct stat st;
 
-    if ( stat( name, &st ) < 0 ) {
+    if (ostat(name, &st, vol_syml_opt(vol)) < 0 ) {
         if (flag)
             return 0;
         LOG(log_error, logtype_afpd, "setdirmode: stat %s: %s", name, strerror(errno) );
     }
     else if (!S_ISDIR(st.st_mode)) {
-        if (setfilmode(name, hf_mode , &st, v_umask) < 0) {
+        if (setfilmode(vol, name, hf_mode, &st) < 0) {
                /* FIXME what do we do then? */
         }
     }
@@ -208,7 +207,6 @@ static int setdirmode_adouble_loop(struct dirent *de _U_, char *name, void *data
 
 static int RF_setdirmode_adouble(VFS_FUNC_ARGS_SETDIRMODE)
 {
-    int   dropbox = vol->v_flags;
     mode_t hf_mode = ad_hf_mode(mode);
     const char  *adouble = vol->ad_path(name, ADFLAGS_DIR );
     const char  *adouble_p = ad_dir(adouble);
@@ -218,7 +216,7 @@ static int RF_setdirmode_adouble(VFS_FUNC_ARGS_SETDIRMODE)
             return -1;
     }
 
-    if (for_each_adouble("setdirmode", adouble_p, setdirmode_adouble_loop, &hf_mode, 0, vol->v_umask))
+    if (for_each_adouble("setdirmode", adouble_p, setdirmode_adouble_loop, vol, &hf_mode, 0))
         return -1;
 
     if (!dir_rx_set(mode)) {
@@ -257,7 +255,7 @@ static int RF_renamefile_adouble(VFS_FUNC_ARGS_RENAMEFILE)
         if (errno == ENOENT) {
 	        struct adouble    ad;
 
-            if (lstatat(dirfd, adsrc, &st)) /* source has no ressource fork, */
+            if (ostatat(dirfd, adsrc, &st, vol_syml_opt(vol))) /* source has no ressource fork, */
                 return 0;
 
             /* We are here  because :
@@ -350,31 +348,24 @@ EC_CLEANUP:
     EC_EXIT;
 }
 
-#ifdef HAVE_SOLARIS_ACLS
+#ifdef HAVE_NFSV4_ACLS
 static int RF_solaris_acl(VFS_FUNC_ARGS_ACL)
 {
     static char buf[ MAXPATHLEN + 1];
     struct stat st;
     int len;
 
-    if ((stat(path, &st)) != 0)
-	return -1;
-    if (S_ISDIR(st.st_mode)) {
-	len = snprintf(buf, MAXPATHLEN, "%s/.AppleDouble",path);
-	if (len < 0 || len >=  MAXPATHLEN)
-	    return -1;
-	/* set acl on .AppleDouble dir first */
-	if ((acl(buf, cmd, count, aces)) != 0)
-	    return -1;
-	/* now set ACL on ressource fork */
-	if ((acl(vol->ad_path(path, ADFLAGS_DIR), cmd, count, aces)) != 0)
-	    return -1;
-    } else
-	/* set ACL on ressource fork */
-	if ((acl(vol->ad_path(path, ADFLAGS_HF), cmd, count, aces)) != 0)
-	    return -1;
-
-    return 0;
+    if ((stat(path, &st)) != 0) {
+        if (errno == ENOENT)
+            return AFP_OK;
+        return AFPERR_MISC;
+    }
+    if (!S_ISDIR(st.st_mode)) {
+        /* set ACL on ressource fork */
+        if ((acl(vol->ad_path(path, ADFLAGS_HF), cmd, count, aces)) != 0)
+            return AFPERR_MISC;
+    }
+    return AFP_OK;
 }
 
 static int RF_solaris_remove_acl(VFS_FUNC_ARGS_REMOVE_ACL)
@@ -383,20 +374,15 @@ static int RF_solaris_remove_acl(VFS_FUNC_ARGS_REMOVE_ACL)
     static char buf[ MAXPATHLEN + 1];
     int len;
 
-    if (dir) {
-	len = snprintf(buf, MAXPATHLEN, "%s/.AppleDouble",path);
-	if (len < 0 || len >=  MAXPATHLEN)
-	    return AFPERR_MISC;
-	/* remove ACL from .AppleDouble/.Parent first */
-	if ((ret = remove_acl_vfs(vol->ad_path(path, ADFLAGS_DIR))) != AFP_OK)
-	    return ret;
-	/* now remove from .AppleDouble dir */
-	if ((ret = remove_acl_vfs(buf)) != AFP_OK)
-	    return ret;
-    } else
-	/* remove ACL from ressource fork */
-	if ((ret = remove_acl_vfs(vol->ad_path(path, ADFLAGS_HF))) != AFP_OK)
-	    return ret;
+    if (dir)
+        return AFP_OK;
+
+    /* remove ACL from ressource fork */
+    if ((ret = remove_acl_vfs(vol->ad_path(path, ADFLAGS_HF))) != AFP_OK) {
+        if (errno == ENOENT)
+            return AFP_OK;
+        return ret;
+    }
 
     return AFP_OK;
 }
@@ -406,52 +392,35 @@ static int RF_solaris_remove_acl(VFS_FUNC_ARGS_REMOVE_ACL)
 static int RF_posix_acl(VFS_FUNC_ARGS_ACL)
 {
     EC_INIT;
-    static char buf[ MAXPATHLEN + 1];
     struct stat st;
-    int len;
 
-    if (S_ISDIR(st.st_mode)) {
-        len = snprintf(buf, MAXPATHLEN, "%s/.AppleDouble",path);
-        if (len < 0 || len >=  MAXPATHLEN)
-            EC_FAIL;
-        /* set acl on .AppleDouble dir first */
-        EC_ZERO_LOG(acl_set_file(buf, type, acl));
+    if (stat(path, &st) == -1)
+        EC_FAIL;
 
-        if (type == ACL_TYPE_ACCESS)
-            /* set ACL on ressource fork (".Parent") too */
-            EC_ZERO_LOG(acl_set_file(vol->ad_path(path, ADFLAGS_DIR), type, acl));
-    } else {
+    if (!S_ISDIR(st.st_mode)) {
         /* set ACL on ressource fork */
-        EC_ZERO_LOG(acl_set_file(vol->ad_path(path, ADFLAGS_HF), type, acl));
+        EC_ZERO_ERR( acl_set_file(vol->ad_path(path, ADFLAGS_HF), type, acl), AFPERR_MISC );
     }
     
 EC_CLEANUP:
-    if (ret != 0)
-        return AFPERR_MISC;
-    return AFP_OK;
+    if (errno == ENOENT)
+        EC_STATUS(AFP_OK);
+    EC_EXIT;
 }
 
 static int RF_posix_remove_acl(VFS_FUNC_ARGS_REMOVE_ACL)
 {
     EC_INIT;
-    static char buf[ MAXPATHLEN + 1];
-    int len;
 
-    if (dir) {
-        len = snprintf(buf, MAXPATHLEN, "%s/.AppleDouble",path);
-        if (len < 0 || len >=  MAXPATHLEN)
-            return AFPERR_MISC;
-        /* remove ACL from .AppleDouble/.Parent first */
-        EC_ZERO_LOG_ERR(remove_acl_vfs(vol->ad_path(path, ADFLAGS_DIR)), AFPERR_MISC);
+    if (dir)
+        EC_EXIT_STATUS(AFP_OK);
 
-        /* now remove from .AppleDouble dir */
-        EC_ZERO_LOG_ERR(remove_acl_vfs(buf), AFPERR_MISC);
-    } else {
-        /* remove ACL from ressource fork */
-        EC_ZERO_LOG_ERR(remove_acl_vfs(vol->ad_path(path, ADFLAGS_HF)), AFPERR_MISC);
-    }
+    /* remove ACL from ressource fork */
+    EC_ZERO_ERR( remove_acl_vfs(vol->ad_path(path, ADFLAGS_HF)), AFPERR_MISC );
 
 EC_CLEANUP:
+    if (errno == ENOENT)
+        EC_STATUS(AFP_OK);
     EC_EXIT;
 }
 #endif
@@ -487,7 +456,7 @@ static int RF_renamedir_ea(VFS_FUNC_ARGS_RENAMEDIR)
 }
 
 /* Returns 1 if the entry is NOT an ._ file */
-static int deletecurdir_ea_osx_chkifempty_loop(struct dirent *de, char *name, void *data _U_, int flag _U_, mode_t v_umask _U_)
+static int deletecurdir_ea_osx_chkifempty_loop(const struct vol *vol, struct dirent *de, char *name, void *data _U_, int flag _U_)
 {
     if (de->d_name[0] != '.' || de->d_name[0] == '_')
         return 1;
@@ -495,12 +464,18 @@ static int deletecurdir_ea_osx_chkifempty_loop(struct dirent *de, char *name, vo
     return 0;
 }
 
-static int deletecurdir_ea_osx_loop(struct dirent *de, char *name, void *data _U_, int flag _U_, mode_t v_umask _U_)
+static int deletecurdir_ea_osx_loop(const struct vol *vol, struct dirent *de, char *name, void *data _U_, int flag _U_)
 {
     int ret;
-    
-    if ((ret = netatalk_unlink(name)) != 0)
-        return ret;
+    struct stat sb;
+
+    if (strncmp(name, "._", strlen("._")) == 0) {
+        if (lstat(name, &sb) != 0)
+            return -1;
+        if (S_ISREG(sb.st_mode))
+            if ((ret = netatalk_unlink(name)) != 0)
+                return ret;
+    }
 
     return 0;
 }
@@ -511,20 +486,9 @@ static int RF_deletecurdir_ea(VFS_FUNC_ARGS_DELETECURDIR)
 #ifndef HAVE_EAFD
     int err;
     /* delete stray ._AppleDouble files */
-
-    /* first check if there's really no other file besides files starting with ._ */
-    if ((err = for_each_adouble("deletecurdir_ea_osx", ".",
-                                deletecurdir_ea_osx_chkifempty_loop,
-                                NULL, 0, 0)) != 0) {
-        if (err == 1)
-            return AFPERR_DIRNEMPT;
-        return AFPERR_MISC;
-    }
-
-    /* Now delete orphaned ._ files */
     if ((err = for_each_adouble("deletecurdir_ea_osx", ".",
                                 deletecurdir_ea_osx_loop,
-                                NULL, 0, 0)) != 0)
+                                vol, NULL, 0)) != 0)
         return err;
 
 #endif
@@ -542,7 +506,7 @@ static int RF_setdirunixmode_ea(VFS_FUNC_ARGS_SETDIRUNIXMODE)
 static int RF_setfilmode_ea(VFS_FUNC_ARGS_SETFILEMODE)
 {
 #ifndef HAVE_EAFD
-    return adouble_setfilmode(vol->ad_path(name, ADFLAGS_HF ), mode, st, vol->v_umask);
+    return adouble_setfilmode(vol, vol->ad_path(name, ADFLAGS_HF ), mode, st);
 #endif
     return 0;
 }
@@ -643,7 +607,7 @@ static int RF_renamefile_ea(VFS_FUNC_ARGS_RENAMEFILE)
         struct stat st;
 
         err = errno;
-        if (errno == ENOENT && lstatat(dirfd, adsrc, &st)) /* source has no ressource fork, */
+        if (errno == ENOENT && ostatat(dirfd, adsrc, &st, vol_syml_opt(vol))) /* source has no ressource fork, */
             return 0;
         errno = err;
         return -1;
@@ -827,7 +791,7 @@ static struct vfs_ops netatalk_ea_sys = {
  * Tertiary VFS modules for ACLs
  */
 
-#ifdef HAVE_SOLARIS_ACLS
+#ifdef HAVE_NFSV4_ACLS
 static struct vfs_ops netatalk_solaris_acl_adouble = {
     /* validupath:        */ NULL,
     /* rf_chown:          */ NULL,
@@ -895,7 +859,7 @@ void initvol_vfs(struct vol *vol)
     }
 
     /* ACLs */
-#ifdef HAVE_SOLARIS_ACLS
+#ifdef HAVE_NFSV4_ACLS
     vol->vfs_modules[2] = &netatalk_solaris_acl_adouble;
 #endif
 #ifdef HAVE_POSIX_ACLS

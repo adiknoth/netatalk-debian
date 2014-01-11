@@ -59,6 +59,7 @@ subdir = libatalk/util
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
+	$(top_srcdir)/macros/ax_pthread.m4 \
 	$(top_srcdir)/macros/cnid-backend.m4 \
 	$(top_srcdir)/macros/config-checks.m4 \
 	$(top_srcdir)/macros/db3-check.m4 \
@@ -91,18 +92,18 @@ CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libutil_la_LIBADD =
 am__libutil_la_SOURCES_DIST = bprint.c cnid.c fault.c getiface.c \
-	locking.c logger.c module.c netatalk_conf.c queue.c \
+	gettok.c locking.c logger.c module.c netatalk_conf.c queue.c \
 	server_child.c server_ipc.c server_lock.c socket.c \
 	strdicasecmp.c unix.c ftw.c
 @HAVE_ATFUNCS_TRUE@am__objects_1 = libutil_la-ftw.lo
 am_libutil_la_OBJECTS = libutil_la-bprint.lo libutil_la-cnid.lo \
 	libutil_la-fault.lo libutil_la-getiface.lo \
-	libutil_la-locking.lo libutil_la-logger.lo \
-	libutil_la-module.lo libutil_la-netatalk_conf.lo \
-	libutil_la-queue.lo libutil_la-server_child.lo \
-	libutil_la-server_ipc.lo libutil_la-server_lock.lo \
-	libutil_la-socket.lo libutil_la-strdicasecmp.lo \
-	libutil_la-unix.lo $(am__objects_1)
+	libutil_la-gettok.lo libutil_la-locking.lo \
+	libutil_la-logger.lo libutil_la-module.lo \
+	libutil_la-netatalk_conf.lo libutil_la-queue.lo \
+	libutil_la-server_child.lo libutil_la-server_ipc.lo \
+	libutil_la-server_lock.lo libutil_la-socket.lo \
+	libutil_la-strdicasecmp.lo libutil_la-unix.lo $(am__objects_1)
 libutil_la_OBJECTS = $(am_libutil_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -168,17 +169,24 @@ BDB_PATH = @BDB_PATH@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
-COMPILE_64BIT_KMODULE = @COMPILE_64BIT_KMODULE@
-COMPILE_KERNEL_GCC = @COMPILE_KERNEL_GCC@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CRYPT_LIBS = @CRYPT_LIBS@
 CYGPATH_W = @CYGPATH_W@
+DBUS_CFLAGS = @DBUS_CFLAGS@
+DBUS_GLIB_CFLAGS = @DBUS_GLIB_CFLAGS@
+DBUS_GLIB_LIBS = @DBUS_GLIB_LIBS@
+DBUS_GTHREAD_CFLAGS = @DBUS_GTHREAD_CFLAGS@
+DBUS_GTHREAD_LIBS = @DBUS_GTHREAD_LIBS@
+DBUS_LIBS = @DBUS_LIBS@
+DBUS_SYS_DIR = @DBUS_SYS_DIR@
 DEFAULT_CNID_SCHEME = @DEFAULT_CNID_SCHEME@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLTOOL = @DLLTOOL@
+DOCBOOK_ROOT = @DOCBOOK_ROOT@
 DSYMUTIL = @DSYMUTIL@
+DTRACE_LIBS = @DTRACE_LIBS@
 DUMPBIN = @DUMPBIN@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
@@ -192,13 +200,12 @@ GSSAPI_LDFLAGS = @GSSAPI_LDFLAGS@
 GSSAPI_LIBS = @GSSAPI_LIBS@
 ICONV_CFLAGS = @ICONV_CFLAGS@
 ICONV_LIBS = @ICONV_LIBS@
+INIT_DIR = @INIT_DIR@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-KCFLAGS = @KCFLAGS@
-KLDFLAGS = @KLDFLAGS@
 KRB5_CFLAGS = @KRB5_CFLAGS@
 KRB5_CONFIG = @KRB5_CONFIG@
 KRB5_LIBS = @KRB5_LIBS@
@@ -252,11 +259,14 @@ PAM_DIRECTIVE = @PAM_DIRECTIVE@
 PAM_LIBS = @PAM_LIBS@
 PAM_PASSWORD = @PAM_PASSWORD@
 PAM_SESSION = @PAM_SESSION@
+PATH_NETATALK_LOCK = @PATH_NETATALK_LOCK@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
 PKGCONFDIR = @PKGCONFDIR@
 PKG_CONFIG = @PKG_CONFIG@
 PS = @PS@
+PTHREAD_CC = @PTHREAD_CC@
+PTHREAD_CFLAGS = @PTHREAD_CFLAGS@
 PTHREAD_LIBS = @PTHREAD_LIBS@
 QUOTA_LIBS = @QUOTA_LIBS@
 RANLIB = @RANLIB@
@@ -267,9 +277,13 @@ SHELL = @SHELL@
 SSL_CFLAGS = @SSL_CFLAGS@
 SSL_LIBS = @SSL_LIBS@
 STRIP = @STRIP@
+TDB_CFLAGS = @TDB_CFLAGS@
+TDB_LIBS = @TDB_LIBS@
 UAMS_PATH = @UAMS_PATH@
 VERSION = @VERSION@
 WRAP_LIBS = @WRAP_LIBS@
+XSLTPROC = @XSLTPROC@
+XSLTPROC_FLAGS = @XSLTPROC_FLAGS@
 ZEROCONF_CFLAGS = @ZEROCONF_CFLAGS@
 ZEROCONF_LIBS = @ZEROCONF_LIBS@
 abs_builddir = @abs_builddir@
@@ -284,6 +298,8 @@ am__leading_dot = @am__leading_dot@
 am__quote = @am__quote@
 am__tar = @am__tar@
 am__untar = @am__untar@
+atalk_cv_have_dtrace = @atalk_cv_have_dtrace@
+ax_pthread_config = @ax_pthread_config@
 bindir = @bindir@
 build = @build@
 build_alias = @build_alias@
@@ -333,10 +349,10 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 pkgconfdir = @PKGCONFDIR@
 noinst_LTLIBRARIES = libutil.la
-libutil_la_SOURCES = bprint.c cnid.c fault.c getiface.c locking.c \
-	logger.c module.c netatalk_conf.c queue.c server_child.c \
-	server_ipc.c server_lock.c socket.c strdicasecmp.c unix.c \
-	$(am__append_1)
+libutil_la_SOURCES = bprint.c cnid.c fault.c getiface.c gettok.c \
+	locking.c logger.c module.c netatalk_conf.c queue.c \
+	server_child.c server_ipc.c server_lock.c socket.c \
+	strdicasecmp.c unix.c $(am__append_1)
 libutil_la_CFLAGS = \
 	-D_PATH_CONFDIR='"$(pkgconfdir)/"' \
 	-DSERVERTEXT='"$(SERVERTEXT)/"' \
@@ -401,6 +417,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libutil_la-fault.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libutil_la-ftw.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libutil_la-getiface.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libutil_la-gettok.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libutil_la-locking.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libutil_la-logger.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libutil_la-module.Plo@am__quote@
@@ -461,6 +478,13 @@ libutil_la-getiface.lo: getiface.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='getiface.c' object='libutil_la-getiface.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libutil_la_CFLAGS) $(CFLAGS) -c -o libutil_la-getiface.lo `test -f 'getiface.c' || echo '$(srcdir)/'`getiface.c
+
+libutil_la-gettok.lo: gettok.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libutil_la_CFLAGS) $(CFLAGS) -MT libutil_la-gettok.lo -MD -MP -MF $(DEPDIR)/libutil_la-gettok.Tpo -c -o libutil_la-gettok.lo `test -f 'gettok.c' || echo '$(srcdir)/'`gettok.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libutil_la-gettok.Tpo $(DEPDIR)/libutil_la-gettok.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='gettok.c' object='libutil_la-gettok.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libutil_la_CFLAGS) $(CFLAGS) -c -o libutil_la-gettok.lo `test -f 'gettok.c' || echo '$(srcdir)/'`gettok.c
 
 libutil_la-locking.lo: locking.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libutil_la_CFLAGS) $(CFLAGS) -MT libutil_la-locking.lo -MD -MP -MF $(DEPDIR)/libutil_la-locking.Tpo -c -o libutil_la-locking.lo `test -f 'locking.c' || echo '$(srcdir)/'`locking.c

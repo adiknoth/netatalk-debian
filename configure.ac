@@ -74,17 +74,15 @@ AC_CHECK_MEMBERS(struct tm.tm_gmtoff,,, [#include <time.h>])
 
 dnl these tests have been comfirmed to be needed in 2011
 AC_CHECK_FUNCS(backtrace_symbols dirfd getusershell pread pwrite pselect)
-AC_CHECK_FUNCS(setlinebuf strlcat strlcpy strnlen)
+AC_CHECK_FUNCS(setlinebuf strlcat strlcpy strnlen mempcpy)
 AC_CHECK_FUNCS(mmap utime getpagesize) dnl needed by tbd
 
 dnl search for necessary libraries
 AC_SEARCH_LIBS(gethostbyname, nsl)
 AC_SEARCH_LIBS(connect, socket)
-AC_SEARCH_LIBS(pthread_sigmask, pthread,,[AC_MSG_ERROR([missing pthread_sigmask])])
-if test x"$ac_cv_search_pthread_sigmask" != x"none required" ; then
-   PTHREAD_LIBS=$ac_cv_search_pthread_sigmask
-fi
-AC_SUBST(PTHREAD_LIBS)
+AC_CHECK_FUNCS(getifaddrs) dnl comes after gethostbyname and connect so it picks up the libs
+
+AX_PTHREAD(, [AC_MSG_ERROR([missing pthread_sigmask])])
 
 AC_DEFINE(OPEN_NOFOLLOW_ERRNO, ELOOP, errno returned by open with O_NOFOLLOW)
 
@@ -184,12 +182,28 @@ AC_NETATALK_SENDFILE
 dnl Check whether bundled libevent shall not be used
 AC_NETATALK_LIBEVENT
 
+dnl Check whether bundled tdb shall be used
+AC_NETATALK_TDB
+
+dnl libatalk API checks
+AC_DEVELOPER
+
+dnl Check for dtrace
+AC_NETATALK_DTRACE
+
+dnl Check for dbus-glib, for AFP stats on dbus
+AC_NETATALK_DBUS_GLIB
+
 dnl FHS stuff has to be done last because it overrides other defaults
 AC_NETATALK_FHS
 
-AC_DEVELOPER
+dnl netatalk lockfile path, must come after AC_NETATALK_FHS
+AC_NETATALK_LOCKFILE
 
-CFLAGS="-I\$(top_srcdir)/include -I\$(top_srcdir)/sys $CFLAGS"
+dnl Check for Docbook and build documentation if found
+AX_CHECK_DOCBOOK
+
+CPPFLAGS="-I\$(top_srcdir)/include -I\$(top_builddir)/include $CPPFLAGS"
 UAMS_PATH="${uams_path}"
 
 AC_SUBST(LIBS)
@@ -199,7 +213,7 @@ AC_SUBST(UAMS_PATH)
 AM_CONDITIONAL(SOLARIS_MODULE, test x$solaris_module = xyes)
 AM_CONDITIONAL(HAVE_LIBGCRYPT, test x$neta_cv_have_libgcrypt = xyes)
 AM_CONDITIONAL(HAVE_OPENSSL, test x$neta_cv_have_openssl = xyes)
-AM_CONDITIONAL(HAVE_ACLS, test x"$with_acl_support" = x"yes")
+AM_CONDITIONAL(HAVE_ACLS, test x"$ac_cv_have_acls" = x"yes")
 AM_CONDITIONAL(HAVE_LDAP, test x"$netatalk_cv_ldap" = x"yes")
 AM_CONDITIONAL(USE_DHX, test x$neta_cv_compile_dhx = xyes)
 AM_CONDITIONAL(USE_DHX2, test x$neta_cv_compile_dhx2 = xyes)
@@ -240,6 +254,14 @@ AC_OUTPUT([Makefile
 	distrib/initscripts/Makefile
 	distrib/m4/Makefile
 	doc/Makefile
+    doc/html.xsl
+    doc/man.xsl
+    doc/manual/Makefile
+    doc/manual/manual.xml
+    doc/manpages/Makefile
+    doc/manpages/man1/Makefile
+    doc/manpages/man5/Makefile
+    doc/manpages/man8/Makefile
 	etc/Makefile
 	etc/afpd/Makefile
 	etc/cnid_dbd/Makefile
@@ -267,8 +289,26 @@ AC_OUTPUT([Makefile
 	macros/Makefile
 	man/Makefile
 	man/man1/Makefile
+    man/man1/ad.1
+    man/man1/afpldaptest.1
+    man/man1/afppasswd.1
+    man/man1/afpstats.1
+    man/man1/apple_dump.1
+    man/man1/asip-status.pl.1
+    man/man1/dbd.1
+    man/man1/macusers.1
+    man/man1/netatalk-config.1
+    man/man1/uniconv.1
 	man/man5/Makefile
+    man/man5/afp.conf.5
+    man/man5/afp_signature.conf.5
+    man/man5/afp_voluuid.conf.5
+    man/man5/extmap.conf.5
 	man/man8/Makefile
+    man/man8/afpd.8
+    man/man8/cnid_dbd.8
+    man/man8/cnid_metad.8
+    man/man8/netatalk.8
 	test/Makefile
 	test/afpd/Makefile
 	],

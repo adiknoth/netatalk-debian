@@ -1,0 +1,15 @@
+--- a/man/man8/psf.8.tmpl
++++ b/man/man8/psf.8.tmpl
+@@ -81,9 +81,9 @@
+ .\}
+ .nf
+ laser|lp|LaserWriter Plus on AppleTalk:\e
+-    :sd=/usr/spool/lpd/laser:\e
+-    :lp=/usr/spool/lpd/laser/null:\e
+-    :lf=/var/adm/lpd\-errs:pw#80:hl:\e
++    :sd=/var/spool/lpd/laser:\e
++    :lp=/var/spool/lpd/laser/null:\e
++    :lf=/var/log/lpd\-errs:pw#80:hl:\e
+     :of=:LIBEXECDIR:/ofpap:\e
+     :if=:LIBEXECDIR:/ifpaprev:\e
+     :tf=:LIBEXECDIR:/tfpaprev:\e

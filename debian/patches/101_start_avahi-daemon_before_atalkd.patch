@@ -1,0 +1,14 @@
+Description: Start avahi-daemon (if available) before atalkd
+Author: Jonas Smedegaard <dr@jones.dk>
+Last-Update: 2012-03-20
+
+--- a/distrib/initscripts/rc.atalk.debian.tmpl
++++ b/distrib/initscripts/rc.atalk.debian.tmpl
+@@ -2,6 +2,7 @@
+ ### BEGIN INIT INFO
+ # Provides:          netatalk
+ # Required-Start:    $remote_fs $syslog
++# Should-Start:      avahi-daemon
+ # Required-Stop:     $remote_fs $syslog
+ # Default-Start:     2 3 4 5
+ # Default-Stop:      1

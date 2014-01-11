@@ -651,8 +651,31 @@ HAVE_LIBGCRYPT_TRUE
 SOLARIS_MODULE_FALSE
 SOLARIS_MODULE_TRUE
 UAMS_PATH
+DOCBOOK_ROOT
+XSLTPROC_FLAGS
+HAVE_XSLTPROC_FALSE
+HAVE_XSLTPROC_TRUE
+XSLTPROC
+PATH_NETATALK_LOCK
+DBUS_SYS_DIR
+HAVE_DBUS_GLIB_FALSE
+HAVE_DBUS_GLIB_TRUE
+DBUS_GTHREAD_LIBS
+DBUS_GTHREAD_CFLAGS
+DBUS_GLIB_LIBS
+DBUS_GLIB_CFLAGS
+DBUS_LIBS
+DBUS_CFLAGS
+WITH_DTRACE_FALSE
+WITH_DTRACE_TRUE
+DTRACE_LIBS
+atalk_cv_have_dtrace
 DEVELOPER_FALSE
 DEVELOPER_TRUE
+USE_BUILTIN_TDB_FALSE
+USE_BUILTIN_TDB_TRUE
+TDB_LIBS
+TDB_CFLAGS
 USE_BUILTIN_LIBEVENT_FALSE
 USE_BUILTIN_LIBEVENT_TRUE
 LIBEVENT_LDFLAGS
@@ -681,6 +704,7 @@ SSL_CFLAGS
 LIBGCRYPT_LIBS
 LIBGCRYPT_CFLAGS
 LIBGCRYPT_CONFIG
+INIT_DIR
 USE_UNDEF_FALSE
 USE_UNDEF_TRUE
 USE_SYSTEMD_FALSE
@@ -733,11 +757,10 @@ AFS_LIBS
 RUN_LDCONFIG_FALSE
 RUN_LDCONFIG_TRUE
 NETA_LDCONFIG
-KLDFLAGS
-KCFLAGS
-COMPILE_64BIT_KMODULE
-COMPILE_KERNEL_GCC
+PTHREAD_CFLAGS
 PTHREAD_LIBS
+PTHREAD_CC
+ax_pthread_config
 sys_symbol_underscore
 LIBADD_DL
 LT_DLPREOPEN
@@ -893,9 +916,11 @@ enable_quota
 enable_zeroconf
 enable_tcp_wrappers
 with_pam
+with_pam_confdir
 with_shadow
 enable_shell_check
 with_init_style
+with_init_dir
 with_uams_path
 with_libgcrypt_dir
 with_ssl_dir
@@ -908,10 +933,16 @@ enable_overwrite
 with_ldap
 with_acls
 enable_sendfile
+with_libevent
 with_libevent_header
 with_libevent_lib
-enable_fhs
+with_tdb
 enable_developer
+with_dtrace
+with_dbus_sysconf_dir
+enable_fhs
+with_lockfile
+with_docbook
 enable_silent_rules
 '
       ac_precious_vars='build_alias
@@ -927,7 +958,15 @@ PKG_CONFIG
 AVAHI_CFLAGS
 AVAHI_LIBS
 AVAHI_TPOLL_CFLAGS
-AVAHI_TPOLL_LIBS'
+AVAHI_TPOLL_LIBS
+TDB_CFLAGS
+TDB_LIBS
+DBUS_CFLAGS
+DBUS_LIBS
+DBUS_GLIB_CFLAGS
+DBUS_GLIB_LIBS
+DBUS_GTHREAD_CFLAGS
+DBUS_GTHREAD_LIBS'
 ac_subdirs_all='libevent'
 
 # Initialize some variables set by options.
@@ -1569,8 +1608,8 @@ Optional Features:
   --enable-krbV-uam       enable build of Kerberos V UAM module
   --enable-overwrite      overwrite configuration files during installation
   --disable-sendfile       disable sendfile syscall
-  --enable-fhs            use Filesystem Hierarchy Standard (FHS) compatibility
   --enable-developer      whether to enable developer build (ABI checking)
+  --enable-fhs            use Filesystem Hierarchy Standard (FHS) compatibility
   --enable-silent-rules          less verbose build output (undo: `make V=1')
   --disable-silent-rules         verbose build output (undo: `make V=0')
 
@@ -1593,8 +1632,11 @@ Optional Packages:
   --with-cnid-tdb-backend	build TDB CNID scheme                      [yes]
   --with-cnid-default-backend=val	set default DID scheme [dbd]
   --with-pam[=PATH]       specify path to PAM installation [auto]
+  --with-pam-confdir=PATH Path to PAM config dir (default:
+                          ${sysconfdir}/pam.d)
   --with-shadow           enable shadow password support [auto]
   --with-init-style       use OS specific init config [redhat-sysv|redhat-systemd|suse-sysv|suse-systemd|gentoo|netbsd|debian|solaris|systemd]
+  --with-init-dir=PATH    path to OS specific init directory
   --with-uams-path=PATH   path to UAMs [$libdir/netatalk/]
   --with-libgcrypt-dir=PATH
                           path where LIBGCRYPT is installed (optional). Must
@@ -1604,10 +1646,19 @@ Optional Packages:
   --with-bdb=PATH         specify path to Berkeley DB installation[auto]
   --with-gssapi[=PATH]    path to GSSAPI for Kerberos V UAM [auto]
   --with-kerberos         Kerberos 5 support (default=auto)
-  --with-ldap             LDAP support (default=auto)
+  --with-ldap[=PATH]      LDAP support (default=auto)
   --with-acls             Include ACL support (default=auto)
+  --with-libevent         whether to use the bundled libevent (default: yes)
   --with-libevent-header  path to libevent header files
-  --with-libevent-lib     path to libevent header library
+  --with-libevent-lib     path to libevent library
+  --with-tdb              whether to use the bundled tdb (default: yes)
+  --with-dtrace           Enable dtrace probes (default: enabled if dtrace
+                          found)
+  --with-dbus-sysconf-dir=PATH
+                          Path to dbus system bus security configuration
+                          directory (default: ${sysconfdir}/dbus-1/system.d/)
+  --with-lockfile=PATH    Path of netatalk lockfile
+  --with-docbook          Path to Docbook XSL directory
 
 Some influential environment variables:
   CC          C compiler command
@@ -1626,6 +1677,18 @@ Some influential environment variables:
               C compiler flags for AVAHI_TPOLL, overriding pkg-config
   AVAHI_TPOLL_LIBS
               linker flags for AVAHI_TPOLL, overriding pkg-config
+  TDB_CFLAGS  C compiler flags for TDB, overriding pkg-config
+  TDB_LIBS    linker flags for TDB, overriding pkg-config
+  DBUS_CFLAGS C compiler flags for DBUS, overriding pkg-config
+  DBUS_LIBS   linker flags for DBUS, overriding pkg-config
+  DBUS_GLIB_CFLAGS
+              C compiler flags for DBUS_GLIB, overriding pkg-config
+  DBUS_GLIB_LIBS
+              linker flags for DBUS_GLIB, overriding pkg-config
+  DBUS_GTHREAD_CFLAGS
+              C compiler flags for DBUS_GTHREAD, overriding pkg-config
+  DBUS_GTHREAD_LIBS
+              linker flags for DBUS_GTHREAD, overriding pkg-config
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -13248,7 +13311,7 @@ _ACEOF
 fi
 done
 
-for ac_func in setlinebuf strlcat strlcpy strnlen
+for ac_func in setlinebuf strlcat strlcpy strnlen mempcpy
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -13384,13 +13447,42 @@ if test "$ac_res" != no; then :
 
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing pthread_sigmask" >&5
-$as_echo_n "checking for library containing pthread_sigmask... " >&6; }
-if ${ac_cv_search_pthread_sigmask+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+for ac_func in getifaddrs
+do :
+  ac_fn_c_check_func "$LINENO" "getifaddrs" "ac_cv_func_getifaddrs"
+if test "x$ac_cv_func_getifaddrs" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_GETIFADDRS 1
+_ACEOF
+
+fi
+done
+
+
+
+ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+ax_pthread_ok=no
+
+# We used to check for pthread.h first, but this fails if pthread.h
+# requires special compiler flags (e.g. on True64 or Sequent).
+# It gets checked for in the link test anyway.
+
+# First of all, check if the user has set any of the PTHREAD_LIBS,
+# etcetera environment variables, and if threads linking works using
+# them:
+if test x"$PTHREAD_LIBS$PTHREAD_CFLAGS" != x; then
+        save_CFLAGS="$CFLAGS"
+        CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+        save_LIBS="$LIBS"
+        LIBS="$PTHREAD_LIBS $LIBS"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pthread_join in LIBS=$PTHREAD_LIBS with CFLAGS=$PTHREAD_CFLAGS" >&5
+$as_echo_n "checking for pthread_join in LIBS=$PTHREAD_LIBS with CFLAGS=$PTHREAD_CFLAGS... " >&6; }
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 /* Override any GCC internal prototype to avoid an error.
@@ -13399,52 +13491,368 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #ifdef __cplusplus
 extern "C"
 #endif
-char pthread_sigmask ();
+char pthread_join ();
 int
 main ()
 {
-return pthread_sigmask ();
+return pthread_join ();
   ;
   return 0;
 }
 _ACEOF
-for ac_lib in '' pthread; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_pthread_sigmask=$ac_res
+if ac_fn_c_try_link "$LINENO"; then :
+  ax_pthread_ok=yes
 fi
 rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext
-  if ${ac_cv_search_pthread_sigmask+:} false; then :
-  break
+    conftest$ac_exeext conftest.$ac_ext
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_pthread_ok" >&5
+$as_echo "$ax_pthread_ok" >&6; }
+        if test x"$ax_pthread_ok" = xno; then
+                PTHREAD_LIBS=""
+                PTHREAD_CFLAGS=""
+        fi
+        LIBS="$save_LIBS"
+        CFLAGS="$save_CFLAGS"
 fi
+
+# We must check for the threads library under a number of different
+# names; the ordering is very important because some systems
+# (e.g. DEC) have both -lpthread and -lpthreads, where one of the
+# libraries is broken (non-POSIX).
+
+# Create a list of thread flags to try.  Items starting with a "-" are
+# C compiler flags, and other items are library names, except for "none"
+# which indicates that we try without any flags at all, and "pthread-config"
+# which is a program returning the flags for the Pth emulation library.
+
+ax_pthread_flags="pthreads none -Kthread -kthread lthread -pthread -pthreads -mthreads pthread --thread-safe -mt pthread-config"
+
+# The ordering *is* (sometimes) important.  Some notes on the
+# individual items follow:
+
+# pthreads: AIX (must check this before -lpthread)
+# none: in case threads are in libc; should be tried before -Kthread and
+#       other compiler flags to prevent continual compiler warnings
+# -Kthread: Sequent (threads in libc, but -Kthread needed for pthread.h)
+# -kthread: FreeBSD kernel threads (preferred to -pthread since SMP-able)
+# lthread: LinuxThreads port on FreeBSD (also preferred to -pthread)
+# -pthread: Linux/gcc (kernel threads), BSD/gcc (userland threads)
+# -pthreads: Solaris/gcc
+# -mthreads: Mingw32/gcc, Lynx/gcc
+# -mt: Sun Workshop C (may only link SunOS threads [-lthread], but it
+#      doesn't hurt to check since this sometimes defines pthreads too;
+#      also defines -D_REENTRANT)
+#      ... -mt is also the pthreads flag for HP/aCC
+# pthread: Linux, etcetera
+# --thread-safe: KAI C++
+# pthread-config: use pthread-config program (for GNU Pth library)
+
+case ${host_os} in
+        solaris*)
+
+        # On Solaris (at least, for some versions), libc contains stubbed
+        # (non-functional) versions of the pthreads routines, so link-based
+        # tests will erroneously succeed.  (We need to link with -pthreads/-mt/
+        # -lpthread.)  (The stubs are missing pthread_cleanup_push, or rather
+        # a function called by this macro, so we could check for that, but
+        # who knows whether they'll stub that too in a future libc.)  So,
+        # we'll just look for -pthreads and -lpthread first:
+
+        ax_pthread_flags="-pthreads pthread -mt -pthread $ax_pthread_flags"
+        ;;
+
+        darwin*)
+        ax_pthread_flags="-pthread $ax_pthread_flags"
+        ;;
+esac
+
+if test x"$ax_pthread_ok" = xno; then
+for flag in $ax_pthread_flags; do
+
+        case $flag in
+                none)
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether pthreads work without any flags" >&5
+$as_echo_n "checking whether pthreads work without any flags... " >&6; }
+                ;;
+
+                -*)
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether pthreads work with $flag" >&5
+$as_echo_n "checking whether pthreads work with $flag... " >&6; }
+                PTHREAD_CFLAGS="$flag"
+                ;;
+
+                pthread-config)
+                # Extract the first word of "pthread-config", so it can be a program name with args.
+set dummy pthread-config; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_ax_pthread_config+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$ax_pthread_config"; then
+  ac_cv_prog_ax_pthread_config="$ax_pthread_config" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_ax_pthread_config="yes"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
 done
-if ${ac_cv_search_pthread_sigmask+:} false; then :
+  done
+IFS=$as_save_IFS
 
+  test -z "$ac_cv_prog_ax_pthread_config" && ac_cv_prog_ax_pthread_config="no"
+fi
+fi
+ax_pthread_config=$ac_cv_prog_ax_pthread_config
+if test -n "$ax_pthread_config"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_pthread_config" >&5
+$as_echo "$ax_pthread_config" >&6; }
 else
-  ac_cv_search_pthread_sigmask=no
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_pthread_sigmask" >&5
-$as_echo "$ac_cv_search_pthread_sigmask" >&6; }
-ac_res=$ac_cv_search_pthread_sigmask
-if test "$ac_res" != no; then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
+
+                if test x"$ax_pthread_config" = xno; then continue; fi
+                PTHREAD_CFLAGS="`pthread-config --cflags`"
+                PTHREAD_LIBS="`pthread-config --ldflags` `pthread-config --libs`"
+                ;;
+
+                *)
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking for the pthreads library -l$flag" >&5
+$as_echo_n "checking for the pthreads library -l$flag... " >&6; }
+                PTHREAD_LIBS="-l$flag"
+                ;;
+        esac
+
+        save_LIBS="$LIBS"
+        save_CFLAGS="$CFLAGS"
+        LIBS="$PTHREAD_LIBS $LIBS"
+        CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+
+        # Check for various functions.  We must include pthread.h,
+        # since some functions may be macros.  (On the Sequent, we
+        # need a special flag -Kthread to make this header compile.)
+        # We check for pthread_join because it is in -lpthread on IRIX
+        # while pthread_create is in libc.  We check for pthread_attr_init
+        # due to DEC craziness with -lpthreads.  We check for
+        # pthread_cleanup_push because it is one of the few pthread
+        # functions on Solaris that doesn't have a non-functional libc stub.
+        # We try pthread_create on general principles.
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <pthread.h>
+                        static void routine(void *a) { a = 0; }
+                        static void *start_routine(void *a) { return a; }
+int
+main ()
+{
+pthread_t th; pthread_attr_t attr;
+                        pthread_create(&th, 0, start_routine, 0);
+                        pthread_join(th, 0);
+                        pthread_attr_init(&attr);
+                        pthread_cleanup_push(routine, 0);
+                        pthread_cleanup_pop(0) /* ; */
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ax_pthread_ok=yes
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+        LIBS="$save_LIBS"
+        CFLAGS="$save_CFLAGS"
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_pthread_ok" >&5
+$as_echo "$ax_pthread_ok" >&6; }
+        if test "x$ax_pthread_ok" = xyes; then
+                break;
+        fi
+
+        PTHREAD_LIBS=""
+        PTHREAD_CFLAGS=""
+done
+fi
+
+# Various other checks:
+if test "x$ax_pthread_ok" = xyes; then
+        save_LIBS="$LIBS"
+        LIBS="$PTHREAD_LIBS $LIBS"
+        save_CFLAGS="$CFLAGS"
+        CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+
+        # Detect AIX lossage: JOINABLE attribute is called UNDETACHED.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for joinable pthread attribute" >&5
+$as_echo_n "checking for joinable pthread attribute... " >&6; }
+        attr_name=unknown
+        for attr in PTHREAD_CREATE_JOINABLE PTHREAD_CREATE_UNDETACHED; do
+            cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <pthread.h>
+int
+main ()
+{
+int attr = $attr; return attr /* ; */
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  attr_name=$attr; break
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+        done
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $attr_name" >&5
+$as_echo "$attr_name" >&6; }
+        if test "$attr_name" != PTHREAD_CREATE_JOINABLE; then
+
+cat >>confdefs.h <<_ACEOF
+#define PTHREAD_CREATE_JOINABLE $attr_name
+_ACEOF
+
+        fi
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking if more special flags are required for pthreads" >&5
+$as_echo_n "checking if more special flags are required for pthreads... " >&6; }
+        flag=no
+        case ${host_os} in
+            aix* | freebsd* | darwin*) flag="-D_THREAD_SAFE";;
+            osf* | hpux*) flag="-D_REENTRANT";;
+            solaris*)
+            if test "$GCC" = "yes"; then
+                flag="-D_REENTRANT"
+            else
+                flag="-mt -D_REENTRANT"
+            fi
+            ;;
+        esac
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${flag}" >&5
+$as_echo "${flag}" >&6; }
+        if test "x$flag" != xno; then
+            PTHREAD_CFLAGS="$flag $PTHREAD_CFLAGS"
+        fi
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for PTHREAD_PRIO_INHERIT" >&5
+$as_echo_n "checking for PTHREAD_PRIO_INHERIT... " >&6; }
+if ${ax_cv_PTHREAD_PRIO_INHERIT+:} false; then :
+  $as_echo_n "(cached) " >&6
 else
-  as_fn_error $? "missing pthread_sigmask" "$LINENO" 5
+
+                cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+                    #include <pthread.h>
+int
+main ()
+{
+int i = PTHREAD_PRIO_INHERIT;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ax_cv_PTHREAD_PRIO_INHERIT=yes
+else
+  ax_cv_PTHREAD_PRIO_INHERIT=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_PTHREAD_PRIO_INHERIT" >&5
+$as_echo "$ax_cv_PTHREAD_PRIO_INHERIT" >&6; }
+        if test "x$ax_cv_PTHREAD_PRIO_INHERIT" = "xyes"; then :
+
+$as_echo "#define HAVE_PTHREAD_PRIO_INHERIT 1" >>confdefs.h
+
 fi
 
-if test x"$ac_cv_search_pthread_sigmask" != x"none required" ; then
-   PTHREAD_LIBS=$ac_cv_search_pthread_sigmask
+        LIBS="$save_LIBS"
+        CFLAGS="$save_CFLAGS"
+
+        # More AIX lossage: must compile with xlc_r or cc_r
+        if test x"$GCC" != xyes; then
+          for ac_prog in xlc_r cc_r
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_PTHREAD_CC+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$PTHREAD_CC"; then
+  ac_cv_prog_PTHREAD_CC="$PTHREAD_CC" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_PTHREAD_CC="$ac_prog"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
 fi
+fi
+PTHREAD_CC=$ac_cv_prog_PTHREAD_CC
+if test -n "$PTHREAD_CC"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PTHREAD_CC" >&5
+$as_echo "$PTHREAD_CC" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$PTHREAD_CC" && break
+done
+test -n "$PTHREAD_CC" || PTHREAD_CC="${CC}"
+
+        else
+          PTHREAD_CC=$CC
+        fi
+else
+        PTHREAD_CC="$CC"
+fi
+
+
+
+
+
+# Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
+if test x"$ax_pthread_ok" = xyes; then
+
+$as_echo "#define HAVE_PTHREAD 1" >>confdefs.h
+
+        :
+else
+        ax_pthread_ok=no
+        as_fn_error $? "missing pthread_sigmask" "$LINENO" 5
+fi
+ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
 
 
 
@@ -13564,6 +13972,8 @@ if test x"$this_os" = "xlinux"; then
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result:  * Linux specific configuration" >&5
 $as_echo " * Linux specific configuration" >&6; }
 
+$as_echo "#define LINUX 1" >>confdefs.h
+
 	    for ac_header in linux/dqblk_xfs.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "linux/dqblk_xfs.h" "ac_cv_header_linux_dqblk_xfs_h" "$ac_includes_default"
@@ -13666,119 +14076,8 @@ $as_echo "#define _XOPEN_SOURCE 600" >>confdefs.h
 
 $as_echo "#define __EXTENSIONS__ 1" >>confdefs.h
 
-	CFLAGS="-I\$(top_srcdir)/sys/generic $CFLAGS"
 	need_dash_r=yes
 	init_style=solaris
-
-	solaris_module=no
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can build Solaris kernel module" >&5
-$as_echo_n "checking if we can build Solaris kernel module... " >&6; }
-	if test -x /usr/ccs/bin/ld && test x"$netatalk_cv_ddp_enabled" = x"yes" ; then
-		solaris_module=yes
-	fi
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $solaris_module" >&5
-$as_echo "$solaris_module" >&6; }
-
-	COMPILE_64BIT_KMODULE=no
-	KCFLAGS=""
-	KLDFLAGS=""
-	COMPILE_KERNEL_GCC=no
-
-	if test "$solaris_module" = "yes"; then
-	              { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we have to build a 64bit kernel module" >&5
-$as_echo_n "checking if we have to build a 64bit kernel module... " >&6; }
-
-	   # check for isainfo, if not found it has to be a 32 bit kernel (<=2.6)
-	   if test -x /usr/bin/isainfo; then
-		# check for 64 bit platform
-		if isainfo -kv | grep '^64-bit'; then
-			COMPILE_64BIT_KMODULE=yes
-		fi
-	   fi
-
-	   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $COMPILE_64BIT_KMODULE" >&5
-$as_echo "$COMPILE_64BIT_KMODULE" >&6; }
-
-	   if test "${GCC}" = yes; then
-		COMPILE_KERNEL_GCC=yes
-		if test "$COMPILE_64BIT_KMODULE" = yes; then
-
-                        { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can build a 64bit kernel module" >&5
-$as_echo_n "checking if we can build a 64bit kernel module... " >&6; }
-
-                        case `$CC --version 2>/dev/null` in
-			[12].* | 3.0.*)
-				COMPILE_64BIT_KMODULE=no
-				COMPILE_KERNEL_GCC=no
-				solaris_module=no;;
-			*)
-			       	# use for 64 bit
-				KCFLAGS="-m64"
-				#KLDFLAGS="-melf64_sparc"
-				KLDFLAGS="-64";;
-			esac
-
-			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $COMPILE_64BIT_KMODULE" >&5
-$as_echo "$COMPILE_64BIT_KMODULE" >&6; }
-
-		else
-			KCFLAGS=""
-			KLDFLAGS=""
-		fi
-		KCFLAGS="$KCFLAGS -D_KERNEL -Wall -Wstrict-prototypes"
-           else
-		if test "$COMPILE_64BIT_KMODULE" = yes; then
-                # use Sun CC (for a 64-bit kernel, uncomment " -xarch=v9 -xregs=no%appl ")
- 			KCFLAGS="-xarch=v9 -xregs=no%appl"
-			KLDFLAGS="-64"
-		else
- 			KCFLAGS=""
-			KLDFLAGS=""
-		fi
-		KCFLAGS="-D_KERNEL $KCFLAGS -mno-app-regs -munaligned-doubles -fpcc-struct-return"
-	   fi
-
-           { $as_echo "$as_me:${as_lineno-$LINENO}: checking for timeout_id_t" >&5
-$as_echo_n "checking for timeout_id_t... " >&6; }
-if ${netatalk_cv_HAVE_TIMEOUT_ID_T+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-           cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-\
-#include <sys/stream.h>
-#include <sys/ddi.h>
-int
-main ()
-{
-\
-timeout_id_t dummy;
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  netatalk_cv_HAVE_TIMEOUT_ID_T=yes
-else
-  netatalk_cv_HAVE_TIMEOUT_ID_T=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $netatalk_cv_HAVE_TIMEOUT_ID_T" >&5
-$as_echo "$netatalk_cv_HAVE_TIMEOUT_ID_T" >&6; }
-
-
-$as_echo "#define HAVE_TIMEOUT_ID_T test x\"\$netatalk_cv_HAVE_TIMEOUT_ID\" = x\"yes\"" >>confdefs.h
-
-	fi
-
-
-
-
-
 fi
 
 # Extract the first word of "ldconfig", so it can be a program name with args.
@@ -15432,6 +15731,12 @@ $as_echo_n "checking for includable common PAM config... " >&6; }
            PAM_ACCOUNT=system
            PAM_PASSWORD=system
            PAM_SESSION=system
+                elif test -f "$pampath/other" ; then
+           PAM_DIRECTIVE=include
+           PAM_AUTH=${PAMDIR}etc/pam.d/other
+           PAM_ACCOUNT=${PAMDIR}etc/pam.d/other
+           PAM_PASSWORD=${PAMDIR}etc/pam.d/other
+           PAM_SESSION=${PAMDIR}etc/pam.d/other
                 else
            PAM_DIRECTIVE=required
            PAM_AUTH=pam_unix.so
@@ -15471,6 +15776,18 @@ $as_echo "yes" >&6; }
 $as_echo "#define USE_PAM 1" >>confdefs.h
 
 	fi
+
+
+# Check whether --with-pam-confdir was given.
+if test "${with_pam_confdir+set}" = set; then :
+  withval=$with_pam_confdir; ac_cv_pamdir=$withval
+else
+  ac_cv_pamdir='${sysconfdir}/pam.d'
+
+fi
+
+
+    PAMDIR="$ac_cv_pamdir"
 
 
   ac_new_flags=""
@@ -15592,10 +15909,12 @@ fi
     "redhat-sysv")
 	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: enabling redhat-style sysv initscript support" >&5
 $as_echo "enabling redhat-style sysv initscript support" >&6; }
+	    ac_cv_init_dir="/etc/rc.d/init.d"
 	    ;;
     "redhat-systemd")
 	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: enabling redhat-style systemd support" >&5
 $as_echo "enabling redhat-style systemd support" >&6; }
+	    ac_cv_init_dir="/usr/lib/systemd/system"
 	    ;;
     "suse")
 	    as_fn_error $? "--with-init-style=suse is obsoleted. Use suse-sysv or suse-systemd." "$LINENO" 5
@@ -15603,34 +15922,42 @@ $as_echo "enabling redhat-style systemd support" >&6; }
     "suse-sysv")
 	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: enabling suse-style sysv initscript support" >&5
 $as_echo "enabling suse-style sysv initscript support" >&6; }
+	    ac_cv_init_dir="/etc/init.d"
 	    ;;
     "suse-systemd")
 	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: enabling suse-style systemd support (>=openSUSE12.1)" >&5
 $as_echo "enabling suse-style systemd support (>=openSUSE12.1)" >&6; }
+	    ac_cv_init_dir="/usr/lib/systemd/system"
 	    ;;
     "gentoo")
 	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: enabling gentoo-style initscript support" >&5
 $as_echo "enabling gentoo-style initscript support" >&6; }
+	    ac_cv_init_dir="/etc/init.d"
         ;;
     "netbsd")
 	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: enabling netbsd-style initscript support" >&5
 $as_echo "enabling netbsd-style initscript support" >&6; }
+	    ac_cv_init_dir="/etc/rc.d"
         ;;
     "debian")
 	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: enabling debian-style initscript support" >&5
 $as_echo "enabling debian-style initscript support" >&6; }
+	    ac_cv_init_dir="/etc/init.d"
         ;;
     "solaris")
 	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: enabling solaris-style SMF support" >&5
 $as_echo "enabling solaris-style SMF support" >&6; }
+	    ac_cv_init_dir="/lib/svc/manifest/network/"
         ;;
     "systemd")
 	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: enabling general systemd support" >&5
 $as_echo "enabling general systemd support" >&6; }
+	    ac_cv_init_dir="/usr/lib/systemd/system"
         ;;
     "none")
 	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabling init-style support" >&5
 $as_echo "disabling init-style support" >&6; }
+	    ac_cv_init_dir="none"
         ;;
     *)
 	    as_fn_error $? "illegal init-style" "$LINENO" 5
@@ -15700,6 +16027,18 @@ else
   USE_UNDEF_FALSE=
 fi
 
+
+
+# Check whether --with-init-dir was given.
+if test "${with_init_dir+set}" = set; then :
+  withval=$with_init_dir; ac_cv_init_dir="$withval"
+else
+  ac_cv_init_dir="$ac_cv_init_dir"
+
+fi
+
+    INIT_DIR="$ac_cv_init_dir"
+    INIT_DIR="$ac_cv_init_dir"
 
 
 
@@ -16224,6 +16563,9 @@ fi
                         if test x"${atalk_cv_bdb_version}" = x"yes"; then
                             BDB_CFLAGS="-I${bdbdir}/include${subdir}"
                             BDB_LIBS="-L${bdblibdir} ${atalk_cv_lib_db}"
+                            if test x"$need_dash_r" = x"yes"; then
+                                BDB_LIBS="$BDB_LIBS -R${bdblibdir}"
+                            fi
                             BDB_BIN="$bdbbindir"
                             BDB_PATH="$bdbdir"
                             bdbfound=yes
@@ -16317,6 +16659,9 @@ fi
                            if test x"${atalk_cv_bdb_version}" = x"yes"; then
                               BDB_CFLAGS="-I${bdbdir}/include${subdir}"
                               BDB_LIBS="-L${bdblibdir} ${atalk_cv_lib_db}"
+                              if test x"$need_dash_r" = x"yes"; then
+                                 BDB_LIBS="$BDB_LIBS -R${bdblibdir}"
+                              fi
                               BDB_BIN="$bdbbindir"
                               BDB_PATH="$bdbdir"
                               bdbfound=yes
@@ -16852,7 +17197,7 @@ save_CFLAGS="$CFLAGS"
 save_LIBS="$LIBS"
 CFLAGS="$KRB5_CFLAGS"
 LIBS="$KRB5_LIBS"
-for ac_func in krb5_free_unparsed_name krb5_free_error_message
+for ac_func in krb5_free_unparsed_name krb5_free_error_message krb5_free_keytab_entry_contents krb5_kt_free_entry
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -16987,11 +17332,12 @@ fi
 
 
 CFLAGS="$save_CFLAGS"
-LDLFLAGS="$save_LDLFLAGS"
+LDFLAGS="$save_LDFLAGS"
 LIBS="$save_LIBS"
 
 
 
+ac_cv_have_acls=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to support ACLs" >&5
 $as_echo_n "checking whether to support ACLs... " >&6; }
 
@@ -17015,70 +17361,115 @@ $as_echo "$with_acl_support" >&6; }
 if test x"$with_acl_support" = x"no"; then
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: Disabling ACL support" >&5
 $as_echo "Disabling ACL support" >&6; }
-
-$as_echo "#define HAVE_NO_ACLS 1" >>confdefs.h
-
-else
-    with_acl_support=yes
 fi
 
-if test x"$with_acl_support" = x"yes" ; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ACL support is available:" >&5
-$as_echo "$as_me: checking whether ACL support is available:" >&6;}
+# Platform specific checks
+if test x"$with_acl_support" != x"no" ; then
 	case "$host_os" in
-	*sysv5*)
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: Using UnixWare ACLs" >&5
-$as_echo "$as_me: Using UnixWare ACLs" >&6;}
-
-$as_echo "#define HAVE_UNIXWARE_ACLS 1" >>confdefs.h
-
-		;;
 	*solaris*)
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: Using solaris ACLs" >&5
 $as_echo "$as_me: Using solaris ACLs" >&6;}
 
 $as_echo "#define HAVE_SOLARIS_ACLS 1" >>confdefs.h
 
+
+$as_echo "#define HAVE_NFSV4_ACLS 1" >>confdefs.h
+
 		ACL_LIBS="$ACL_LIBS -lsec"
+		ac_cv_have_acls=yes
 		;;
-	*hpux*)
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: Using HPUX ACLs" >&5
-$as_echo "$as_me: Using HPUX ACLs" >&6;}
+	*freebsd*)
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether libsunacl is available" >&5
+$as_echo "$as_me: checking whether libsunacl is available" >&6;}
+		sunacl_include_path="/usr/local/include"
+		sunacl_lib_path="/usr/local/lib"
 
-$as_echo "#define HAVE_HPUX_ACLS 1" >>confdefs.h
+		save_CPPFLAGS=$CPPFLAGS
+		save_LDFLAGS=$LDFLAGS
+		save_LIBS=$LIBS
 
+		CPPFLAGS="-I$sunacl_include_path $CPPFLAGS"
+		ac_fn_c_check_header_mongrel "$LINENO" "sunacl.h" "ac_cv_header_sunacl_h" "$ac_includes_default"
+if test "x$ac_cv_header_sunacl_h" = xyes; then :
+
+fi
+
+
+
+		LDFLAGS="-L$sunacl_lib_path $LDFLAGS"
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for acl in -lsunacl" >&5
+$as_echo_n "checking for acl in -lsunacl... " >&6; }
+if ${ac_cv_lib_sunacl_acl+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lsunacl  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char acl ();
+int
+main ()
+{
+return acl ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_sunacl_acl=yes
+else
+  ac_cv_lib_sunacl_acl=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sunacl_acl" >&5
+$as_echo "$ac_cv_lib_sunacl_acl" >&6; }
+if test "x$ac_cv_lib_sunacl_acl" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBSUNACL 1
+_ACEOF
+
+  LIBS="-lsunacl $LIBS"
+
+fi
+
+
+		if test x"$ac_cv_header_sunacl_h" = x"yes" -a x"$ac_cv_lib_sunacl_acl" = x"yes" ; then
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: Enabling support for ZFS ACLs using libsunacl" >&5
+$as_echo "$as_me: Enabling support for ZFS ACLs using libsunacl" >&6;}
+			ac_cv_have_acls=yes
+			CFLAGS="-I$sunacl_include_path $CFLAGS"
+			ACL_LIBS="$ACL_LIBS -L$sunacl_lib_path -lsunacl"
+
+$as_echo "#define HAVE_FREEBSD_SUNACL 1" >>confdefs.h
+
+
+$as_echo "#define HAVE_NFSV4_ACLS 1" >>confdefs.h
+
+		else
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: libsunacl not found, disabling ZFS ACL support" >&5
+$as_echo "$as_me: libsunacl not found, disabling ZFS ACL support" >&6;}
+		fi
+
+		CPPFLAGS=$save_CPPFLAGS
+		LDFLAGS=$save_LDFLAGS
+		LIBS=$save_LIBS
 		;;
-	*irix*)
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: Using IRIX ACLs" >&5
-$as_echo "$as_me: Using IRIX ACLs" >&6;}
+	esac
+fi
 
-$as_echo "#define HAVE_IRIX_ACLS 1" >>confdefs.h
-
-		;;
-	*aix*)
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: Using AIX ACLs" >&5
-$as_echo "$as_me: Using AIX ACLs" >&6;}
-
-$as_echo "#define HAVE_AIX_ACLS 1" >>confdefs.h
-
-		;;
-	*osf*)
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: Using Tru64 ACLs" >&5
-$as_echo "$as_me: Using Tru64 ACLs" >&6;}
-
-$as_echo "#define HAVE_TRU64_ACLS 1" >>confdefs.h
-
-		ACL_LIBS="$ACL_LIBS -lpacl"
-		;;
-	*darwin*)
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: ACLs on Darwin currently not supported" >&5
-$as_echo "$as_me: ACLs on Darwin currently not supported" >&6;}
-
-$as_echo "#define HAVE_NO_ACLS 1" >>confdefs.h
-
-		;;
-	*)
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for acl_get_file in -lacl" >&5
+if test x"$with_acl_support" != x"no" -a x"$ac_cv_have_acls" != x"yes" ; then
+	# Runtime checks for POSIX ACLs
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for acl_get_file in -lacl" >&5
 $as_echo_n "checking for acl_get_file in -lacl... " >&6; }
 if ${ac_cv_lib_acl_acl_get_file+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -17118,9 +17509,9 @@ if test "x$ac_cv_lib_acl_acl_get_file" = xyes; then :
   ACL_LIBS="$ACL_LIBS -lacl"
 fi
 
-		case "$host_os" in
-		*linux*)
-			{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for getxattr in -lattr" >&5
+	case "$host_os" in
+	*linux*)
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for getxattr in -lattr" >&5
 $as_echo_n "checking for getxattr in -lattr... " >&6; }
 if ${ac_cv_lib_attr_getxattr+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -17160,11 +17551,60 @@ if test "x$ac_cv_lib_attr_getxattr" = xyes; then :
   ACL_LIBS="$ACL_LIBS -lattr"
 fi
 
-			;;
-		esac
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for POSIX ACL support" >&5
+		;;
+	esac
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for POSIX ACL support" >&5
 $as_echo_n "checking for POSIX ACL support... " >&6; }
 if ${netatalk_cv_HAVE_POSIX_ACLS+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+		acl_LIBS=$LIBS
+		LIBS="$LIBS $ACL_LIBS"
+		cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+			#include <sys/types.h>
+			#include <sys/acl.h>
+
+int
+main ()
+{
+
+			acl_t acl;
+			int entry_id;
+			acl_entry_t *entry_p;
+			return acl_get_entry(acl, entry_id, entry_p);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  netatalk_cv_HAVE_POSIX_ACLS=yes; ac_cv_have_acls=yes
+else
+  netatalk_cv_HAVE_POSIX_ACLS=no; ac_cv_have_acls=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+		LIBS=$acl_LIBS
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $netatalk_cv_HAVE_POSIX_ACLS" >&5
+$as_echo "$netatalk_cv_HAVE_POSIX_ACLS" >&6; }
+
+	if test x"$netatalk_cv_HAVE_POSIX_ACLS" = x"yes"; then
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: Using POSIX ACLs" >&5
+$as_echo "$as_me: Using POSIX ACLs" >&6;}
+
+$as_echo "#define HAVE_POSIX_ACLS 1" >>confdefs.h
+
+
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for acl_get_perm_np" >&5
+$as_echo_n "checking for acl_get_perm_np... " >&6; }
+if ${netatalk_cv_HAVE_ACL_GET_PERM_NP+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
@@ -17180,55 +17620,9 @@ int
 main ()
 {
 
-				acl_t acl;
-				int entry_id;
-				acl_entry_t *entry_p;
-				return acl_get_entry(acl, entry_id, entry_p);
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  netatalk_cv_HAVE_POSIX_ACLS=yes
-else
-  netatalk_cv_HAVE_POSIX_ACLS=no
-                with_acl_support=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-			LIBS=$acl_LIBS
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $netatalk_cv_HAVE_POSIX_ACLS" >&5
-$as_echo "$netatalk_cv_HAVE_POSIX_ACLS" >&6; }
-		if test x"$netatalk_cv_HAVE_POSIX_ACLS" = x"yes"; then
-			{ $as_echo "$as_me:${as_lineno-$LINENO}: Using POSIX ACLs" >&5
-$as_echo "$as_me: Using POSIX ACLs" >&6;}
-
-$as_echo "#define HAVE_POSIX_ACLS 1" >>confdefs.h
-
-			{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for acl_get_perm_np" >&5
-$as_echo_n "checking for acl_get_perm_np... " >&6; }
-if ${netatalk_cv_HAVE_ACL_GET_PERM_NP+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-				acl_LIBS=$LIBS
-				LIBS="$LIBS $ACL_LIBS"
-				cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-					#include <sys/types.h>
-					#include <sys/acl.h>
-
-int
-main ()
-{
-
-					acl_permset_t permset_d;
-					acl_perm_t perm;
-					return acl_get_perm_np(permset_d, perm);
+				acl_permset_t permset_d;
+				acl_perm_t perm;
+				return acl_get_perm_np(permset_d, perm);
 
   ;
   return 0;
@@ -17241,27 +17635,26 @@ else
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-				LIBS=$acl_LIBS
+			LIBS=$acl_LIBS
 
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $netatalk_cv_HAVE_ACL_GET_PERM_NP" >&5
 $as_echo "$netatalk_cv_HAVE_ACL_GET_PERM_NP" >&6; }
-			if test x"$netatalk_cv_HAVE_ACL_GET_PERM_NP" = x"yes"; then
+		if test x"$netatalk_cv_HAVE_ACL_GET_PERM_NP" = x"yes"; then
 
 $as_echo "#define HAVE_ACL_GET_PERM_NP 1" >>confdefs.h
 
-			fi
+		fi
 
-
-                       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for acl_from_mode" >&5
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for acl_from_mode" >&5
 $as_echo_n "checking for acl_from_mode... " >&6; }
 if ${netatalk_cv_HAVE_ACL_FROM_MODE+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-                               acl_LIBS=$LIBS
-                               LIBS="$LIBS $ACL_LIBS"
-                for ac_func in acl_from_mode
+			acl_LIBS=$LIBS
+			LIBS="$LIBS $ACL_LIBS"
+			for ac_func in acl_from_mode
 do :
   ac_fn_c_check_func "$LINENO" "acl_from_mode" "ac_cv_func_acl_from_mode"
 if test "x$ac_cv_func_acl_from_mode" = xyes; then :
@@ -17271,33 +17664,32 @@ _ACEOF
  netatalk_cv_HAVE_ACL_FROM_MODE=yes
 else
   netatalk_cv_HAVE_ACL_FROM_MODE=no
+
 fi
 done
 
-                               LIBS=$acl_LIBS
+			LIBS=$acl_LIBS
 
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $netatalk_cv_HAVE_ACL_FROM_MODE" >&5
 $as_echo "$netatalk_cv_HAVE_ACL_FROM_MODE" >&6; }
-                       if test x"netatalk_cv_HAVE_ACL_FROM_MODE" = x"yes"; then
+		if test x"netatalk_cv_HAVE_ACL_FROM_MODE" = x"yes"; then
 
 $as_echo "#define HAVE_ACL_FROM_MODE 1" >>confdefs.h
 
-                       fi
-
-		else
-			{ $as_echo "$as_me:${as_lineno-$LINENO}: ACL support is not avaliable" >&5
-$as_echo "$as_me: ACL support is not avaliable" >&6;}
-
-$as_echo "#define HAVE_NO_ACLS 1" >>confdefs.h
-
 		fi
-		;;
-    esac
+	fi
 fi
 
-if test x"$with_acl_support" = x"yes" ; then
-   for ac_header in acl/libacl.h
+if test x"$ac_cv_have_acls" = x"no" ; then
+	if test x"$with_acl_support" = x"yes" ; then
+		as_fn_error $? "ACL support requested but not found" "$LINENO" 5
+	else
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: ACL support is not avaliable" >&5
+$as_echo "$as_me: ACL support is not avaliable" >&6;}
+	fi
+else
+	for ac_header in acl/libacl.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "acl/libacl.h" "ac_cv_header_acl_libacl_h" "$ac_includes_default"
 if test "x$ac_cv_header_acl_libacl_h" = xyes; then :
@@ -17312,8 +17704,8 @@ done
 
 $as_echo "#define HAVE_ACLS 1" >>confdefs.h
 
-
 fi
+
 
 
 
@@ -17926,27 +18318,34 @@ fi
 
 
 
-    use_bundled_libevent=no
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to use bundled or installed libevent" >&5
-$as_echo_n "checking whether to use bundled or installed libevent... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to use bundled libevent" >&5
+$as_echo_n "checking whether to use bundled libevent... " >&6; }
+
+# Check whether --with-libevent was given.
+if test "${with_libevent+set}" = set; then :
+  withval=$with_libevent; use_bundled_libevent=$withval
+else
+  use_bundled_libevent=yes
+
+fi
+
 
 # Check whether --with-libevent-header was given.
 if test "${with_libevent_header+set}" = set; then :
-  withval=$with_libevent_header; LIBEVENT_CFLAGS=-I$withval
-else
-  use_bundled_libevent=yes
+  withval=$with_libevent_header; use_bundled_libevent=no; LIBEVENT_CFLAGS=-I$withval
 
 fi
 
 
 # Check whether --with-libevent-lib was given.
 if test "${with_libevent_lib+set}" = set; then :
-  withval=$with_libevent_lib; LIBEVENT_LDFLAGS=-L$withval
-else
-  use_bundled_libevent=yes
+  withval=$with_libevent_lib; use_bundled_libevent=no; LIBEVENT_LDFLAGS=-L$withval
 
 fi
 
+    if test x"$LIBEVENT_CFLAGS" = x"-Iyes" -o x"$LIBEVENT_LDFLAGS" = x"-Lyes" ; then
+        as_fn_error $? "--with-libevent requires a path" "$LINENO" 5
+    fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $use_bundled_libevent" >&5
 $as_echo "$use_bundled_libevent" >&6; }
     if test x"$use_bundled_libevent" = x"yes" ; then
@@ -17966,39 +18365,111 @@ fi
 
 
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to use Filesystem Hierarchy Standard (FHS) compatibility" >&5
-$as_echo_n "checking whether to use Filesystem Hierarchy Standard (FHS) compatibility... " >&6; }
-# Check whether --enable-fhs was given.
-if test "${enable_fhs+set}" = set; then :
-  enableval=$enable_fhs;
-	if test "$enableval" = "yes"; then
-		bindir="/bin"
-		sbindir="/sbin"
-		sysconfdir="/etc"
-		libdir="/lib"
-		localstatedir="/var"
-		mandir="/usr/share/man"
-		uams_path="${libdir}/netatalk"
-		PKGCONFDIR="${sysconfdir}"
-		SERVERTEXT="${localstatedir}/netatalk/msg"
-		use_pam_so=yes
 
-$as_echo "#define FHS_COMPATIBILITY 1" >>confdefs.h
-
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-	else
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-	fi
-
+# Check whether --with-tdb was given.
+if test "${with_tdb+set}" = set; then :
+  withval=$with_tdb; use_bundled_tdb=$withval
 else
-
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
+  use_bundled_tdb=yes
 
 fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to use bundled tdb" >&5
+$as_echo_n "checking whether to use bundled tdb... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $use_bundled_tdb" >&5
+$as_echo "$use_bundled_tdb" >&6; }
+
+    if test x"$use_bundled_tdb" = x"yes" ; then
+
+$as_echo "#define USE_BUILTIN_TDB 1" >>confdefs.h
+
+    else
+        if test -z "$TDB_LIBS" ; then
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for TDB" >&5
+$as_echo_n "checking for TDB... " >&6; }
+
+if test -n "$PKG_CONFIG"; then
+    if test -n "$TDB_CFLAGS"; then
+        pkg_cv_TDB_CFLAGS="$TDB_CFLAGS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"tdb\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "tdb") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_TDB_CFLAGS=`$PKG_CONFIG --cflags "tdb" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+if test -n "$PKG_CONFIG"; then
+    if test -n "$TDB_LIBS"; then
+        pkg_cv_TDB_LIBS="$TDB_LIBS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"tdb\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "tdb") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_TDB_LIBS=`$PKG_CONFIG --libs "tdb" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        TDB_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "tdb"`
+        else
+	        TDB_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "tdb"`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$TDB_PKG_ERRORS" >&5
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+                as_fn_error $? "couldn't find tdb with pkg-config" "$LINENO" 5
+elif test $pkg_failed = untried; then
+	as_fn_error $? "couldn't find tdb with pkg-config" "$LINENO" 5
+else
+	TDB_CFLAGS=$pkg_cv_TDB_CFLAGS
+	TDB_LIBS=$pkg_cv_TDB_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	:
+fi
+        fi
+        use_bundled_tdb=no
+    fi
+
+
+
+     if test x"$use_bundled_tdb" = x"yes"; then
+  USE_BUILTIN_TDB_TRUE=
+  USE_BUILTIN_TDB_FALSE='#'
+else
+  USE_BUILTIN_TDB_TRUE='#'
+  USE_BUILTIN_TDB_FALSE=
+fi
+
 
 
 
@@ -18024,7 +18495,520 @@ fi
 
 
 
-CFLAGS="-I\$(top_srcdir)/include -I\$(top_srcdir)/sys $CFLAGS"
+
+
+# Check whether --with-dtrace was given.
+if test "${with_dtrace+set}" = set; then :
+  withval=$with_dtrace; WDTRACE=$withval
+else
+  WDTRACE=auto
+
+fi
+
+  if test "x$WDTRACE" = "xyes" -o "x$WDTRACE" = "xauto" ; then
+    # Extract the first word of "dtrace", so it can be a program name with args.
+set dummy dtrace; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_atalk_cv_have_dtrace+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$atalk_cv_have_dtrace"; then
+  ac_cv_prog_atalk_cv_have_dtrace="$atalk_cv_have_dtrace" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_atalk_cv_have_dtrace="yes"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_prog_atalk_cv_have_dtrace" && ac_cv_prog_atalk_cv_have_dtrace="no"
+fi
+fi
+atalk_cv_have_dtrace=$ac_cv_prog_atalk_cv_have_dtrace
+if test -n "$atalk_cv_have_dtrace"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $atalk_cv_have_dtrace" >&5
+$as_echo "$atalk_cv_have_dtrace" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+    if test "x$atalk_cv_have_dtrace" = "xno" ; then
+      if test "x$WDTRACE" = "xyes" ; then
+        { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "dtrace requested but not found
+See \`config.log' for more details" "$LINENO" 5; }
+      fi
+      WDTRACE="no"
+    else
+      WDTRACE="yes"
+    fi
+  fi
+
+  if test x"$WDTRACE" = x"yes" ; then
+
+$as_echo "#define WITH_DTRACE 1" >>confdefs.h
+
+    DTRACE_LIBS=""
+    if test x"$this_os" = x"freebsd" ; then
+      DTRACE_LIBS="-lelf"
+    fi
+
+  fi
+   if test "x$WDTRACE" = "xyes"; then
+  WITH_DTRACE_TRUE=
+  WITH_DTRACE_FALSE='#'
+else
+  WITH_DTRACE_TRUE='#'
+  WITH_DTRACE_FALSE=
+fi
+
+
+
+
+    atalk_cv_with_dbus=no
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for DBUS" >&5
+$as_echo_n "checking for DBUS... " >&6; }
+
+if test -n "$PKG_CONFIG"; then
+    if test -n "$DBUS_CFLAGS"; then
+        pkg_cv_DBUS_CFLAGS="$DBUS_CFLAGS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"dbus-1 >= 1.1\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "dbus-1 >= 1.1") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_DBUS_CFLAGS=`$PKG_CONFIG --cflags "dbus-1 >= 1.1" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+if test -n "$PKG_CONFIG"; then
+    if test -n "$DBUS_LIBS"; then
+        pkg_cv_DBUS_LIBS="$DBUS_LIBS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"dbus-1 >= 1.1\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "dbus-1 >= 1.1") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_DBUS_LIBS=`$PKG_CONFIG --libs "dbus-1 >= 1.1" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        DBUS_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "dbus-1 >= 1.1"`
+        else
+	        DBUS_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "dbus-1 >= 1.1"`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$DBUS_PKG_ERRORS" >&5
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+                have_dbus=no
+elif test $pkg_failed = untried; then
+	have_dbus=no
+else
+	DBUS_CFLAGS=$pkg_cv_DBUS_CFLAGS
+	DBUS_LIBS=$pkg_cv_DBUS_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	have_dbus=yes
+fi
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for DBUS_GLIB" >&5
+$as_echo_n "checking for DBUS_GLIB... " >&6; }
+
+if test -n "$PKG_CONFIG"; then
+    if test -n "$DBUS_GLIB_CFLAGS"; then
+        pkg_cv_DBUS_GLIB_CFLAGS="$DBUS_GLIB_CFLAGS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"dbus-glib-1\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "dbus-glib-1") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_DBUS_GLIB_CFLAGS=`$PKG_CONFIG --cflags "dbus-glib-1" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+if test -n "$PKG_CONFIG"; then
+    if test -n "$DBUS_GLIB_LIBS"; then
+        pkg_cv_DBUS_GLIB_LIBS="$DBUS_GLIB_LIBS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"dbus-glib-1\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "dbus-glib-1") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_DBUS_GLIB_LIBS=`$PKG_CONFIG --libs "dbus-glib-1" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        DBUS_GLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "dbus-glib-1"`
+        else
+	        DBUS_GLIB_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "dbus-glib-1"`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$DBUS_GLIB_PKG_ERRORS" >&5
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+                have_dbus_glib=no
+elif test $pkg_failed = untried; then
+	have_dbus_glib=no
+else
+	DBUS_GLIB_CFLAGS=$pkg_cv_DBUS_GLIB_CFLAGS
+	DBUS_GLIB_LIBS=$pkg_cv_DBUS_GLIB_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	have_dbus_glib=yes
+fi
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for DBUS_GTHREAD" >&5
+$as_echo_n "checking for DBUS_GTHREAD... " >&6; }
+
+if test -n "$PKG_CONFIG"; then
+    if test -n "$DBUS_GTHREAD_CFLAGS"; then
+        pkg_cv_DBUS_GTHREAD_CFLAGS="$DBUS_GTHREAD_CFLAGS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gthread-2.0\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gthread-2.0") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_DBUS_GTHREAD_CFLAGS=`$PKG_CONFIG --cflags "gthread-2.0" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+if test -n "$PKG_CONFIG"; then
+    if test -n "$DBUS_GTHREAD_LIBS"; then
+        pkg_cv_DBUS_GTHREAD_LIBS="$DBUS_GTHREAD_LIBS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gthread-2.0\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gthread-2.0") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_DBUS_GTHREAD_LIBS=`$PKG_CONFIG --libs "gthread-2.0" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        DBUS_GTHREAD_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "gthread-2.0"`
+        else
+	        DBUS_GTHREAD_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "gthread-2.0"`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$DBUS_GTHREAD_PKG_ERRORS" >&5
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+                have_dbus_gthread=no
+elif test $pkg_failed = untried; then
+	have_dbus_gthread=no
+else
+	DBUS_GTHREAD_CFLAGS=$pkg_cv_DBUS_GTHREAD_CFLAGS
+	DBUS_GTHREAD_LIBS=$pkg_cv_DBUS_GTHREAD_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	have_dbus_gthread=yes
+fi
+
+
+
+
+
+
+    if test x$have_dbus_glib = xyes -a x$have_dbus = xyes -a x$have_dbus_gthread = xyes ; then
+        saved_CFLAGS=$CFLAGS
+        saved_LIBS=$LIBS
+        CFLAGS="$CFLAGS $DBUS_GLIB_CFLAGS"
+        LIBS="$LIBS $DBUS_GLIB_LIBS"
+        ac_fn_c_check_func "$LINENO" "dbus_g_bus_get_private" "ac_cv_func_dbus_g_bus_get_private"
+if test "x$ac_cv_func_dbus_g_bus_get_private" = xyes; then :
+  atalk_cv_with_dbus=yes
+else
+  atalk_cv_with_dbus=no
+fi
+
+        CFLAGS="$saved_CFLAGS"
+        LIBS="$saved_LIBS"
+    fi
+     if test x$atalk_cv_with_dbus = xyes; then
+  HAVE_DBUS_GLIB_TRUE=
+  HAVE_DBUS_GLIB_FALSE='#'
+else
+  HAVE_DBUS_GLIB_TRUE='#'
+  HAVE_DBUS_GLIB_FALSE=
+fi
+
+
+
+# Check whether --with-dbus-sysconf-dir was given.
+if test "${with_dbus_sysconf_dir+set}" = set; then :
+  withval=$with_dbus_sysconf_dir; ac_cv_dbus_sysdir=$withval
+else
+  ac_cv_dbus_sysdir='${sysconfdir}/dbus-1/system.d'
+
+fi
+
+
+    if test x$atalk_cv_with_dbus = xyes ; then
+
+$as_echo "#define HAVE_DBUS_GLIB 1" >>confdefs.h
+
+        DBUS_SYS_DIR="$ac_cv_dbus_sysdir"
+
+    fi
+
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to use Filesystem Hierarchy Standard (FHS) compatibility" >&5
+$as_echo_n "checking whether to use Filesystem Hierarchy Standard (FHS) compatibility... " >&6; }
+# Check whether --enable-fhs was given.
+if test "${enable_fhs+set}" = set; then :
+  enableval=$enable_fhs;
+	if test "$enableval" = "yes"; then
+		bindir="/bin"
+		sbindir="/sbin"
+		sysconfdir="/etc"
+		libdir="/lib"
+		localstatedir="/var"
+		mandir="/usr/share/man"
+		uams_path="${libdir}/netatalk"
+		PKGCONFDIR="${sysconfdir}"
+		SERVERTEXT="${localstatedir}/netatalk/msg"
+		use_pam_so=yes
+
+$as_echo "#define FHS_COMPATIBILITY 1" >>confdefs.h
+
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        atalk_cv_fhs_compat=yes
+	else
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+        atalk_cv_fhs_compat=no
+	fi
+
+else
+
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+        atalk_cv_fhs_compat=no
+
+fi
+
+
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking netatalk lockfile path" >&5
+$as_echo_n "checking netatalk lockfile path... " >&6; }
+
+# Check whether --with-lockfile was given.
+if test "${with_lockfile+set}" = set; then :
+  withval=$with_lockfile; ac_cv_netatalk_lock=$withval
+else
+  ac_cv_netatalk_lock=""
+
+fi
+
+    if test -z "$ac_cv_netatalk_lock" ; then
+        ac_cv_netatalk_lock=/var/spool/locks/netatalk
+        if test x"$atalk_cv_fhs_compat" = x"yes" ; then
+            ac_cv_netatalk_lock=/var/run/netatalk.pid
+        else
+            case "$host_os" in
+            *freebsd*)
+                ac_cv_netatalk_lock=/var/spool/lock/netatalk
+                ;;
+            *netbsd*|*openbsd*)
+                ac_cv_netatalk_lock=/var/run/netatalk.pid
+                ;;
+            *linux*)
+                ac_cv_netatalk_lock=/var/lock/netatalk
+                ;;
+            esac
+        fi
+    fi
+
+cat >>confdefs.h <<_ACEOF
+#define PATH_NETATALK_LOCK "$ac_cv_netatalk_lock"
+_ACEOF
+
+    PATH_NETATALK_LOCK="$ac_cv_netatalk_lock"
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_netatalk_lock" >&5
+$as_echo "$ac_cv_netatalk_lock" >&6; }
+
+
+
+  # It's just rude to go over the net to build
+  XSLTPROC_FLAGS=--nonet
+  DOCBOOK_ROOT=
+  XSLTPROC_WORKS=no
+
+
+# Check whether --with-docbook was given.
+if test "${with_docbook+set}" = set; then :
+  withval=$with_docbook; DOCBOOK_ROOT=$withval
+
+fi
+
+
+  if test -n "$DOCBOOK_ROOT" ; then
+    # Extract the first word of "xsltproc", so it can be a program name with args.
+set dummy xsltproc; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_XSLTPROC+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$XSLTPROC"; then
+  ac_cv_prog_XSLTPROC="$XSLTPROC" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_XSLTPROC="xsltproc"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+XSLTPROC=$ac_cv_prog_XSLTPROC
+if test -n "$XSLTPROC"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $XSLTPROC" >&5
+$as_echo "$XSLTPROC" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+    if test -n "$XSLTPROC"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether xsltproc works" >&5
+$as_echo_n "checking whether xsltproc works... " >&6; }
+      DB_FILE="$DOCBOOK_ROOT/html/docbook.xsl"
+      $XSLTPROC $XSLTPROC_FLAGS $DB_FILE >/dev/null 2>&1 << END
+<?xml version="1.0" encoding='ISO-8859-1'?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN" "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+<book id="test">
+</book>
+END
+      if test "$?" = 0; then
+        XSLTPROC_WORKS=yes
+      fi
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $XSLTPROC_WORKS" >&5
+$as_echo "$XSLTPROC_WORKS" >&6; }
+    fi
+  fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to build Docbook documentation" >&5
+$as_echo_n "checking whether to build Docbook documentation... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $XSLTPROC_WORKS" >&5
+$as_echo "$XSLTPROC_WORKS" >&6; }
+
+   if test x"$XSLTPROC_WORKS" = x"yes"; then
+  HAVE_XSLTPROC_TRUE=
+  HAVE_XSLTPROC_FALSE='#'
+else
+  HAVE_XSLTPROC_TRUE='#'
+  HAVE_XSLTPROC_FALSE=
+fi
+
+
+
+
+
+
+CPPFLAGS="-I\$(top_srcdir)/include -I\$(top_builddir)/include $CPPFLAGS"
 UAMS_PATH="${uams_path}"
 
 
@@ -18055,7 +19039,7 @@ else
   HAVE_OPENSSL_FALSE=
 fi
 
- if test x"$with_acl_support" = x"yes"; then
+ if test x"$ac_cv_have_acls" = x"yes"; then
   HAVE_ACLS_TRUE=
   HAVE_ACLS_FALSE='#'
 else
@@ -18200,7 +19184,7 @@ fi
 AM_BACKSLASH='\'
 
 
-ac_config_files="$ac_config_files Makefile bin/Makefile bin/ad/Makefile bin/afppasswd/Makefile bin/cnid/Makefile bin/cnid/cnid2_create bin/megatron/Makefile bin/misc/Makefile bin/uniconv/Makefile config/Makefile config/pam/Makefile contrib/Makefile contrib/macusers/Makefile contrib/macusers/macusers contrib/shell_utils/Makefile contrib/shell_utils/apple_dump contrib/shell_utils/asip-status.pl distrib/Makefile distrib/config/Makefile distrib/config/netatalk-config distrib/initscripts/Makefile distrib/m4/Makefile doc/Makefile etc/Makefile etc/afpd/Makefile etc/cnid_dbd/Makefile etc/netatalk/Makefile etc/uams/Makefile include/Makefile include/atalk/Makefile libatalk/Makefile libatalk/acl/Makefile libatalk/adouble/Makefile libatalk/bstring/Makefile libatalk/cnid/Makefile libatalk/cnid/cdb/Makefile libatalk/cnid/last/Makefile libatalk/cnid/dbd/Makefile libatalk/cnid/tdb/Makefile libatalk/compat/Makefile libatalk/dsi/Makefile libatalk/iniparser/Makefile libatalk/tdb/Makefile libatalk/unicode/Makefile libatalk/unicode/charsets/Makefile libatalk/util/Makefile libatalk/vfs/Makefile macros/Makefile man/Makefile man/man1/Makefile man/man5/Makefile man/man8/Makefile test/Makefile test/afpd/Makefile"
+ac_config_files="$ac_config_files Makefile bin/Makefile bin/ad/Makefile bin/afppasswd/Makefile bin/cnid/Makefile bin/cnid/cnid2_create bin/megatron/Makefile bin/misc/Makefile bin/uniconv/Makefile config/Makefile config/pam/Makefile contrib/Makefile contrib/macusers/Makefile contrib/macusers/macusers contrib/shell_utils/Makefile contrib/shell_utils/apple_dump contrib/shell_utils/asip-status.pl distrib/Makefile distrib/config/Makefile distrib/config/netatalk-config distrib/initscripts/Makefile distrib/m4/Makefile doc/Makefile doc/html.xsl doc/man.xsl doc/manual/Makefile doc/manual/manual.xml doc/manpages/Makefile doc/manpages/man1/Makefile doc/manpages/man5/Makefile doc/manpages/man8/Makefile etc/Makefile etc/afpd/Makefile etc/cnid_dbd/Makefile etc/netatalk/Makefile etc/uams/Makefile include/Makefile include/atalk/Makefile libatalk/Makefile libatalk/acl/Makefile libatalk/adouble/Makefile libatalk/bstring/Makefile libatalk/cnid/Makefile libatalk/cnid/cdb/Makefile libatalk/cnid/last/Makefile libatalk/cnid/dbd/Makefile libatalk/cnid/tdb/Makefile libatalk/compat/Makefile libatalk/dsi/Makefile libatalk/iniparser/Makefile libatalk/tdb/Makefile libatalk/unicode/Makefile libatalk/unicode/charsets/Makefile libatalk/util/Makefile libatalk/vfs/Makefile macros/Makefile man/Makefile man/man1/Makefile man/man1/ad.1 man/man1/afpldaptest.1 man/man1/afppasswd.1 man/man1/afpstats.1 man/man1/apple_dump.1 man/man1/asip-status.pl.1 man/man1/dbd.1 man/man1/macusers.1 man/man1/netatalk-config.1 man/man1/uniconv.1 man/man5/Makefile man/man5/afp.conf.5 man/man5/afp_signature.conf.5 man/man5/afp_voluuid.conf.5 man/man5/extmap.conf.5 man/man8/Makefile man/man8/afpd.8 man/man8/cnid_dbd.8 man/man8/cnid_metad.8 man/man8/netatalk.8 test/Makefile test/afpd/Makefile"
 
 ac_config_commands="$ac_config_commands default"
 
@@ -18394,8 +19378,24 @@ if test -z "${USE_BUILTIN_LIBEVENT_TRUE}" && test -z "${USE_BUILTIN_LIBEVENT_FAL
   as_fn_error $? "conditional \"USE_BUILTIN_LIBEVENT\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${USE_BUILTIN_TDB_TRUE}" && test -z "${USE_BUILTIN_TDB_FALSE}"; then
+  as_fn_error $? "conditional \"USE_BUILTIN_TDB\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${DEVELOPER_TRUE}" && test -z "${DEVELOPER_FALSE}"; then
   as_fn_error $? "conditional \"DEVELOPER\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${WITH_DTRACE_TRUE}" && test -z "${WITH_DTRACE_FALSE}"; then
+  as_fn_error $? "conditional \"WITH_DTRACE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_DBUS_GLIB_TRUE}" && test -z "${HAVE_DBUS_GLIB_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_DBUS_GLIB\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_XSLTPROC_TRUE}" && test -z "${HAVE_XSLTPROC_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_XSLTPROC\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${SOLARIS_MODULE_TRUE}" && test -z "${SOLARIS_MODULE_FALSE}"; then
@@ -19369,6 +20369,14 @@ do
     "distrib/initscripts/Makefile") CONFIG_FILES="$CONFIG_FILES distrib/initscripts/Makefile" ;;
     "distrib/m4/Makefile") CONFIG_FILES="$CONFIG_FILES distrib/m4/Makefile" ;;
     "doc/Makefile") CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
+    "doc/html.xsl") CONFIG_FILES="$CONFIG_FILES doc/html.xsl" ;;
+    "doc/man.xsl") CONFIG_FILES="$CONFIG_FILES doc/man.xsl" ;;
+    "doc/manual/Makefile") CONFIG_FILES="$CONFIG_FILES doc/manual/Makefile" ;;
+    "doc/manual/manual.xml") CONFIG_FILES="$CONFIG_FILES doc/manual/manual.xml" ;;
+    "doc/manpages/Makefile") CONFIG_FILES="$CONFIG_FILES doc/manpages/Makefile" ;;
+    "doc/manpages/man1/Makefile") CONFIG_FILES="$CONFIG_FILES doc/manpages/man1/Makefile" ;;
+    "doc/manpages/man5/Makefile") CONFIG_FILES="$CONFIG_FILES doc/manpages/man5/Makefile" ;;
+    "doc/manpages/man8/Makefile") CONFIG_FILES="$CONFIG_FILES doc/manpages/man8/Makefile" ;;
     "etc/Makefile") CONFIG_FILES="$CONFIG_FILES etc/Makefile" ;;
     "etc/afpd/Makefile") CONFIG_FILES="$CONFIG_FILES etc/afpd/Makefile" ;;
     "etc/cnid_dbd/Makefile") CONFIG_FILES="$CONFIG_FILES etc/cnid_dbd/Makefile" ;;
@@ -19396,8 +20404,26 @@ do
     "macros/Makefile") CONFIG_FILES="$CONFIG_FILES macros/Makefile" ;;
     "man/Makefile") CONFIG_FILES="$CONFIG_FILES man/Makefile" ;;
     "man/man1/Makefile") CONFIG_FILES="$CONFIG_FILES man/man1/Makefile" ;;
+    "man/man1/ad.1") CONFIG_FILES="$CONFIG_FILES man/man1/ad.1" ;;
+    "man/man1/afpldaptest.1") CONFIG_FILES="$CONFIG_FILES man/man1/afpldaptest.1" ;;
+    "man/man1/afppasswd.1") CONFIG_FILES="$CONFIG_FILES man/man1/afppasswd.1" ;;
+    "man/man1/afpstats.1") CONFIG_FILES="$CONFIG_FILES man/man1/afpstats.1" ;;
+    "man/man1/apple_dump.1") CONFIG_FILES="$CONFIG_FILES man/man1/apple_dump.1" ;;
+    "man/man1/asip-status.pl.1") CONFIG_FILES="$CONFIG_FILES man/man1/asip-status.pl.1" ;;
+    "man/man1/dbd.1") CONFIG_FILES="$CONFIG_FILES man/man1/dbd.1" ;;
+    "man/man1/macusers.1") CONFIG_FILES="$CONFIG_FILES man/man1/macusers.1" ;;
+    "man/man1/netatalk-config.1") CONFIG_FILES="$CONFIG_FILES man/man1/netatalk-config.1" ;;
+    "man/man1/uniconv.1") CONFIG_FILES="$CONFIG_FILES man/man1/uniconv.1" ;;
     "man/man5/Makefile") CONFIG_FILES="$CONFIG_FILES man/man5/Makefile" ;;
+    "man/man5/afp.conf.5") CONFIG_FILES="$CONFIG_FILES man/man5/afp.conf.5" ;;
+    "man/man5/afp_signature.conf.5") CONFIG_FILES="$CONFIG_FILES man/man5/afp_signature.conf.5" ;;
+    "man/man5/afp_voluuid.conf.5") CONFIG_FILES="$CONFIG_FILES man/man5/afp_voluuid.conf.5" ;;
+    "man/man5/extmap.conf.5") CONFIG_FILES="$CONFIG_FILES man/man5/extmap.conf.5" ;;
     "man/man8/Makefile") CONFIG_FILES="$CONFIG_FILES man/man8/Makefile" ;;
+    "man/man8/afpd.8") CONFIG_FILES="$CONFIG_FILES man/man8/afpd.8" ;;
+    "man/man8/cnid_dbd.8") CONFIG_FILES="$CONFIG_FILES man/man8/cnid_dbd.8" ;;
+    "man/man8/cnid_metad.8") CONFIG_FILES="$CONFIG_FILES man/man8/cnid_metad.8" ;;
+    "man/man8/netatalk.8") CONFIG_FILES="$CONFIG_FILES man/man8/netatalk.8" ;;
     "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
     "test/afpd/Makefile") CONFIG_FILES="$CONFIG_FILES test/afpd/Makefile" ;;
     "default") CONFIG_COMMANDS="$CONFIG_COMMANDS default" ;;
@@ -20909,12 +21935,20 @@ fi
 
 
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: Using libraries:" >&5
-$as_echo "Using libraries:" >&6; }
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result:     LIBS = $LIBS" >&5
-$as_echo "    LIBS = $LIBS" >&6; }
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result:     CFLAGS = $CFLAGS" >&5
-$as_echo "    CFLAGS = $CFLAGS" >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: Compilation summary:" >&5
+$as_echo "Compilation summary:" >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result:     CPPFLAGS       = $CPPFLAGS" >&5
+$as_echo "    CPPFLAGS       = $CPPFLAGS" >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result:     CFLAGS         = $CFLAGS" >&5
+$as_echo "    CFLAGS         = $CFLAGS" >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result:     LIBS           = $LIBS" >&5
+$as_echo "    LIBS           = $LIBS" >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result:     PTHREADS:" >&5
+$as_echo "    PTHREADS:" >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result:         LIBS   = $PTHREAD_LIBS" >&5
+$as_echo "        LIBS   = $PTHREAD_LIBS" >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result:         CFLAGS = $PTHREAD_CFLAGS" >&5
+$as_echo "        CFLAGS = $PTHREAD_CFLAGS" >&6; }
 	if test x"$neta_cv_have_openssl" = x"yes"; then
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result:     SSL:" >&5
 $as_echo "    SSL:" >&6; }
@@ -20982,11 +22016,34 @@ $as_echo "        CFLAGS = $ZEROCONF_CFLAGS" >&6; }
 	if test x"$netatalk_cv_ldap" = x"yes"; then
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result:     LDAP:" >&5
 $as_echo "    LDAP:" >&6; }
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result:         LIBS   = $LDAP_LDLFLAGS $LDAP_LIBS" >&5
-$as_echo "        LIBS   = $LDAP_LDLFLAGS $LDAP_LIBS" >&6; }
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result:         LIBS   = $LDAP_LDFLAGS $LDAP_LIBS" >&5
+$as_echo "        LIBS   = $LDAP_LDFLAGS $LDAP_LIBS" >&6; }
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result:         CFLAGS = $LDAP_CFLAGS" >&5
 $as_echo "        CFLAGS = $LDAP_CFLAGS" >&6; }
 	fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result:     LIBEVENT:" >&5
+$as_echo "    LIBEVENT:" >&6; }
+    if test x"$use_bundled_libevent" = x"yes"; then
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result:         bundled" >&5
+$as_echo "        bundled" >&6; }
+    else
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result:         LIBS   = $LIBEVENT_CFLAGS" >&5
+$as_echo "        LIBS   = $LIBEVENT_CFLAGS" >&6; }
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result:         CFLAGS = $LIBEVENT_LDFLAGS" >&5
+$as_echo "        CFLAGS = $LIBEVENT_LDFLAGS" >&6; }
+    fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result:     TDB:" >&5
+$as_echo "    TDB:" >&6; }
+    if test x"$use_bundled_tdb" = x"yes"; then
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result:         bundled" >&5
+$as_echo "        bundled" >&6; }
+    else
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result:         LIBS   = $TDB_LIBS" >&5
+$as_echo "        LIBS   = $TDB_LIBS" >&6; }
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result:         CFLAGS = $TDB_CFLAGS" >&5
+$as_echo "        CFLAGS = $TDB_CFLAGS" >&6; }
+    fi
 
 
 
@@ -21005,8 +22062,8 @@ $as_echo "         none" >&6; }
 $as_echo "    AFP:" >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result:          Extended Attributes: $neta_cv_eas" >&5
 $as_echo "         Extended Attributes: $neta_cv_eas" >&6; }
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result:          ACL support: $with_acl_support" >&5
-$as_echo "         ACL support: $with_acl_support" >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result:          ACL support: $ac_cv_have_acls" >&5
+$as_echo "         ACL support: $ac_cv_have_acls" >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result:     CNID:" >&5
 $as_echo "    CNID:" >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result:          backends: $compiled_backends" >&5
@@ -21064,7 +22121,27 @@ $as_echo "         ACL support:             $with_acl_support" >&6; }
 $as_echo "         Kerberos support:        $with_kerberos" >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result:          LDAP support:            $netatalk_cv_ldap" >&5
 $as_echo "         LDAP support:            $netatalk_cv_ldap" >&6; }
-	if test x"$use_pam_so" = x"yes" -a x"$netatalk_cv_install_pam" = x"no"; then
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result:          dbus support:            $atalk_cv_with_dbus" >&5
+$as_echo "         dbus support:            $atalk_cv_with_dbus" >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result:          dtrace probes:           $WDTRACE" >&5
+$as_echo "         dtrace probes:           $WDTRACE" >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result:     Paths:" >&5
+$as_echo "    Paths:" >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result:          Netatalk lockfile:       $ac_cv_netatalk_lock" >&5
+$as_echo "         Netatalk lockfile:       $ac_cv_netatalk_lock" >&6; }
+	if test "x$init_style" != x"none"; then
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result:          init directory:          $ac_cv_init_dir" >&5
+$as_echo "         init directory:          $ac_cv_init_dir" >&6; }
+	fi
+	if test x"$atalk_cv_with_dbus" = x"yes"; then
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result:          dbus system directory:   $ac_cv_dbus_sysdir" >&5
+$as_echo "         dbus system directory:   $ac_cv_dbus_sysdir" >&6; }
+	fi
+	if test x"$use_pam_so" = x"yes"; then
+	   if test x"$netatalk_cv_install_pam" = x"yes"; then
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result:          pam config directory:    $ac_cv_pamdir" >&5
+$as_echo "         pam config directory:    $ac_cv_pamdir" >&6; }
+	   else
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: " >&5
 $as_echo "" >&6; }
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING:  PAM support was configured for your system, but the netatalk PAM configuration file" >&5
@@ -21075,6 +22152,10 @@ $as_echo "$as_me: WARNING:  cannot be installed. Please install the config/netat
 $as_echo "$as_me: WARNING:  If you're running Solaris or BSD you'll have to edit /etc/pam.conf to get PAM working." >&2;}
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING:  You can also re-run configure and specify --without-pam to disable PAM support." >&5
 $as_echo "$as_me: WARNING:  You can also re-run configure and specify --without-pam to disable PAM support." >&2;}
+	   fi
 	fi
-
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result:     Documentation:" >&5
+$as_echo "    Documentation:" >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result:          Docbook:                 $XSLTPROC_WORKS" >&5
+$as_echo "         Docbook:                 $XSLTPROC_WORKS" >&6; }
 

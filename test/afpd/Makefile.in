@@ -57,11 +57,14 @@ target_triplet = @target@
 TESTS = test.sh test$(EXEEXT)
 check_PROGRAMS = test$(EXEEXT)
 @HAVE_ACLS_TRUE@am__append_1 = $(top_srcdir)/etc/afpd/acls.c
+@WITH_DTRACE_TRUE@am__append_2 = afp_dtrace.o @DTRACE_LIBS@
+@WITH_DTRACE_TRUE@am__append_3 = afp_dtrace.o
 subdir = test/afpd
 DIST_COMMON = $(noinst_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
+	$(top_srcdir)/macros/ax_pthread.m4 \
 	$(top_srcdir)/macros/cnid-backend.m4 \
 	$(top_srcdir)/macros/config-checks.m4 \
 	$(top_srcdir)/macros/db3-check.m4 \
@@ -110,8 +113,8 @@ am__test_SOURCES_DIST = test.c subtests.c afpfunc_helpers.c \
 	$(top_srcdir)/etc/afpd/fce_api.c \
 	$(top_srcdir)/etc/afpd/fce_util.c \
 	$(top_srcdir)/etc/afpd/file.c $(top_srcdir)/etc/afpd/filedir.c \
-	$(top_srcdir)/etc/afpd/fork.c $(top_srcdir)/etc/afpd/gettok.c \
-	$(top_srcdir)/etc/afpd/hash.c $(top_srcdir)/etc/afpd/mangle.c \
+	$(top_srcdir)/etc/afpd/fork.c $(top_srcdir)/etc/afpd/hash.c \
+	$(top_srcdir)/etc/afpd/mangle.c \
 	$(top_srcdir)/etc/afpd/messages.c \
 	$(top_srcdir)/etc/afpd/nfsquota.c \
 	$(top_srcdir)/etc/afpd/ofork.c $(top_srcdir)/etc/afpd/quota.c \
@@ -131,15 +134,16 @@ am_test_OBJECTS = test-test.$(OBJEXT) test-subtests.$(OBJEXT) \
 	test-directory.$(OBJEXT) test-enumerate.$(OBJEXT) \
 	test-extattrs.$(OBJEXT) test-fce_api.$(OBJEXT) \
 	test-fce_util.$(OBJEXT) test-file.$(OBJEXT) \
-	test-filedir.$(OBJEXT) test-fork.$(OBJEXT) \
-	test-gettok.$(OBJEXT) test-hash.$(OBJEXT) \
+	test-filedir.$(OBJEXT) test-fork.$(OBJEXT) test-hash.$(OBJEXT) \
 	test-mangle.$(OBJEXT) test-messages.$(OBJEXT) \
 	test-nfsquota.$(OBJEXT) test-ofork.$(OBJEXT) \
 	test-quota.$(OBJEXT) test-status.$(OBJEXT) \
 	test-switch.$(OBJEXT) test-uam.$(OBJEXT) test-unix.$(OBJEXT) \
 	test-volume.$(OBJEXT) $(am__objects_1)
 test_OBJECTS = $(am_test_OBJECTS)
-test_DEPENDENCIES = $(top_builddir)/libatalk/libatalk.la
+@WITH_DTRACE_TRUE@am__DEPENDENCIES_1 = afp_dtrace.o
+test_DEPENDENCIES = $(top_builddir)/libatalk/libatalk.la \
+	$(am__DEPENDENCIES_1)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -207,17 +211,24 @@ BDB_PATH = @BDB_PATH@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
-COMPILE_64BIT_KMODULE = @COMPILE_64BIT_KMODULE@
-COMPILE_KERNEL_GCC = @COMPILE_KERNEL_GCC@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CRYPT_LIBS = @CRYPT_LIBS@
 CYGPATH_W = @CYGPATH_W@
+DBUS_CFLAGS = @DBUS_CFLAGS@
+DBUS_GLIB_CFLAGS = @DBUS_GLIB_CFLAGS@
+DBUS_GLIB_LIBS = @DBUS_GLIB_LIBS@
+DBUS_GTHREAD_CFLAGS = @DBUS_GTHREAD_CFLAGS@
+DBUS_GTHREAD_LIBS = @DBUS_GTHREAD_LIBS@
+DBUS_LIBS = @DBUS_LIBS@
+DBUS_SYS_DIR = @DBUS_SYS_DIR@
 DEFAULT_CNID_SCHEME = @DEFAULT_CNID_SCHEME@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLTOOL = @DLLTOOL@
+DOCBOOK_ROOT = @DOCBOOK_ROOT@
 DSYMUTIL = @DSYMUTIL@
+DTRACE_LIBS = @DTRACE_LIBS@
 DUMPBIN = @DUMPBIN@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
@@ -231,13 +242,12 @@ GSSAPI_LDFLAGS = @GSSAPI_LDFLAGS@
 GSSAPI_LIBS = @GSSAPI_LIBS@
 ICONV_CFLAGS = @ICONV_CFLAGS@
 ICONV_LIBS = @ICONV_LIBS@
+INIT_DIR = @INIT_DIR@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-KCFLAGS = @KCFLAGS@
-KLDFLAGS = @KLDFLAGS@
 KRB5_CFLAGS = @KRB5_CFLAGS@
 KRB5_CONFIG = @KRB5_CONFIG@
 KRB5_LIBS = @KRB5_LIBS@
@@ -291,11 +301,14 @@ PAM_DIRECTIVE = @PAM_DIRECTIVE@
 PAM_LIBS = @PAM_LIBS@
 PAM_PASSWORD = @PAM_PASSWORD@
 PAM_SESSION = @PAM_SESSION@
+PATH_NETATALK_LOCK = @PATH_NETATALK_LOCK@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
 PKGCONFDIR = @PKGCONFDIR@
 PKG_CONFIG = @PKG_CONFIG@
 PS = @PS@
+PTHREAD_CC = @PTHREAD_CC@
+PTHREAD_CFLAGS = @PTHREAD_CFLAGS@
 PTHREAD_LIBS = @PTHREAD_LIBS@
 QUOTA_LIBS = @QUOTA_LIBS@
 RANLIB = @RANLIB@
@@ -306,9 +319,13 @@ SHELL = @SHELL@
 SSL_CFLAGS = @SSL_CFLAGS@
 SSL_LIBS = @SSL_LIBS@
 STRIP = @STRIP@
+TDB_CFLAGS = @TDB_CFLAGS@
+TDB_LIBS = @TDB_LIBS@
 UAMS_PATH = @UAMS_PATH@
 VERSION = @VERSION@
 WRAP_LIBS = @WRAP_LIBS@
+XSLTPROC = @XSLTPROC@
+XSLTPROC_FLAGS = @XSLTPROC_FLAGS@
 ZEROCONF_CFLAGS = @ZEROCONF_CFLAGS@
 ZEROCONF_LIBS = @ZEROCONF_LIBS@
 abs_builddir = @abs_builddir@
@@ -323,6 +340,8 @@ am__leading_dot = @am__leading_dot@
 am__quote = @am__quote@
 am__tar = @am__tar@
 am__untar = @am__untar@
+atalk_cv_have_dtrace = @atalk_cv_have_dtrace@
+ax_pthread_config = @ax_pthread_config@
 bindir = @bindir@
 build = @build@
 build_alias = @build_alias@
@@ -373,7 +392,7 @@ top_srcdir = @top_srcdir@
 pkgconfdir = @PKGCONFDIR@
 noinst_HEADERS = test.h subtests.h afpfunc_helpers.h
 EXTRA_DIST = test.sh
-CLEANFILES = test.default test.conf
+CLEANFILES = test.default test.conf $(am__append_3)
 test_SOURCES = test.c subtests.c afpfunc_helpers.c \
 	$(top_srcdir)/etc/afpd/afp_avahi.c \
 	$(top_srcdir)/etc/afpd/afp_config.c \
@@ -393,8 +412,8 @@ test_SOURCES = test.c subtests.c afpfunc_helpers.c \
 	$(top_srcdir)/etc/afpd/fce_api.c \
 	$(top_srcdir)/etc/afpd/fce_util.c \
 	$(top_srcdir)/etc/afpd/file.c $(top_srcdir)/etc/afpd/filedir.c \
-	$(top_srcdir)/etc/afpd/fork.c $(top_srcdir)/etc/afpd/gettok.c \
-	$(top_srcdir)/etc/afpd/hash.c $(top_srcdir)/etc/afpd/mangle.c \
+	$(top_srcdir)/etc/afpd/fork.c $(top_srcdir)/etc/afpd/hash.c \
+	$(top_srcdir)/etc/afpd/mangle.c \
 	$(top_srcdir)/etc/afpd/messages.c \
 	$(top_srcdir)/etc/afpd/nfsquota.c \
 	$(top_srcdir)/etc/afpd/ofork.c $(top_srcdir)/etc/afpd/quota.c \
@@ -414,11 +433,12 @@ test_CFLAGS = \
 	-D_PATH_CONFDIR=\"$(pkgconfdir)/\" \
 	-D_PATH_STATEDIR='"$(localstatedir)/netatalk/"'
 
-test_LDADD = \
-	$(top_builddir)/libatalk/libatalk.la \
-	@LIBGCRYPT_LIBS@ @QUOTA_LIBS@ @WRAP_LIBS@ @LIBADD_DL@ @ACL_LIBS@ @ZEROCONF_LIBS@ @PTHREAD_LIBS@ @GSSAPI_LIBS@ @KRB5_LIBS@
-
+test_LDADD = $(top_builddir)/libatalk/libatalk.la @LIBGCRYPT_LIBS@ \
+	@QUOTA_LIBS@ @WRAP_LIBS@ @LIBADD_DL@ @ACL_LIBS@ \
+	@ZEROCONF_LIBS@ @PTHREAD_LIBS@ @GSSAPI_LIBS@ @KRB5_LIBS@ \
+	$(am__append_2)
 test_LDFLAGS = -export-dynamic
+@WITH_DTRACE_TRUE@DTRACE_OBJ = test-afp_dsi.o test-fork.o test-appl.o test-catsearch.o test-directory.o test-enumerate.o test-file.o test-filedir.o
 all: all-am
 
 .SUFFIXES:
@@ -495,7 +515,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test-file.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test-filedir.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test-fork.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test-gettok.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test-hash.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test-mangle.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test-messages.Po@am__quote@
@@ -866,20 +885,6 @@ test-fork.obj: $(top_srcdir)/etc/afpd/fork.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/etc/afpd/fork.c' object='test-fork.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -c -o test-fork.obj `if test -f '$(top_srcdir)/etc/afpd/fork.c'; then $(CYGPATH_W) '$(top_srcdir)/etc/afpd/fork.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/etc/afpd/fork.c'; fi`
-
-test-gettok.o: $(top_srcdir)/etc/afpd/gettok.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -MT test-gettok.o -MD -MP -MF $(DEPDIR)/test-gettok.Tpo -c -o test-gettok.o `test -f '$(top_srcdir)/etc/afpd/gettok.c' || echo '$(srcdir)/'`$(top_srcdir)/etc/afpd/gettok.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test-gettok.Tpo $(DEPDIR)/test-gettok.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/etc/afpd/gettok.c' object='test-gettok.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -c -o test-gettok.o `test -f '$(top_srcdir)/etc/afpd/gettok.c' || echo '$(srcdir)/'`$(top_srcdir)/etc/afpd/gettok.c
-
-test-gettok.obj: $(top_srcdir)/etc/afpd/gettok.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -MT test-gettok.obj -MD -MP -MF $(DEPDIR)/test-gettok.Tpo -c -o test-gettok.obj `if test -f '$(top_srcdir)/etc/afpd/gettok.c'; then $(CYGPATH_W) '$(top_srcdir)/etc/afpd/gettok.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/etc/afpd/gettok.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test-gettok.Tpo $(DEPDIR)/test-gettok.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/etc/afpd/gettok.c' object='test-gettok.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -c -o test-gettok.obj `if test -f '$(top_srcdir)/etc/afpd/gettok.c'; then $(CYGPATH_W) '$(top_srcdir)/etc/afpd/gettok.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/etc/afpd/gettok.c'; fi`
 
 test-hash.o: $(top_srcdir)/etc/afpd/hash.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -MT test-hash.o -MD -MP -MF $(DEPDIR)/test-hash.Tpo -c -o test-hash.o `test -f '$(top_srcdir)/etc/afpd/hash.c' || echo '$(srcdir)/'`$(top_srcdir)/etc/afpd/hash.c
@@ -1354,6 +1359,9 @@ uninstall-am:
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags uninstall uninstall-am
 
+@WITH_DTRACE_TRUE@afp_dtrace.o: $(top_srcdir)/include/atalk/afp_dtrace.d $(DTRACE_OBJ)
+@WITH_DTRACE_TRUE@	if test -f afp_dtrace.o ; then rm -f afp_dtrace.o ; fi
+@WITH_DTRACE_TRUE@	$(LIBTOOL) --mode=execute dtrace -G -s $(top_srcdir)/include/atalk/afp_dtrace.d -o afp_dtrace.o $(DTRACE_OBJ)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

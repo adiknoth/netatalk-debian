@@ -72,10 +72,14 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
+@USE_BUILTIN_TDB_TRUE@am__append_1 = tdb
+@USE_BUILTIN_TDB_TRUE@am__append_2 = tdb/libtdb.la
+@USE_BUILTIN_TDB_TRUE@am__append_3 = tdb/libtdb.la
 subdir = libatalk
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
+	$(top_srcdir)/macros/ax_pthread.m4 \
 	$(top_srcdir)/macros/cnid-backend.m4 \
 	$(top_srcdir)/macros/config-checks.m4 \
 	$(top_srcdir)/macros/db3-check.m4 \
@@ -134,14 +138,14 @@ am__uninstall_files_from_dir = { \
   }
 am__installdirs = "$(DESTDIR)$(libdir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
-am_libatalk_la_OBJECTS = dummy.lo
+am_libatalk_la_OBJECTS = libatalk_la-dummy.lo
 libatalk_la_OBJECTS = $(am_libatalk_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 libatalk_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(libatalk_la_LDFLAGS) $(LDFLAGS) -o $@
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libatalk_la_CFLAGS) \
+	$(CFLAGS) $(libatalk_la_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -189,7 +193,8 @@ AM_RECURSIVE_TARGETS = $(RECURSIVE_TARGETS:-recursive=) \
 	distdir
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = $(SUBDIRS)
+DIST_SUBDIRS = acl adouble bstring compat cnid dsi iniparser util \
+	unicode vfs tdb
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 am__relativize = \
   dir0=`pwd`; \
@@ -238,17 +243,24 @@ BDB_PATH = @BDB_PATH@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
-COMPILE_64BIT_KMODULE = @COMPILE_64BIT_KMODULE@
-COMPILE_KERNEL_GCC = @COMPILE_KERNEL_GCC@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CRYPT_LIBS = @CRYPT_LIBS@
 CYGPATH_W = @CYGPATH_W@
+DBUS_CFLAGS = @DBUS_CFLAGS@
+DBUS_GLIB_CFLAGS = @DBUS_GLIB_CFLAGS@
+DBUS_GLIB_LIBS = @DBUS_GLIB_LIBS@
+DBUS_GTHREAD_CFLAGS = @DBUS_GTHREAD_CFLAGS@
+DBUS_GTHREAD_LIBS = @DBUS_GTHREAD_LIBS@
+DBUS_LIBS = @DBUS_LIBS@
+DBUS_SYS_DIR = @DBUS_SYS_DIR@
 DEFAULT_CNID_SCHEME = @DEFAULT_CNID_SCHEME@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLTOOL = @DLLTOOL@
+DOCBOOK_ROOT = @DOCBOOK_ROOT@
 DSYMUTIL = @DSYMUTIL@
+DTRACE_LIBS = @DTRACE_LIBS@
 DUMPBIN = @DUMPBIN@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
@@ -262,13 +274,12 @@ GSSAPI_LDFLAGS = @GSSAPI_LDFLAGS@
 GSSAPI_LIBS = @GSSAPI_LIBS@
 ICONV_CFLAGS = @ICONV_CFLAGS@
 ICONV_LIBS = @ICONV_LIBS@
+INIT_DIR = @INIT_DIR@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-KCFLAGS = @KCFLAGS@
-KLDFLAGS = @KLDFLAGS@
 KRB5_CFLAGS = @KRB5_CFLAGS@
 KRB5_CONFIG = @KRB5_CONFIG@
 KRB5_LIBS = @KRB5_LIBS@
@@ -322,11 +333,14 @@ PAM_DIRECTIVE = @PAM_DIRECTIVE@
 PAM_LIBS = @PAM_LIBS@
 PAM_PASSWORD = @PAM_PASSWORD@
 PAM_SESSION = @PAM_SESSION@
+PATH_NETATALK_LOCK = @PATH_NETATALK_LOCK@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
 PKGCONFDIR = @PKGCONFDIR@
 PKG_CONFIG = @PKG_CONFIG@
 PS = @PS@
+PTHREAD_CC = @PTHREAD_CC@
+PTHREAD_CFLAGS = @PTHREAD_CFLAGS@
 PTHREAD_LIBS = @PTHREAD_LIBS@
 QUOTA_LIBS = @QUOTA_LIBS@
 RANLIB = @RANLIB@
@@ -337,9 +351,13 @@ SHELL = @SHELL@
 SSL_CFLAGS = @SSL_CFLAGS@
 SSL_LIBS = @SSL_LIBS@
 STRIP = @STRIP@
+TDB_CFLAGS = @TDB_CFLAGS@
+TDB_LIBS = @TDB_LIBS@
 UAMS_PATH = @UAMS_PATH@
 VERSION = @VERSION@
 WRAP_LIBS = @WRAP_LIBS@
+XSLTPROC = @XSLTPROC@
+XSLTPROC_FLAGS = @XSLTPROC_FLAGS@
 ZEROCONF_CFLAGS = @ZEROCONF_CFLAGS@
 ZEROCONF_LIBS = @ZEROCONF_LIBS@
 abs_builddir = @abs_builddir@
@@ -354,6 +372,8 @@ am__leading_dot = @am__leading_dot@
 am__quote = @am__quote@
 am__tar = @am__tar@
 am__untar = @am__untar@
+atalk_cv_have_dtrace = @atalk_cv_have_dtrace@
+ax_pthread_config = @ax_pthread_config@
 bindir = @bindir@
 build = @build@
 build_alias = @build_alias@
@@ -401,7 +421,7 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-VERSION_INFO = 2:0:0
+VERSION_INFO = 7:0:0
 
 # History:          VERSION_INFO
 #
@@ -412,42 +432,38 @@ VERSION_INFO = 2:0:0
 #   3.0.0-beta2     1:0:0
 #   3.0             1:0:0
 #   3.0.1           2:0:0
-SUBDIRS = acl adouble bstring compat cnid dsi iniparser tdb util unicode vfs
+#   3.0.2           3:0:0
+#   3.0.3           4:0:0
+#   3.0.4           5:0:0
+#   3.0.5           6:0:0
+#   3.0.6           7:0:0
+SUBDIRS = acl adouble bstring compat cnid dsi iniparser util unicode \
+	vfs $(am__append_1)
 lib_LTLIBRARIES = libatalk.la
 libatalk_la_SOURCES = dummy.c
-libatalk_la_LIBADD = \
-	@WRAP_LIBS@ @ACL_LIBS@ \
-	acl/libacl.la \
-	adouble/libadouble.la	\
-	bstring/libbstring.la \
-	cnid/libcnid.la \
-	compat/libcompat.la	\
-	dsi/libdsi.la		\
-	iniparser/libiniparser.la \
-	tdb/libtdb.la       \
-	unicode/libunicode.la \
-	util/libutil.la		\
-	vfs/libvfs.la
+libatalk_la_CFLAGS = \
+	@PTHREAD_CFLAGS@
 
-libatalk_la_DEPENDENCIES = \
-	acl/libacl.la \
-	adouble/libadouble.la	\
-	bstring/libbstring.la \
-	cnid/libcnid.la \
-	compat/libcompat.la	\
-	dsi/libdsi.la		\
-	iniparser/libiniparser.la \
-	tdb/libtdb.la       \
-	unicode/libunicode.la \
-	util/libutil.la		\
-	vfs/libvfs.la
-
+libatalk_la_LIBADD = @WRAP_LIBS@ @ACL_LIBS@ @PTHREAD_LIBS@ \
+	acl/libacl.la adouble/libadouble.la bstring/libbstring.la \
+	cnid/libcnid.la compat/libcompat.la dsi/libdsi.la \
+	iniparser/libiniparser.la unicode/libunicode.la \
+	util/libutil.la vfs/libvfs.la $(am__append_2)
+libatalk_la_DEPENDENCIES = acl/libacl.la adouble/libadouble.la \
+	bstring/libbstring.la cnid/libcnid.la compat/libcompat.la \
+	dsi/libdsi.la iniparser/libiniparser.la unicode/libunicode.la \
+	util/libutil.la vfs/libvfs.la $(am__append_3)
 libatalk_la_LDFLAGS = -version-info $(VERSION_INFO)
 EXTRA_DIST = \
 	libatalk-3.0beta1.abi \
 	libatalk-3.0beta2.abi \
+	libatalk-3.0.abi \
 	libatalk-3.0.1.abi \
-	libatalk-3.0.abi
+	libatalk-3.0.2.abi \
+	libatalk-3.0.3.abi \
+	libatalk-3.0.4.abi \
+	libatalk-3.0.5.abi \
+	libatalk-3.0.6.abi
 
 all: all-recursive
 
@@ -524,7 +540,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dummy.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libatalk_la-dummy.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -546,6 +562,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
+
+libatalk_la-dummy.lo: dummy.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libatalk_la_CFLAGS) $(CFLAGS) -MT libatalk_la-dummy.lo -MD -MP -MF $(DEPDIR)/libatalk_la-dummy.Tpo -c -o libatalk_la-dummy.lo `test -f 'dummy.c' || echo '$(srcdir)/'`dummy.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libatalk_la-dummy.Tpo $(DEPDIR)/libatalk_la-dummy.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='dummy.c' object='libatalk_la-dummy.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libatalk_la_CFLAGS) $(CFLAGS) -c -o libatalk_la-dummy.lo `test -f 'dummy.c' || echo '$(srcdir)/'`dummy.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

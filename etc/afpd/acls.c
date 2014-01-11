@@ -27,6 +27,9 @@
 #ifdef HAVE_SOLARIS_ACLS
 #include <sys/acl.h>
 #endif
+#ifdef HAVE_FREEBSD_SUNACL
+#include <sunacl.h>
+#endif
 #ifdef HAVE_POSIX_ACLS
 #include <sys/acl.h>
 #endif
@@ -76,7 +79,7 @@
  * Solaris funcs
  ********************************************************/
 
-#ifdef HAVE_SOLARIS_ACLS
+#ifdef HAVE_NFSV4_ACLS
 
 /*! 
  * Compile access rights for a user to one file-system object
@@ -87,15 +90,17 @@
  *
  * @param obj            (r) handle
  * @param path           (r) path to filesystem object
- * @param sb             (r) struct stat of path
- * @param result         (w) resulting Darwin allow ACE
+ * @param sb             (rw) struct stat of path
+ * @param ma             (rw) UARights struct
+ * @param rights_out     (w) mapped Darwin ACL rights
  *
  * @returns                  0 or -1 on error
  */
 static int solaris_acl_rights(const AFPObj *obj,
                               const char *path,
-                              const struct stat *sb,
-                              uint32_t *result)
+                              struct stat *sb,
+                              struct maccess *ma,
+                              uint32_t *rights_out)
 {
     EC_INIT;
     int      i, ace_count, checkgroup;
@@ -168,7 +173,28 @@ static int solaris_acl_rights(const AFPObj *obj,
             darwin_rights |= nfsv4_to_darwin_rights[i].to;
     }
 
-    *result |= darwin_rights;
+    LOG(log_maxdebug, logtype_afpd, "rights: 0x%08x", darwin_rights);
+
+    if (rights_out)
+        *rights_out = darwin_rights;
+
+    if (ma && obj->options.flags & OPTION_ACL2MACCESS) {
+        if (darwin_rights & DARWIN_ACE_READ_DATA)
+            ma->ma_user |= AR_UREAD;
+        if (darwin_rights & DARWIN_ACE_WRITE_DATA)
+            ma->ma_user |= AR_UWRITE;
+        if (darwin_rights & (DARWIN_ACE_EXECUTE | DARWIN_ACE_SEARCH))
+            ma->ma_user |= AR_USEARCH;
+    }
+
+    if (sb && obj->options.flags & OPTION_ACL2MODE) {
+        if (darwin_rights & DARWIN_ACE_READ_DATA)
+            sb->st_mode |= S_IRUSR;
+        if (darwin_rights & DARWIN_ACE_WRITE_DATA)
+            sb->st_mode |= S_IWUSR;
+        if (darwin_rights & (DARWIN_ACE_EXECUTE | DARWIN_ACE_SEARCH))
+            sb->st_mode |= S_IXUSR;
+    }
 
 EC_CLEANUP:
     if (aces) free(aces);
@@ -339,7 +365,7 @@ EC_CLEANUP:
         free(name);
     EC_EXIT;
 }
-#endif /* HAVE_SOLARIS_ACLS */
+#endif /* HAVE_NFSV4_ACLS */
 
 /********************************************************
  * POSIX 1e funcs
@@ -607,21 +633,23 @@ static int posix_acls_to_uaperms(const AFPObj *obj, const char *path, struct sta
                 break;
         }
     }
-    /* apply the mask and adjust user and group permissions */
-    ma->ma_user |= (acl_rights & mask);
-    ma->ma_group = (group_rights & mask);
 
-    /* update st_mode to properly reflect group permissions */
-    sb->st_mode &= ~S_IRWXG;
+    if (obj->options.flags & OPTION_ACL2MACCESS) {
+        /* apply the mask and adjust user and group permissions */
+        ma->ma_user |= (acl_rights & mask);
+        ma->ma_group = (group_rights & mask);
+    }
 
-    if (ma->ma_group & AR_USEARCH)
-        sb->st_mode |= S_IXGRP;
-
-    if (ma->ma_group & AR_UWRITE)
-        sb->st_mode |= S_IWGRP;
-
-    if (ma->ma_group & AR_UREAD)
-        sb->st_mode |= S_IRGRP;
+    if (obj->options.flags & OPTION_ACL2MODE) {
+        /* update st_mode to properly reflect group permissions */
+        sb->st_mode &= ~S_IRWXG;
+        if (ma->ma_group & AR_USEARCH)
+            sb->st_mode |= S_IXGRP;
+        if (ma->ma_group & AR_UWRITE)
+            sb->st_mode |= S_IWGRP;
+        if (ma->ma_group & AR_UREAD)
+            sb->st_mode |= S_IRGRP;
+    }
 
 EC_CLEANUP:
     if (acl) acl_free(acl);
@@ -629,6 +657,7 @@ EC_CLEANUP:
     EC_EXIT;
 }
 
+#if 0
 /*!
  * Add entries of one acl to another acl
  *
@@ -651,6 +680,7 @@ static int acl_add_acl(acl_t *aclp, const acl_t acl)
 EC_CLEANUP:
     EC_EXIT;
 }
+#endif
 
 /*!
  * Map Darwin ACE rights to POSIX 1e perm
@@ -948,7 +978,7 @@ static int map_acl(int type, void *acl, darwin_ace_t *buf, int ace_count)
 
     switch (type & MAP_MASK) {
 
-#ifdef HAVE_SOLARIS_ACLS
+#ifdef HAVE_NFSV4_ACLS
     case SOLARIS_2_DARWIN:
         mapped_aces = map_aces_solaris_to_darwin( acl, buf, ace_count);
         break;
@@ -956,7 +986,7 @@ static int map_acl(int type, void *acl, darwin_ace_t *buf, int ace_count)
     case DARWIN_2_SOLARIS:
         mapped_aces = map_aces_darwin_to_solaris( buf, acl, ace_count);
         break;
-#endif /* HAVE_SOLARIS_ACLS */
+#endif /* HAVE_NFSV4_ACLS */
 
 #ifdef HAVE_POSIX_ACLS
     case POSIX_DEFAULT_2_DARWIN:
@@ -992,7 +1022,7 @@ static int get_and_map_acl(char *name, char *rbuf, size_t *rbuflen)
     int mapped_aces = 0;
     int dirflag;
     char *darwin_ace_count = rbuf;
-#ifdef HAVE_SOLARIS_ACLS
+#ifdef HAVE_NFSV4_ACLS
     int ace_count = 0;
     ace_t *aces = NULL;
 #endif
@@ -1006,10 +1036,10 @@ static int get_and_map_acl(char *name, char *rbuf, size_t *rbuflen)
     *rbuf = 0;
     rbuf += 4;
 
-#ifdef HAVE_SOLARIS_ACLS
+#ifdef HAVE_NFSV4_ACLS
     EC_NEG1(ace_count = get_nfsv4_acl(name, &aces));
     EC_NEG1(mapped_aces = map_acl(SOLARIS_2_DARWIN, aces, (darwin_ace_t *)rbuf, ace_count));
-#endif /* HAVE_SOLARIS_ACLS */
+#endif /* HAVE_NFSV4_ACLS */
 
 #ifdef HAVE_POSIX_ACLS
     acl_t defacl = NULL , accacl = NULL;
@@ -1047,7 +1077,7 @@ static int get_and_map_acl(char *name, char *rbuf, size_t *rbuflen)
     EC_STATUS(0);
 
 EC_CLEANUP:
-#ifdef HAVE_SOLARIS_ACLS
+#ifdef HAVE_NFSV4_ACLS
     if (aces) free(aces);
 #endif
 #ifdef HAVE_POSIX_ACLS
@@ -1065,7 +1095,7 @@ static int remove_acl(const struct vol *vol,const char *path, int dir)
 {
     int ret = AFP_OK;
 
-#if (defined HAVE_SOLARIS_ACLS || defined HAVE_POSIX_ACLS)
+#if (defined HAVE_NFSV4_ACLS || defined HAVE_POSIX_ACLS)
     /* Ressource etc. first */
     if ((ret = vol->vfs->vfs_remove_acl(vol, path, dir)) != AFP_OK)
         return ret;
@@ -1083,7 +1113,7 @@ static int remove_acl(const struct vol *vol,const char *path, int dir)
   We will store inherited ACEs first, which is Darwins canonical order.
   - returns AFPerror code
 */
-#ifdef HAVE_SOLARIS_ACLS
+#ifdef HAVE_NFSV4_ACLS
 static int set_acl(const struct vol *vol,
                    char *name,
                    int inherit,
@@ -1155,28 +1185,31 @@ static int set_acl(const struct vol *vol,
     }
     LOG(log_debug7, logtype_afpd, "set_acl: copied %d trivial ACEs", trivial_ace_count);
 
-    /* Ressourcefork first.
-       Note: for dirs we set the same ACL on the .AppleDouble/.Parent _file_. This
-       might be strange for ACE_DELETE_CHILD and for inheritance flags. */
+    /* Ressourcefork first */
     if ((ret = (vol->vfs->vfs_acl(vol, name, ACE_SETACL, new_aces_count, new_aces))) != 0) {
-        LOG(log_error, logtype_afpd, "set_acl: error setting acl: %s", strerror(errno));
-        if (errno == (EACCES | EPERM))
-            EC_STATUS(AFPERR_ACCESS);
-        else if (errno == ENOENT)
-            EC_STATUS(AFPERR_NOITEM);
-        else
-            EC_STATUS(AFPERR_MISC);
-        goto EC_CLEANUP;
+        LOG(log_debug, logtype_afpd, "set_acl: error setting acl: %s", strerror(errno));
+        switch (errno) {
+        case ENOENT:
+            break;
+        case EACCES:
+        case EPERM:
+            EC_EXIT_STATUS(AFPERR_ACCESS);
+        default:
+            EC_EXIT_STATUS(AFPERR_MISC);
+        }
     }
+
     if ((ret = (acl(name, ACE_SETACL, new_aces_count, new_aces))) != 0) {
         LOG(log_error, logtype_afpd, "set_acl: error setting acl: %s", strerror(errno));
-        if (errno == (EACCES | EPERM))
-            EC_STATUS(AFPERR_ACCESS);
-        else if (errno == ENOENT)
-            EC_STATUS(AFPERR_NOITEM);
-        else
-            EC_STATUS(AFPERR_MISC);
-        goto EC_CLEANUP;
+        switch (errno) {
+        case EACCES:
+        case EPERM:
+            EC_EXIT_STATUS(AFPERR_ACCESS);
+        case ENOENT:
+            EC_EXIT_STATUS(AFPERR_NOITEM);
+        default:
+            EC_EXIT_STATUS(AFPERR_MISC);
+        }
     }
 
     EC_STATUS(AFP_OK);
@@ -1188,7 +1221,7 @@ EC_CLEANUP:
     LOG(log_debug9, logtype_afpd, "set_acl: END");
     EC_EXIT;
 }
-#endif /* HAVE_SOLARIS_ACLS */
+#endif /* HAVE_NFSV4_ACLS */
 
 #ifdef HAVE_POSIX_ACLS
 #ifndef HAVE_ACL_FROM_MODE
@@ -1261,7 +1294,6 @@ static int set_acl(const struct vol *vol,
     acl_entry_t entry;
     acl_tag_t tag;
     int entry_id = ACL_FIRST_ENTRY;
-    int has_def_acl = 0;
     /* flags to indicate if the object has a minimal default acl and/or an extended
      * default acl.
      */
@@ -1355,13 +1387,14 @@ static int check_acl_access(const AFPObj *obj,
     int            ret;
     uint32_t       allowed_rights = 0;
     char           *username = NULL;
-    uuidtype_t     uuidtype;
     struct stat    st;
     bstring        parent = NULL;
     int            is_dir;
 
     LOG(log_maxdebug, logtype_afpd, "check_acl_access(dir: \"%s\", path: \"%s\", curdir: \"%s\", 0x%08x)",
         cfrombstr(dir->d_fullpath), path, getcwdpath(), requested_rights);
+
+    AFP_ASSERT(vol);
 
     /* This check is not used anymore, as OS X Server seems to be ignoring too */
 #if 0
@@ -1380,7 +1413,7 @@ static int check_acl_access(const AFPObj *obj,
     }
 #endif
 
-    EC_ZERO_LOG_ERR(lstat(path, &st), AFPERR_PARAM);
+    EC_ZERO_LOG_ERR(ostat(path, &st, vol_syml_opt(vol)), AFPERR_PARAM);
 
     is_dir = !strcmp(path, ".");
 
@@ -1389,8 +1422,8 @@ static int check_acl_access(const AFPObj *obj,
         allowed_rights = curdir->d_rights_cache;
         LOG(log_debug, logtype_afpd, "check_access: allowed rights from dircache: 0x%08x", allowed_rights);
     } else {
-#ifdef HAVE_SOLARIS_ACLS
-        EC_ZERO_LOG(solaris_acl_rights(obj, path, &st, &allowed_rights));
+#ifdef HAVE_NFSV4_ACLS
+        EC_ZERO_LOG(solaris_acl_rights(obj, path, &st, NULL, &allowed_rights));
 #endif
 #ifdef HAVE_POSIX_ACLS
         EC_ZERO_LOG(posix_acl_rights(obj, path, &st, &allowed_rights));
@@ -1422,8 +1455,8 @@ static int check_acl_access(const AFPObj *obj,
             LOG(log_debug, logtype_afpd,"parent: %s", cfrombstr(parent));
             EC_ZERO_LOG_ERR(lstat(cfrombstr(parent), &st), AFPERR_MISC);
 
-#ifdef HAVE_SOLARIS_ACLS
-            EC_ZERO_LOG(solaris_acl_rights(obj, cfrombstr(parent), &st, &parent_rights));
+#ifdef HAVE_NFSV4_ACLS
+            EC_ZERO_LOG(solaris_acl_rights(obj, cfrombstr(parent), &st, NULL, &parent_rights));
 #endif
 #ifdef HAVE_POSIX_ACLS
             EC_ZERO_LOG(posix_acl_rights(obj, path, &st, &parent_rights));
@@ -1577,10 +1610,10 @@ int afp_getacl(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf _U_, size
         LOG(log_debug, logtype_afpd, "afp_getacl: client requested files owner user UUID");
         if (NULL == (pw = getpwuid(s_path->st.st_uid))) {
             LOG(log_debug, logtype_afpd, "afp_getacl: local uid: %u", s_path->st.st_uid);
-            localuuid_from_id(rbuf, UUID_USER, s_path->st.st_uid);
+            localuuid_from_id((unsigned char *)rbuf, UUID_USER, s_path->st.st_uid);
         } else {
             LOG(log_debug, logtype_afpd, "afp_getacl: got uid: %d, name: %s", s_path->st.st_uid, pw->pw_name);
-            if ((ret = getuuidfromname(pw->pw_name, UUID_USER, rbuf)) != 0)
+            if ((ret = getuuidfromname(pw->pw_name, UUID_USER, (unsigned char *)rbuf)) != 0)
                 return AFPERR_MISC;
         }
         rbuf += UUID_BINSIZE;
@@ -1592,10 +1625,10 @@ int afp_getacl(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf _U_, size
         LOG(log_debug, logtype_afpd, "afp_getacl: client requested files owner group UUID");
         if (NULL == (gr = getgrgid(s_path->st.st_gid))) {
             LOG(log_debug, logtype_afpd, "afp_getacl: local gid: %u", s_path->st.st_gid);
-            localuuid_from_id(rbuf, UUID_GROUP, s_path->st.st_gid);
+            localuuid_from_id((unsigned char *)rbuf, UUID_GROUP, s_path->st.st_gid);
         } else {
             LOG(log_debug, logtype_afpd, "afp_getacl: got gid: %d, name: %s", s_path->st.st_gid, gr->gr_name);
-            if ((ret = getuuidfromname(gr->gr_name, UUID_GROUP, rbuf)) != 0)
+            if ((ret = getuuidfromname(gr->gr_name, UUID_GROUP, (unsigned char *)rbuf)) != 0)
                 return AFPERR_MISC;
         }
         rbuf += UUID_BINSIZE;
@@ -1727,26 +1760,16 @@ int afp_setacl(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf _U_, size
 int acltoownermode(const AFPObj *obj, const struct vol *vol, char *path, struct stat *st, struct maccess *ma)
 {
     EC_INIT;
-    uint32_t rights = 0;
 
-    if ( ! (obj->options.flags & OPTION_ACL2MACCESS)
+    if ( ! (obj->options.flags & (OPTION_ACL2MACCESS | OPTION_ACL2MODE))
          || ! (vol->v_flags & AFPVOL_ACLS))
          return 0;
 
     LOG(log_maxdebug, logtype_afpd, "acltoownermode(\"%s/%s\", 0x%02x)",
         getcwdpath(), path, ma->ma_user);
 
-#ifdef HAVE_SOLARIS_ACLS
-    EC_ZERO_LOG(solaris_acl_rights(obj, path, st, &rights));
-
-    LOG(log_maxdebug, logtype_afpd, "rights: 0x%08x", rights);
-
-    if (rights & DARWIN_ACE_READ_DATA)
-        ma->ma_user |= AR_UREAD;
-    if (rights & DARWIN_ACE_WRITE_DATA)
-        ma->ma_user |= AR_UWRITE;
-    if (rights & (DARWIN_ACE_EXECUTE | DARWIN_ACE_SEARCH))
-        ma->ma_user |= AR_USEARCH;
+#ifdef HAVE_NFSV4_ACLS
+    EC_ZERO_LOG(solaris_acl_rights(obj, path, st, ma, NULL));
 #endif
 
 #ifdef HAVE_POSIX_ACLS

@@ -15,6 +15,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <poll.h>
+#include <sys/stat.h>
 
 #include <atalk/unicode.h>
 #include <atalk/bstrlib.h>
@@ -146,9 +147,10 @@ extern const char *getip_string(const struct sockaddr *sa);
 extern unsigned int getip_port(const struct sockaddr *sa);
 extern void apply_ip_mask(struct sockaddr *ai, int maskbits);
 extern int compare_ip(const struct sockaddr *sa1, const struct sockaddr *sa2);
+extern int tokenize_ip_port(const char *ipurl, char **address, char **port);
 
 /* Structures and functions dealing with dynamic pollfd arrays */
-enum fdtype {IPC_FD, LISTEN_FD, DISASOCIATED_IPC_FD};
+enum fdtype {IPC_FD, LISTEN_FD};
 struct polldata {
     enum fdtype fdtype; /* IPC fd or listening socket fd                 */
     void *data;         /* pointer to AFPconfig for listening socket and *
@@ -178,15 +180,30 @@ extern int recv_fd(int fd, int nonblocking);
 extern const char *getcwdpath(void);
 extern const char *fullpathname(const char *);
 extern char *stripped_slashes_basename(char *p);
-extern int lchdir(const char *dir);
 extern void randombytes(void *buf, int n);
 extern int daemonize(int nochdir, int noclose);
 extern int run_cmd(const char *cmd, char **cmd_argv);
+extern char *realpath_safe(const char *path);
+extern const char *basename_safe(const char *path);
+extern char *strtok_quote (char *s, const char *delim);
+
+extern int ochdir(const char *dir, int options);
+extern int ostat(const char *path, struct stat *buf, int options);
+extern int ostatat(int dirfd, const char *path, struct stat *st, int options);
+extern int ochown(const char *path, uid_t owner, gid_t group, int options);
+extern int ochmod(char *path, mode_t mode, const struct stat *st, int options);
 
 /******************************************************************
  * cnid.c
  *****************************************************************/
 
 extern bstring rel_path_in_vol(const char *path, const char *volpath);
+
+/******************************************************************
+ * cnid.c
+ *****************************************************************/
+
+extern void initline   (int, char *);
+extern int  parseline  (int, char *);
 
 #endif  /* _ATALK_UTIL_H */

@@ -39,6 +39,7 @@
 #include <atalk/iniparser.h>
 #include <atalk/unix.h>
 #include <atalk/netatalk_conf.h>
+#include <atalk/server_ipc.h>
 
 #ifdef CNID_DB
 #include <atalk/cnid.h>
@@ -152,7 +153,6 @@ static int get_tm_used(struct vol * restrict vol)
     DIR *dir = NULL;
     const struct dirent *entry;
     const char *p;
-    struct stat st;
     long int links;
     time_t now = time(NULL);
 
@@ -177,13 +177,18 @@ static int get_tm_used(struct vol * restrict vol)
 
             EC_NULL_LOG( infoplist = bformat("%s/%s/%s", vol->v_path, entry->d_name, "Info.plist") );
             
-            if ((bandsize = get_tm_bandsize(cfrombstr(infoplist))) == -1)
+            if ((bandsize = get_tm_bandsize(cfrombstr(infoplist))) == -1) {
+                bdestroy(infoplist);
                 continue;
+            }
 
             EC_NULL_LOG( bandsdir = bformat("%s/%s/%s/", vol->v_path, entry->d_name, "bands") );
 
-            if ((links = get_tm_bands(cfrombstr(bandsdir))) == -1)
+            if ((links = get_tm_bands(cfrombstr(bandsdir))) == -1) {
+                bdestroy(infoplist);
+                bdestroy(bandsdir);
                 continue;
+            }
 
             used += (links - 1) * bandsize;
             LOG(log_debug, logtype_afpd, "getused(\"%s\"): bands: %" PRIu64 " bytes",
@@ -212,7 +217,6 @@ static int getvolspace(const AFPObj *obj, struct vol *vol,
 {
     int         spaceflag, rc;
     uint32_t   maxsize;
-    VolSpace    used;
 #ifndef NO_QUOTA_SUPPORT
     VolSpace    qfree, qtotal;
 #endif
@@ -262,22 +266,6 @@ getvolspace_done:
     *bfree = MIN(*xbfree, maxsize);
     *btotal = MIN(*xbtotal, maxsize);
     return( AFP_OK );
-}
-
-#define FCE_TM_DELTA 10  /* send notification every 10 seconds */
-void vol_fce_tm_event(void)
-{
-    static time_t last;
-    time_t now = time(NULL);
-    struct vol  *vol = getvolumes();
-
-    if ((last + FCE_TM_DELTA) < now) {
-        last = now;
-        for ( ; vol; vol = vol->v_next ) {
-            if (vol->v_flags & AFPVOL_TM)
-                (void)fce_register_tm_size(vol->v_path, vol->v_tm_used + vol->v_appended);
-        }
-    }
 }
 
 /* -----------------------
@@ -542,11 +530,12 @@ int afp_getsrvrparms(AFPObj *obj, char *ibuf _U_, size_t ibuflen _U_, char *rbuf
     char        *namebuf;
     int         vcnt;
     size_t      len;
+    uint32_t    aint;
 
-    load_volumes(obj, closevol);
+    load_volumes(obj);
 
     data = rbuf + 5;
-    for ( vcnt = 0, volume = getvolumes(); volume; volume = volume->v_next ) {
+    for ( vcnt = 0, volume = getvolumes(); volume && vcnt < 255; volume = volume->v_next ) {
         if (!(volume->v_flags & AFPVOL_NOSTAT)) {
             struct maccess ma;
 
@@ -573,6 +562,14 @@ int afp_getsrvrparms(AFPObj *obj, char *ibuf _U_, size_t ibuflen _U_, char *rbuf
         if (len == (size_t)-1)
             continue;
 
+        /*
+         * There seems to be an undocumented limit on how big our reply can get
+         * before the client chokes and closes the connection.
+         * Testing with 10.8.4 found the limit at ~4600 bytes. Go figure. 
+         */
+        if (((data + len + 3) - rbuf) > 4600)
+            break;
+
         /* set password bit if there's a volume password */
         *data = (volume->v_password) ? AFPSRVR_PASSWD : 0;
 
@@ -587,12 +584,13 @@ int afp_getsrvrparms(AFPObj *obj, char *ibuf _U_, size_t ibuflen _U_, char *rbuf
     *rbuflen = data - rbuf;
     data = rbuf;
     if ( gettimeofday( &tv, NULL ) < 0 ) {
-        LOG(log_error, logtype_afpd, "afp_getsrvrparms(%s): gettimeofday: %s", volume->v_path, strerror(errno) );
+        LOG(log_error, logtype_afpd, "afp_getsrvrparms: gettimeofday: %s", strerror(errno) );
         *rbuflen = 0;
         return AFPERR_PARAM;
     }
-    tv.tv_sec = AD_DATE_FROM_UNIX(tv.tv_sec);
-    memcpy(data, &tv.tv_sec, sizeof( uint32_t));
+
+    aint = AD_DATE_FROM_UNIX(tv.tv_sec);
+    memcpy(data, &aint, sizeof( uint32_t));
     data += sizeof( uint32_t);
     *data = vcnt;
     return( AFP_OK );
@@ -672,6 +670,31 @@ static int volume_openDB(const AFPObj *obj, struct vol *volume)
     return (!volume->v_cdb)?-1:0;
 }
 
+/*
+ * Send list of open volumes to afpd master via IPC
+ */
+static void server_ipc_volumes(AFPObj *obj)
+{
+    struct vol *volume, *vols;
+    volume = vols = getvolumes();
+    bstring openvolnames = bfromcstr("");
+    bool firstvol = true;
+
+    while (volume) {
+        if (volume->v_flags & AFPVOL_OPEN) {
+            if (!firstvol)
+                bcatcstr(openvolnames, ", ");
+            else
+                firstvol = false;
+            bcatcstr(openvolnames, volume->v_localname);
+        }
+        volume = volume->v_next;
+    }
+
+    ipc_child_write(obj->ipc_fd, IPC_VOLUMES, blength(openvolnames), bdata(openvolnames));
+    bdestroy(openvolnames);
+}
+
 /* -------------------------
  * we are the user here
  */
@@ -679,16 +702,14 @@ int afp_openvol(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf, size_t 
 {
     struct stat st;
     char    *volname;
-    char        *p;
 
     struct vol  *volume;
     struct dir  *dir;
     int     len, ret;
     size_t  namelen;
     uint16_t   bitmap;
-    char        path[ MAXPATHLEN + 1];
     char        *vol_uname;
-    char        *vol_mname;
+    char        *vol_mname = NULL;
     char        *volname_tmp;
 
     ibuf += 2;
@@ -721,7 +742,7 @@ int afp_openvol(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf, size_t 
     if ((len + 1) & 1) /* pad to an even boundary */
         ibuf++;
 
-    load_volumes(obj, closevol);
+    load_volumes(obj);
 
     for ( volume = getvolumes(); volume; volume = volume->v_next ) {
         if ( strcasecmp_w( (ucs2_t*) volname, volume->v_name ) == 0 ) {
@@ -765,33 +786,6 @@ int afp_openvol(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf, size_t 
         return AFPERR_PARAM;
     }
 
-    if ( NULL == getcwd(path, MAXPATHLEN)) {
-        /* shouldn't be fatal but it will fail later */
-        LOG(log_error, logtype_afpd, "afp_openvol(%s): volume pathlen too long", volume->v_path);
-        return AFPERR_MISC;
-    }
-
-    /* Normalize volume path */
-#ifdef REALPATH_TAKES_NULL
-    if ((volume->v_path = realpath(path, NULL)) == NULL)
-        return AFPERR_MISC;
-#else
-    if ((volume->v_path = malloc(MAXPATHLEN+1)) == NULL)
-        return AFPERR_MISC;
-    if (realpath(path, volume->v_path) == NULL) {
-        free(volume->v_path);
-        return AFPERR_MISC;
-    }
-    /* Safe some memory */
-    char *tmp;
-    if ((tmp = strdup(volume->v_path)) == NULL) {
-        free(volume->v_path);
-        return AFPERR_MISC;
-    }
-    free(volume->v_path);
-    volume->v_path = tmp;
-#endif
-
     if (volume_codepage(obj, volume) < 0) {
         ret = AFPERR_MISC;
         goto openvol_err;
@@ -820,9 +814,9 @@ int afp_openvol(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf, size_t 
         goto openvol_err;
     }
 
-    if ((vol_uname = strrchr(path, '/')) == NULL)
-        vol_uname = path;
-    else if (*(vol_uname + 1) != '\0')
+    if ((vol_uname = strrchr(volume->v_path, '/')) == NULL)
+        vol_uname = volume->v_path;
+    else if (vol_uname[1] != '\0')
         vol_uname++;
 
     if ((dir = dir_new(vol_mname,
@@ -838,7 +832,6 @@ int afp_openvol(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf, size_t 
         ret = AFPERR_MISC;
         goto openvol_err;
     }
-    free(vol_mname);
     volume->v_root = dir;
     curdir = dir;
 
@@ -873,9 +866,11 @@ int afp_openvol(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf, size_t 
         }
 
         const char *msg;
-        if ((msg = iniparser_getstring(obj->iniconfig, volume->v_configname, "login message",  NULL)) != NULL)
+        if ((msg = atalk_iniparser_getstring(obj->iniconfig, volume->v_configname, "login message",  NULL)) != NULL)
             setmessage(msg);
 
+        free(vol_mname);
+        server_ipc_volumes(obj);
         return( AFP_OK );
     }
 
@@ -890,6 +885,7 @@ openvol_err:
         cnid_close(volume->v_cdb);
         volume->v_cdb = NULL;
     }
+    free(vol_mname);
     *rbuflen = 0;
     return ret;
 }
@@ -947,6 +943,7 @@ int afp_closevol(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf _U_, si
     (void)chdir("/");
     curdir = NULL;
     closevol(obj, vol);
+    server_ipc_volumes(obj);
 
     return( AFP_OK );
 }
