@@ -59,6 +59,7 @@ DEB_CONFIGURE_EXTRA_FLAGS := \
 	--with-cracklib=/var/cache/cracklib/cracklib_dict	\
 	--disable-srvloc --enable-zeroconf	\
 	--enable-ddp				\
+	--without-libevent			\
 	--with-init-style=debian		\
 	--localstatedir=/var/lib		\
 	--enable-debian
