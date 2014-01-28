@@ -4,7 +4,7 @@ Upstream-Contact: <netatalk-devel@lists.sourceforge.net>
  http://lists.sourceforge.net/lists/listinfo/netatalk-devel
 Source: http://netatalk.sourceforge.net/
 
-File: *
+Files: *
 Copyright: 1990-1997, Regents of The University of Michigan
 License: MIT~UMICH
 
