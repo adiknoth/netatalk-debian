@@ -1,5 +1,4 @@
 /*
- * $Id: uams_pam.c,v 1.24 2010-03-30 10:25:49 franklahm Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * Copyright (c) 1999 Adrian Sun (asun@u.washington.edu) 
@@ -54,7 +53,11 @@ extern UAM_MODULE_EXPORT void append(struct papfile *, const char *, int);
  * echo off means password.
  */
 static int PAM_conv (int num_msg,
+#ifdef LINUX
                      const struct pam_message **msg,
+#else
+                     struct pam_message **msg,
+#endif
                      struct pam_response **resp,
                      void *appdata_ptr _U_) 
 {
@@ -442,7 +445,7 @@ static int pam_printer(char *start, char *stop, char *username, struct papfile *
 }
 
 
-static int uam_setup(const char *path)
+static int uam_setup(void *obj, const char *path)
 {
   if (uam_register(UAM_SERVER_LOGIN_EXT, path, "Cleartxt Passwrd", 
 		   pam_login, NULL, pam_logout, pam_login_ext) < 0)

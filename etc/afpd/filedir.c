@@ -26,6 +26,7 @@
 #include <atalk/globals.h>
 #include <atalk/fce_api.h>
 #include <atalk/netatalk_conf.h>
+#include <atalk/errchk.h>
 
 #include "directory.h"
 #include "dircache.h"
@@ -218,7 +219,7 @@ int check_name(const struct vol *vol, char *name)
     move and rename sdir:oldname to curdir:newname in volume vol
     special care is needed for lock   
 */
-static int moveandrename(const struct vol *vol,
+static int moveandrename(struct vol *vol,
                          struct dir *sdir,
                          int sdir_fd,
                          char *oldname,
@@ -248,7 +249,9 @@ static int moveandrename(const struct vol *vol,
     if (!isdir) {
         if ((oldunixname = strdup(mtoupath(vol, oldname, sdir->d_did, utf8_encoding(vol->v_obj)))) == NULL)
             return AFPERR_PARAM; /* can't convert */
+        AFP_CNID_START("cnid_get");
         id = cnid_get(vol->v_cdb, sdir->d_did, oldunixname, strlen(oldunixname));
+        AFP_CNID_DONE();
 
 #ifndef HAVE_ATFUNCS
         /* Need full path */
@@ -263,7 +266,7 @@ static int moveandrename(const struct vol *vol,
 #ifdef HAVE_ATFUNCS
         opened = of_findnameat(sdir_fd, &path);
 #else
-        opened = of_findname(&path);
+        opened = of_findname(vol, &path);
 #endif /* HAVE_ATFUNCS */
 
         if (opened) {
@@ -300,7 +303,7 @@ static int moveandrename(const struct vol *vol,
         ad_getattr(adp, &bshort);
         
         ad_close(adp, ADFLAGS_HF);
-        if ((bshort & htons(ATTRBIT_NORENAME))) {
+        if (!(vol->v_ignattr & ATTRBIT_NORENAME) && (bshort & htons(ATTRBIT_NORENAME))) {
             rc = AFPERR_OLOCK;
             goto exit;
         }
@@ -346,10 +349,10 @@ static int moveandrename(const struct vol *vol,
     if ( !isdir ) {
         path.st_valid = 1;
         path.st_errno = errno;
-        if (of_findname(&path)) {
+        if (of_findname(vol, &path)) {
             rc = AFPERR_EXIST; /* was AFPERR_BUSY; */
         } else {
-            rc = renamefile(vol, sdir_fd, oldunixname, upath, newname, adp );
+            rc = renamefile(vol, curdir, sdir_fd, oldunixname, upath, newname, adp );
             if (rc == AFP_OK)
                 of_rename(vol, opened, sdir, oldname, curdir, newname);
         }
@@ -378,7 +381,9 @@ static int moveandrename(const struct vol *vol,
         }
 
         /* fix up the catalog entry */
+        AFP_CNID_START("cnid_update");
         cnid_update(vol->v_cdb, id, st, curdir->d_did, upath, strlen(upath));
+        AFP_CNID_DONE();
     }
 
 exit:
@@ -464,6 +469,83 @@ int afp_rename(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf _U_, size
     return( rc );
 }
 
+/* 
+ * Recursivley delete vetoed files and directories if the volume option is set
+ *
+ * @param vol   (r) volume handle
+ * @param upath (r) path of directory
+ *
+ * If the volume option delete veto files is set, this function recursively scans the
+ * directory "upath" for vetoed files and tries deletes these, the it will try to delete
+ * the directory. That may fail if the directory contains normal files that aren't vetoed.
+ *
+ * @returns 0 if the directory upath and all of its contents were deleted, otherwise -1.
+ *            If the volume option is not set it returns -1.
+ */
+int delete_vetoed_files(struct vol *vol, const char *upath, bool in_vetodir)
+{
+    EC_INIT;
+    DIR            *dp = NULL;
+    struct dirent  *de;
+    struct stat     sb;
+    int             pwd = -1;
+    bool            vetoed;
+
+    if (!(vol->v_flags & AFPVOL_DELVETO))
+        return -1;
+
+    EC_NEG1( pwd = open(".", O_RDONLY));
+    EC_ZERO( chdir(upath) );
+    EC_NULL( dp = opendir(".") );
+
+    while ((de = readdir(dp))) {
+        if (!strcmp(de->d_name, ".") || !strcmp(de->d_name, ".."))
+            continue;
+
+        if (stat(de->d_name, &sb) != 0) {
+            LOG(log_error, logtype_afpd, "delete_vetoed_files(\"%s/%s\"): %s",
+                upath, de->d_name, strerror(errno));
+                EC_EXIT_STATUS(AFPERR_DIRNEMPT);
+        }
+
+        if (in_vetodir || veto_file(vol->v_veto, de->d_name))
+            vetoed = true;
+        else
+            vetoed = false;
+
+        if (vetoed) {
+            LOG(log_debug, logtype_afpd, "delete_vetoed_files(\"%s/%s\"): deleting vetoed file",
+                upath, de->d_name);
+            switch (sb.st_mode & S_IFMT) {
+            case S_IFDIR:
+                /* recursion */
+                EC_ZERO( delete_vetoed_files(vol, de->d_name, vetoed));
+                break;
+            case S_IFREG:
+            case S_IFLNK:
+                EC_ZERO( netatalk_unlink(de->d_name) );
+                break;
+            default:
+                break;
+            }
+        }
+    }
+
+    EC_ZERO_LOG( fchdir(pwd) );
+    pwd = -1;
+    EC_ZERO_LOG( rmdir(upath) );
+
+EC_CLEANUP:
+    if (dp)
+        closedir(dp);
+    if (pwd != -1) {
+        if (fchdir(pwd) != 0)
+            ret = -1;
+    }
+
+    EC_EXIT;
+}
+
 /* ------------------------------- */
 int afp_delete(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf _U_, size_t *rbuflen)
 {
@@ -508,7 +590,9 @@ int afp_delete(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf _U_, size
             if (rmdir(upath) != 0) {
                 switch (errno) {
                 case ENOTEMPTY:
-                    return AFPERR_DIRNEMPT;
+                    if (delete_vetoed_files(vol, upath, false) != 0)
+                        return AFPERR_DIRNEMPT;
+                    break;
                 case EACCES:
                     return AFPERR_ACCESS;
                 default:
@@ -521,11 +605,17 @@ int afp_delete(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf _U_, size
                 delcnid = deldir->d_did;
                 dir_remove(vol, deldir);
             }
-            if (delcnid == CNID_INVALID)
+            if (delcnid == CNID_INVALID) {
+                AFP_CNID_START("cnid_get");
                 delcnid = cnid_get(vol->v_cdb, curdir->d_did, upath, strlen(upath));
-            if (delcnid != CNID_INVALID)
+                AFP_CNID_DONE();
+            }
+            if (delcnid != CNID_INVALID) {
+                AFP_CNID_START("cnid_delete");
                 cnid_delete(vol->v_cdb, delcnid);
-            fce_register_delete_dir(upath);
+                AFP_CNID_DONE();
+            }
+            fce_register(FCE_DIR_DELETE, fullpathname(upath), NULL, fce_dir);
         } else {
             /* we have to cache this, the structs are lost in deletcurdir*/
             /* but we need the positive returncode to send our event */
@@ -533,10 +623,10 @@ int afp_delete(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf _U_, size
             if ((dname = bstrcpy(curdir->d_u_name)) == NULL)
                 return AFPERR_MISC;
             if ((rc = deletecurdir(vol)) == AFP_OK)
-                fce_register_delete_dir(cfrombstr(dname));
+                fce_register(FCE_DIR_DELETE, fullpathname(cfrombstr(dname)), NULL, fce_dir);
             bdestroy(dname);
         }
-    } else if (of_findname(s_path)) {
+    } else if (of_findname(vol, s_path)) {
         rc = AFPERR_BUSY;
     } else {
         /* it's a file st_valid should always be true
@@ -547,7 +637,7 @@ int afp_delete(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf _U_, size
             rc = AFPERR_NOOBJ;
         } else {
             if ((rc = deletefile(vol, -1, upath, 1)) == AFP_OK) {
-				fce_register_delete_file( s_path );
+				fce_register(FCE_FILE_DELETE, fullpathname(upath), NULL, fce_file);
                 if (vol->v_tm_used < s_path->st.st_size)
                     vol->v_tm_used = 0;
                 else 
@@ -582,8 +672,10 @@ char *absupath(const struct vol *vol, struct dir *dir, char *u)
         return NULL;
     if (bcatcstr(path, u) != BSTR_OK)
         return NULL;
-    if (path->slen > MAXPATHLEN)
+    if (path->slen > MAXPATHLEN) {
+        bdestroy(path);
         return NULL;
+    }
 
     LOG(log_debug, logtype_afpd, "absupath: %s", cfrombstr(path));
 
@@ -703,8 +795,8 @@ int afp_moveandrename(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf _U
         if (!isdir && !vol_unix_priv(vol)) {
             int  admode = ad_mode("", 0777) | vol->v_fperm;
 
-            setfilmode(upath, admode, NULL, vol->v_umask);
-            vol->vfs->vfs_setfilmode(vol, upath, admode, NULL);
+            setfilmode(vol, upath, admode, path->st_valid ? &path->st : NULL);
+            vol->vfs->vfs_setfilmode(vol, upath, admode, path->st_valid ? &path->st : NULL);
         }
         setvoltime(obj, vol );
     }

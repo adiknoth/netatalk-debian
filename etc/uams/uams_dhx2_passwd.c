@@ -1,5 +1,4 @@
 /*
- * $Id: uams_dhx2_passwd.c,v 1.8 2010-03-30 10:25:49 franklahm Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * Copyright (c) 1999 Adrian Sun (asun@u.washington.edu)
@@ -604,7 +603,7 @@ static int passwd_logincont(void *obj, struct passwd **uam_pwd,
     return ret;
 }
 
-static int uam_setup(const char *path)
+static int uam_setup(void *obj, const char *path)
 {
     if (uam_register(UAM_SERVER_LOGIN_EXT, path, "DHX2", passwd_login,
                      passwd_logincont, NULL, passwd_login_ext) < 0)

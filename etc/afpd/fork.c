@@ -22,6 +22,7 @@
 #include <atalk/logger.h>
 #include <atalk/util.h>
 #include <atalk/cnid.h>
+#include <atalk/bstrlib.h>
 #include <atalk/bstradd.h>
 #include <atalk/globals.h>
 #include <atalk/netatalk_conf.h>
@@ -65,10 +66,10 @@ static int getforkparams(const AFPObj *obj, struct ofork *ofork, uint16_t bitmap
     vol = ofork->of_vol;
     dir = dirlookup(vol, ofork->of_did);
 
-    if (NULL == (path.m_name = utompath(vol, of_name(ofork), dir->d_did, utf8_encoding(obj)))) {
+    if (NULL == (path.u_name = mtoupath(vol, of_name(ofork), dir->d_did, utf8_encoding(obj)))) {
         return( AFPERR_MISC );
     }
-    path.u_name = of_name(ofork);
+    path.m_name = of_name(ofork);
     path.id = 0;
     st = &path.st;
     if ( bitmap & ( (1<<FILPBIT_DFLEN) | (1<<FILPBIT_EXTDFLEN) |
@@ -250,7 +251,6 @@ int afp_openfork(AFPObj *obj _U_, char *ibuf, size_t ibuflen _U_, char *rbuf, si
     struct stat     *st;
     uint16_t        bshort;
     struct path     *s_path;
-    struct stat xxx;
 
     ibuf++;
     fork = *ibuf++;
@@ -316,7 +316,7 @@ int afp_openfork(AFPObj *obj _U_, char *ibuf, size_t ibuflen _U_, char *rbuf, si
         }
     }
 
-    if ((opened = of_findname(s_path))) {
+    if ((opened = of_findname(vol, s_path))) {
         adsame = opened->of_ad;
     }
 
@@ -328,8 +328,6 @@ int afp_openfork(AFPObj *obj _U_, char *ibuf, size_t ibuflen _U_, char *rbuf, si
     } else {
         eid = ADEID_RFORK;
         adflags |= ADFLAGS_RF;
-        if (!(access & OPENACC_WR))
-            adflags |= ADFLAGS_NORF;
     }
 
     if (access & OPENACC_WR) {
@@ -388,6 +386,16 @@ int afp_openfork(AFPObj *obj _U_, char *ibuf, size_t ibuflen _U_, char *rbuf, si
 
     if (ad_open(ofork->of_ad, upath, adflags, 0666) == 0) {
         ofork->of_flags |= AFPFORK_META;
+        if (ad_get_MD_flags(ofork->of_ad) & O_CREAT) {
+            LOG(log_debug, logtype_afpd, "afp_openfork(\"%s\"): setting CNID", upath);
+            cnid_t id;
+            if ((id = get_id(vol, ofork->of_ad, st, dir->d_did, upath, strlen(upath))) == CNID_INVALID) {
+                LOG(log_error, logtype_afpd, "afp_createfile(\"%s\"): CNID error", upath);
+                goto openfork_err;
+            }
+            (void)ad_setid(ofork->of_ad, st->st_dev, st->st_ino, id, dir->d_did, vol->v_stamp);
+            ad_flush(ofork->of_ad);
+        }
     } else {
         switch (errno) {
         case EACCES:
@@ -575,7 +583,7 @@ int afp_setforkparams(AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf _U_, s
             goto afp_setfork_err;
         }
 
-        err = ad_rtruncate(ofork->of_ad, size);
+        err = ad_rtruncate(ofork->of_ad, mtoupath(ofork->of_vol, of_name(ofork), ofork->of_did, utf8_encoding(obj)), size);
         if (st_size > size)
             ad_tmplock(ofork->of_ad, eid, ADLOCK_CLR, size, st_size -size, ofork->of_refnum);
         if (err < 0)
@@ -733,8 +741,6 @@ int afp_bytelock_ext(AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf, size_t
 static int read_file(const struct ofork *ofork, int eid, off_t offset, char *rbuf, size_t *rbuflen)
 {
     ssize_t cc;
-    int eof = 0;
-    char *p, *q;
 
     cc = ad_read(ofork->of_ad, eid, offset, rbuf, *rbuflen);
     if ( cc < 0 ) {
@@ -793,6 +799,8 @@ static int read_fork(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf, si
         goto afp_read_err;
     }
 
+    AFP_READ_START((long)reqcount);
+
     /* reqcount isn't always truthful. we need to deal with that. */
     size = ad_size(ofork->of_ad, eid);
 
@@ -800,7 +808,7 @@ static int read_fork(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf, si
         "afp_read(fork: %" PRIu16 " [%s], off: %" PRIu64 ", len: %" PRIu64 ", size: %" PRIu64 ")",
         ofork->of_refnum, (ofork->of_flags & AFPFORK_DATA) ? "data" : "reso", offset, reqcount, size);
 
-    if (offset > size) {
+    if (offset >= size) {
         err = AFPERR_EOF;
         goto afp_read_err;
     }
@@ -839,11 +847,13 @@ static int read_fork(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf, si
     }
 #endif
 
-    *rbuflen = MIN(reqcount, *rbuflen);
+    *rbuflen = MIN(reqcount, dsi->server_quantum);
 
-    err = read_file(ofork, eid, offset, rbuf, rbuflen);
-    if (err < 0)
+    cc = read_file(ofork, eid, offset, ibuf, rbuflen);
+    if (cc < 0) {
+        err = cc;
         goto afp_read_done;
+    }
 
     LOG(log_debug, logtype_afpd,
         "afp_read(name: \"%s\", offset: %jd, reqcount: %jd): got %jd bytes from file",
@@ -856,18 +866,22 @@ static int read_fork(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf, si
      * we know that we're sending some data. if we fail, something
      * horrible happened.
      */
-    if ((cc = dsi_readinit(dsi, rbuf, *rbuflen, reqcount, err)) < 0)
+    if ((cc = dsi_readinit(dsi, ibuf, *rbuflen, reqcount, err)) < 0)
         goto afp_read_exit;
     *rbuflen = cc;
 
     while (*rbuflen > 0) {
-        cc = read_file(ofork, eid, offset, rbuf, rbuflen);
+        /*
+         * This loop isn't really entered anymore, we've already
+         * sent the whole requested block in dsi_readinit().
+         */
+        cc = read_file(ofork, eid, offset, ibuf, rbuflen);
         if (cc < 0)
             goto afp_read_exit;
 
         offset += *rbuflen;
         /* dsi_read() also returns buffer size of next allocation */
-        cc = dsi_read(dsi, rbuf, *rbuflen); /* send it off */
+        cc = dsi_read(dsi, ibuf, *rbuflen); /* send it off */
         if (cc < 0)
             goto afp_read_exit;
         *rbuflen = cc;
@@ -885,6 +899,8 @@ afp_read_exit:
 afp_read_done:
     if (obj->options.flags & OPTION_AFP_READ_LOCK)
         ad_tmplock(ofork->of_ad, eid, ADLOCK_CLR, saveoff, savereqcount, ofork->of_refnum);
+
+    AFP_READ_DONE();
     return err;
 
 afp_read_err:
@@ -1039,7 +1055,7 @@ int afp_closefork(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf _U_, s
         ofork->of_refnum, (ofork->of_flags & AFPFORK_DATA) ? "data" : "rsrc");
 
     if (of_closefork(obj, ofork) < 0 ) {
-        LOG(log_error, logtype_afpd, "afp_closefork(%s): of_closefork: %s", of_name(ofork), strerror(errno) );
+        LOG(log_error, logtype_afpd, "afp_closefork: of_closefork: %s", strerror(errno) );
         return( AFPERR_PARAM );
     }
 
@@ -1051,7 +1067,6 @@ static ssize_t write_file(struct ofork *ofork, int eid,
                           off_t offset, char *rbuf,
                           size_t rbuflen)
 {
-    char *p, *q;
     ssize_t cc;
 
     LOG(log_debug, logtype_afpd, "write_file(off: %ju, size: %zu)",
@@ -1090,7 +1105,7 @@ static int write_fork(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf, s
     uint16_t        ofrefnum;
     ssize_t         cc;
     DSI             *dsi = obj->dsi;
-    char            *rcvbuf = dsi->commands;
+    char            *rcvbuf = (char *)dsi->commands;
     size_t          rcvbuflen = dsi->server_quantum;
 
     /* figure out parameters */
@@ -1155,6 +1170,8 @@ static int write_fork(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf, s
         *rbuflen = set_off_t (offset, rbuf, is64);
         goto afp_write_err;
     }
+
+    AFP_WRITE_START((long)reqcount);
 
     saveoff = offset;
     if (obj->options.flags & OPTION_AFP_READ_LOCK) {
@@ -1230,6 +1247,7 @@ static int write_fork(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf, s
     ofork->of_vol->v_appended += (newsize > oldsize) ? (newsize - oldsize) : 0;
 
     *rbuflen = set_off_t (offset, rbuf, is64);
+    AFP_WRITE_DONE();
     return( AFP_OK );
 
 afp_write_err:

@@ -23,7 +23,6 @@
 
 
 
-
 VPATH = @srcdir@
 am__make_dryrun = \
   { \
@@ -61,17 +60,15 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 @PTHREADS_TRUE@am__append_1 = libevent_pthreads.la
-@PTHREADS_TRUE@am__append_2 = libevent_pthreads.pc
-@OPENSSL_TRUE@am__append_3 = libevent_openssl.la
-@OPENSSL_TRUE@am__append_4 = libevent_openssl.pc
-@SELECT_BACKEND_TRUE@am__append_5 = select.c
-@POLL_BACKEND_TRUE@am__append_6 = poll.c
-@DEVPOLL_BACKEND_TRUE@am__append_7 = devpoll.c
-@KQUEUE_BACKEND_TRUE@am__append_8 = kqueue.c
-@EPOLL_BACKEND_TRUE@am__append_9 = epoll.c
-@EVPORT_BACKEND_TRUE@am__append_10 = evport.c
-@SIGNAL_SUPPORT_TRUE@am__append_11 = signal.c
-@INSTALL_LIBEVENT_FALSE@am__append_12 = $(EVENT1_HDRS)
+@OPENSSL_TRUE@am__append_2 = libevent_openssl.la
+@SELECT_BACKEND_TRUE@am__append_3 = select.c
+@POLL_BACKEND_TRUE@am__append_4 = poll.c
+@DEVPOLL_BACKEND_TRUE@am__append_5 = devpoll.c
+@KQUEUE_BACKEND_TRUE@am__append_6 = kqueue.c
+@EPOLL_BACKEND_TRUE@am__append_7 = epoll.c
+@EVPORT_BACKEND_TRUE@am__append_8 = evport.c
+@SIGNAL_SUPPORT_TRUE@am__append_9 = signal.c
+@INSTALL_LIBEVENT_FALSE@am__append_10 = $(EVENT1_HDRS)
 subdir = .
 DIST_COMMON = README $(am__configure_deps) \
 	$(am__dist_bin_SCRIPTS_DIST) $(am__include_HEADERS_DIST) \
@@ -126,7 +123,7 @@ am__uninstall_files_from_dir = { \
          $(am__cd) "$$dir" && rm -f $$files; }; \
   }
 am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" \
-	"$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(includedir)"
+	"$(DESTDIR)$(includedir)"
 LTLIBRARIES = $(lib_LTLIBRARIES) $(noinst_LTLIBRARIES)
 am__DEPENDENCIES_1 =
 libevent_la_DEPENDENCIES = @LTLIBOBJS@ $(am__DEPENDENCIES_1)
@@ -268,7 +265,6 @@ am__can_run_installinfo = \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
-DATA = $(pkgconfig_DATA)
 am__include_HEADERS_DIST = event.h evhttp.h evdns.h evrpc.h evutil.h
 am__noinst_HEADERS_DIST = util-internal.h mm-internal.h \
 	ipv6-internal.h evrpc-internal.h strlcpy-internal.h \
@@ -530,8 +526,6 @@ VERSION_INFO = 6:6:1
 # is user-visible, and so we can pretty much guarantee that release
 # series won't be binary-compatible.
 @INSTALL_LIBEVENT_TRUE@dist_bin_SCRIPTS = event_rpcgen.py
-pkgconfigdir = $(libdir)/pkgconfig
-LIBEVENT_PKGCONFIG = libevent.pc $(am__append_2) $(am__append_4)
 
 # These sources are conditionally added by configure.in or conditionally
 # included from other files.
@@ -550,23 +544,22 @@ EXTRA_DIST = \
 	$(PLATFORM_DEPENDENT_SRC)
 
 LIBEVENT_LIBS_LA = libevent.la libevent_core.la libevent_extra.la \
-	$(am__append_1) $(am__append_3)
+	$(am__append_1) $(am__append_2)
 @INSTALL_LIBEVENT_TRUE@lib_LTLIBRARIES = $(LIBEVENT_LIBS_LA)
-@INSTALL_LIBEVENT_TRUE@pkgconfig_DATA = $(LIBEVENT_PKGCONFIG)
 @INSTALL_LIBEVENT_FALSE@noinst_LTLIBRARIES = $(LIBEVENT_LIBS_LA)
 SUBDIRS = . include sample test
 @BUILD_WIN32_FALSE@SYS_LIBS = 
 @BUILD_WIN32_TRUE@SYS_LIBS = -lws2_32 -lshell32 -ladvapi32
-@BUILD_WIN32_FALSE@SYS_SRC = $(am__append_5) $(am__append_6) \
+@BUILD_WIN32_FALSE@SYS_SRC = $(am__append_3) $(am__append_4) \
+@BUILD_WIN32_FALSE@	$(am__append_5) $(am__append_6) \
 @BUILD_WIN32_FALSE@	$(am__append_7) $(am__append_8) \
-@BUILD_WIN32_FALSE@	$(am__append_9) $(am__append_10) \
-@BUILD_WIN32_FALSE@	$(am__append_11)
+@BUILD_WIN32_FALSE@	$(am__append_9)
 @BUILD_WIN32_TRUE@SYS_SRC = win32select.c evthread_win32.c \
 @BUILD_WIN32_TRUE@	buffer_iocp.c event_iocp.c \
-@BUILD_WIN32_TRUE@	bufferevent_async.c $(am__append_5) \
+@BUILD_WIN32_TRUE@	bufferevent_async.c $(am__append_3) \
+@BUILD_WIN32_TRUE@	$(am__append_4) $(am__append_5) \
 @BUILD_WIN32_TRUE@	$(am__append_6) $(am__append_7) \
-@BUILD_WIN32_TRUE@	$(am__append_8) $(am__append_9) \
-@BUILD_WIN32_TRUE@	$(am__append_10) $(am__append_11)
+@BUILD_WIN32_TRUE@	$(am__append_8) $(am__append_9)
 @BUILD_WIN32_FALSE@SYS_INCLUDES = 
 @BUILD_WIN32_TRUE@SYS_INCLUDES = -IWIN32-Code
 BUILT_SOURCES = ./include/event2/event-config.h
@@ -580,7 +573,7 @@ EXTRA_SRC = event_tagging.c http.c evdns.c evrpc.c
 @BUILD_WITH_NO_UNDEFINED_TRUE@NO_UNDEFINED = -no-undefined
 @BUILD_WITH_NO_UNDEFINED_FALSE@MAYBE_CORE = 
 @BUILD_WITH_NO_UNDEFINED_TRUE@MAYBE_CORE = libevent_core.la
-GENERIC_LDFLAGS = -version-info $(VERSION_INFO) $(RELEASE) $(NO_UNDEFINED)
+GENERIC_LDFLAGS = -static
 libevent_la_SOURCES = $(CORE_SRC) $(EXTRA_SRC)
 libevent_la_LIBADD = @LTLIBOBJS@ $(SYS_LIBS)
 libevent_la_LDFLAGS = $(GENERIC_LDFLAGS)
@@ -603,11 +596,11 @@ noinst_HEADERS = util-internal.h mm-internal.h ipv6-internal.h \
 	minheap-internal.h log-internal.h evsignal-internal.h \
 	evmap-internal.h changelist-internal.h iocp-internal.h \
 	ratelim-internal.h WIN32-Code/event2/event-config.h \
-	WIN32-Code/tree.h compat/sys/queue.h $(am__append_12)
+	WIN32-Code/tree.h compat/sys/queue.h $(am__append_10)
 EVENT1_HDRS = event.h evhttp.h evdns.h evrpc.h evutil.h
 @INSTALL_LIBEVENT_TRUE@include_HEADERS = $(EVENT1_HDRS)
 AM_CPPFLAGS = -I$(srcdir)/compat -I$(srcdir)/include -I./include $(SYS_INCLUDES)
-DISTCLEANFILES = *~ libevent.pc ./include/event2/event-config.h
+DISTCLEANFILES = *~ ./include/event2/event-config.h
 all: $(BUILT_SOURCES) config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
@@ -824,27 +817,6 @@ clean-libtool:
 
 distclean-libtool:
 	-rm -f libtool config.lt
-install-pkgconfigDATA: $(pkgconfig_DATA)
-	@$(NORMAL_INSTALL)
-	@list='$(pkgconfig_DATA)'; test -n "$(pkgconfigdir)" || list=; \
-	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(pkgconfigdir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(pkgconfigdir)" || exit 1; \
-	fi; \
-	for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  echo "$$d$$p"; \
-	done | $(am__base_list) | \
-	while read files; do \
-	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(pkgconfigdir)'"; \
-	  $(INSTALL_DATA) $$files "$(DESTDIR)$(pkgconfigdir)" || exit $$?; \
-	done
-
-uninstall-pkgconfigDATA:
-	@$(NORMAL_UNINSTALL)
-	@list='$(pkgconfig_DATA)'; test -n "$(pkgconfigdir)" || list=; \
-	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
-	dir='$(DESTDIR)$(pkgconfigdir)'; $(am__uninstall_files_from_dir)
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
 	@list='$(include_HEADERS)'; test -n "$(includedir)" || list=; \
@@ -1192,14 +1164,12 @@ distcleancheck: distclean
 check-am: all-am
 check: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) check-recursive
-all-am: Makefile $(LTLIBRARIES) $(SCRIPTS) $(DATA) $(HEADERS) config.h
+all-am: Makefile $(LTLIBRARIES) $(SCRIPTS) $(HEADERS) config.h
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(includedir)"; do \
+	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(includedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
-install: $(BUILT_SOURCES)
-	$(MAKE) $(AM_MAKEFLAGS) install-recursive
 install-exec: install-exec-recursive
 install-data: install-data-recursive
 uninstall: uninstall-recursive
@@ -1255,7 +1225,7 @@ info: info-recursive
 
 info-am:
 
-install-data-am: install-includeHEADERS install-pkgconfigDATA
+install-data-am: install-includeHEADERS
 
 install-dvi: install-dvi-recursive
 
@@ -1304,7 +1274,7 @@ ps: ps-recursive
 ps-am:
 
 uninstall-am: uninstall-dist_binSCRIPTS uninstall-includeHEADERS \
-	uninstall-libLTLIBRARIES uninstall-pkgconfigDATA
+	uninstall-libLTLIBRARIES
 
 .MAKE: $(RECURSIVE_CLEAN_TARGETS) $(RECURSIVE_TARGETS) all check \
 	ctags-recursive install install-am install-strip \
@@ -1323,13 +1293,13 @@ uninstall-am: uninstall-dist_binSCRIPTS uninstall-includeHEADERS \
 	install-exec install-exec-am install-html install-html-am \
 	install-includeHEADERS install-info install-info-am \
 	install-libLTLIBRARIES install-man install-pdf install-pdf-am \
-	install-pkgconfigDATA install-ps install-ps-am install-strip \
-	installcheck installcheck-am installdirs installdirs-am \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
-	pdf pdf-am ps ps-am tags tags-recursive uninstall uninstall-am \
+	install-ps install-ps-am install-strip installcheck \
+	installcheck-am installdirs installdirs-am maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
+	tags tags-recursive uninstall uninstall-am \
 	uninstall-dist_binSCRIPTS uninstall-includeHEADERS \
-	uninstall-libLTLIBRARIES uninstall-pkgconfigDATA
+	uninstall-libLTLIBRARIES
 
 
 ./include/event2/event-config.h: config.h
@@ -1356,6 +1326,8 @@ verify: check
 doxygen: FORCE
 	doxygen $(srcdir)/Doxyfile
 FORCE:
+
+install:
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

@@ -134,7 +134,7 @@ static int netatalk_mkdir(const struct vol *vol, const char *name)
 }
 
 /* ------------------- */
-static int deletedir(int dirfd, char *dir)
+static int deletedir(const struct vol *vol, int dirfd, char *dir)
 {
     char path[MAXPATHLEN + 1];
     DIR *dp;
@@ -165,11 +165,11 @@ static int deletedir(int dirfd, char *dir)
             break;
         }
         strcpy(path + len, de->d_name);
-        if (lstatat(dirfd, path, &st)) {
+        if (ostatat(dirfd, path, &st, vol_syml_opt(vol))) {
             continue;
         }
         if (S_ISDIR(st.st_mode)) {
-            err = deletedir(dirfd, path);
+            err = deletedir(vol, dirfd, path);
         } else {
             err = netatalk_unlinkat(dirfd, path);
         }
@@ -185,7 +185,7 @@ static int deletedir(int dirfd, char *dir)
 }
 
 /* do a recursive copy. */
-static int copydir(const struct vol *vol, int dirfd, char *src, char *dst)
+static int copydir(struct vol *vol, struct dir *ddir, int dirfd, char *src, char *dst)
 {
     char spath[MAXPATHLEN + 1], dpath[MAXPATHLEN + 1];
     DIR *dp;
@@ -231,7 +231,7 @@ static int copydir(const struct vol *vol, int dirfd, char *src, char *dst)
         }
         strcpy(spath + slen, de->d_name);
 
-        if (lstatat(dirfd, spath, &st) == 0) {
+        if (ostatat(dirfd, spath, &st, vol_syml_opt(vol)) == 0) {
             if (strlen(de->d_name) > drem) {
                 err = AFPERR_PARAM;
                 break;
@@ -239,9 +239,9 @@ static int copydir(const struct vol *vol, int dirfd, char *src, char *dst)
             strcpy(dpath + dlen, de->d_name);
 
             if (S_ISDIR(st.st_mode)) {
-                if (AFP_OK != (err = copydir(vol, dirfd, spath, dpath)))
+                if (AFP_OK != (err = copydir(vol, ddir, dirfd, spath, dpath)))
                     goto copydir_done;
-            } else if (AFP_OK != (err = copyfile(vol, vol, dirfd, spath, dpath, NULL, NULL))) {
+            } else if (AFP_OK != (err = copyfile(vol, vol, ddir, dirfd, spath, dpath, NULL, NULL))) {
                 goto copydir_done;
 
             } else {
@@ -253,7 +253,7 @@ static int copydir(const struct vol *vol, int dirfd, char *src, char *dst)
     }
 
     /* keep the same time stamp. */
-    if (lstatat(dirfd, src, &st) == 0) {
+    if (ostatat(dirfd, src, &st, vol_syml_opt(vol)) == 0) {
         ut.actime = ut.modtime = st.st_mtime;
         utime(dst, &ut);
     }
@@ -301,7 +301,7 @@ static int set_dir_errors(struct path *path, const char *where, int err)
  *
  * @note If the passed ret->m_name is mangled, we'll demangle it
  */
-static int cname_mtouname(const struct vol *vol, const struct dir *dir, struct path *ret, int toUTF8)
+static int cname_mtouname(const struct vol *vol, struct dir *dir, struct path *ret, int toUTF8)
 {
     static char temp[ MAXPATHLEN + 1];
     char *t;
@@ -331,6 +331,12 @@ static int cname_mtouname(const struct vol *vol, const struct dir *dir, struct p
 
         /* check for OS X mangled filename :( */
         t = demangle_osx(vol, ret->m_name, dir->d_did, &fileid);
+
+        if (curdir == NULL) {
+            /* demangle_osx() calls dirlookup() which might have clobbered curdir */
+            movecwd(vol, dir);
+        }
+
         LOG(log_maxdebug, logtype_afpd, "cname_mtouname('%s',did:%u) {demangled:'%s', fileid:%u}",
             ret->m_name, ntohl(dir->d_did), t, ntohl(fileid));
 
@@ -497,12 +503,15 @@ struct dir *dirlookup_bypath(const struct vol *vol, const char *path)
                                            cfrombstr(l->entry[i]),
                                            blength(l->entry[i]))) == NULL) {
 
-            if ((cnid = cnid_add(vol->v_cdb,             /* 6. */
-                                 &st,
-                                 did,
-                                 cfrombstr(l->entry[i]),
-                                 blength(l->entry[i]),
-                                 0)) == CNID_INVALID)
+            AFP_CNID_START("cnid_add");
+            cnid = cnid_add(vol->v_cdb,             /* 6. */
+                            &st,
+                            did,
+                            cfrombstr(l->entry[i]),
+                            blength(l->entry[i]),
+                            0);
+            AFP_CNID_DONE();
+            if (cnid == CNID_INVALID)
                 EC_FAIL;
 
             if ((dir = dirlookup(vol, cnid)) == NULL) /* 7. */
@@ -607,7 +616,11 @@ struct dir *dirlookup(const struct vol *vol, cnid_t did)
     /* Get it from the database */
     cnid = did;
     LOG(log_debug, logtype_afpd, "dirlookup(did: %u): querying CNID database", ntohl(did));
-    if ((upath = cnid_resolve(vol->v_cdb, &cnid, buffer, buflen)) == NULL) {
+
+    AFP_CNID_START("cnid_resolve");
+    upath = cnid_resolve(vol->v_cdb, &cnid, buffer, buflen);
+    AFP_CNID_DONE();
+    if (upath == NULL) {
         afp_errno = AFPERR_NOOBJ;
         err = 1;
         goto exit;
@@ -643,7 +656,7 @@ struct dir *dirlookup(const struct vol *vol, cnid_t did)
     LOG(log_debug, logtype_afpd, "dirlookup(did: %u): stating \"%s\"",
         ntohl(did), cfrombstr(fullpath));
 
-    if (lstat(cfrombstr(fullpath), &st) != 0) { /* 5a */
+    if (ostat(cfrombstr(fullpath), &st, vol_syml_opt(vol)) != 0) { /* 5a */
         switch (errno) {
         case ENOENT:
             afp_errno = AFPERR_NOOBJ;
@@ -815,7 +828,7 @@ struct dir *dir_add(struct vol *vol, const struct dir *dir, struct path *path, i
     cnid_t      id;
     struct adouble  ad;
     struct adouble *adp = NULL;
-    bstring fullpath;
+    bstring fullpath = NULL;
 
     AFP_ASSERT(vol);
     AFP_ASSERT(dir);
@@ -912,7 +925,7 @@ exit:
 void dir_free_invalid_q(void)
 {
     struct dir *dir;
-    while (dir = (struct dir *)dequeue(invalid_dircache_entries))
+    while ((dir = (struct dir *)dequeue(invalid_dircache_entries)))
         dir_free(dir);
 }
 
@@ -1159,6 +1172,14 @@ struct path *cname(struct vol *vol, struct dir *dir, char **cpath)
             /* the name is illegal */
             LOG(log_info, logtype_afpd, "cname: illegal path: '%s'", ret.u_name);
             afp_errno = AFPERR_PARAM;
+            if (vol->v_obj->options.flags & OPTION_VETOMSG) {
+                bstring message = bformat("Attempt to access vetoed file or directory \"%s\" in directory \"%s\"",
+                                          ret.u_name, bdata(dir->d_u_name));
+                if (setmessage(bdata(message)) == 0)
+                    /* Client may make multiple attempts, only send the message the first time */
+                    kill(getpid(), SIGUSR2);
+                bdestroy(message);
+            }
             return NULL;
         }
 
@@ -1181,7 +1202,7 @@ struct path *cname(struct vol *vol, struct dir *dir, char **cpath)
              *   and thus call continue which should terminate the while loop because
              *   len = 0. Ok?
              */
-            if (of_stat(&ret) != 0) { /* 9 */
+            if (of_stat(vol, &ret) != 0) { /* 9 */
                 /*
                  * ret.u_name doesn't exist, might be afp_createfile|dir
                  * that means it should have been the last part
@@ -1299,7 +1320,7 @@ int movecwd(const struct vol *vol, struct dir *dir)
     LOG(log_debug, logtype_afpd, "movecwd(to: did: %u, \"%s\")",
         ntohl(dir->d_did), cfrombstr(dir->d_fullpath));
 
-    if ((ret = lchdir(cfrombstr(dir->d_fullpath))) != 0 ) {
+    if ((ret = ochdir(cfrombstr(dir->d_fullpath), vol_syml_opt(vol))) != 0 ) {
         LOG(log_debug, logtype_afpd, "movecwd(\"%s\"): %s",
             cfrombstr(dir->d_fullpath), strerror(errno));
         if (ret == 1) {
@@ -1465,6 +1486,7 @@ int getdirparams(const AFPObj *obj,
                 ashort = htons(ATTRBIT_INVISIBLE);
             } else
                 ashort = 0;
+            ashort &= ~htons(vol->v_ignattr);
             memcpy( data, &ashort, sizeof( ashort ));
             data += sizeof( ashort );
             break;
@@ -1501,10 +1523,6 @@ int getdirparams(const AFPObj *obj,
                 memcpy( data, ad_entry( &ad, ADEID_FINDERI ), 32 );
             } else { /* no appledouble */
                 memset( data, 0, 32 );
-                /* set default view -- this also gets done in ad_open() */
-                ashort = htons(FINDERINFO_CLOSEDVIEW);
-                memcpy(data + FINDERINFO_FRVIEWOFF, &ashort, sizeof(ashort));
-
                 /* dot files are by default visible */
                 if (invisible_dots(vol, cfrombstr(dir->d_u_name))) {
                     ashort = htons(FINDERINFO_INVISIBLE);
@@ -1857,6 +1875,7 @@ int setdirparams(struct vol *vol, struct path *path, uint16_t d_bitmap, char *bu
                 ad_getattr(&ad, &bshort);
                 oshort = bshort;
                 if ( ntohs( ashort ) & ATTRBIT_SETCLR ) {
+                    ashort &= ~htons(vol->v_ignattr);
                     bshort |= htons( ntohs( ashort ) & ~ATTRBIT_SETCLR );
                 } else {
                     bshort &= ~ashort;
@@ -2174,7 +2193,7 @@ int afp_createdir(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf, size_
         return err;
     }
 
-    if (of_stat(s_path) < 0) {
+    if (of_stat(vol, s_path) < 0) {
         return AFPERR_MISC;
     }
 
@@ -2195,12 +2214,11 @@ int afp_createdir(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf, size_
     ad_setname(&ad, s_path->m_name);
     ad_setid( &ad, s_path->st.st_dev, s_path->st.st_ino, dir->d_did, did, vol->v_stamp);
 
-    fce_register_new_dir(s_path);
+    fce_register(FCE_DIR_CREATE, bdata(curdir->d_fullpath), NULL, fce_dir);
 
     ad_flush(&ad);
     ad_close(&ad, ADFLAGS_HF);
 
-createdir_done:
     memcpy( rbuf, &dir->d_did, sizeof( uint32_t ));
     *rbuflen = sizeof( uint32_t );
     setvoltime(obj, vol );
@@ -2213,7 +2231,7 @@ createdir_done:
  * newparent curdir
  * dirfd     -1 means ignore dirfd (or use AT_FDCWD), otherwise src is relative to dirfd
  */
-int renamedir(const struct vol *vol,
+int renamedir(struct vol *vol,
               int dirfd,
               char *src,
               char *dst,
@@ -2239,11 +2257,11 @@ int renamedir(const struct vol *vol,
         case EXDEV:
             /* this needs to copy and delete. bleah. that means we have
              * to deal with entire directory hierarchies. */
-            if ((err = copydir(vol, dirfd, src, dst)) < 0) {
-                deletedir(-1, dst);
+            if ((err = copydir(vol, newparent, dirfd, src, dst)) < 0) {
+                deletedir(vol, -1, dst);
                 return err;
             }
-            if ((err = deletedir(dirfd, src)) < 0)
+            if ((err = deletedir(vol, dirfd, src)) < 0)
                 return err;
             break;
         default :
@@ -2270,7 +2288,6 @@ int deletecurdir(struct vol *vol)
     struct dirent *de;
     struct stat st;
     struct dir  *fdir, *pdir;
-    DIR *dp;
     struct adouble  ad;
     uint16_t       ashort;
     int err;
@@ -2287,37 +2304,15 @@ int deletecurdir(struct vol *vol)
 
         ad_getattr(&ad, &ashort);
         ad_close(&ad, ADFLAGS_HF);
-        if ((ashort & htons(ATTRBIT_NODELETE))) {
+        if (!(vol->v_ignattr & ATTRBIT_NODELETE) && (ashort & htons(ATTRBIT_NODELETE))) {
             return  AFPERR_OLOCK;
         }
     }
     err = vol->vfs->vfs_deletecurdir(vol);
     if (err) {
-        LOG(log_error, logtype_afpd, "deletecurdir: error deleting .AppleDouble in \"%s\"",
+        LOG(log_error, logtype_afpd, "deletecurdir: error deleting AppleDouble files in \"%s\"",
             cfrombstr(curdir->d_fullpath));
         return err;
-    }
-
-    /* now get rid of dangling symlinks */
-    if ((dp = opendir("."))) {
-        while ((de = readdir(dp))) {
-            /* skip this and previous directory */
-            if (!strcmp(de->d_name, ".") || !strcmp(de->d_name, ".."))
-                continue;
-
-            /* bail if it's not a symlink */
-            if ((lstat(de->d_name, &st) == 0) && !S_ISLNK(st.st_mode)) {
-                LOG(log_error, logtype_afpd, "deletecurdir(\"%s\"): not empty",
-                    curdir->d_fullpath);
-                closedir(dp);
-                return AFPERR_DIRNEMPT;
-            }
-
-            if ((err = netatalk_unlink(de->d_name))) {
-                closedir(dp);
-                return err;
-            }
-        }
     }
 
     if (movecwd(vol, pdir) < 0) {
@@ -2329,22 +2324,29 @@ int deletecurdir(struct vol *vol)
         cfrombstr(curdir->d_fullpath));
 
     err = netatalk_rmdir_all_errors(-1, cfrombstr(fdir->d_u_name));
-    if ( err ==  AFP_OK || err == AFPERR_NOOBJ) {
-        cnid_delete(vol->v_cdb, fdir->d_did);
-        dir_remove( vol, fdir );
-    } else {
+
+    switch (err) {
+    case AFP_OK:
+    case AFPERR_NOOBJ:
+        break;
+    case AFPERR_DIRNEMPT:
+        if (delete_vetoed_files(vol, bdata(fdir->d_u_name), false) != 0)
+            goto delete_done;
+        err = AFP_OK;
+        break;
+    default:
         LOG(log_error, logtype_afpd, "deletecurdir(\"%s\"): netatalk_rmdir_all_errors error",
             cfrombstr(curdir->d_fullpath));
+        goto delete_done;
     }
 
+    AFP_CNID_START("cnid_delete");
+    cnid_delete(vol->v_cdb, fdir->d_did);
+    AFP_CNID_DONE();
+
+    dir_remove( vol, fdir );
+
 delete_done:
-    if (dp) {
-        /* inode is used as key for cnid.
-         * Close the descriptor only after cnid_delete
-         * has been called.
-         */
-        closedir(dp);
-    }
     return err;
 }
 
@@ -2622,7 +2624,7 @@ int afp_opendir(AFPObj *obj _U_, char *ibuf, size_t ibuflen  _U_, char *rbuf, si
         return path_error(path, AFPERR_NOOBJ);
     }
 
-    if ( !path->st_valid && of_stat(path ) < 0 ) {
+    if ( !path->st_valid && of_stat(vol, path) < 0 ) {
         return( AFPERR_NOOBJ );
     }
     if ( path->st_errno ) {

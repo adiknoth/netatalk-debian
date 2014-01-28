@@ -51,6 +51,9 @@
 #ifdef HAVE_SOLARIS_ACLS
 #include <sys/acl.h>
 #endif  /* HAVE_SOLARIS_ACLS */
+#ifdef HAVE_FREEBSD_SUNACL
+#include <sunacl.h>
+#endif
 
 #ifdef HAVE_POSIX_ACLS
 #include <sys/types.h>
@@ -138,9 +141,11 @@ int openvol(AFPObj *obj, const char *path, afpvol_t *vol)
 
 void closevol(afpvol_t *vol)
 {
-    if (vol->vol->v_cdb) {
-        cnid_close(vol->vol->v_cdb);
-        vol->vol->v_cdb = NULL;
+    if (vol->vol) {
+        if (vol->vol->v_cdb) {
+            cnid_close(vol->vol->v_cdb);
+            vol->vol->v_cdb = NULL;
+        }
     }
     memset(vol, 0, sizeof(afpvol_t));
 }

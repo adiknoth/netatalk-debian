@@ -13,6 +13,7 @@ pkgconfdir = @PKGCONFDIR@
 	    -e s@:SBINDIR:@${sbindir}@ \
 	    -e s@:ETCDIR:@${pkgconfdir}@ \
 	    -e s@:NETATALK_VERSION:@${NETATALK_VERSION}@ \
+	    -e s@:PATH_NETATALK_LOCK:@${PATH_NETATALK_LOCK}@ \
 	    <$< >$@
 
 GENERATED_FILES = \
@@ -39,6 +40,7 @@ TEMPLATES = \
 
 CLEANFILES = $(GENERATED_FILES) $(sysv_SCRIPTS) $(service_DATA) afpd cnid_metad
 EXTRA_DIST = $(TEMPLATES)
+noinst_DATA = $(GENERATED_FILES)
 
 # overwrite automake uninstall
 # not beautiful, but this way we can call the OS specific init script
@@ -52,7 +54,7 @@ uninstall: uninstall-startup
 
 if USE_REDHAT_SYSV
 
-sysvdir	= /etc/rc.d/init.d
+sysvdir	= $(INIT_DIR)
 sysv_SCRIPTS = netatalk
 
 $(sysv_SCRIPTS): rc.redhat
@@ -74,7 +76,7 @@ endif
 
 if USE_SYSTEMD
 
-servicedir	= /lib/systemd/system
+servicedir	= $(INIT_DIR)
 service_DATA	= netatalk.service
 
 netatalk.service: service.systemd
@@ -96,7 +98,7 @@ endif
 
 if USE_SUSE_SYSV
 
-sysvdir	= /etc/init.d
+sysvdir	= $(INIT_DIR)
 sysv_SCRIPTS = netatalk
 
 $(sysv_SCRIPTS): rc.suse
@@ -118,7 +120,7 @@ endif
 
 if USE_NETBSD
 
-sysvdir = /etc/rc.d
+sysvdir = $(INIT_DIR)
 sysv_SCRIPTS = netatalk
 
 netatalk: rc.netbsd
@@ -139,7 +141,7 @@ endif
 
 if USE_SOLARIS
 
-servicedir = /lib/svc/manifest/network/
+servicedir = $(INIT_DIR)
 service_DATA = netatalk.xml
 
 install-data-hook:
@@ -156,7 +158,7 @@ endif
 
 if USE_GENTOO
 
-sysvdir = /etc/init.d
+sysvdir = $(INIT_DIR)
 sysv_SCRIPTS = netatalk
 
 $(sysv_SCRIPTS): rc.gentoo
@@ -178,7 +180,7 @@ endif
 
 if USE_DEBIAN
 
-sysvdir = /etc/init.d
+sysvdir = $(INIT_DIR)
 sysv_SCRIPTS = netatalk
 
 $(sysv_SCRIPTS): rc.debian

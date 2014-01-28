@@ -54,11 +54,14 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
+@WITH_DTRACE_TRUE@am__append_1 = afp_dtrace.h
+@WITH_DTRACE_TRUE@am__append_2 = afp_dtrace.h
 subdir = include/atalk
 DIST_COMMON = $(atalkinclude_HEADERS) $(noinst_HEADERS) \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
+	$(top_srcdir)/macros/ax_pthread.m4 \
 	$(top_srcdir)/macros/cnid-backend.m4 \
 	$(top_srcdir)/macros/config-checks.m4 \
 	$(top_srcdir)/macros/db3-check.m4 \
@@ -155,17 +158,24 @@ BDB_PATH = @BDB_PATH@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
-COMPILE_64BIT_KMODULE = @COMPILE_64BIT_KMODULE@
-COMPILE_KERNEL_GCC = @COMPILE_KERNEL_GCC@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CRYPT_LIBS = @CRYPT_LIBS@
 CYGPATH_W = @CYGPATH_W@
+DBUS_CFLAGS = @DBUS_CFLAGS@
+DBUS_GLIB_CFLAGS = @DBUS_GLIB_CFLAGS@
+DBUS_GLIB_LIBS = @DBUS_GLIB_LIBS@
+DBUS_GTHREAD_CFLAGS = @DBUS_GTHREAD_CFLAGS@
+DBUS_GTHREAD_LIBS = @DBUS_GTHREAD_LIBS@
+DBUS_LIBS = @DBUS_LIBS@
+DBUS_SYS_DIR = @DBUS_SYS_DIR@
 DEFAULT_CNID_SCHEME = @DEFAULT_CNID_SCHEME@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLTOOL = @DLLTOOL@
+DOCBOOK_ROOT = @DOCBOOK_ROOT@
 DSYMUTIL = @DSYMUTIL@
+DTRACE_LIBS = @DTRACE_LIBS@
 DUMPBIN = @DUMPBIN@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
@@ -179,13 +189,12 @@ GSSAPI_LDFLAGS = @GSSAPI_LDFLAGS@
 GSSAPI_LIBS = @GSSAPI_LIBS@
 ICONV_CFLAGS = @ICONV_CFLAGS@
 ICONV_LIBS = @ICONV_LIBS@
+INIT_DIR = @INIT_DIR@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-KCFLAGS = @KCFLAGS@
-KLDFLAGS = @KLDFLAGS@
 KRB5_CFLAGS = @KRB5_CFLAGS@
 KRB5_CONFIG = @KRB5_CONFIG@
 KRB5_LIBS = @KRB5_LIBS@
@@ -239,11 +248,14 @@ PAM_DIRECTIVE = @PAM_DIRECTIVE@
 PAM_LIBS = @PAM_LIBS@
 PAM_PASSWORD = @PAM_PASSWORD@
 PAM_SESSION = @PAM_SESSION@
+PATH_NETATALK_LOCK = @PATH_NETATALK_LOCK@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
 PKGCONFDIR = @PKGCONFDIR@
 PKG_CONFIG = @PKG_CONFIG@
 PS = @PS@
+PTHREAD_CC = @PTHREAD_CC@
+PTHREAD_CFLAGS = @PTHREAD_CFLAGS@
 PTHREAD_LIBS = @PTHREAD_LIBS@
 QUOTA_LIBS = @QUOTA_LIBS@
 RANLIB = @RANLIB@
@@ -254,9 +266,13 @@ SHELL = @SHELL@
 SSL_CFLAGS = @SSL_CFLAGS@
 SSL_LIBS = @SSL_LIBS@
 STRIP = @STRIP@
+TDB_CFLAGS = @TDB_CFLAGS@
+TDB_LIBS = @TDB_LIBS@
 UAMS_PATH = @UAMS_PATH@
 VERSION = @VERSION@
 WRAP_LIBS = @WRAP_LIBS@
+XSLTPROC = @XSLTPROC@
+XSLTPROC_FLAGS = @XSLTPROC_FLAGS@
 ZEROCONF_CFLAGS = @ZEROCONF_CFLAGS@
 ZEROCONF_LIBS = @ZEROCONF_LIBS@
 abs_builddir = @abs_builddir@
@@ -271,6 +287,8 @@ am__leading_dot = @am__leading_dot@
 am__quote = @am__quote@
 am__tar = @am__tar@
 am__untar = @am__untar@
+atalk_cv_have_dtrace = @atalk_cv_have_dtrace@
+ax_pthread_config = @ax_pthread_config@
 bindir = @bindir@
 build = @build@
 build_alias = @build_alias@
@@ -319,6 +337,8 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 atalkincludedir = $(includedir)/atalk
+BUILT_SOURCES = $(am__append_1)
+CLEANFILES = $(am__append_2)
 atalkinclude_HEADERS = \
 	adouble.h \
 	afp.h \
@@ -359,7 +379,9 @@ noinst_HEADERS = \
 	ldapconfig.h \
 	fce_api.h
 
-all: all-am
+EXTRA_DIST = afp_dtrace.d
+all: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) all-am
 
 .SUFFIXES:
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
@@ -503,13 +525,15 @@ distdir: $(DISTFILES)
 	  fi; \
 	done
 check-am: all-am
-check: check-am
+check: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) check-am
 all-am: Makefile $(HEADERS)
 installdirs:
 	for dir in "$(DESTDIR)$(atalkincludedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
-install: install-am
+install: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) install-am
 install-exec: install-exec-am
 install-data: install-data-am
 uninstall: uninstall-am
@@ -531,6 +555,7 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -539,6 +564,7 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 clean: clean-am
 
 clean-am: clean-generic clean-libtool mostlyclean-am
@@ -605,7 +631,7 @@ ps-am:
 
 uninstall-am: uninstall-atalkincludeHEADERS
 
-.MAKE: install-am install-strip
+.MAKE: all check install install-am install-strip
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
 	clean-libtool ctags distclean distclean-generic \
@@ -621,6 +647,8 @@ uninstall-am: uninstall-atalkincludeHEADERS
 	ps ps-am tags uninstall uninstall-am \
 	uninstall-atalkincludeHEADERS
 
+@WITH_DTRACE_TRUE@afp_dtrace.h: $(top_srcdir)/include/atalk/afp_dtrace.d
+@WITH_DTRACE_TRUE@	$(LIBTOOL) --mode=execute dtrace -o afp_dtrace.h -h -s $(top_srcdir)/include/atalk/afp_dtrace.d
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

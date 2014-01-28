@@ -1,5 +1,4 @@
 /*
- * $Id: uams_pgp.c,v 1.12 2009-10-15 11:39:48 didg Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * Copyright (c) 1999 Adrian Sun (asun@u.washington.edu) 
@@ -175,7 +174,7 @@ static int pgp_logincont(void *obj, struct passwd **uam_pwd,
 }
 
 
-static int uam_setup(const char *path)
+static int uam_setup(void *obj, const char *path)
 {
   if (uam_register(UAM_SERVER_LOGIN, path, "PGPuam 1.0",
 		   pgp_login, pgp_logincont, NULL) < 0)

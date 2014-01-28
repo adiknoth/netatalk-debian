@@ -52,7 +52,6 @@ ssize_t ad_write(struct adouble *ad, uint32_t eid, off_t off, int end, const cha
     EC_INIT;
     struct stat		st;
     ssize_t		cc;
-    size_t roundup;
     off_t    r_off;
 
     if (ad_data_fileno(ad) == AD_SYMLINK) {
@@ -60,7 +59,7 @@ ssize_t ad_write(struct adouble *ad, uint32_t eid, off_t off, int end, const cha
         return -1;
     }
 
-    LOG(log_debug, logtype_default, "ad_write: off: %ju, size: %zu, eabuflen: %zu",
+    LOG(log_debug, logtype_ad, "ad_write: off: %ju, size: %zu, eabuflen: %zu",
         (uintmax_t)off, buflen, ad->ad_rlen);
     
     if ( eid == ADEID_DFORK ) {
@@ -94,7 +93,6 @@ ssize_t ad_write(struct adouble *ad, uint32_t eid, off_t off, int end, const cha
         return -1; /* we don't know how to write if it's not a ressource or data fork */
     }
 
-EC_CLEANUP:
     if (ret != 0)
         return ret;
     return( cc );
@@ -159,13 +157,13 @@ char            c = 0;
 }
 
 /* ------------------------ */
-int ad_rtruncate( struct adouble *ad, const off_t size)
+int ad_rtruncate(struct adouble *ad, const char *uname, const off_t size)
 {
     EC_INIT;
 
 #ifndef HAVE_EAFD
     if (ad->ad_vers == AD_VERSION_EA && size == 0)
-        EC_NEG1( unlink(ad->ad_ops->ad_path(ad->ad_name, 0)) );
+        EC_NEG1( unlink(ad->ad_ops->ad_path(uname, 0)) );
     else
 #endif
         EC_NEG1( sys_ftruncate(ad_reso_fileno(ad), size + ad->ad_eid[ ADEID_RFORK ].ade_off) );
@@ -174,15 +172,15 @@ EC_CLEANUP:
     if (ret == 0)
         ad->ad_rlen = size;    
     else
-        LOG(log_error, logtype_default, "ad_rtruncate(\"%s\"): %s",
-            fullpathname(ad->ad_name), strerror(errno));
+        LOG(log_error, logtype_ad, "ad_rtruncate(\"%s\"): %s",
+            fullpathname(uname), strerror(errno));
     EC_EXIT;
 }
 
 int ad_dtruncate(struct adouble *ad, const off_t size)
 {
     if (sys_ftruncate(ad_data_fileno(ad), size) < 0) {
-        LOG(log_error, logtype_default, "sys_ftruncate(fd: %d): %s",
+        LOG(log_error, logtype_ad, "sys_ftruncate(fd: %d): %s",
             ad_data_fileno(ad), strerror(errno));
         return -1;
     }

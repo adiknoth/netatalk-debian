@@ -1,8 +1,16 @@
-/*
- * Copyright (c) 1990,1993 Regents of The University of Michigan.
- * All Rights Reserved.  See COPYRIGHT.
- */
-
+/* 
+   Copyright (c) 2012 Frank Lahm <franklahm@gmail.com>
+   
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+ 
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+*/
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
@@ -44,7 +52,6 @@ static void kill_childs(int sig, ...);
 
 /* static variables */
 static AFPObj obj;
-static sig_atomic_t got_chldsig;
 static pid_t afpd_pid = -1,  cnid_metad_pid = -1;
 static uint afpd_restarts, cnid_metad_restarts;
 static struct event_base *base;
@@ -116,10 +123,17 @@ static void sigquit_cb(evutil_socket_t fd, short what, void *arg)
     kill_childs(SIGQUIT, &afpd_pid, &cnid_metad_pid, NULL);
 }
 
+/* SIGQUIT callback */
+static void sighup_cb(evutil_socket_t fd, short what, void *arg)
+{
+    LOG(log_note, logtype_afpd, "Received SIGHUP, sending all processes signal to reload config");
+    kill_childs(SIGHUP, &afpd_pid, &cnid_metad_pid, NULL);
+}
+
 /* SIGCHLD callback */
 static void sigchld_cb(evutil_socket_t fd, short what, void *arg)
 {
-    int status, i;
+    int status;
     pid_t pid;
 
     LOG(log_debug, logtype_afpd, "Got SIGCHLD event");
@@ -139,7 +153,7 @@ static void sigchld_cb(evutil_socket_t fd, short what, void *arg)
 
         if (pid == afpd_pid)
             afpd_pid = -1;
-        else if (pid = cnid_metad_pid)
+        else if (pid == cnid_metad_pid)
             cnid_metad_pid = -1;
         else
             LOG(log_error, logtype_afpd, "Bad pid: %d", pid);
@@ -152,8 +166,6 @@ static void sigchld_cb(evutil_socket_t fd, short what, void *arg)
 /* timer callback */
 static void timer_cb(evutil_socket_t fd, short what, void *arg)
 {
-    static int i = 0;
-
     if (in_shutdown)
         return;
 
@@ -197,7 +209,7 @@ static void kill_childs(int sig, ...)
 /* this get called when error conditions are met that require us to exit gracefully */
 static void netatalk_exit(int ret)
 {
-    server_unlock(_PATH_NETATALK_LOCK);
+    server_unlock(PATH_NETATALK_LOCK);
     exit(ret);
 }
 
@@ -237,7 +249,6 @@ static void usage(void)
 
 int main(int argc, char **argv)
 {
-    const char *configfile = NULL;
     int c, ret, debug = 0;
     sigset_t blocksigs;
     struct timeval tv;
@@ -259,13 +270,13 @@ int main(int argc, char **argv)
         }
     }
 
-    if (check_lockfile("netatalk", _PATH_NETATALK_LOCK) != 0)
+    if (check_lockfile("netatalk", PATH_NETATALK_LOCK) != 0)
         exit(EXITERR_SYS);
 
     if (!debug && daemonize(0, 0) != 0)
         exit(EXITERR_SYS);
 
-    if (create_lockfile("netatalk", _PATH_NETATALK_LOCK) != 0)
+    if (create_lockfile("netatalk", PATH_NETATALK_LOCK) != 0)
         exit(EXITERR_SYS);
 
     sigfillset(&blocksigs);
@@ -280,7 +291,7 @@ int main(int argc, char **argv)
     LOG(log_note, logtype_default, "Netatalk AFP server starting");
 
     if ((afpd_pid = run_process(_PATH_AFPD, "-d", "-F", obj.options.configfile, NULL)) == -1) {
-        LOG(log_error, logtype_afpd, "Error starting 'cnid_metad'");
+        LOG(log_error, logtype_afpd, "Error starting 'afpd'");
         netatalk_exit(EXITERR_CONF);
     }
 
@@ -296,6 +307,7 @@ int main(int argc, char **argv)
 
     sigterm_ev = event_new(base, SIGTERM, EV_SIGNAL, sigterm_cb, NULL);
     sigquit_ev = event_new(base, SIGQUIT, EV_SIGNAL | EV_PERSIST, sigquit_cb, NULL);
+    sigquit_ev = event_new(base, SIGHUP,  EV_SIGNAL | EV_PERSIST, sighup_cb, NULL);
     sigchld_ev = event_new(base, SIGCHLD, EV_SIGNAL | EV_PERSIST, sigchld_cb, NULL);
     timer_ev = event_new(base, -1, EV_PERSIST, timer_cb, NULL);
 
@@ -311,6 +323,7 @@ int main(int argc, char **argv)
     sigdelset(&blocksigs, SIGTERM);
     sigdelset(&blocksigs, SIGQUIT);
     sigdelset(&blocksigs, SIGCHLD);
+    sigdelset(&blocksigs, SIGHUP);
     sigprocmask(SIG_SETMASK, &blocksigs, NULL);
 
     /* run the event loop */

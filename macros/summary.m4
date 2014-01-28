@@ -11,7 +11,7 @@ AC_DEFUN([AC_NETATALK_CONFIG_SUMMARY], [
 	fi
 	AC_MSG_RESULT([    AFP:])
 	AC_MSG_RESULT([         Extended Attributes: $neta_cv_eas])
-	AC_MSG_RESULT([         ACL support: $with_acl_support])
+	AC_MSG_RESULT([         ACL support: $ac_cv_have_acls])
 	AC_MSG_RESULT([    CNID:])
 	AC_MSG_RESULT([         backends: $compiled_backends])
 	AC_MSG_RESULT([    UAMS:])
@@ -53,14 +53,29 @@ dnl	AC_MSG_RESULT([         Samba sharemode interop: $neta_cv_have_smbshmd])
 	AC_MSG_RESULT([         ACL support:             $with_acl_support])
 	AC_MSG_RESULT([         Kerberos support:        $with_kerberos])
 	AC_MSG_RESULT([         LDAP support:            $netatalk_cv_ldap])
-	if test x"$use_pam_so" = x"yes" -a x"$netatalk_cv_install_pam" = x"no"; then
+	AC_MSG_RESULT([         dbus support:            $atalk_cv_with_dbus])
+	AC_MSG_RESULT([         dtrace probes:           $WDTRACE])
+	AC_MSG_RESULT([    Paths:])
+	AC_MSG_RESULT([         Netatalk lockfile:       $ac_cv_netatalk_lock])
+	if test "x$init_style" != x"none"; then
+		AC_MSG_RESULT([         init directory:          $ac_cv_init_dir])
+	fi
+	if test x"$atalk_cv_with_dbus" = x"yes"; then
+		AC_MSG_RESULT([         dbus system directory:   $ac_cv_dbus_sysdir])
+	fi
+	if test x"$use_pam_so" = x"yes"; then
+	   if test x"$netatalk_cv_install_pam" = x"yes"; then
+		AC_MSG_RESULT([         pam config directory:    $ac_cv_pamdir])
+	   else
 		AC_MSG_RESULT([])
 		AC_MSG_WARN([ PAM support was configured for your system, but the netatalk PAM configuration file])
 		AC_MSG_WARN([ cannot be installed. Please install the config/netatalk.pamd file manually.])
 		AC_MSG_WARN([ If you're running Solaris or BSD you'll have to edit /etc/pam.conf to get PAM working.])
 		AC_MSG_WARN([ You can also re-run configure and specify --without-pam to disable PAM support.])
+	   fi
 	fi
-
+	AC_MSG_RESULT([    Documentation:])
+	AC_MSG_RESULT([         Docbook:                 $XSLTPROC_WORKS])
 ])
 
 
@@ -68,9 +83,13 @@ AC_DEFUN([AC_NETATALK_LIBS_SUMMARY], [
 	dnl #################################################
 	dnl # Display summary of libraries detected
 
-	AC_MSG_RESULT([Using libraries:])
-	AC_MSG_RESULT([    LIBS = $LIBS])
-	AC_MSG_RESULT([    CFLAGS = $CFLAGS])
+	AC_MSG_RESULT([Compilation summary:])
+	AC_MSG_RESULT([    CPPFLAGS       = $CPPFLAGS])
+	AC_MSG_RESULT([    CFLAGS         = $CFLAGS])
+	AC_MSG_RESULT([    LIBS           = $LIBS])
+	AC_MSG_RESULT([    PTHREADS:])
+	AC_MSG_RESULT([        LIBS   = $PTHREAD_LIBS])
+	AC_MSG_RESULT([        CFLAGS = $PTHREAD_CFLAGS])
 	if test x"$neta_cv_have_openssl" = x"yes"; then
 		AC_MSG_RESULT([    SSL:])
 		AC_MSG_RESULT([        LIBS   = $SSL_LIBS])
@@ -113,7 +132,22 @@ AC_DEFUN([AC_NETATALK_LIBS_SUMMARY], [
 	fi
 	if test x"$netatalk_cv_ldap" = x"yes"; then
 		AC_MSG_RESULT([    LDAP:])
-		AC_MSG_RESULT([        LIBS   = $LDAP_LDLFLAGS $LDAP_LIBS])
+		AC_MSG_RESULT([        LIBS   = $LDAP_LDFLAGS $LDAP_LIBS])
 		AC_MSG_RESULT([        CFLAGS = $LDAP_CFLAGS])
 	fi
+    AC_MSG_RESULT([    LIBEVENT:])
+    if test x"$use_bundled_libevent" = x"yes"; then
+		AC_MSG_RESULT([        bundled])
+    else
+		AC_MSG_RESULT([        LIBS   = $LIBEVENT_CFLAGS])
+		AC_MSG_RESULT([        CFLAGS = $LIBEVENT_LDFLAGS])
+    fi
+
+    AC_MSG_RESULT([    TDB:])
+    if test x"$use_bundled_tdb" = x"yes"; then
+		AC_MSG_RESULT([        bundled])
+    else
+		AC_MSG_RESULT([        LIBS   = $TDB_LIBS])
+		AC_MSG_RESULT([        CFLAGS = $TDB_CFLAGS])
+    fi
 ])

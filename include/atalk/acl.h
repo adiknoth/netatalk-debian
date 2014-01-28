@@ -21,8 +21,16 @@
 
 #ifdef HAVE_ACLS
 
+#define O_NETATALK_ACL (O_NOFOLLOW << 1)
+
 #ifdef HAVE_SOLARIS_ACLS
 #include <sys/acl.h>
+#endif
+#ifdef HAVE_FREEBSD_SUNACL
+#include <sunacl.h>
+#endif
+
+#ifdef HAVE_NFSV4_ACLS
 
 #define chmod_acl nfsv4_chmod
 
@@ -32,7 +40,7 @@ extern int strip_nontrivial_aces(ace_t **saces, int sacecount);
 extern ace_t *concat_aces(ace_t *aces1, int ace1count, ace_t *aces2, int ace2count);
 extern int nfsv4_chmod(char *name, mode_t mode);
 
-#endif  /* HAVE_SOLARIS_ACLS */
+#endif  /* HAVE_NFSV4_ACLS */
 
 #ifdef HAVE_POSIX_ACLS
 #include <sys/types.h>
@@ -51,6 +59,7 @@ extern int remove_acl_vfs(const char *name);
 
 #else /* HAVE_ACLS=no */
 
+#define O_NETATALK_ACL 0
 #define chmod_acl chmod
 
 #endif /* HAVE_ACLS */

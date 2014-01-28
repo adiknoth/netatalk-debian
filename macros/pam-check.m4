@@ -1,4 +1,3 @@
-dnl $Id: pam-check.m4,v 1.6 2010-01-11 13:06:02 franklahm Exp $
 dnl PAM finding macro
 
 AC_DEFUN([AC_NETATALK_PATH_PAM], [
@@ -98,6 +97,13 @@ AC_DEFUN([AC_NETATALK_PATH_PAM], [
            PAM_ACCOUNT=system
            PAM_PASSWORD=system
            PAM_SESSION=system
+        dnl Solaris 11+
+        elif test -f "$pampath/other" ; then
+           PAM_DIRECTIVE=include
+           PAM_AUTH=${PAMDIR}etc/pam.d/other
+           PAM_ACCOUNT=${PAMDIR}etc/pam.d/other
+           PAM_PASSWORD=${PAMDIR}etc/pam.d/other
+           PAM_SESSION=${PAMDIR}etc/pam.d/other
         dnl Fallback
         else
            PAM_DIRECTIVE=required
@@ -131,6 +137,15 @@ AC_DEFUN([AC_NETATALK_PATH_PAM], [
 	    netatalk_cv_use_pam=yes
 	    AC_DEFINE(USE_PAM, 1, [Define to enable PAM support])
 	fi
+
+    AC_ARG_WITH(
+        pam-confdir,
+        [AS_HELP_STRING([--with-pam-confdir=PATH],[Path to PAM config dir (default: ${sysconfdir}/pam.d)])],
+        ac_cv_pamdir=$withval,
+        ac_cv_pamdir='${sysconfdir}/pam.d'
+    )
+
+    PAMDIR="$ac_cv_pamdir"
 
     LIB_REMOVE_USR_LIB(PAM_LIBS)
     CFLAGS_REMOVE_USR_INCLUDE(PAM_CFLAGS)

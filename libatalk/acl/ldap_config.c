@@ -30,6 +30,17 @@
 #include <atalk/logger.h>
 #include <atalk/iniparser.h>
 
+void acl_ldap_freeconfig(void)
+{
+    for (int i = 0; ldap_prefs[i].name != NULL; i++) {
+        if (ldap_prefs[i].intfromarray == 0 && ldap_prefs[i].strorint == 0) {
+            free(*((char **)(ldap_prefs[i].pref)));
+            *((char **)(ldap_prefs[i].pref)) = NULL;
+        }
+        ldap_prefs[i].valid = ldap_prefs[i].valid_save;
+    }
+}
+
 int acl_ldap_readconfig(dictionary *iniconfig)
 {
     int i, j;
@@ -38,7 +49,7 @@ int acl_ldap_readconfig(dictionary *iniconfig)
     i = 0;
     /* now see if its a correct pref */
     for (i = 0; ldap_prefs[i].name != NULL; i++) {
-        if ((val = iniparser_getstring(iniconfig, INISEC_GLOBAL, ldap_prefs[i].name, NULL))) {
+        if ((val = atalk_iniparser_getstring(iniconfig, INISEC_GLOBAL, ldap_prefs[i].name, NULL))) {
             /* check if we have pre-defined values */
             if (ldap_prefs[i].intfromarray == 0) {
                 /* no, its just a string */

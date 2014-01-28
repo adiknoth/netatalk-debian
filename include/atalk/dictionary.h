@@ -4,7 +4,6 @@
    @file    dictionary.h
    @author  N. Devillard
    @date    Sep 2007
-   @version $Revision: 1.12 $
    @brief   Implements a dictionary for string variables.
 
    This module implements a simple dictionary object, i.e. a list
@@ -14,10 +13,8 @@
 /*--------------------------------------------------------------------------*/
 
 /*
-	$Id: dictionary.h,v 1.12 2007-11-23 21:37:00 ndevilla Exp $
 	$Author: ndevilla $
 	$Date: 2007-11-23 21:37:00 $
-	$Revision: 1.12 $
 */
 
 #ifndef _DICTIONARY_H_
@@ -60,12 +57,12 @@ typedef struct _dictionary_ {
   							Function prototypes
  ---------------------------------------------------------------------------*/
 
-unsigned   dictionary_hash  (char * key);
-dictionary *dictionary_new  (int size);
-void       dictionary_del   (dictionary * vd);
-const char *dictionary_get  (const dictionary * d, const char *section, const char * key, const char * def);
-int        dictionary_set   (dictionary * vd, char *section, char * key, char * val);
-void       dictionary_unset (dictionary * d, char *section, char * key);
-void       dictionary_dump  (dictionary * d, FILE * out);
+unsigned   atalkdict_hash  (char * key);
+dictionary *atalkdict_new  (int size);
+void       atalkdict_del   (dictionary * vd);
+const char *atalkdict_get  (const dictionary * d, const char *section, const char * key, const char * def);
+int        atalkdict_set   (dictionary * vd, char *section, char * key, char * val);
+void       atalkdict_unset (dictionary * d, char *section, char * key);
+void       atalkdict_dump  (dictionary * d, FILE * out);
 
 #endif

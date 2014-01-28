@@ -1,5 +1,117 @@
 dnl Kitchen sink for configuration macros
 
+dnl Check for docbook
+AC_DEFUN(AX_CHECK_DOCBOOK, [
+  # It's just rude to go over the net to build
+  XSLTPROC_FLAGS=--nonet
+  DOCBOOK_ROOT=
+  XSLTPROC_WORKS=no
+
+  AC_ARG_WITH(docbook,
+    AS_HELP_STRING(
+      [--with-docbook],
+      [Path to Docbook XSL directory]
+    ),
+    [DOCBOOK_ROOT=$withval]
+  )
+
+  if test -n "$DOCBOOK_ROOT" ; then
+    AC_CHECK_PROG(XSLTPROC,xsltproc,xsltproc,)
+    if test -n "$XSLTPROC"; then
+      AC_MSG_CHECKING([whether xsltproc works])
+      DB_FILE="$DOCBOOK_ROOT/html/docbook.xsl"
+      $XSLTPROC $XSLTPROC_FLAGS $DB_FILE >/dev/null 2>&1 << END
+<?xml version="1.0" encoding='ISO-8859-1'?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN" "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+<book id="test">
+</book>
+END
+      if test "$?" = 0; then
+        XSLTPROC_WORKS=yes
+      fi
+      AC_MSG_RESULT($XSLTPROC_WORKS)
+    fi
+  fi
+
+  AC_MSG_CHECKING([whether to build Docbook documentation])
+  AC_MSG_RESULT($XSLTPROC_WORKS)
+
+  AM_CONDITIONAL(HAVE_XSLTPROC, test x"$XSLTPROC_WORKS" = x"yes")
+  AC_SUBST(XSLTPROC_FLAGS)
+  AC_SUBST(DOCBOOK_ROOT)
+  AC_SUBST(XSLTPROC)
+])
+
+dnl Check for dtrace
+AC_DEFUN([AC_NETATALK_DTRACE], [
+  AC_ARG_WITH(dtrace,
+    AS_HELP_STRING(
+      [--with-dtrace],
+      [Enable dtrace probes (default: enabled if dtrace found)]
+    ),
+    [WDTRACE=$withval],
+    [WDTRACE=auto]
+  )
+  if test "x$WDTRACE" = "xyes" -o "x$WDTRACE" = "xauto" ; then
+    AC_CHECK_PROG([atalk_cv_have_dtrace], [dtrace], [yes], [no])
+    if test "x$atalk_cv_have_dtrace" = "xno" ; then
+      if test "x$WDTRACE" = "xyes" ; then
+        AC_MSG_FAILURE([dtrace requested but not found])
+      fi
+      WDTRACE="no"
+    else
+      WDTRACE="yes"
+    fi
+  fi
+
+  if test x"$WDTRACE" = x"yes" ; then
+    AC_DEFINE([WITH_DTRACE], [1], [dtrace probes])
+    DTRACE_LIBS=""
+    if test x"$this_os" = x"freebsd" ; then
+      DTRACE_LIBS="-lelf"
+    fi
+    AC_SUBST(DTRACE_LIBS)
+  fi
+  AM_CONDITIONAL(WITH_DTRACE, test "x$WDTRACE" = "xyes")
+])
+
+dnl Check for dbus-glib, for AFP stats
+AC_DEFUN([AC_NETATALK_DBUS_GLIB], [
+    atalk_cv_with_dbus=no
+    PKG_CHECK_MODULES(DBUS, dbus-1 >= 1.1, have_dbus=yes, have_dbus=no)
+    PKG_CHECK_MODULES(DBUS_GLIB, dbus-glib-1, have_dbus_glib=yes, have_dbus_glib=no)
+    PKG_CHECK_MODULES(DBUS_GTHREAD, gthread-2.0, have_dbus_gthread=yes, have_dbus_gthread=no)
+    AC_SUBST(DBUS_CFLAGS)
+    AC_SUBST(DBUS_LIBS)
+    AC_SUBST(DBUS_GLIB_CFLAGS)
+    AC_SUBST(DBUS_GLIB_LIBS)
+    AC_SUBST(DBUS_GTHREAD_CFLAGS)
+    AC_SUBST(DBUS_GTHREAD_LIBS)
+    if test x$have_dbus_glib = xyes -a x$have_dbus = xyes -a x$have_dbus_gthread = xyes ; then
+        saved_CFLAGS=$CFLAGS
+        saved_LIBS=$LIBS
+        CFLAGS="$CFLAGS $DBUS_GLIB_CFLAGS"
+        LIBS="$LIBS $DBUS_GLIB_LIBS"
+        AC_CHECK_FUNC([dbus_g_bus_get_private], [atalk_cv_with_dbus=yes], [atalk_cv_with_dbus=no])
+        CFLAGS="$saved_CFLAGS"
+        LIBS="$saved_LIBS"
+    fi
+    AM_CONDITIONAL(HAVE_DBUS_GLIB, test x$atalk_cv_with_dbus = xyes)
+
+    AC_ARG_WITH(
+        dbus-sysconf-dir,
+        [AS_HELP_STRING([--with-dbus-sysconf-dir=PATH],[Path to dbus system bus security configuration directory (default: ${sysconfdir}/dbus-1/system.d/)])],
+        ac_cv_dbus_sysdir=$withval,
+        ac_cv_dbus_sysdir='${sysconfdir}/dbus-1/system.d'
+    )
+
+    if test x$atalk_cv_with_dbus = xyes ; then
+        AC_DEFINE(HAVE_DBUS_GLIB, 1, [Define if support for dbus-glib was found])
+        DBUS_SYS_DIR="$ac_cv_dbus_sysdir"
+        AC_SUBST(DBUS_SYS_DIR)
+    fi
+])
+
 dnl Whether to enable developer build
 AC_DEFUN([AC_DEVELOPER], [
     AC_MSG_CHECKING([whether to enable developer build])
@@ -15,20 +127,26 @@ AC_DEFUN([AC_DEVELOPER], [
 
 dnl Whether to disable bundled libevent
 AC_DEFUN([AC_NETATALK_LIBEVENT], [
-    use_bundled_libevent=no
-    AC_MSG_CHECKING([whether to use bundled or installed libevent])
+    AC_MSG_CHECKING([whether to use bundled libevent])
+    AC_ARG_WITH(
+        libevent,
+        [AS_HELP_STRING([--with-libevent],[whether to use the bundled libevent (default: yes)])],
+        use_bundled_libevent=$withval,
+        use_bundled_libevent=yes
+    )
     AC_ARG_WITH(
         libevent-header,
         [AS_HELP_STRING([--with-libevent-header],[path to libevent header files])],
-        LIBEVENT_CFLAGS=-I$withval,
-        use_bundled_libevent=yes
+        [use_bundled_libevent=no; LIBEVENT_CFLAGS=-I$withval]
     )
     AC_ARG_WITH(
         libevent-lib,
-        [AS_HELP_STRING([--with-libevent-lib],[path to libevent header library])],
-        LIBEVENT_LDFLAGS=-L$withval,
-        use_bundled_libevent=yes
+        [AS_HELP_STRING([--with-libevent-lib],[path to libevent library])],
+        [use_bundled_libevent=no; LIBEVENT_LDFLAGS=-L$withval]
     )
+    if test x"$LIBEVENT_CFLAGS" = x"-Iyes" -o x"$LIBEVENT_LDFLAGS" = x"-Lyes" ; then
+        AC_MSG_ERROR([--with-libevent requires a path])
+    fi
     AC_MSG_RESULT([$use_bundled_libevent])
     if test x"$use_bundled_libevent" = x"yes" ; then
         AC_CONFIG_SUBDIRS([libevent])
@@ -36,6 +154,31 @@ AC_DEFUN([AC_NETATALK_LIBEVENT], [
     AC_SUBST(LIBEVENT_CFLAGS)
     AC_SUBST(LIBEVENT_LDFLAGS)
     AM_CONDITIONAL(USE_BUILTIN_LIBEVENT, test x"$use_bundled_libevent" = x"yes")
+])
+
+dnl Whether to disable bundled tdb
+AC_DEFUN([AC_NETATALK_TDB], [
+    AC_ARG_WITH(
+        tdb,
+        [AS_HELP_STRING([--with-tdb],[whether to use the bundled tdb (default: yes)])],
+        use_bundled_tdb=$withval,
+        use_bundled_tdb=yes
+    )
+    AC_MSG_CHECKING([whether to use bundled tdb])
+    AC_MSG_RESULT([$use_bundled_tdb])
+
+    if test x"$use_bundled_tdb" = x"yes" ; then
+        AC_DEFINE(USE_BUILTIN_TDB, 1, [Use internal tbd])
+    else
+        if test -z "$TDB_LIBS" ; then
+            PKG_CHECK_MODULES(TDB, tdb, , [AC_MSG_ERROR([couldn't find tdb with pkg-config])])
+        fi
+        use_bundled_tdb=no
+    fi        
+
+    AC_SUBST(TDB_CFLAGS)
+    AC_SUBST(TDB_LIBS)
+    AM_CONDITIONAL(USE_BUILTIN_TDB, test x"$use_bundled_tdb" = x"yes")
 ])
 
 dnl Filesystem Hierarchy Standard (FHS) compatibility
@@ -56,13 +199,47 @@ AC_ARG_ENABLE(fhs,
 		use_pam_so=yes
 		AC_DEFINE(FHS_COMPATIBILITY, 1, [Define if you want compatibily with the FHS])
 		AC_MSG_RESULT([yes])
+        atalk_cv_fhs_compat=yes
 	else
 		AC_MSG_RESULT([no])
+        atalk_cv_fhs_compat=no
 	fi
 	],[
 		AC_MSG_RESULT([no])
-	]
-)])
+        atalk_cv_fhs_compat=no
+])])
+
+dnl netatalk lockfile path
+AC_DEFUN([AC_NETATALK_LOCKFILE], [
+    AC_MSG_CHECKING([netatalk lockfile path])
+    AC_ARG_WITH(
+        lockfile,
+        [AS_HELP_STRING([--with-lockfile=PATH],[Path of netatalk lockfile])],
+        ac_cv_netatalk_lock=$withval,
+        ac_cv_netatalk_lock=""
+    )
+    if test -z "$ac_cv_netatalk_lock" ; then
+        ac_cv_netatalk_lock=/var/spool/locks/netatalk
+        if test x"$atalk_cv_fhs_compat" = x"yes" ; then
+            ac_cv_netatalk_lock=/var/run/netatalk.pid
+        else
+            case "$host_os" in
+            *freebsd*)
+                ac_cv_netatalk_lock=/var/spool/lock/netatalk
+                ;;
+            *netbsd*|*openbsd*)
+                ac_cv_netatalk_lock=/var/run/netatalk.pid
+                ;;
+            *linux*)
+                ac_cv_netatalk_lock=/var/lock/netatalk
+                ;;
+            esac
+        fi
+    fi
+    AC_DEFINE_UNQUOTED(PATH_NETATALK_LOCK, ["$ac_cv_netatalk_lock"], [netatalk lockfile path])
+    AC_SUBST(PATH_NETATALK_LOCK, ["$ac_cv_netatalk_lock"])
+    AC_MSG_RESULT([$ac_cv_netatalk_lock])
+])
 
 dnl 64bit platform check
 AC_DEFUN([AC_NETATALK_64BIT_LIBS], [
@@ -245,7 +422,7 @@ AC_ARG_ENABLE(shell-check,
 )
 ])
 
-dnl Check for optional sysv initscript install
+dnl Check for optional initscript install
 AC_DEFUN([AC_NETATALK_INIT_STYLE], [
     AC_ARG_WITH(init-style,
                 [  --with-init-style       use OS specific init config [[redhat-sysv|redhat-systemd|suse-sysv|suse-systemd|gentoo|netbsd|debian|solaris|systemd]]],
@@ -257,36 +434,46 @@ AC_DEFUN([AC_NETATALK_INIT_STYLE], [
         ;;
     "redhat-sysv")
 	    AC_MSG_RESULT([enabling redhat-style sysv initscript support])
+	    ac_cv_init_dir="/etc/rc.d/init.d"
 	    ;;
     "redhat-systemd")
 	    AC_MSG_RESULT([enabling redhat-style systemd support])
+	    ac_cv_init_dir="/usr/lib/systemd/system"
 	    ;;
     "suse")
 	    AC_MSG_ERROR([--with-init-style=suse is obsoleted. Use suse-sysv or suse-systemd.])
         ;;
     "suse-sysv")
 	    AC_MSG_RESULT([enabling suse-style sysv initscript support])
+	    ac_cv_init_dir="/etc/init.d"
 	    ;;
     "suse-systemd")
 	    AC_MSG_RESULT([enabling suse-style systemd support (>=openSUSE12.1)])
+	    ac_cv_init_dir="/usr/lib/systemd/system"
 	    ;;
     "gentoo")
 	    AC_MSG_RESULT([enabling gentoo-style initscript support])
+	    ac_cv_init_dir="/etc/init.d"
         ;;
     "netbsd")
 	    AC_MSG_RESULT([enabling netbsd-style initscript support])
+	    ac_cv_init_dir="/etc/rc.d"
         ;;
     "debian")
 	    AC_MSG_RESULT([enabling debian-style initscript support])
+	    ac_cv_init_dir="/etc/init.d"
         ;;
     "solaris")
 	    AC_MSG_RESULT([enabling solaris-style SMF support])
+	    ac_cv_init_dir="/lib/svc/manifest/network/"
         ;;
     "systemd")
 	    AC_MSG_RESULT([enabling general systemd support])
+	    ac_cv_init_dir="/usr/lib/systemd/system"
         ;;
     "none")
 	    AC_MSG_RESULT([disabling init-style support])
+	    ac_cv_init_dir="none"
         ;;
     *)
 	    AC_MSG_ERROR([illegal init-style])
@@ -301,6 +488,12 @@ AC_DEFUN([AC_NETATALK_INIT_STYLE], [
     AM_CONDITIONAL(USE_SYSTEMD, test x$init_style = xsystemd || test x$init_style = xredhat-systemd || test x$init_style = xsuse-systemd)
     AM_CONDITIONAL(USE_UNDEF, test x$init_style = xnone)
 
+    AC_ARG_WITH(init-dir,
+                [  --with-init-dir=PATH    path to OS specific init directory],
+                ac_cv_init_dir="$withval", ac_cv_init_dir="$ac_cv_init_dir"
+    )
+    INIT_DIR="$ac_cv_init_dir"
+    AC_SUBST(INIT_DIR, ["$ac_cv_init_dir"])
 ])
 
 dnl OS specific configuration
@@ -355,7 +548,7 @@ fi
 dnl ----- Linux specific -----
 if test x"$this_os" = "xlinux"; then 
 	AC_MSG_RESULT([ * Linux specific configuration])
-	
+    AC_DEFINE(LINUX, 1, [OS is Linux])	
 	dnl ----- check if we need the quotactl wrapper
     AC_CHECK_HEADERS(linux/dqblk_xfs.h,,
 		[AC_CHECK_HEADERS(linux/xqm.h linux/xfs_fs.h)
@@ -402,87 +595,8 @@ if test x"$this_os" = "xsolaris"; then
 	AC_DEFINE(SOLARIS, 1, [Solaris compatibility macro])
     AC_DEFINE(_XOPEN_SOURCE, 600, [Solaris compilation environment])
     AC_DEFINE(__EXTENSIONS__,  1, [Solaris compilation environment])
-	CFLAGS="-I\$(top_srcdir)/sys/generic $CFLAGS"
 	need_dash_r=yes
 	init_style=solaris
-
-	solaris_module=no
-	AC_MSG_CHECKING([if we can build Solaris kernel module])
-	if test -x /usr/ccs/bin/ld && test x"$netatalk_cv_ddp_enabled" = x"yes" ; then
-		solaris_module=yes
-	fi
-	AC_MSG_RESULT([$solaris_module])
-
-	COMPILE_64BIT_KMODULE=no
-	KCFLAGS=""
-	KLDFLAGS=""
-	COMPILE_KERNEL_GCC=no
-
-	if test "$solaris_module" = "yes"; then
-	   dnl Solaris kernel module stuff
-           AC_MSG_CHECKING([if we have to build a 64bit kernel module])
-
-	   # check for isainfo, if not found it has to be a 32 bit kernel (<=2.6)	
-	   if test -x /usr/bin/isainfo; then
-		# check for 64 bit platform
-		if isainfo -kv | grep '^64-bit'; then
-			COMPILE_64BIT_KMODULE=yes
-		fi
-	   fi
-
-	   AC_MSG_RESULT([$COMPILE_64BIT_KMODULE])
-
-	   if test "${GCC}" = yes; then
-		COMPILE_KERNEL_GCC=yes
-		if test "$COMPILE_64BIT_KMODULE" = yes; then
-  	        
-                        AC_MSG_CHECKING([if we can build a 64bit kernel module])
-		        
-                        case `$CC --version 2>/dev/null` in
-			[[12]].* | 3.0.*)
-				COMPILE_64BIT_KMODULE=no
-				COMPILE_KERNEL_GCC=no	
-				solaris_module=no;;
-			*)
-			       	# use for 64 bit
-				KCFLAGS="-m64"
-				#KLDFLAGS="-melf64_sparc"
-				KLDFLAGS="-64";;
-			esac	
-			
-			AC_MSG_RESULT([$COMPILE_64BIT_KMODULE])
-			
-		else
-			KCFLAGS=""
-			KLDFLAGS=""
-		fi
-		KCFLAGS="$KCFLAGS -D_KERNEL -Wall -Wstrict-prototypes"
-           else
-		if test "$COMPILE_64BIT_KMODULE" = yes; then
-                # use Sun CC (for a 64-bit kernel, uncomment " -xarch=v9 -xregs=no%appl ")
- 			KCFLAGS="-xarch=v9 -xregs=no%appl"
-			KLDFLAGS="-64"
-		else
- 			KCFLAGS=""
-			KLDFLAGS=""
-		fi
-		KCFLAGS="-D_KERNEL $KCFLAGS -mno-app-regs -munaligned-doubles -fpcc-struct-return"
-	   fi
-
-           AC_CACHE_CHECK([for timeout_id_t],netatalk_cv_HAVE_TIMEOUT_ID_T,[
-           AC_LINK_IFELSE([AC_LANG_PROGRAM([[\
-#include <sys/stream.h>
-#include <sys/ddi.h>]], [[\
-timeout_id_t dummy;
-]])],[netatalk_cv_HAVE_TIMEOUT_ID_T=yes],[netatalk_cv_HAVE_TIMEOUT_ID_T=no])])
-
-	   AC_DEFINE(HAVE_TIMEOUT_ID_T, test x"$netatalk_cv_HAVE_TIMEOUT_ID" = x"yes", [define for timeout_id_t])
-	fi
-
-	AC_SUBST(COMPILE_KERNEL_GCC)
-	AC_SUBST(COMPILE_64BIT_KMODULE)
-	AC_SUBST(KCFLAGS)
-	AC_SUBST(KLDFLAGS)
 fi
 
 dnl Whether to run ldconfig after installing libraries
@@ -581,7 +695,7 @@ save_CFLAGS="$CFLAGS"
 save_LIBS="$LIBS"
 CFLAGS="$KRB5_CFLAGS"
 LIBS="$KRB5_LIBS"
-AC_CHECK_FUNCS([krb5_free_unparsed_name krb5_free_error_message])
+AC_CHECK_FUNCS([krb5_free_unparsed_name krb5_free_error_message krb5_free_keytab_entry_contents krb5_kt_free_entry])
 CFLAGS="$save_CFLAGS"
 LIBS="$save_LIBS"
 ])
@@ -602,7 +716,7 @@ dnl Check for LDAP support, for client-side ACL visibility
 AC_DEFUN([AC_NETATALK_LDAP], [
 AC_MSG_CHECKING(for LDAP (necessary for client-side ACL visibility))
 AC_ARG_WITH(ldap,
-    [AS_HELP_STRING([--with-ldap],
+    [AS_HELP_STRING([--with-ldap[[=PATH]]],
         [LDAP support (default=auto)])],
         netatalk_cv_ldap=$withval,
         netatalk_cv_ldap=auto
@@ -649,12 +763,13 @@ AC_SUBST(LDAP_CFLAGS)
 AC_SUBST(LDAP_LDFLAGS)
 AC_SUBST(LDAP_LIBS)
 CFLAGS="$save_CFLAGS"
-LDLFLAGS="$save_LDLFLAGS"
+LDFLAGS="$save_LDFLAGS"
 LIBS="$save_LIBS"
 ])
 
 dnl Check for ACL support
 AC_DEFUN([AC_NETATALK_ACL], [
+ac_cv_have_acls=no
 AC_MSG_CHECKING(whether to support ACLs)
 AC_ARG_WITH(acls,
     [AS_HELP_STRING([--with-acls],
@@ -672,112 +787,125 @@ AC_MSG_RESULT($with_acl_support)
 
 if test x"$with_acl_support" = x"no"; then
 	AC_MSG_RESULT(Disabling ACL support)
-	AC_DEFINE(HAVE_NO_ACLS,1,[Whether no ACLs support should be built in])
-else
-    with_acl_support=yes
 fi
 
-if test x"$with_acl_support" = x"yes" ; then
-	AC_MSG_NOTICE(checking whether ACL support is available:)
+# Platform specific checks
+if test x"$with_acl_support" != x"no" ; then
 	case "$host_os" in
-	*sysv5*)
-		AC_MSG_NOTICE(Using UnixWare ACLs)
-		AC_DEFINE(HAVE_UNIXWARE_ACLS,1,[Whether UnixWare ACLs are available])
-		;;
 	*solaris*)
 		AC_MSG_NOTICE(Using solaris ACLs)
-		AC_DEFINE(HAVE_SOLARIS_ACLS,1,[Whether solaris ACLs are available])
+		AC_DEFINE(HAVE_SOLARIS_ACLS,1,[Whether Solaris ACLs are available])
+		AC_DEFINE(HAVE_NFSV4_ACLS,1,[Whether NFSv4 ACLs are available])
 		ACL_LIBS="$ACL_LIBS -lsec"
+		ac_cv_have_acls=yes
 		;;
-	*hpux*)
-		AC_MSG_NOTICE(Using HPUX ACLs)
-		AC_DEFINE(HAVE_HPUX_ACLS,1,[Whether HPUX ACLs are available])
+	*freebsd*)
+		AC_MSG_NOTICE(checking whether libsunacl is available)
+		sunacl_include_path="/usr/local/include"
+		sunacl_lib_path="/usr/local/lib"
+
+		save_CPPFLAGS=$CPPFLAGS
+		save_LDFLAGS=$LDFLAGS
+		save_LIBS=$LIBS
+
+		CPPFLAGS="-I$sunacl_include_path $CPPFLAGS"
+		AC_CHECK_HEADER([sunacl.h])
+
+		LDFLAGS="-L$sunacl_lib_path $LDFLAGS"
+		AC_CHECK_LIB([sunacl], [acl])
+
+		if test x"$ac_cv_header_sunacl_h" = x"yes" -a x"$ac_cv_lib_sunacl_acl" = x"yes" ; then
+			AC_MSG_NOTICE([Enabling support for ZFS ACLs using libsunacl])
+			ac_cv_have_acls=yes
+			CFLAGS="-I$sunacl_include_path $CFLAGS"
+			ACL_LIBS="$ACL_LIBS -L$sunacl_lib_path -lsunacl"
+			AC_DEFINE(HAVE_FREEBSD_SUNACL, 1, [Whether FreeBSD ZFS ACLs with libsunacl are available])
+			AC_DEFINE(HAVE_NFSV4_ACLS,1,[Whether NFSv4 ACLs are available])
+		else
+			AC_MSG_NOTICE([libsunacl not found, disabling ZFS ACL support])
+		fi
+
+		CPPFLAGS=$save_CPPFLAGS
+		LDFLAGS=$save_LDFLAGS
+		LIBS=$save_LIBS
 		;;
-	*irix*)
-		AC_MSG_NOTICE(Using IRIX ACLs)
-		AC_DEFINE(HAVE_IRIX_ACLS,1,[Whether IRIX ACLs are available])
+	esac
+fi
+
+if test x"$with_acl_support" != x"no" -a x"$ac_cv_have_acls" != x"yes" ; then
+	# Runtime checks for POSIX ACLs
+	AC_CHECK_LIB(acl,acl_get_file,[ACL_LIBS="$ACL_LIBS -lacl"])
+	case "$host_os" in
+	*linux*)
+		AC_CHECK_LIB(attr,getxattr,[ACL_LIBS="$ACL_LIBS -lattr"])
 		;;
-	*aix*)
-		AC_MSG_NOTICE(Using AIX ACLs)
-		AC_DEFINE(HAVE_AIX_ACLS,1,[Whether AIX ACLs are available])
-		;;
-	*osf*)
-		AC_MSG_NOTICE(Using Tru64 ACLs)
-		AC_DEFINE(HAVE_TRU64_ACLS,1,[Whether Tru64 ACLs are available])
-		ACL_LIBS="$ACL_LIBS -lpacl"
-		;;
-	*darwin*)
-		AC_MSG_NOTICE(ACLs on Darwin currently not supported)
-		AC_DEFINE(HAVE_NO_ACLS,1,[Whether no ACLs support is available])
-		;;
-	*)
-		AC_CHECK_LIB(acl,acl_get_file,[ACL_LIBS="$ACL_LIBS -lacl"])
-		case "$host_os" in
-		*linux*)
-			AC_CHECK_LIB(attr,getxattr,[ACL_LIBS="$ACL_LIBS -lattr"])
-			;;
-		esac
-		AC_CACHE_CHECK([for POSIX ACL support],netatalk_cv_HAVE_POSIX_ACLS,[
+	esac
+
+	AC_CACHE_CHECK([for POSIX ACL support],netatalk_cv_HAVE_POSIX_ACLS,[
+		acl_LIBS=$LIBS
+		LIBS="$LIBS $ACL_LIBS"
+		AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+			#include <sys/types.h>
+			#include <sys/acl.h>
+		]], [[
+			acl_t acl;
+			int entry_id;
+			acl_entry_t *entry_p;
+			return acl_get_entry(acl, entry_id, entry_p);
+		]])],
+			[netatalk_cv_HAVE_POSIX_ACLS=yes; ac_cv_have_acls=yes],
+			[netatalk_cv_HAVE_POSIX_ACLS=no; ac_cv_have_acls=no]
+		)
+		LIBS=$acl_LIBS
+	])
+
+	if test x"$netatalk_cv_HAVE_POSIX_ACLS" = x"yes"; then
+		AC_MSG_NOTICE(Using POSIX ACLs)
+		AC_DEFINE(HAVE_POSIX_ACLS,1,[Whether POSIX ACLs are available])
+
+		AC_CACHE_CHECK([for acl_get_perm_np],netatalk_cv_HAVE_ACL_GET_PERM_NP,[
 			acl_LIBS=$LIBS
 			LIBS="$LIBS $ACL_LIBS"
 			AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 				#include <sys/types.h>
 				#include <sys/acl.h>
 			]], [[
-				acl_t acl;
-				int entry_id;
-				acl_entry_t *entry_p;
-				return acl_get_entry(acl, entry_id, entry_p);
-			]])],[netatalk_cv_HAVE_POSIX_ACLS=yes],[netatalk_cv_HAVE_POSIX_ACLS=no
-                with_acl_support=no])
+				acl_permset_t permset_d;
+				acl_perm_t perm;
+				return acl_get_perm_np(permset_d, perm);
+			]])],[netatalk_cv_HAVE_ACL_GET_PERM_NP=yes],[netatalk_cv_HAVE_ACL_GET_PERM_NP=no])
 			LIBS=$acl_LIBS
 		])
-		if test x"$netatalk_cv_HAVE_POSIX_ACLS" = x"yes"; then
-			AC_MSG_NOTICE(Using POSIX ACLs)
-			AC_DEFINE(HAVE_POSIX_ACLS,1,[Whether POSIX ACLs are available])
-			AC_CACHE_CHECK([for acl_get_perm_np],netatalk_cv_HAVE_ACL_GET_PERM_NP,[
-				acl_LIBS=$LIBS
-				LIBS="$LIBS $ACL_LIBS"
-				AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-					#include <sys/types.h>
-					#include <sys/acl.h>
-				]], [[
-					acl_permset_t permset_d;
-					acl_perm_t perm;
-					return acl_get_perm_np(permset_d, perm);
-				]])],[netatalk_cv_HAVE_ACL_GET_PERM_NP=yes],[netatalk_cv_HAVE_ACL_GET_PERM_NP=no])
-				LIBS=$acl_LIBS
-			])
-			if test x"$netatalk_cv_HAVE_ACL_GET_PERM_NP" = x"yes"; then
-				AC_DEFINE(HAVE_ACL_GET_PERM_NP,1,[Whether acl_get_perm_np() is available])
-			fi
-
-
-                       AC_CACHE_CHECK([for acl_from_mode], netatalk_cv_HAVE_ACL_FROM_MODE,[
-                               acl_LIBS=$LIBS
-                               LIBS="$LIBS $ACL_LIBS"
-                AC_CHECK_FUNCS(acl_from_mode,
-                               [netatalk_cv_HAVE_ACL_FROM_MODE=yes],
-                               [netatalk_cv_HAVE_ACL_FROM_MODE=no])
-                               LIBS=$acl_LIBS
-                       ])
-                       if test x"netatalk_cv_HAVE_ACL_FROM_MODE" = x"yes"; then
-                               AC_DEFINE(HAVE_ACL_FROM_MODE,1,[Whether acl_from_mode() is available])
-                       fi
-
-		else
-			AC_MSG_NOTICE(ACL support is not avaliable)
-			AC_DEFINE(HAVE_NO_ACLS,1,[Whether no ACLs support is available])
+		if test x"$netatalk_cv_HAVE_ACL_GET_PERM_NP" = x"yes"; then
+			AC_DEFINE(HAVE_ACL_GET_PERM_NP,1,[Whether acl_get_perm_np() is available])
 		fi
-		;;
-    esac
+
+		AC_CACHE_CHECK([for acl_from_mode], netatalk_cv_HAVE_ACL_FROM_MODE,[
+			acl_LIBS=$LIBS
+			LIBS="$LIBS $ACL_LIBS"
+			AC_CHECK_FUNCS(acl_from_mode,
+				[netatalk_cv_HAVE_ACL_FROM_MODE=yes],
+				[netatalk_cv_HAVE_ACL_FROM_MODE=no]
+			)
+			LIBS=$acl_LIBS
+		])
+		if test x"netatalk_cv_HAVE_ACL_FROM_MODE" = x"yes"; then
+		   AC_DEFINE(HAVE_ACL_FROM_MODE,1,[Whether acl_from_mode() is available])
+		fi
+	fi
 fi
 
-if test x"$with_acl_support" = x"yes" ; then
-   AC_CHECK_HEADERS([acl/libacl.h])
-    AC_DEFINE(HAVE_ACLS,1,[Whether ACLs support is available])
-    AC_SUBST(ACL_LIBS)
+if test x"$ac_cv_have_acls" = x"no" ; then
+	if test x"$with_acl_support" = x"yes" ; then
+		AC_MSG_ERROR(ACL support requested but not found)
+	else
+		AC_MSG_NOTICE(ACL support is not avaliable)
+	fi
+else
+	AC_CHECK_HEADERS([acl/libacl.h])
+	AC_DEFINE(HAVE_ACLS,1,[Whether ACLs support is available])
 fi
+AC_SUBST(ACL_LIBS)
 ])
 
 dnl Check for Extended Attributes support

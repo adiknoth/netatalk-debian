@@ -2090,6 +2090,7 @@ AC_SUBST([am__untar])
 ]) # _AM_PROG_TAR
 
 m4_include([macros/afs-check.m4])
+m4_include([macros/ax_pthread.m4])
 m4_include([macros/cnid-backend.m4])
 m4_include([macros/config-checks.m4])
 m4_include([macros/db3-check.m4])

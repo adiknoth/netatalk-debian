@@ -39,6 +39,7 @@ extern void afp_get_cmdline( int *ac, char ***av );
 #include <atalk/server_ipc.h>
 #include <atalk/uuid.h>
 #include <atalk/globals.h>
+#include <atalk/unix.h>
 
 #include "auth.h"
 #include "uam_auth.h"
@@ -210,23 +211,6 @@ static int set_auth_switch(const AFPObj *obj, int expired)
     return AFP_OK;
 }
 
-#define GROUPSTR_BUFSIZE 1024
-static const char *print_groups(int ngroups, gid_t *groups)
-{
-    static char groupsstr[GROUPSTR_BUFSIZE];
-    int i;
-    char *s = groupsstr;
-
-    if (ngroups == 0)
-        return "-";
-
-    for (i = 0; (i < ngroups) && (s < &groupsstr[GROUPSTR_BUFSIZE]); i++) {
-        s += snprintf(s, &groupsstr[GROUPSTR_BUFSIZE] - s, " %u", groups[i]);
-    }
-
-    return groupsstr;
-}
-
 static int login(AFPObj *obj, struct passwd *pwd, void (*logout)(void), int expired)
 {
 #ifdef ADMIN_GRP
@@ -238,35 +222,16 @@ static int login(AFPObj *obj, struct passwd *pwd, void (*logout)(void), int expi
         return AFPERR_NOTAUTH;
     }
 
+    if (obj->cnx_cnt > obj->cnx_max) {
+        LOG(log_error, logtype_dsi, "login: too many connections, limit: %d", obj->cnx_max);
+        return AFPERR_MAXSESS;
+    }
+
     LOG(log_note, logtype_afpd, "%s Login by %s",
         afp_versions[afp_version_index].av_name, pwd->pw_name);
 
-    if (initgroups( pwd->pw_name, pwd->pw_gid ) < 0) {
-#ifdef RUN_AS_USER
-        LOG(log_info, logtype_afpd, "running with uid %d", geteuid());
-#else /* RUN_AS_USER */
-        LOG(log_error, logtype_afpd, "login: %s", strerror(errno));
+    if (set_groups(obj, pwd) != 0)
         return AFPERR_BADUAM;
-#endif /* RUN_AS_USER */
-
-    }
-
-    /* Basically if the user is in the admin group, we stay root */
-
-    if ((obj->ngroups = getgroups( 0, NULL )) < 0 ) {
-        LOG(log_error, logtype_afpd, "login: %s getgroups: %s", pwd->pw_name, strerror(errno) );
-        return AFPERR_BADUAM;
-    }
-
-    if ( NULL == (obj->groups = calloc(obj->ngroups, sizeof(gid_t))) ) {
-        LOG(log_error, logtype_afpd, "login: %s calloc: %d", obj->ngroups);
-        return AFPERR_BADUAM;
-    }
-
-    if (( obj->ngroups = getgroups(obj->ngroups, obj->groups )) < 0 ) {
-        LOG(log_error, logtype_afpd, "login: %s getgroups: %s", pwd->pw_name, strerror(errno) );
-        return AFPERR_BADUAM;
-    }
 
 #ifdef ADMIN_GRP
     LOG(log_debug, logtype_afpd, "obj->options.admingid == %d", obj->options.admingid);
@@ -375,6 +340,7 @@ int afp_zzz(AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf, size_t *rbuflen
         if (dsi->flags & DSI_EXTSLEEP) {
             LOG(log_note, logtype_afpd, "afp_zzz: waking up from extended sleep");
             dsi->flags &= ~(DSI_SLEEPING | DSI_EXTSLEEP);
+            ipc_child_state(obj, DSI_RUNNING);
         }
     } else {
         /* sleep request */
@@ -382,8 +348,10 @@ int afp_zzz(AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf, size_t *rbuflen
         if (data & AFPZZZ_EXT_SLEEP) {
             LOG(log_note, logtype_afpd, "afp_zzz: entering extended sleep");
             dsi->flags |= DSI_EXTSLEEP;
+            ipc_child_state(obj, DSI_EXTSLEEP);
         } else {
             LOG(log_note, logtype_afpd, "afp_zzz: entering normal sleep");
+            ipc_child_state(obj, DSI_SLEEPING);
         }
     }
 
@@ -912,7 +880,7 @@ int afp_changepw(AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf, size_t *rb
         if ( ibuf[0] != '\0' || ibuf[1] != '\0')
             return AFPERR_PARAM;
         ibuf += 2;
-        len = MIN(sizeof(username), strlen(obj->username));
+        len = MIN(sizeof(username) - 1, strlen(obj->username));
         memcpy(username, obj->username, len);
         username[ len ] = '\0';
     }
@@ -1049,7 +1017,7 @@ int auth_register(const int type, struct uam_obj *uam)
 }
 
 /* load all of the modules */
-int auth_load(const char *path, const char *list)
+int auth_load(AFPObj *obj, const char *path, const char *list)
 {
     char name[MAXPATHLEN + 1], buf[MAXPATHLEN + 1], *p;
     struct uam_mod *mod;
@@ -1076,7 +1044,7 @@ int auth_load(const char *path, const char *list)
           if ((stat(name, &st) == 0) && (mod = uam_load(name, p))) {
         */
         if (stat(name, &st) == 0) {
-            if ((mod = uam_load(name, p))) {
+            if ((mod = uam_load(obj, name, p))) {
                 uam_attach(&uam_modules, mod);
                 LOG(log_debug, logtype_afpd, "uam: %s loaded", p);
             } else {

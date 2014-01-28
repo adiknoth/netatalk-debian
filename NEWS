@@ -1,3 +1,154 @@
+Changes in 3.0.6
+================
+* FIX: charset conversion failed when copying from Mac OS 9. Bug #523.
+* UPD: Don't force S_ISGID for directories on FreeBSD. Bug #525.
+* NEW: Add support for ZFS ACLs on FreeBSD with libsunacl. From FR#83.
+* FIX: Active Directory LDAP queries for ACL support with new options
+       "ldap user filter" and "ldap group filter". Bug #526.
+* NEW: Option "vol dbnest", when set to true, the CNID database for
+       a volume is stored in the volume root of a share in a directory
+       .AppleDB like in Netatalk 2. Defaults to false. From FR#84.
+* FIX: Small fix in the DSI tickle handling. Bug #528.
+* UPD: Enhance handling of connection attempts when hitting the
+       connection limit. Bug #529.
+* FIX: Saving from Word to a folder that is a symlink to a folder on
+       another filesystem results in a crash of the afpd process and
+       the save to fail. This happens only if the option
+       "follow symlinks" is enabled. Bug #532.
+* FIX: Disable Kerberos UAM if AFP service principal name can't be
+       evaluated. Fixes bug #531.
+* FIX: Fix handling of large number of volumes. Bug #527.
+* NEW: Configure option --with-tbd which can be used to disable the
+       use of the bundled tdb and use a system installed version.
+
+Changes in 3.0.5
+================
+* FIX: Fix a crash when using pam_winbind. Fixes bug #516.
+* NEW: New global/volume option "ignored attributes"
+* FIX: "afp listen" option failed to take IPv6 addresses. Bug #515.
+* FIX: Fix a possible crash in set_groups. Bug #518.
+* NEW: Send optional AFP messages for vetoed files, new option
+       "veto message" can be used to enable sending messages.
+       Then whenever a client tries to access any file or directory
+       with a vetoed name, it will be sent an AFP message indicating
+       the name and the directory. From FR #81.
+* NEW: New boolean volume option "delete veto files". If this option is
+       set to yes, then Netatalk will attempt to recursively delete any
+       vetoed files and directories. FR #82.
+* UPD: systemd unit dir is /usr/lib/systemd/system .
+* FIX: Saving files from application like MS Word may result in the file
+       loosing metadata like the Finder label. Bug #521.
+
+Changes in 3.0.4
+================
+* FIX: Opening files without metadata EA may result in an invalid
+       metadata EA. Check for malformed metadata EAs and delete them.
+       Fixes bug #510.
+* FIX: Fix an issue with filenames containing non-ASCII characters that
+       lead to a failure setting the size of a files ressource fork.
+       This affected application like Adobe Photoshop where saving
+       files may fail. Fixes bug #511.
+* UPD: Enhance ACL mapping, change global ACL option 'map acls' to take
+       the following options: "none", "rights" (default), "mode".
+       none   = no mapping, this resembles the previous false/no setting
+       rights = map ACLs to Finder UARights, this resembles the previous
+                true/yes setting. This is the default.
+       mode   = map ACLs to Finder UARights and UNIX mode
+       From FR #73.
+* FIX: Fix a possible crash in cname() where cname_mtouname calls
+       dirlookup() where the curdir is freed because the dircache
+       detected a dev/inode cache difference and evicted the object
+       from the cache. Fixes bug #498.
+* FIX: Add missing include, fixes bug #512.
+* FIX: Change default FinderInfo for directories to be all 0, fixes
+       bug 514.
+* NEW: New option "afp interfaces" which allows specifying where
+       Netatalk listens for AFP connections by interface names.
+       From FR #79.
+
+Changes in 3.0.3
+================
+* UPD: afpd: Increase default DSI server quantum to 1 MB
+* UPD: bundled libevent2 is now static
+* NEW: --with-lockfile=PATH configure option for specifying an
+       alternative path for the netatalk lockfile.
+* UPD: systemd service file use PIDFile and ExecReload.
+       From FR #70.
+* UPD: RedHat sysvinit: rm graceful, reimplement reload, add condrestart
+* FIX: Couldn't create folders on FreeBSD 9.1 ZFS fileystems.
+       Fixed bug #491.
+* FIX: Fix an issue with user homes when user home directory has not the
+       same name as the username.
+       Fixes bug #497.
+* UPD: Fix PAM config install, new default installation dir is
+       $sysconfdir/pam.d/. Add configure option --with-pam-confdir
+       to specify alternative path.
+* NEW: AFP stats about active session via dbus IPC. Client side python
+       program `afpstats`. Requires dbus, dbus-glib any python-dbus.
+       configure option --dbus-sysconf-dir for specifying dbus
+       system security configuration files.
+       New option 'afpstats' (default: no) which determines whether
+       to enable the feature or not.
+* NEW: configure option --with-init-dir
+* NEW: dtrace probes, cf include/atalk/afp_dtrace.d for available
+       probes.
+* UPD: Reload groups when reloading volumes. FR #71.
+* FIX: Attempt to read read-only ._ rfork results in disconnect.
+       Fixes bug #502.
+* FIX: File's ressource fork can't be read if metadata EA is missing.
+       Fixes bug #501.
+* FIX: Conversion from adouble v2 to ea for directories.
+       Fixes bug #500.
+* FIX: Error messages when mounting read-only filesystems.
+       Fixes bug #504.
+* FIX: Permissions of ._ AppleDouble ressource fork after conversion
+       from v2 to ea.
+       Fixes bug #505.
+* UPD: Use FreeBSD sendfile() capability to send protocol header.
+       From FR #75.
+* UPD: Increase IO size when sendfile() is not used.
+       From FR #76.
+* FIX: Can't set Finder label on symlinked folder with "follow symlinks = yes".
+       Fixes bug #508.
+* FIX: Setting POSIX ACLs on Linux
+       Fixes bug #506.
+* FIX: "ad ls" segfault if requested object is not in an AFP volume.
+       Fixes bug #496.
+
+Changes in 3.0.2
+================
+* NEW: afpd: Put file extension type/creator mapping back in which had
+       been removed in 3.0.
+* NEW: afpd: new option 'ad domain'. From FR #66.
+* FIX: volumes and home share with symlinks in the path
+* FIX: Copying packages to a Netatalk share could fail, bug #469
+* FIX: Reloading volumes from config file was broken.  Fixes bug #474.
+* FIX: Fix _device-info service type registered with dns-sd API
+* FIX: Fix pathname bug for FCE modified event.
+* FIX: Remove length limitation of options like "valid users".
+       Fixes bug #473.
+* FIX: Dont copy our metadata EA in copyfile(). Fixes bug #452.
+* FIX: Fix an error where catalog search gave incomplete results.
+       Fixes bug #479.
+* REM: Remove TimeMachine volume used size FCE event.
+* UPD: Add quoting support to '[in]valid users' option. Fixes bug #472.
+* FIX: Install working PAM config on Solaris 11. Fixes bug #481.
+* FIX: Fix a race condition between dbd and the cnid_dbd daemon
+       which could result in users being disconnected from volumes
+       when dbd was scanning their volumes. Fixes bug #477.
+* FIX: Netatalk didn't start when the last line of the config file
+       afp.conf wasn't terminated by a newline. Fixes bug #476.
+* NEW: Add a new volumes option 'follow symlinks'. The default setting is
+       false, symlinks are not followed on the server. This is the same
+       behaviour as OS X's AFP server.
+       Setting the option to true causes afpd to follow symlinks on the
+       server. symlinks may point outside of the AFP volume, currently
+       afpd doesn't do any checks for "wide symlinks".
+* FIX: Automatic AppleDouble conversion to EAs failing for directories.
+       Fixes bug #486.
+* FIX: dbd failed to convert appledouble files of symlinks.
+       Fixes bug #490.
+
 Changes in 3.0.1
 ================
 * NEW: afpd: Optional "ldap uuid encoding = string | ms-guid" parameter to

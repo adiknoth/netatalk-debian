@@ -1,5 +1,4 @@
 /*
- * $Id: dsi_getsess.c,v 1.7 2005-04-28 20:50:02 bfernhomberg Exp $
  *
  * Copyright (c) 1997 Adrian Sun (asun@zoology.washington.edu)
  * All rights reserved. See COPYRIGHT.
@@ -33,10 +32,10 @@
  * @param childp    (w) after fork: parent return pointer to child, child returns NULL
  * @returns             0 on sucess, any other value denotes failure
  */
-int dsi_getsession(DSI *dsi, server_child *serv_children, int tickleval, afp_child_t **childp)
+int dsi_getsession(DSI *dsi, server_child_t *serv_children, int tickleval, afp_child_t **childp)
 {
   pid_t pid;
-  unsigned int ipc_fds[2];  
+  int ipc_fds[2];  
   afp_child_t *child;
 
   if (socketpair(PF_UNIX, SOCK_STREAM, 0, ipc_fds) < 0) {
@@ -62,13 +61,13 @@ int dsi_getsession(DSI *dsi, server_child *serv_children, int tickleval, afp_chi
     /* using SIGKILL is hokey, but the child might not have
      * re-established its signal handler for SIGTERM yet. */
     close(ipc_fds[1]);
-    if ((child = server_child_add(serv_children, CHILD_DSIFORK, pid, ipc_fds[0])) ==  NULL) {
+    if ((child = server_child_add(serv_children, pid, ipc_fds[0])) ==  NULL) {
       LOG(log_error, logtype_dsi, "dsi_getsess: %s", strerror(errno));
       close(ipc_fds[0]);
       dsi->header.dsi_flags = DSIFL_REPLY;
-      dsi->header.dsi_code = DSIERR_SERVBUSY;
+      dsi->header.dsi_data.dsi_code = htonl(DSIERR_SERVBUSY);
       dsi_send(dsi);
-      dsi->header.dsi_code = DSIERR_OK;
+      dsi->header.dsi_data.dsi_code = DSIERR_OK;
       kill(pid, SIGKILL);
     }
     dsi->proto_close(dsi);
@@ -76,16 +75,9 @@ int dsi_getsession(DSI *dsi, server_child *serv_children, int tickleval, afp_chi
     return 0;
   }
   
-  /* child: check number of open connections. this is one off the
-   * actual count. */
-  if ((serv_children->count >= serv_children->nsessions) &&
-      (dsi->header.dsi_command == DSIFUNC_OPEN)) {
-    LOG(log_info, logtype_dsi, "dsi_getsess: too many connections");
-    dsi->header.dsi_flags = DSIFL_REPLY;
-    dsi->header.dsi_code = DSIERR_TOOMANY;
-    dsi_send(dsi);
-    exit(EXITERR_CLNT);
-  }
+  /* Save number of existing and maximum connections */
+  dsi->AFPobj->cnx_cnt = serv_children->servch_count;
+  dsi->AFPobj->cnx_max = serv_children->servch_nsessions;
 
   /* get rid of some stuff */
   dsi->AFPobj->ipc_fd = ipc_fds[1];
@@ -121,7 +113,6 @@ int dsi_getsession(DSI *dsi, server_child *serv_children, int tickleval, afp_chi
     /* set up the tickle timer */
     dsi->timer.it_interval.tv_sec = dsi->timer.it_value.tv_sec = tickleval;
     dsi->timer.it_interval.tv_usec = dsi->timer.it_value.tv_usec = 0;
-    signal(SIGPIPE, SIG_IGN); /* we catch these ourselves */
     dsi_opensession(dsi);
     *childp = NULL;
     return 0;

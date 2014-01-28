@@ -19,6 +19,19 @@
 #include <atalk/unicode.h>
 #include <atalk/uam.h>
 #include <atalk/iniparser.h>
+#ifdef WITH_DTRACE
+#include <atalk/afp_dtrace.h>
+#else
+/* List of empty dtrace macros */
+#define AFP_AFPFUNC_START(a,b)
+#define AFP_AFPFUNC_DONE(a, b)
+#define AFP_CNID_START(a)
+#define AFP_CNID_DONE()
+#define AFP_READ_START(a)
+#define AFP_READ_DONE()
+#define AFP_WRITE_START(a)
+#define AFP_WRITE_DONE()
+#endif
 
 /* #define DOSFILELEN 12 */             /* Type1, DOS-compat*/
 #define MACFILELEN 31                   /* Type2, HFS-compat */
@@ -35,14 +48,15 @@
 #define OPTION_CLOSEVOL      (1 << 1)
 #define OPTION_SERVERNOTIF   (1 << 2)
 #define OPTION_NOSENDFILE    (1 << 3)
-/* #define OPTION_CUSTOMICON    (1 << 4) */
+#define OPTION_VETOMSG       (1 << 4) /* whether to send an AFP message for veto file access */
 #define OPTION_AFP_READ_LOCK (1 << 5) /* whether to do AFP spec conforming read locks (default: no) */
 #define OPTION_ANNOUNCESSH   (1 << 6)
 #define OPTION_UUID          (1 << 7)
 #define OPTION_ACL2MACCESS   (1 << 8)
 #define OPTION_NOZEROCONF    (1 << 9)
-#define OPTION_KEEPSESSIONS  (1 << 10) /* preserve sessions across master afpd restart with SIGQUIT */
+#define OPTION_ACL2MODE      (1 << 10)
 #define OPTION_SHARE_RESERV  (1 << 11) /* whether to use Solaris fcntl F_SHARE locks */
+#define OPTION_DBUS_AFPSTATS (1 << 12) /* whether to run dbus thread for afpstats */
 
 #define PASSWD_NONE     0
 #define PASSWD_SET     (1 << 0)
@@ -80,17 +94,19 @@ struct afp_options {
     uint32_t server_quantum;
     int dsireadbuf; /* scale factor for sizefof(dsi->buffer) = server_quantum * dsireadbuf */
     char *hostname;
-    char *listen, *port;
+    char *listen, *interfaces, *port;
     char *Cnid_srv, *Cnid_port;
     char *configfile;
     char *uampath, *fqdn;
     char *sigconffile;
     char *uuidconf;
-    char *guest, *loginmesg, *keyfile, *passwdfile;
+    char *guest, *loginmesg, *keyfile, *passwdfile, *extmapfile;
     char *uamlist;
     char *signatureopt;
     unsigned char signature[16];
     char *k5service, *k5realm, *k5keytab;
+    size_t k5principal_buflen;
+    char *k5principal;
     char *unixcodepage, *maccodepage, *volcodepage;
     charset_t maccharset, unixcharset; 
     mode_t umask;
@@ -98,11 +114,12 @@ struct afp_options {
     gid_t admingid;
     int    volnamelen;
     /* default value for winbind authentication */
-    char *ntdomain, *ntseparator;
+    char *ntdomain, *ntseparator, *addomain;
     char *logconfig;
     char *logfile;
     char *mimicmodel;
     char *adminauthuser;
+    char *ignored_attr;
     struct afp_volume_name volfile;
 };
 
@@ -123,6 +140,7 @@ typedef struct AFPObj {
     gid_t *groups;
     int ngroups;
     int afp_version;
+    int cnx_cnt, cnx_max;
     /* Functions */
     void (*logout)(void);
     void (*exit)(int);
@@ -147,13 +165,8 @@ extern const char         *Cnid_port;
 extern int  get_afp_errno   (const int param);
 extern void afp_options_init (struct afp_options *);
 extern void afp_options_parse_cmdline(AFPObj *obj, int ac, char **av);
-extern void afp_options_free(struct afp_options *);
-extern void setmessage (const char *);
+extern int setmessage (const char *);
 extern void readmessage (AFPObj *);
-
-/* gettok.c */
-extern void initline   (int, char *);
-extern int  parseline  (int, char *);
 
 /* afp_util.c */
 extern const char *AfpNum2name (int );

@@ -1,5 +1,4 @@
 /*
- * $Id: dsi_write.c,v 1.5 2009-10-20 04:31:41 didg Exp $
  *
  * Copyright (c) 1997 Adrian Sun (asun@zoology.washington.edu)
  * All rights reserved. See COPYRIGHT.
@@ -33,7 +32,7 @@ size_t dsi_writeinit(DSI *dsi, void *buf, const size_t buflen _U_)
 
   /* figure out how much data we have. do a couple checks for 0 
    * data */
-  header = ntohl(dsi->header.dsi_doff);
+  header = ntohl(dsi->header.dsi_data.dsi_doff);
   dsi->datasize = header ? ntohl(dsi->header.dsi_len) - header : 0;
 
   if (dsi->datasize > 0) {

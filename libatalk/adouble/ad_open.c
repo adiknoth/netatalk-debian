@@ -108,10 +108,12 @@ static int ad_mkrf(const char *path);
 static int ad_header_read(const char *path, struct adouble *ad, const struct stat *hst);
 static int ad_header_upgrade(struct adouble *ad, const char *name);
 
+#ifdef HAVE_EAFD
 static int ad_mkrf_ea(const char *path);
+#endif
 static int ad_header_read_ea(const char *path, struct adouble *ad, const struct stat *hst);
 static int ad_header_upgrade_ea(struct adouble *ad, const char *name);
-static int ad_reso_size(const char *path, int adflags, struct adouble *ad);
+off_t ad_reso_size(const char *path, int adflags, struct adouble *ad);
 static int ad_mkrf_osx(const char *path);
 
 
@@ -309,19 +311,16 @@ static uint32_t get_eid(uint32_t eid)
     return 0;
 }
 
-/* ----------------------------------- */
-static int new_ad_header(struct adouble *ad, const char *path, struct stat *stp, int adflags)
+
+/**
+ * Initialize offset pointers
+ */
+int ad_init_offsets(struct adouble *ad)
 {
     const struct entry  *eid;
-    uint16_t            ashort;
-    struct stat         st;
 
-    LOG(log_debug, logtype_default, "new_ad_header(\"%s\")", path);
-
-    if (ad->ad_magic == AD_MAGIC) {
-        LOG(log_debug, logtype_default, "new_ad_header(\"%s\"): already initialized", path);
+    if (ad->ad_magic == AD_MAGIC)
         return 0;
-    }
 
     ad->ad_magic = AD_MAGIC;
     ad->ad_version = ad->ad_vers & 0x0f0000;
@@ -344,22 +343,24 @@ static int new_ad_header(struct adouble *ad, const char *path, struct stat *stp,
         eid++;
     }
 
-    /* put something sane in the directory finderinfo */
-    if (stp == NULL) {
-        stp = &st;
-        if (lstat(path, &st) != 0)
-            return -1;
-    }
+    return 0;
+}
 
-    if ((adflags & ADFLAGS_DIR)) {
-        /* set default view */
-        ashort = htons(FINDERINFO_CLOSEDVIEW);
-        memcpy(ad_entry(ad, ADEID_FINDERI) + FINDERINFO_FRVIEWOFF, &ashort, sizeof(ashort));
-    } else {
-        /* set default creator/type fields */
-        memcpy(ad_entry(ad, ADEID_FINDERI) + FINDERINFO_FRTYPEOFF,"\0\0\0\0", 4);
-        memcpy(ad_entry(ad, ADEID_FINDERI) + FINDERINFO_FRCREATOFF,"\0\0\0\0", 4);
-    }
+/* ----------------------------------- */
+static int new_ad_header(struct adouble *ad, const char *path, struct stat *stp, int adflags)
+{
+    const struct entry  *eid;
+    uint16_t            ashort;
+    struct stat         st;
+
+    LOG(log_debug, logtype_ad, "new_ad_header(\"%s\")", path);
+
+    if (ad_init_offsets(ad) != 0)
+        return -1;
+
+    /* set default creator/type fields */
+    memcpy(ad_entry(ad, ADEID_FINDERI) + FINDERINFO_FRTYPEOFF,"\0\0\0\0", 4);
+    memcpy(ad_entry(ad, ADEID_FINDERI) + FINDERINFO_FRCREATOFF,"\0\0\0\0", 4);
 
     /* make things invisible */
     if ((ad->ad_options & ADVOL_INVDOTS)
@@ -373,6 +374,11 @@ static int new_ad_header(struct adouble *ad, const char *path, struct stat *stp,
     }
 
     /* put something sane in the date fields */
+    if (stp == NULL) {
+        stp = &st;
+        if (lstat(path, &st) != 0)
+            return -1;
+    }
     ad_setdate(ad, AD_DATE_CREATE | AD_DATE_UNIX, stp->st_mtime);
     ad_setdate(ad, AD_DATE_MODIFY | AD_DATE_UNIX, stp->st_mtime);
     ad_setdate(ad, AD_DATE_ACCESS | AD_DATE_UNIX, stp->st_mtime);
@@ -409,7 +415,7 @@ static void parse_entries(struct adouble *ad, char *buf, uint16_t nentries)
             ad->ad_eid[ eid ].ade_len = len;
         } else if (!warning) {
             warning = 1;
-            LOG(log_warning, logtype_default, "parse_entries: bogus eid: %d", eid);
+            LOG(log_warning, logtype_ad, "parse_entries: bogus eid: %d", eid);
         }
     }
 }
@@ -444,7 +450,7 @@ static int ad_header_read(const char *path _U_, struct adouble *ad, const struct
     ad->ad_version = ntohl( ad->ad_version );
 
     if ((ad->ad_magic != AD_MAGIC) || (ad->ad_version != AD_VERSION2)) {
-        LOG(log_error, logtype_default, "ad_open: can't parse AppleDouble header.");
+        LOG(log_error, logtype_ad, "ad_open: can't parse AppleDouble header.");
         errno = EIO;
         return -1;
     }
@@ -461,7 +467,7 @@ static int ad_header_read(const char *path _U_, struct adouble *ad, const struct
 
     buf += AD_HEADER_LEN;
     if (len > header_len - AD_HEADER_LEN) {
-        LOG(log_error, logtype_default, "ad_header_read: can't read entry info.");
+        LOG(log_error, logtype_ad, "ad_header_read: can't read entry info.");
         errno = EIO;
         return -1;
     }
@@ -473,13 +479,13 @@ static int ad_header_read(const char *path _U_, struct adouble *ad, const struct
     if (!ad_getentryoff(ad, ADEID_RFORK)
         || (ad_getentryoff(ad, ADEID_RFORK) > sizeof(ad->ad_data))
         ) {
-        LOG(log_error, logtype_default, "ad_header_read: problem with rfork entry offset.");
+        LOG(log_error, logtype_ad, "ad_header_read: problem with rfork entry offset.");
         errno = EIO;
         return -1;
     }
 
     if (ad_getentryoff(ad, ADEID_RFORK) > header_len) {
-        LOG(log_error, logtype_default, "ad_header_read: can't read in entries.");
+        LOG(log_error, logtype_ad, "ad_header_read: can't read in entries.");
         errno = EIO;
         return -1;
     }
@@ -505,7 +511,7 @@ int ad_valid_header_osx(const char *path)
     char                *buf = &adosx.ad_data[0];
     ssize_t             header_len;
 
-    LOG(log_debug, logtype_afpd, "ad_valid_header_osx(\"%s\"): BEGIN", fullpathname(path));
+    LOG(log_debug, logtype_ad, "ad_valid_header_osx(\"%s\"): BEGIN", fullpathname(path));
 
     EC_NEG1( fd = open(path, O_RDONLY) );
 
@@ -521,12 +527,20 @@ int ad_valid_header_osx(const char *path)
     adosx.ad_version = ntohl(adosx.ad_version);
 
     if ((adosx.ad_magic != AD_MAGIC) || (adosx.ad_version != AD_VERSION2)) {
-        LOG(log_error, logtype_afpd, "ad_valid_header_osx: not an adouble:ox file");
+        LOG(log_warning, logtype_ad, "ad_valid_header_osx(\"%s\"): not an adouble:osx file", fullpathname(path));
         EC_FAIL;
     }
 
+    if (strncmp(buf + ADEDOFF_FILLER, "Mac OS X", strlen("Mac OS X")) == 0)
+        /*
+         * It's a split fork created by OS X, it's not our "own" ._ file
+         * and thus not a valid header in this context.
+         * We allow enumeration and access.
+         */
+        EC_FAIL;
+
 EC_CLEANUP:
-    LOG(log_debug, logtype_afpd, "ad_valid_header_osx(\"%s\"): END: %d", fullpathname(path), ret);
+    LOG(log_debug, logtype_ad, "ad_valid_header_osx(\"%s\"): END: %d", fullpathname(path), ret);
     if (fd != -1)
         close(fd);
     if (ret != 0)
@@ -561,7 +575,7 @@ static int ad_header_read_osx(const char *path _U_, struct adouble *ad, const st
     adosx.ad_version = ntohl(adosx.ad_version);
 
     if ((adosx.ad_magic != AD_MAGIC) || (adosx.ad_version != AD_VERSION2)) {
-        LOG(log_error, logtype_afpd, "ad_header_read_osx: can't parse AppleDouble header");
+        LOG(log_error, logtype_ad, "ad_header_read_osx: can't parse AppleDouble header");
         errno = EIO;
         return -1;
     }
@@ -575,7 +589,7 @@ static int ad_header_read_osx(const char *path _U_, struct adouble *ad, const st
 
     buf += AD_HEADER_LEN;
     if (len > header_len - AD_HEADER_LEN) {
-        LOG(log_error, logtype_afpd, "ad_header_read_osx: can't read entry info.");
+        LOG(log_error, logtype_ad, "ad_header_read_osx: can't read entry info.");
         errno = EIO;
         return -1;
     }
@@ -587,7 +601,7 @@ static int ad_header_read_osx(const char *path _U_, struct adouble *ad, const st
         || ad_getentryoff(&adosx, ADEID_RFORK) > sizeof(ad->ad_data)
         || ad_getentryoff(&adosx, ADEID_RFORK) > header_len
         ) {
-        LOG(log_error, logtype_afpd, "ad_header_read_osx: problem with rfork entry offset.");
+        LOG(log_error, logtype_ad, "ad_header_read_osx: problem with rfork entry offset.");
         errno = EIO;
         return -1;
     }
@@ -606,6 +620,7 @@ EC_CLEANUP:
 
 static int ad_header_read_ea(const char *path, struct adouble *ad, const struct stat *hst _U_)
 {
+    EC_INIT;
     uint16_t nentries;
     int      len;
     ssize_t  header_len;
@@ -614,16 +629,16 @@ static int ad_header_read_ea(const char *path, struct adouble *ad, const struct 
     if (ad_meta_fileno(ad) != -1)
         header_len = sys_fgetxattr(ad_meta_fileno(ad), AD_EA_META, ad->ad_data, AD_DATASZ_EA);
     else
-        header_len = sys_lgetxattr(path, AD_EA_META, ad->ad_data, AD_DATASZ_EA);
-     if (header_len < 1) {
-        LOG(log_debug, logtype_default, "ad_header_read_ea: %s", strerror(errno));
-        return -1;
+        header_len = sys_getxattr(path, AD_EA_META, ad->ad_data, AD_DATASZ_EA);
+    if (header_len < 1) {
+        LOG(log_debug, logtype_ad, "ad_header_read_ea: %s", strerror(errno));
+        EC_FAIL;
     }
 
-    if (header_len < AD_HEADER_LEN) {
-        LOG(log_error, logtype_default, "ad_header_read_ea: bogus AppleDouble header.");
-        errno = EIO;
-        return -1;
+    if (header_len < AD_DATASZ_EA) {
+        LOG(log_error, logtype_ad, "ad_header_read_ea(\"%s\"): short metadata EA", fullpathname(path));
+        errno = EINVAL;
+        EC_FAIL;
     }
 
     memcpy(&ad->ad_magic, buf, sizeof( ad->ad_magic ));
@@ -633,29 +648,45 @@ static int ad_header_read_ea(const char *path, struct adouble *ad, const struct 
     ad->ad_version = ntohl( ad->ad_version );
 
     if ((ad->ad_magic != AD_MAGIC) || (ad->ad_version != AD_VERSION2)) {
-        LOG(log_error, logtype_default, "ad_header_read_ea: wrong magic or version");
-        errno = EIO;
-        return -1;
+        LOG(log_error, logtype_ad, "ad_header_read_ea(\"%s\"): wrong magic or version", fullpathname(path));
+        errno = EINVAL;
+        EC_FAIL;
     }
 
     memcpy(&nentries, buf + ADEDOFF_NENTRIES, sizeof( nentries ));
     nentries = ntohs( nentries );
-
-    /* Protect against bogus nentries */
-    len = nentries * AD_ENTRY_LEN;
-    if (len + AD_HEADER_LEN > sizeof(ad->ad_data))
-        len = sizeof(ad->ad_data) - AD_HEADER_LEN;
-    if (len > header_len - AD_HEADER_LEN) {
-        LOG(log_error, logtype_default, "ad_header_read_ea: can't read entry info.");
-        errno = EIO;
-        return -1;
+    if (nentries != ADEID_NUM_EA) {
+        LOG(log_error, logtype_ad, "ad_header_read_ea(\"%s\"): invalid number of entries: %d", fullpathname(path), nentries);
+        errno = EINVAL;
+        EC_FAIL;
     }
-    nentries = len / AD_ENTRY_LEN;
 
     /* Now parse entries */
     parse_entries(ad, buf + AD_HEADER_LEN, nentries);
 
-    return 0;
+    if (nentries != ADEID_NUM_EA
+        || !ad_entry(ad, ADEID_FINDERI)
+        || !ad_entry(ad, ADEID_COMMENT)
+        || !ad_entry(ad, ADEID_FILEDATESI)
+        || !ad_entry(ad, ADEID_AFPFILEI)
+        || !ad_entry(ad, ADEID_PRIVDEV)
+        || !ad_entry(ad, ADEID_PRIVINO)
+        || !ad_entry(ad, ADEID_PRIVSYN)
+        || !ad_entry(ad, ADEID_PRIVID)) {
+        LOG(log_error, logtype_ad, "ad_header_read_ea(\"%s\"): invalid metadata EA", fullpathname(path));
+        errno = EINVAL;
+        EC_FAIL;
+    }
+
+EC_CLEANUP:
+    if (ret != 0 && errno == EINVAL) {
+        become_root();
+        (void)sys_removexattr(path, AD_EA_META);
+        unbecome_root();
+        LOG(log_error, logtype_ad, "ad_header_read_ea(\"%s\"): deleted invalid metadata EA", fullpathname(path), nentries);
+        errno = ENOENT;
+    }
+    EC_EXIT;
 }
 
 /*!
@@ -683,11 +714,13 @@ static int ad_mkrf(const char *path)
     return 0;
 }
 
+#ifdef HAVE_EAFD
 static int ad_mkrf_ea(const char *path _U_)
 {
     AFP_PANIC("ad_mkrf_ea: dont use");
     return 0;
 }
+#endif
 
 static int ad_mkrf_osx(const char *path _U_)
 {
@@ -754,7 +787,8 @@ static int ad_header_upgrade_ea(struct adouble *ad _U_, const char *name _U_)
  *
  * We're called because opening ADFLAGS_HF caused an error.
  * 1. In case ad_open is called with ADFLAGS_NOHF the error is suppressed.
- * 2. If ad_open was called with ADFLAGS_DF we may have opened the datafork and thus
+ * 2. Open non-existent ressource fork, this will just result in first read return EOF
+ * 3. If ad_open was called with ADFLAGS_DF we may have opened the datafork and thus
  *    ought to close it before returning with an error condition.
  */
 static int ad_error(struct adouble *ad, int adflags)
@@ -763,7 +797,9 @@ static int ad_error(struct adouble *ad, int adflags)
     if (adflags & ADFLAGS_NOHF) { /* 1 */
         return 0;
     }
-    if (adflags & (ADFLAGS_DF | ADFLAGS_SETSHRMD | ADFLAGS_CHECK_OF)) { /* 2 */
+    if ((adflags & ADFLAGS_RDONLY) && (adflags & ADFLAGS_RF) && (errno == ENOENT)) /* 2 */
+        return 0;
+    if (adflags & (ADFLAGS_DF | ADFLAGS_SETSHRMD | ADFLAGS_CHECK_OF)) { /* 3 */
         ad_close( ad, ADFLAGS_DF );
         err = errno;
     }
@@ -800,6 +836,9 @@ static int ad2openflags(const struct adouble *ad, int adfile, int adflags)
     if (adflags & ADFLAGS_TRUNC)
         oflags |= O_TRUNC;
 
+    if (!(ad->ad_options & ADVOL_FOLLO_SYML))
+        oflags |= O_NOFOLLOW;
+
     return oflags;
 }
 
@@ -812,7 +851,7 @@ static int ad_open_df(const char *path, int adflags, mode_t mode, struct adouble
     int         st_invalid = -1;
     ssize_t     lsz;
 
-    LOG(log_debug, logtype_default,
+    LOG(log_debug, logtype_ad,
         "ad_open_df(\"%s\", %s): BEGIN [dfd: %d (ref: %d), mfd: %d (ref: %d), rfd: %d (ref: %d)]",
         fullpathname(path), adflags2logstr(adflags),
         ad_data_fileno(ad), ad->ad_data_fork.adf_refcount,
@@ -833,7 +872,7 @@ static int ad_open_df(const char *path, int adflags, mode_t mode, struct adouble
         goto EC_CLEANUP;
     }
 
-    oflags = O_NOFOLLOW | ad2openflags(ad, ADFLAGS_DF, adflags);
+    oflags = ad2openflags(ad, ADFLAGS_DF, adflags);
 
     admode = mode;
     if ((adflags & ADFLAGS_CREATE)) {
@@ -878,7 +917,7 @@ static int ad_open_df(const char *path, int adflags, mode_t mode, struct adouble
     ad->ad_data_fork.adf_refcount++;
 
 EC_CLEANUP:
-    LOG(log_debug, logtype_default,
+    LOG(log_debug, logtype_ad,
         "ad_open_df(\"%s\", %s): END: %d [dfd: %d (ref: %d), mfd: %d (ref: %d), rfd: %d (ref: %d)]",
         fullpathname(path), adflags2logstr(adflags), ret,
         ad_data_fileno(ad), ad->ad_data_fork.adf_refcount,
@@ -898,7 +937,7 @@ static int ad_open_hf_v2(const char *path, int adflags, mode_t mode, struct adou
     mode_t      admode;
     int         st_invalid = -1;
 
-    LOG(log_debug, logtype_default,
+    LOG(log_debug, logtype_ad,
         "ad_open_hf_v2(\"%s\", %s): BEGIN [dfd: %d (ref: %d), mfd: %d (ref: %d), rfd: %d (ref: %d)]",
         fullpathname(path), adflags2logstr(adflags),
         ad_data_fileno(ad), ad->ad_data_fork.adf_refcount,
@@ -921,8 +960,8 @@ static int ad_open_hf_v2(const char *path, int adflags, mode_t mode, struct adou
     }
 
     ad_p = ad->ad_ops->ad_path(path, adflags);
-    oflags = O_NOFOLLOW | ad2openflags(ad, ADFLAGS_HF, adflags);
-    LOG(log_debug, logtype_default,"ad_open_hf_v2(\"%s\"): open flags: %s",
+    oflags = ad2openflags(ad, ADFLAGS_HF, adflags);
+    LOG(log_debug, logtype_ad,"ad_open_hf_v2(\"%s\"): open flags: %s",
         fullpathname(path), openflags2logstr(oflags));
     nocreatflags = oflags & ~(O_CREAT | O_EXCL);
 
@@ -949,7 +988,7 @@ static int ad_open_hf_v2(const char *path, int adflags, mode_t mode, struct adou
             /*
              * We're expecting to create a new adouble header file here
              */
-            LOG(log_debug, logtype_default, "ad_open(\"%s\"): creating adouble file",
+            LOG(log_debug, logtype_ad, "ad_open(\"%s\"): creating adouble file",
                 fullpathname(path));
             admode = mode;
             errno = 0;
@@ -1010,7 +1049,7 @@ EC_CLEANUP:
         ad_meta_fileno(ad) = -1;
         ad->ad_mdp->adf_refcount = 0;
     }
-    LOG(log_debug, logtype_default,
+    LOG(log_debug, logtype_ad,
         "ad_open_hf_v2(\"%s\", %s): END: %d [dfd: %d (ref: %d), mfd: %d (ref: %d), rfd: %d (ref: %d)]",
         fullpathname(path), adflags2logstr(adflags), ret,
         ad_data_fileno(ad), ad->ad_data_fork.adf_refcount,
@@ -1022,18 +1061,17 @@ EC_CLEANUP:
 static int ad_open_hf_ea(const char *path, int adflags, int mode, struct adouble *ad)
 {
     EC_INIT;
-    ssize_t rforklen;
     int oflags;
     int opened = 0;
 
-    LOG(log_debug, logtype_default,
+    LOG(log_debug, logtype_ad,
         "ad_open_hf_ea(\"%s\", %s): BEGIN [dfd: %d (ref: %d), mfd: %d (ref: %d), rfd: %d (ref: %d)]",
         fullpathname(path), adflags2logstr(adflags),
         ad_data_fileno(ad), ad->ad_data_fork.adf_refcount,
         ad_meta_fileno(ad), ad->ad_mdp->adf_refcount,
         ad_reso_fileno(ad), ad->ad_rfp->adf_refcount);
 
-    oflags = O_NOFOLLOW | (ad2openflags(ad, ADFLAGS_DF, adflags) & ~(O_CREAT | O_TRUNC));
+    oflags = ad2openflags(ad, ADFLAGS_DF, adflags) & ~(O_CREAT | O_TRUNC);
 
     if (ad_meta_fileno(ad) == AD_SYMLINK)
         goto EC_CLEANUP;
@@ -1043,7 +1081,7 @@ static int ad_open_hf_ea(const char *path, int adflags, int mode, struct adouble
         if ((oflags & O_RDWR) &&
             /* and it was already denied: */
             (ad->ad_mdp->adf_flags & O_RDONLY)) {
-            LOG(log_error, logtype_default, "ad_open_hf_ea(%s): rw request for ro file: %s",
+            LOG(log_error, logtype_ad, "ad_open_hf_ea(%s): rw request for ro file: %s",
                 fullpathname(path), strerror(errno));
             errno = EACCES;
             EC_FAIL;
@@ -1056,7 +1094,7 @@ static int ad_open_hf_ea(const char *path, int adflags, int mode, struct adouble
             if (adflags & ADFLAGS_DIR)
                 /* For directories we open the directory RDONYL so we can later fchdir()  */
                 oflags = (oflags & ~O_RDWR) | O_RDONLY;
-            LOG(log_debug, logtype_default, "ad_open_hf_ea(\"%s\"): opening base file for meta adouble EA", path);
+            LOG(log_debug, logtype_ad, "ad_open_hf_ea(\"%s\"): opening base file for meta adouble EA", path);
             EC_NEG1(ad_meta_fileno(ad) = open(path, oflags));
             opened = 1;
             ad->ad_mdp->adf_flags = oflags;
@@ -1066,16 +1104,20 @@ static int ad_open_hf_ea(const char *path, int adflags, int mode, struct adouble
     /* Read the adouble header in and parse it.*/
     if (ad->ad_ops->ad_header_read(path, ad, NULL) != 0) {
         if (!(adflags & ADFLAGS_CREATE)) {
-            LOG(log_debug, logtype_default, "ad_open_hf_ea(\"%s\"): can't read metadata EA", path);
+            LOG(log_debug, logtype_ad, "ad_open_hf_ea(\"%s\"): can't read metadata EA", path);
             errno = ENOENT;
             EC_FAIL;
         }
+        if ((adflags & ADFLAGS_CREATE) && (ad->ad_options & ADVOL_RO)) {
+            errno = EROFS;
+            EC_FAIL;
+        }
 
-        LOG(log_debug, logtype_default, "ad_open_hf_ea(\"%s\"): creating metadata EA", path);
+        LOG(log_debug, logtype_ad, "ad_open_hf_ea(\"%s\"): creating metadata EA", path);
 
         /* It doesnt exist, EPERM or another error */
         if (!(errno == ENOATTR || errno == ENOENT)) {
-            LOG(log_error, logtype_default, "ad_open_hf_ea: unexpected: %s", strerror(errno));
+            LOG(log_error, logtype_ad, "ad_open_hf_ea: unexpected: %s", strerror(errno));
             EC_FAIL;
         }
 
@@ -1083,12 +1125,12 @@ static int ad_open_hf_ea(const char *path, int adflags, int mode, struct adouble
         EC_NEG1_LOG(new_ad_header(ad, path, NULL, adflags));
         ad->ad_mdp->adf_flags |= O_CREAT; /* mark as just created */
         ad_flush(ad);
-        LOG(log_debug, logtype_default, "ad_open_hf_ea(\"%s\"): created metadata EA", path);
+        LOG(log_debug, logtype_ad, "ad_open_hf_ea(\"%s\"): created metadata EA", path);
     }
 
     if (ad_meta_fileno(ad) != -1)
         ad->ad_mdp->adf_refcount++;
-    (void)ad_reso_size(path, adflags, ad);
+    ad->ad_rlen = ad_reso_size(path, adflags, ad);
 
 EC_CLEANUP:
     if (ret != 0 && opened && ad_meta_fileno(ad) != -1) {
@@ -1096,7 +1138,7 @@ EC_CLEANUP:
         ad_meta_fileno(ad) = -1;
         ad->ad_mdp->adf_refcount = 0;
     }
-    LOG(log_debug, logtype_default,
+    LOG(log_debug, logtype_ad,
         "ad_open_hf_ea(\"%s\", %s): END: %d [dfd: %d (ref: %d), mfd: %d (ref: %d), rfd: %d (ref: %d)]",
         fullpathname(path), adflags2logstr(adflags), ret,
         ad_data_fileno(ad), ad->ad_data_fork.adf_refcount,
@@ -1110,8 +1152,7 @@ static int ad_open_hf(const char *path, int adflags, int mode, struct adouble *a
 {
     int ret = 0;
 
-    memset(ad->ad_eid, 0, sizeof( ad->ad_eid ));
-    ad->ad_rlen = 0;
+    ad->ad_meta_refcount++;
 
     switch (ad->ad_vers) {
     case AD_VERSION2:
@@ -1125,66 +1166,77 @@ static int ad_open_hf(const char *path, int adflags, int mode, struct adouble *a
         break;
     }
 
-    if (ret != 0)
+    if (ret != 0) {
+        ad->ad_meta_refcount--;
         ret = ad_error(ad, adflags);
+    }
 
     return ret;
 }
 
 /*!
- * Get resofork length for adouble:ea
+ * Get resofork length for adouble:ea, parameter 'ad' may be NULL
  */
-static int ad_reso_size(const char *path, int adflags, struct adouble *ad)
+off_t ad_reso_size(const char *path, int adflags, struct adouble *ad)
 {
     EC_INIT;
     struct stat st;
+    off_t rlen;
 
-    if (adflags & ADFLAGS_DIR) {
-        ad->ad_rlen = 0;
-        goto EC_CLEANUP;
-    }
+    if (adflags & ADFLAGS_DIR)
+        EC_FAIL;
 
-    LOG(log_debug, logtype_default, "ad_reso_size(\"%s\"): BEGIN", path);
+    LOG(log_debug, logtype_ad, "ad_reso_size(\"%s\"): BEGIN", path);
 
 #ifdef HAVE_EAFD
     ssize_t easz;
 
-    if (ad_reso_fileno(ad) != -1) {
+    if (ad && ad_reso_fileno(ad) != -1) {
         EC_NEG1( fstat(ad_reso_fileno(ad), &st) );
-        ad->ad_rlen = st.st_size;
-    } else if (ad_meta_fileno(ad) != -1) {
-        EC_NEG1( (ad->ad_rlen = sys_fgetxattr(ad_meta_fileno(ad), AD_EA_RESO, NULL, 0)) );
+        rlen = st.st_size;
+    } else if (ad && ad_meta_fileno(ad) != -1) {
+        EC_NEG1( (rlen = sys_fgetxattr(ad_meta_fileno(ad), AD_EA_RESO, NULL, 0)) );
     } else {
-        EC_NEG1( (ad->ad_rlen = sys_lgetxattr(path, AD_EA_RESO, NULL, 0)) );
+        EC_NEG1( (rlen = sys_lgetxattr(path, AD_EA_RESO, NULL, 0)) );
     }
 
 #else
     const char *rfpath;
-    EC_NULL_LOG( rfpath = ad->ad_ops->ad_path(path, adflags));
+    EC_NULL_LOG( rfpath = ad_path_osx(path, adflags));
     EC_ZERO( lstat(rfpath, &st));
     if (st.st_size > ADEDOFF_RFORK_OSX)
-        ad->ad_rlen = st.st_size - ADEDOFF_RFORK_OSX;
+        rlen = st.st_size - ADEDOFF_RFORK_OSX;
     else
-        ad->ad_rlen = 0;
+        rlen = 0;
 #endif
 
-    LOG(log_debug, logtype_default, "ad_reso_size(\"%s\"): size: %zd", path, ad->ad_rlen);
+    LOG(log_debug, logtype_ad, "ad_reso_size(\"%s\"): size: %zd", path, rlen);
 
 EC_CLEANUP:
     if (ret != 0)
-        ad->ad_rlen = 0;
-    EC_EXIT;
+        rlen = 0;
+    return rlen;
 }
 
 static int ad_open_rf_v2(const char *path, int adflags, int mode, struct adouble *ad)
 {
+    EC_INIT;
+
     /*
      * ad_open_hf_v2() does the work, but if it failed and adflags are ADFLAGS_NOHF | ADFLAGS_RF
      * ad_open_hf_v2() didn't give an error, but we're supposed to return a reso fork fd
      */
-    if (!AD_RSRC_OPEN(ad) && !(adflags & ADFLAGS_NORF))
-        return -1;
-    return 0;
+
+    LOG(log_debug, logtype_ad, "ad_open_rf_v2(\"%s\"): BEGIN", fullpathname(path));
+
+    if (!AD_META_OPEN(ad) && !(adflags & (ADFLAGS_NORF | ADFLAGS_RDONLY)))
+        EC_FAIL;
+    if (AD_META_OPEN(ad))
+        ad->ad_reso_refcount++;
+
+EC_CLEANUP:
+    LOG(log_debug, logtype_ad, "ad_open_rf_v2(\"%s\"): END: %d", fullpathname(path), ret);
+    EC_EXIT;
 }
 
 static int ad_open_rf_ea(const char *path, int adflags, int mode, struct adouble *ad)
@@ -1193,15 +1245,14 @@ static int ad_open_rf_ea(const char *path, int adflags, int mode, struct adouble
     int oflags;
     int opened = 0;
     int closeflags = adflags & (ADFLAGS_DF | ADFLAGS_HF);
-    ssize_t rlen;
 #ifndef HAVE_EAFD
     const char *rfpath;
     struct stat st;
 #endif
 
-    LOG(log_debug, logtype_default, "ad_open_rf(\"%s\"): BEGIN", fullpathname(path));
+    LOG(log_debug, logtype_ad, "ad_open_rf(\"%s\"): BEGIN", fullpathname(path));
 
-    oflags = O_NOFOLLOW | (ad2openflags(ad, ADFLAGS_RF, adflags) & ~O_CREAT);
+    oflags = ad2openflags(ad, ADFLAGS_RF, adflags) & ~O_CREAT;
 
     if (ad_reso_fileno(ad) != -1) {
         /* the file is already open, but we want write access: */
@@ -1212,8 +1263,9 @@ static int ad_open_rf_ea(const char *path, int adflags, int mode, struct adouble
             EC_FAIL;
         }
         ad->ad_rfp->adf_flags &= ~( O_TRUNC | O_CREAT );
+        ad->ad_reso_refcount++;
         ad->ad_rfp->adf_refcount++;
-        EC_NEG1_LOG( ad_reso_size(path, adflags, ad));
+        EC_NEG1_LOG( ad->ad_rlen = ad_reso_size(path, adflags, ad));
         goto EC_CLEANUP;
     }
 #ifdef HAVE_EAFD
@@ -1221,53 +1273,97 @@ static int ad_open_rf_ea(const char *path, int adflags, int mode, struct adouble
         EC_FAIL;
     if ((ad_reso_fileno(ad) = sys_getxattrfd(ad_meta_fileno(ad), AD_EA_RESO, oflags)) == -1) {
         if (!(adflags & ADFLAGS_CREATE)) {
-            errno = ENOENT;
-            EC_FAIL;
+            switch (errno) {
+            case EACCES:
+            case EPERM:
+            case EROFS:
+                if (!(adflags & ADFLAGS_RDONLY)) {
+                    LOG(log_error, logtype_ad, "ad_open_rf_ea(\"%s\"): \"%s\"", fullpathname(path), strerror(errno));
+                    EC_FAIL;
+                }
+                oflags &= ~O_RDWR;
+                oflags |= O_RDONLY;
+                if ((ad_reso_fileno(ad) = sys_getxattrfd(ad_meta_fileno(ad), AD_EA_RESO, oflags)) == -1) {
+                    LOG(log_error, logtype_ad, "ad_open_rf_ea(\"%s\"): \"%s\"", fullpathname(path), strerror(errno));
+                    EC_FAIL;
+                }
+                break;
+            case ENOENT:
+                EC_EXIT_STATUS(0);
+            default:
+                LOG(log_error, logtype_ad, "ad_open_rf_ea(\"%s\"): \"%s\"", fullpathname(path), strerror(errno));
+                EC_FAIL;
+            }
+        } else {
+            oflags |= O_CREAT;
+            EC_NEG1_LOG( ad_reso_fileno(ad) = sys_getxattrfd(ad_meta_fileno(ad),
+                                                             AD_EA_RESO, oflags, 0666) );
         }
-        oflags |= O_CREAT;
-        EC_NEG1_LOG( ad_reso_fileno(ad) = sys_getxattrfd(ad_meta_fileno(ad),
-                                                         AD_EA_RESO, oflags, 0666) ); 
     }
 #else
     EC_NULL_LOG( rfpath = ad->ad_ops->ad_path(path, adflags) );
     if ((ad_reso_fileno(ad) = open(rfpath, oflags)) == -1) {
-        if (!(adflags & ADFLAGS_CREATE))
-            EC_FAIL;
-        oflags |= O_CREAT;
-        EC_NEG1_LOG( ad_reso_fileno(ad) = open(rfpath, oflags, mode) );
-        LOG(log_debug, logtype_default, "ad_open_rf(\"%s\"): created adouble rfork: \"%s\"",
-            path, rfpath);
+        if (!(adflags & ADFLAGS_CREATE)) {
+            switch (errno) {
+            case EACCES:
+            case EPERM:
+            case EROFS:
+                if (!(adflags & ADFLAGS_RDONLY)) {
+                    LOG(log_error, logtype_ad, "ad_open_rf_ea(\"%s\"): \"%s\"", fullpathname(rfpath), strerror(errno));
+                    EC_FAIL;
+                }
+                oflags &= ~O_RDWR;
+                oflags |= O_RDONLY;
+                if ((ad_reso_fileno(ad) = open(rfpath, oflags)) == -1) {
+                    LOG(log_error, logtype_ad, "ad_open_rf_ea(\"%s\"): \"%s\"", fullpathname(rfpath), strerror(errno));
+                    EC_FAIL;
+                }
+                break;
+            case ENOENT:
+                EC_EXIT_STATUS(0);
+            default:
+                LOG(log_error, logtype_ad, "ad_open_rf_ea(\"%s\"): \"%s\"", fullpathname(rfpath), strerror(errno));
+                EC_FAIL;
+            }
+        } else {
+            oflags |= O_CREAT;
+            EC_NEG1_LOG( ad_reso_fileno(ad) = open(rfpath, oflags, mode) );
+            LOG(log_debug, logtype_ad, "ad_open_rf(\"%s\"): created adouble rfork: \"%s\"",
+                path, rfpath);
+        }
     }
 #endif
     opened = 1;
     ad->ad_rfp->adf_refcount = 1;
     ad->ad_rfp->adf_flags = oflags;
+    ad->ad_reso_refcount++;
 
 #ifndef HAVE_EAFD
     EC_ZERO_LOG( fstat(ad_reso_fileno(ad), &st) );
     if (ad->ad_rfp->adf_flags & O_CREAT) {
         /* This is a new adouble header file, create it */
-        LOG(log_debug, logtype_default, "ad_open_rf(\"%s\"): created adouble rfork, initializing: \"%s\"",
+        LOG(log_debug, logtype_ad, "ad_open_rf(\"%s\"): created adouble rfork, initializing: \"%s\"",
             path, rfpath);
         EC_NEG1_LOG( new_ad_header(ad, path, NULL, adflags) );
-        LOG(log_debug, logtype_default, "ad_open_rf(\"%s\"): created adouble rfork, flushing: \"%s\"",
+        LOG(log_debug, logtype_ad, "ad_open_rf(\"%s\"): created adouble rfork, flushing: \"%s\"",
             path, rfpath);
         ad_flush(ad);
     } else {
         /* Read the adouble header */
-        LOG(log_debug, logtype_default, "ad_open_rf(\"%s\"): reading adouble rfork: \"%s\"",
+        LOG(log_debug, logtype_ad, "ad_open_rf(\"%s\"): reading adouble rfork: \"%s\"",
             path, rfpath);
         EC_NEG1_LOG( ad_header_read_osx(NULL, ad, &st) );
     }
 #endif
 
-    (void)ad_reso_size(path, adflags, ad);
+    ad->ad_rlen = ad_reso_size(path, adflags, ad);
 
 EC_CLEANUP:
     if (ret != 0) {
         if (opened && (ad_reso_fileno(ad) != -1)) {
             close(ad_reso_fileno(ad));
             ad_reso_fileno(ad) = -1;
+            ad->ad_reso_refcount--;
             ad->ad_rfp->adf_refcount = 0;
         }
         if (adflags & ADFLAGS_NORF) {
@@ -1280,7 +1376,7 @@ EC_CLEANUP:
         ad->ad_rlen = 0;
     }
 
-    LOG(log_debug, logtype_default, "ad_open_rf(\"%s\"): END: %d", fullpathname(path), ret);
+    LOG(log_debug, logtype_ad, "ad_open_rf(\"%s\"): END: %d", fullpathname(path), ret);
 
     EC_EXIT;
 }
@@ -1478,7 +1574,7 @@ int ad_stat(const char *path, struct stat *stbuf)
     p = ad_dir(path);
     if (!p)
         return -1;
-    return lstat( p, stbuf );
+    return stat( p, stbuf );
 }
 
 /* ----------------
@@ -1500,7 +1596,7 @@ int ad_mkdir( const char *path, mode_t mode)
     int st_invalid;
     struct stat stbuf;
 
-    LOG(log_debug, logtype_default, "ad_mkdir(\"%s\", %04o) {cwd: \"%s\"}",
+    LOG(log_debug, logtype_ad, "ad_mkdir(\"%s\", %04o) {cwd: \"%s\"}",
         path, mode, getcwdpath());
 
     st_invalid = ad_mode_st(path, &mode, &stbuf);
@@ -1534,6 +1630,7 @@ static void ad_init_func(struct adouble *ad)
     ad_reso_fileno(ad) = -1;
     ad_meta_fileno(ad) = -1;
     ad->ad_refcount = 1;
+    ad->ad_rlen = 0;
     return;
 }
 
@@ -1603,7 +1700,7 @@ int ad_open(struct adouble *ad, const char *path, int adflags, ...)
     va_list args;
     mode_t mode = 0;
 
-    LOG(log_debug, logtype_default,
+    LOG(log_debug, logtype_ad,
         "ad_open(\"%s\", %s): BEGIN {d: %d, m: %d, r: %d}"
         "[dfd: %d (ref: %d), mfd: %d (ref: %d), rfd: %d (ref: %d)]",
         fullpathname(path), adflags2logstr(adflags),
@@ -1650,17 +1747,13 @@ int ad_open(struct adouble *ad, const char *path, int adflags, ...)
     }
 
     if (adflags & ADFLAGS_HF) {
-        ad->ad_meta_refcount++;
         if (ad_open_hf(path, adflags, mode, ad) != 0) {
-            ad->ad_meta_refcount--;
             EC_FAIL;
         }
     }
 
     if (adflags & ADFLAGS_RF) {
-        ad->ad_reso_refcount++;
         if (ad_open_rf(path, adflags, mode, ad) != 0) {
-            ad->ad_reso_refcount--;
             EC_FAIL;
         }
     }
@@ -1670,7 +1763,7 @@ int ad_open(struct adouble *ad, const char *path, int adflags, ...)
     }
 
 EC_CLEANUP:
-    LOG(log_debug, logtype_default,
+    LOG(log_debug, logtype_ad,
         "ad_open(\"%s\"): END: %d {d: %d, m: %d, r: %d}"
         "[dfd: %d (ref: %d), mfd: %d (ref: %d), rfd: %d (ref: %d)]",
         fullpathname(path), ret,
@@ -1734,7 +1827,7 @@ int ad_metadataat(int dirfd, const char *name, int flags, struct adouble *adp)
     if (dirfd != -1) {
 
         if (fchdir(cwdfd) != 0) {
-            LOG(log_error, logtype_afpd, "ad_openat: cant chdir back, exiting");
+            LOG(log_error, logtype_ad, "ad_openat: cant chdir back, exiting");
             exit(EXITERR_SYS);
         }
     }
@@ -1801,10 +1894,10 @@ int ad_openat(struct adouble  *ad,
     EC_INIT;
     int cwdfd = -1;
     va_list args;
-    mode_t mode;
+    mode_t mode = 0;
 
     if (dirfd != -1) {
-        if ((cwdfd = open(".", O_RDONLY) == -1) || (fchdir(dirfd) != 0))
+        if (((cwdfd = open(".", O_RDONLY)) == -1) || (fchdir(dirfd) != 0))
             EC_FAIL;
     }
 

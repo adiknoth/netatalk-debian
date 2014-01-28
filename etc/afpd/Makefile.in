@@ -58,11 +58,19 @@ target_triplet = @target@
 sbin_PROGRAMS = afpd$(EXEEXT)
 noinst_PROGRAMS = hash$(EXEEXT) fce$(EXEEXT)
 @HAVE_ACLS_TRUE@am__append_1 = acls.c
+@HAVE_DBUS_GLIB_TRUE@am__append_2 = afpstats_service_glue.h
+@HAVE_DBUS_GLIB_TRUE@am__append_3 = afpstats_service_glue.h
+@HAVE_DBUS_GLIB_TRUE@am__append_4 = afpstats.c afpstats_obj.c
+@HAVE_DBUS_GLIB_TRUE@am__append_5 = $(DBUS_CFLAGS) $(DBUS_GLIB_CFLAGS) $(DBUS_GTHREAD_CFLAGS) -DDBUS_COMPILATION
+@HAVE_DBUS_GLIB_TRUE@am__append_6 = $(DBUS_LIBS) $(DBUS_GLIB_LIBS) $(DBUS_GTHREAD_LIBS) -ldbus-glib-1
+@WITH_DTRACE_TRUE@am__append_7 = afp_dtrace.o @DTRACE_LIBS@
+@WITH_DTRACE_TRUE@am__append_8 = afp_dtrace.o
 subdir = etc/afpd
 DIST_COMMON = $(noinst_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
+	$(top_srcdir)/macros/ax_pthread.m4 \
 	$(top_srcdir)/macros/cnid-backend.m4 \
 	$(top_srcdir)/macros/config-checks.m4 \
 	$(top_srcdir)/macros/db3-check.m4 \
@@ -98,10 +106,12 @@ am__afpd_SOURCES_DIST = afp_avahi.c afp_config.c afp_dsi.c afp_mdns.c \
 	afp_options.c afp_util.c afp_zeroconf.c afprun.c afs.c appl.c \
 	auth.c catsearch.c desktop.c dircache.c directory.c \
 	enumerate.c extattrs.c fce_api.c fce_util.c file.c filedir.c \
-	fork.c gettok.c hash.c main.c mangle.c messages.c nfsquota.c \
-	ofork.c quota.c status.c switch.c uam.c uid.c unix.c volume.c \
-	acls.c
+	fork.c hash.c main.c mangle.c messages.c nfsquota.c ofork.c \
+	quota.c status.c switch.c uam.c uid.c unix.c volume.c acls.c \
+	afpstats.c afpstats_obj.c
 @HAVE_ACLS_TRUE@am__objects_1 = afpd-acls.$(OBJEXT)
+@HAVE_DBUS_GLIB_TRUE@am__objects_2 = afpd-afpstats.$(OBJEXT) \
+@HAVE_DBUS_GLIB_TRUE@	afpd-afpstats_obj.$(OBJEXT)
 am_afpd_OBJECTS = afpd-afp_avahi.$(OBJEXT) afpd-afp_config.$(OBJEXT) \
 	afpd-afp_dsi.$(OBJEXT) afpd-afp_mdns.$(OBJEXT) \
 	afpd-afp_options.$(OBJEXT) afpd-afp_util.$(OBJEXT) \
@@ -112,14 +122,16 @@ am_afpd_OBJECTS = afpd-afp_avahi.$(OBJEXT) afpd-afp_config.$(OBJEXT) \
 	afpd-enumerate.$(OBJEXT) afpd-extattrs.$(OBJEXT) \
 	afpd-fce_api.$(OBJEXT) afpd-fce_util.$(OBJEXT) \
 	afpd-file.$(OBJEXT) afpd-filedir.$(OBJEXT) afpd-fork.$(OBJEXT) \
-	afpd-gettok.$(OBJEXT) afpd-hash.$(OBJEXT) afpd-main.$(OBJEXT) \
-	afpd-mangle.$(OBJEXT) afpd-messages.$(OBJEXT) \
-	afpd-nfsquota.$(OBJEXT) afpd-ofork.$(OBJEXT) \
-	afpd-quota.$(OBJEXT) afpd-status.$(OBJEXT) \
-	afpd-switch.$(OBJEXT) afpd-uam.$(OBJEXT) afpd-uid.$(OBJEXT) \
-	afpd-unix.$(OBJEXT) afpd-volume.$(OBJEXT) $(am__objects_1)
+	afpd-hash.$(OBJEXT) afpd-main.$(OBJEXT) afpd-mangle.$(OBJEXT) \
+	afpd-messages.$(OBJEXT) afpd-nfsquota.$(OBJEXT) \
+	afpd-ofork.$(OBJEXT) afpd-quota.$(OBJEXT) \
+	afpd-status.$(OBJEXT) afpd-switch.$(OBJEXT) afpd-uam.$(OBJEXT) \
+	afpd-uid.$(OBJEXT) afpd-unix.$(OBJEXT) afpd-volume.$(OBJEXT) \
+	$(am__objects_1) $(am__objects_2)
 afpd_OBJECTS = $(am_afpd_OBJECTS)
-afpd_DEPENDENCIES = $(top_builddir)/libatalk/libatalk.la
+@WITH_DTRACE_TRUE@am__DEPENDENCIES_1 = afp_dtrace.o
+afpd_DEPENDENCIES = $(top_builddir)/libatalk/libatalk.la \
+	$(am__DEPENDENCIES_1)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -197,17 +209,24 @@ BDB_PATH = @BDB_PATH@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
-COMPILE_64BIT_KMODULE = @COMPILE_64BIT_KMODULE@
-COMPILE_KERNEL_GCC = @COMPILE_KERNEL_GCC@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CRYPT_LIBS = @CRYPT_LIBS@
 CYGPATH_W = @CYGPATH_W@
+DBUS_CFLAGS = @DBUS_CFLAGS@
+DBUS_GLIB_CFLAGS = @DBUS_GLIB_CFLAGS@
+DBUS_GLIB_LIBS = @DBUS_GLIB_LIBS@
+DBUS_GTHREAD_CFLAGS = @DBUS_GTHREAD_CFLAGS@
+DBUS_GTHREAD_LIBS = @DBUS_GTHREAD_LIBS@
+DBUS_LIBS = @DBUS_LIBS@
+DBUS_SYS_DIR = @DBUS_SYS_DIR@
 DEFAULT_CNID_SCHEME = @DEFAULT_CNID_SCHEME@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLTOOL = @DLLTOOL@
+DOCBOOK_ROOT = @DOCBOOK_ROOT@
 DSYMUTIL = @DSYMUTIL@
+DTRACE_LIBS = @DTRACE_LIBS@
 DUMPBIN = @DUMPBIN@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
@@ -221,13 +240,12 @@ GSSAPI_LDFLAGS = @GSSAPI_LDFLAGS@
 GSSAPI_LIBS = @GSSAPI_LIBS@
 ICONV_CFLAGS = @ICONV_CFLAGS@
 ICONV_LIBS = @ICONV_LIBS@
+INIT_DIR = @INIT_DIR@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-KCFLAGS = @KCFLAGS@
-KLDFLAGS = @KLDFLAGS@
 KRB5_CFLAGS = @KRB5_CFLAGS@
 KRB5_CONFIG = @KRB5_CONFIG@
 KRB5_LIBS = @KRB5_LIBS@
@@ -281,11 +299,14 @@ PAM_DIRECTIVE = @PAM_DIRECTIVE@
 PAM_LIBS = @PAM_LIBS@
 PAM_PASSWORD = @PAM_PASSWORD@
 PAM_SESSION = @PAM_SESSION@
+PATH_NETATALK_LOCK = @PATH_NETATALK_LOCK@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
 PKGCONFDIR = @PKGCONFDIR@
 PKG_CONFIG = @PKG_CONFIG@
 PS = @PS@
+PTHREAD_CC = @PTHREAD_CC@
+PTHREAD_CFLAGS = @PTHREAD_CFLAGS@
 PTHREAD_LIBS = @PTHREAD_LIBS@
 QUOTA_LIBS = @QUOTA_LIBS@
 RANLIB = @RANLIB@
@@ -296,9 +317,13 @@ SHELL = @SHELL@
 SSL_CFLAGS = @SSL_CFLAGS@
 SSL_LIBS = @SSL_LIBS@
 STRIP = @STRIP@
+TDB_CFLAGS = @TDB_CFLAGS@
+TDB_LIBS = @TDB_LIBS@
 UAMS_PATH = @UAMS_PATH@
 VERSION = @VERSION@
 WRAP_LIBS = @WRAP_LIBS@
+XSLTPROC = @XSLTPROC@
+XSLTPROC_FLAGS = @XSLTPROC_FLAGS@
 ZEROCONF_CFLAGS = @ZEROCONF_CFLAGS@
 ZEROCONF_LIBS = @ZEROCONF_LIBS@
 abs_builddir = @abs_builddir@
@@ -313,6 +338,8 @@ am__leading_dot = @am__leading_dot@
 am__quote = @am__quote@
 am__tar = @am__tar@
 am__untar = @am__untar@
+atalk_cv_have_dtrace = @atalk_cv_have_dtrace@
+ax_pthread_config = @ax_pthread_config@
 bindir = @bindir@
 build = @build@
 build_alias = @build_alias@
@@ -361,38 +388,42 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 pkgconfdir = @PKGCONFDIR@
+BUILT_SOURCES = $(am__append_2)
+EXTRA_DIST = afpstats-service.xml afpstats_service_glue.h
+CLEANFILES = $(am__append_8)
+DISTCLEANFILES = $(am__append_3)
 afpd_SOURCES = afp_avahi.c afp_config.c afp_dsi.c afp_mdns.c \
 	afp_options.c afp_util.c afp_zeroconf.c afprun.c afs.c appl.c \
 	auth.c catsearch.c desktop.c dircache.c directory.c \
 	enumerate.c extattrs.c fce_api.c fce_util.c file.c filedir.c \
-	fork.c gettok.c hash.c main.c mangle.c messages.c nfsquota.c \
-	ofork.c quota.c status.c switch.c uam.c uid.c unix.c volume.c \
-	$(am__append_1)
-afpd_LDADD = \
-	$(top_builddir)/libatalk/libatalk.la \
-	@LIBGCRYPT_LIBS@ @QUOTA_LIBS@ @WRAP_LIBS@ @LIBADD_DL@ @ACL_LIBS@ @ZEROCONF_LIBS@ @PTHREAD_LIBS@ @GSSAPI_LIBS@ @KRB5_LIBS@
-
-afpd_LDFLAGS = -export-dynamic
-afpd_CFLAGS = \
-	@ZEROCONF_CFLAGS@ @GSSAPI_CFLAGS@ @KRB5_CFLAGS@\
-	-DAPPLCNAME \
-	-DSERVERTEXT=\"$(SERVERTEXT)/\" \
+	fork.c hash.c main.c mangle.c messages.c nfsquota.c ofork.c \
+	quota.c status.c switch.c uam.c uid.c unix.c volume.c \
+	$(am__append_1) $(am__append_4)
+afpd_LDADD = $(top_builddir)/libatalk/libatalk.la @LIBGCRYPT_LIBS@ \
+	@QUOTA_LIBS@ @WRAP_LIBS@ @LIBADD_DL@ @ACL_LIBS@ \
+	@ZEROCONF_LIBS@ @PTHREAD_LIBS@ @GSSAPI_LIBS@ @KRB5_LIBS@ \
+	$(am__append_7)
+afpd_LDFLAGS = -export-dynamic $(am__append_6)
+afpd_CFLAGS = @ZEROCONF_CFLAGS@ @GSSAPI_CFLAGS@ @KRB5_CFLAGS@ \
+	@PTHREAD_CFLAGS@ -DAPPLCNAME -DSERVERTEXT=\"$(SERVERTEXT)/\" \
 	-D_PATH_AFPDPWFILE=\"$(pkgconfdir)/afppasswd\" \
 	-D_PATH_AFPDUAMPATH=\"$(UAMS_PATH)/\" \
 	-D_PATH_CONFDIR=\"$(pkgconfdir)/\" \
-	-D_PATH_STATEDIR='"$(localstatedir)/netatalk/"'
-
+	-D_PATH_STATEDIR='"$(localstatedir)/netatalk/"' \
+	$(am__append_5)
+@WITH_DTRACE_TRUE@DTRACE_OBJ = afpd-afp_dsi.o afpd-fork.o afpd-appl.o afpd-catsearch.o afpd-directory.o afpd-enumerate.o afpd-file.o afpd-filedir.o
 noinst_HEADERS = auth.h afp_config.h desktop.h directory.h fce_api_internal.h file.h \
 	 filedir.h fork.h icon.h mangle.h misc.h status.h switch.h \
 	 uam_auth.h uid.h unix.h volume.h hash.h acls.h acl_mappings.h extattrs.h \
-	 dircache.h afp_zeroconf.h afp_avahi.h afp_mdns.h
+	 dircache.h afp_zeroconf.h afp_avahi.h afp_mdns.h afpstats.h afpstats_obj.h
 
 hash_SOURCES = hash.c
 hash_CFLAGS = -DKAZLIB_TEST_MAIN -I$(top_srcdir)/include
 fce_SOURCES = fce_api.c fce_util.c
 fce_CFLAGS = -DFCE_TEST_MAIN -I$(top_srcdir)/include
 fce_LDADD = $(top_builddir)/libatalk/libatalk.la
-all: all-am
+all: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) all-am
 
 .SUFFIXES:
 .SUFFIXES: .c .lo .o .obj
@@ -506,6 +537,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-afp_util.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-afp_zeroconf.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-afprun.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-afpstats.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-afpstats_obj.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-afs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-appl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-auth.Po@am__quote@
@@ -520,7 +553,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-file.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-filedir.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-fork.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-gettok.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-hash.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/afpd-mangle.Po@am__quote@
@@ -867,20 +899,6 @@ afpd-fork.obj: fork.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-fork.obj `if test -f 'fork.c'; then $(CYGPATH_W) 'fork.c'; else $(CYGPATH_W) '$(srcdir)/fork.c'; fi`
 
-afpd-gettok.o: gettok.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-gettok.o -MD -MP -MF $(DEPDIR)/afpd-gettok.Tpo -c -o afpd-gettok.o `test -f 'gettok.c' || echo '$(srcdir)/'`gettok.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/afpd-gettok.Tpo $(DEPDIR)/afpd-gettok.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='gettok.c' object='afpd-gettok.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-gettok.o `test -f 'gettok.c' || echo '$(srcdir)/'`gettok.c
-
-afpd-gettok.obj: gettok.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-gettok.obj -MD -MP -MF $(DEPDIR)/afpd-gettok.Tpo -c -o afpd-gettok.obj `if test -f 'gettok.c'; then $(CYGPATH_W) 'gettok.c'; else $(CYGPATH_W) '$(srcdir)/gettok.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/afpd-gettok.Tpo $(DEPDIR)/afpd-gettok.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='gettok.c' object='afpd-gettok.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-gettok.obj `if test -f 'gettok.c'; then $(CYGPATH_W) 'gettok.c'; else $(CYGPATH_W) '$(srcdir)/gettok.c'; fi`
-
 afpd-hash.o: hash.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-hash.o -MD -MP -MF $(DEPDIR)/afpd-hash.Tpo -c -o afpd-hash.o `test -f 'hash.c' || echo '$(srcdir)/'`hash.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/afpd-hash.Tpo $(DEPDIR)/afpd-hash.Po
@@ -1077,6 +1095,34 @@ afpd-acls.obj: acls.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-acls.obj `if test -f 'acls.c'; then $(CYGPATH_W) 'acls.c'; else $(CYGPATH_W) '$(srcdir)/acls.c'; fi`
 
+afpd-afpstats.o: afpstats.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afpstats.o -MD -MP -MF $(DEPDIR)/afpd-afpstats.Tpo -c -o afpd-afpstats.o `test -f 'afpstats.c' || echo '$(srcdir)/'`afpstats.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/afpd-afpstats.Tpo $(DEPDIR)/afpd-afpstats.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='afpstats.c' object='afpd-afpstats.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afpstats.o `test -f 'afpstats.c' || echo '$(srcdir)/'`afpstats.c
+
+afpd-afpstats.obj: afpstats.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afpstats.obj -MD -MP -MF $(DEPDIR)/afpd-afpstats.Tpo -c -o afpd-afpstats.obj `if test -f 'afpstats.c'; then $(CYGPATH_W) 'afpstats.c'; else $(CYGPATH_W) '$(srcdir)/afpstats.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/afpd-afpstats.Tpo $(DEPDIR)/afpd-afpstats.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='afpstats.c' object='afpd-afpstats.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afpstats.obj `if test -f 'afpstats.c'; then $(CYGPATH_W) 'afpstats.c'; else $(CYGPATH_W) '$(srcdir)/afpstats.c'; fi`
+
+afpd-afpstats_obj.o: afpstats_obj.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afpstats_obj.o -MD -MP -MF $(DEPDIR)/afpd-afpstats_obj.Tpo -c -o afpd-afpstats_obj.o `test -f 'afpstats_obj.c' || echo '$(srcdir)/'`afpstats_obj.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/afpd-afpstats_obj.Tpo $(DEPDIR)/afpd-afpstats_obj.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='afpstats_obj.c' object='afpd-afpstats_obj.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afpstats_obj.o `test -f 'afpstats_obj.c' || echo '$(srcdir)/'`afpstats_obj.c
+
+afpd-afpstats_obj.obj: afpstats_obj.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -MT afpd-afpstats_obj.obj -MD -MP -MF $(DEPDIR)/afpd-afpstats_obj.Tpo -c -o afpd-afpstats_obj.obj `if test -f 'afpstats_obj.c'; then $(CYGPATH_W) 'afpstats_obj.c'; else $(CYGPATH_W) '$(srcdir)/afpstats_obj.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/afpd-afpstats_obj.Tpo $(DEPDIR)/afpd-afpstats_obj.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='afpstats_obj.c' object='afpd-afpstats_obj.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(afpd_CFLAGS) $(CFLAGS) -c -o afpd-afpstats_obj.obj `if test -f 'afpstats_obj.c'; then $(CYGPATH_W) 'afpstats_obj.c'; else $(CYGPATH_W) '$(srcdir)/afpstats_obj.c'; fi`
+
 fce-fce_api.o: fce_api.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fce_CFLAGS) $(CFLAGS) -MT fce-fce_api.o -MD -MP -MF $(DEPDIR)/fce-fce_api.Tpo -c -o fce-fce_api.o `test -f 'fce_api.c' || echo '$(srcdir)/'`fce_api.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/fce-fce_api.Tpo $(DEPDIR)/fce-fce_api.Po
@@ -1208,13 +1254,15 @@ distdir: $(DISTFILES)
 	  fi; \
 	done
 check-am: all-am
-check: check-am
+check: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) check-am
 all-am: Makefile $(PROGRAMS) $(HEADERS)
 installdirs:
 	for dir in "$(DESTDIR)$(sbindir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
-install: install-am
+install: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) install-am
 install-exec: install-exec-am
 install-data: install-data-am
 uninstall: uninstall-am
@@ -1236,14 +1284,17 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
+	-test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 clean: clean-am
 
 clean-am: clean-generic clean-libtool clean-noinstPROGRAMS \
@@ -1315,7 +1366,7 @@ ps-am:
 
 uninstall-am: uninstall-sbinPROGRAMS
 
-.MAKE: install-am install-strip
+.MAKE: all check install install-am install-strip
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
 	clean-libtool clean-noinstPROGRAMS clean-sbinPROGRAMS ctags \
@@ -1331,6 +1382,17 @@ uninstall-am: uninstall-sbinPROGRAMS
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags uninstall uninstall-am uninstall-sbinPROGRAMS
 
+
+@HAVE_DBUS_GLIB_TRUE@afpstats_service_glue.h: afpstats-service.xml
+@HAVE_DBUS_GLIB_TRUE@	$(LIBTOOL) --mode=execute \
+@HAVE_DBUS_GLIB_TRUE@		dbus-binding-tool \
+@HAVE_DBUS_GLIB_TRUE@			--prefix=afpstats_obj \
+@HAVE_DBUS_GLIB_TRUE@			--mode=glib-server \
+@HAVE_DBUS_GLIB_TRUE@			--output=afpstats_service_glue.h \
+@HAVE_DBUS_GLIB_TRUE@			$(top_srcdir)/etc/afpd/afpstats-service.xml
+@WITH_DTRACE_TRUE@afp_dtrace.o: $(top_srcdir)/include/atalk/afp_dtrace.d $(DTRACE_OBJ)
+@WITH_DTRACE_TRUE@	if test -f afp_dtrace.o ; then rm -f afp_dtrace.o ; fi
+@WITH_DTRACE_TRUE@	$(LIBTOOL) --mode=execute dtrace -G -s $(top_srcdir)/include/atalk/afp_dtrace.d -o afp_dtrace.o $(DTRACE_OBJ)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

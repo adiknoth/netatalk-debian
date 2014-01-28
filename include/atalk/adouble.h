@@ -1,4 +1,4 @@
-/*
+ /*
  * Copyright (c) 1990,1991 Regents of The University of Michigan.
  * All Rights Reserved.
  *
@@ -219,7 +219,7 @@ struct adouble {
     int                 ad_reso_refcount;
     off_t               ad_rlen;           /* ressource fork len with AFP 3.0         *
                                             * the header parameter size is too small. */
-    char                *ad_name;          /* name in server encoding (usually UTF8)  */
+    char                *ad_name;          /* mac name (maccharset or UTF8-MAC)       */
     struct adouble_fops *ad_ops;
     uint16_t            ad_open_forks;     /* open forks (by others)                  */
     char                ad_data[AD_DATASZ_MAX];
@@ -245,8 +245,10 @@ struct adouble {
 #define ADFLAGS_TRUNC     (1<<12) /* truncate, open called with O_TRUNC */
 
 #define ADVOL_NODEV      (1 << 0)
+#define ADVOL_RO         (1 << 1)
 #define ADVOL_UNIXPRIV   (1 << 2) /* adouble unix priv */
 #define ADVOL_INVDOTS    (1 << 3) /* dot files (.DS_Store) are invisible) */
+#define ADVOL_FOLLO_SYML (1 << 4)
 
 /* lock flags */
 #define ADLOCK_CLR      (0)
@@ -369,6 +371,8 @@ struct adouble {
 #define ad_ref(ad)   (ad)->ad_refcount++
 #define ad_unref(ad) --((ad)->ad_refcount)
 
+#define ad_get_syml_opt(ad) (((ad)->ad_options & ADVOL_FOLLO_SYML) ? 0 : O_NOFOLLOW)
+
 /* ad_flush.c */
 extern int ad_rebuild_adouble_header_v2(struct adouble *);
 extern int ad_rebuild_adouble_header_ea(struct adouble *);
@@ -398,6 +402,7 @@ extern int ad_mkdir       (const char *, mode_t);
 struct vol;
 extern void ad_init       (struct adouble *, const struct vol * restrict);
 extern void ad_init_old   (struct adouble *ad, int flags, int options);
+extern int ad_init_offsets(struct adouble *ad);
 extern int ad_open        (struct adouble *ad, const char *path, int adflags, ...);
 extern int ad_openat      (struct adouble *, int dirfd, const char *path, int adflags, ...);
 extern int ad_refresh     (const char *path, struct adouble *);
@@ -406,6 +411,7 @@ extern int ad_metadata    (const char *, int, struct adouble *);
 extern int ad_metadataat  (int, const char *, int, struct adouble *);
 extern mode_t ad_hf_mode(mode_t mode);
 extern int ad_valid_header_osx(const char *path);
+extern off_t ad_reso_size(const char *path, int adflags, struct adouble *ad);
 
 /* ad_conv.c */
 extern int ad_convert(const char *path, const struct stat *sp, const struct vol *vol, const char **newpath);
@@ -418,7 +424,7 @@ extern ssize_t ad_write(struct adouble *, uint32_t, off_t, int, const char *, si
 extern ssize_t adf_pread(struct ad_fd *, void *, size_t, off_t);
 extern ssize_t adf_pwrite(struct ad_fd *, const void *, size_t, off_t);
 extern int     ad_dtruncate(struct adouble *, off_t);
-extern int     ad_rtruncate(struct adouble *, off_t);
+extern int     ad_rtruncate(struct adouble *, const char *, off_t);
 extern int     copy_fork(int eid, struct adouble *add, struct adouble *ads);
 
 /* ad_size.c */

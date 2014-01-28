@@ -75,9 +75,6 @@
 /* Define to 1 if you have the `add_proplist_entry' function. */
 #undef HAVE_ADD_PROPLIST_ENTRY
 
-/* Whether AIX ACLs are available */
-#undef HAVE_AIX_ACLS
-
 /* whether at funcs are available */
 #undef HAVE_ATFUNCS
 
@@ -125,6 +122,9 @@
 
 /* Define to 1 if you have the <crypt.h> header file. */
 #undef HAVE_CRYPT_H
+
+/* Define if support for dbus-glib was found */
+#undef HAVE_DBUS_GLIB
 
 /* Define to 1 if you have the declaration of `cygwin_conv_path', and to 0 if
    you don't. */
@@ -214,6 +214,9 @@
 /* Define to 1 if you have the `flistxattr' function. */
 #undef HAVE_FLISTXATTR
 
+/* Whether FreeBSD ZFS ACLs with libsunacl are available */
+#undef HAVE_FREEBSD_SUNACL
+
 /* Define to 1 if you have the `fremoveea' function. */
 #undef HAVE_FREMOVEEA
 
@@ -237,6 +240,9 @@
 
 /* Define to 1 if you have the `getea' function. */
 #undef HAVE_GETEA
+
+/* Define to 1 if you have the `getifaddrs' function. */
+#undef HAVE_GETIFADDRS
 
 /* Define to 1 if you have the `getpagesize' function. */
 #undef HAVE_GETPAGESIZE
@@ -271,20 +277,17 @@
 /* Wheter GSS_C_NT_HOSTBASED_SERVICE is in gssapi.h */
 #undef HAVE_GSS_C_NT_HOSTBASED_SERVICE
 
-/* Whether HPUX ACLs are available */
-#undef HAVE_HPUX_ACLS
-
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
-
-/* Whether IRIX ACLs are available */
-#undef HAVE_IRIX_ACLS
 
 /* Define if Kerberos 5 is available */
 #undef HAVE_KERBEROS
 
 /* Define to 1 if you have the `krb5_free_error_message' function. */
 #undef HAVE_KRB5_FREE_ERROR_MESSAGE
+
+/* Define to 1 if you have the `krb5_free_keytab_entry_contents' function. */
+#undef HAVE_KRB5_FREE_KEYTAB_ENTRY_CONTENTS
 
 /* Define to 1 if you have the `krb5_free_unparsed_name' function. */
 #undef HAVE_KRB5_FREE_UNPARSED_NAME
@@ -294,6 +297,9 @@
 
 /* Define to 1 if you have the <krb5/krb5.h> header file. */
 #undef HAVE_KRB5_KRB5_H
+
+/* Define to 1 if you have the `krb5_kt_free_entry' function. */
+#undef HAVE_KRB5_KT_FREE_ENTRY
 
 /* Define to 1 if you have the <langinfo.h> header file. */
 #undef HAVE_LANGINFO_H
@@ -330,6 +336,9 @@
 
 /* define if you have libquota */
 #undef HAVE_LIBQUOTA
+
+/* Define to 1 if you have the `sunacl' library (-lsunacl). */
+#undef HAVE_LIBSUNACL
 
 /* Define to 1 if you have the <linux/dqblk_xfs.h> header file. */
 #undef HAVE_LINUX_DQBLK_XFS_H
@@ -373,6 +382,9 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
+/* Define to 1 if you have the `mempcpy' function. */
+#undef HAVE_MEMPCPY
+
 /* Define to 1 if you have the `mmap' function. */
 #undef HAVE_MMAP
 
@@ -382,8 +394,8 @@
 /* Define to 1 if you have the <netdb.h> header file. */
 #undef HAVE_NETDB_H
 
-/* Whether no ACLs support is available */
-#undef HAVE_NO_ACLS
+/* Whether NFSv4 ACLs are available */
+#undef HAVE_NFSV4_ACLS
 
 /* Define to 1 if you have the `openat' function. */
 #undef HAVE_OPENAT
@@ -399,6 +411,12 @@
 
 /* Define to 1 if you have the `pselect' function. */
 #undef HAVE_PSELECT
+
+/* Define if you have POSIX threads libraries and header files. */
+#undef HAVE_PTHREAD
+
+/* Have PTHREAD_PRIO_INHERIT. */
+#undef HAVE_PTHREAD_PRIO_INHERIT
 
 /* Define to 1 if you have the `pwrite' function. */
 #undef HAVE_PWRITE
@@ -448,7 +466,7 @@
 /* Define to 1 if you have the `sizeof_proplist_entry' function. */
 #undef HAVE_SIZEOF_PROPLIST_ENTRY
 
-/* Whether solaris ACLs are available */
+/* Whether Solaris ACLs are available */
 #undef HAVE_SOLARIS_ACLS
 
 /* Define to 1 if you have the <statfs.h> header file. */
@@ -523,12 +541,6 @@
 /* Define to 1 if you have the <termios.h> header file. */
 #undef HAVE_TERMIOS_H
 
-/* define for timeout_id_t */
-#undef HAVE_TIMEOUT_ID_T
-
-/* Whether Tru64 ACLs are available */
-#undef HAVE_TRU64_ACLS
-
 /* Whether UCS-2-INTERNAL is supported */
 #undef HAVE_UCS2INTERNAL
 
@@ -537,9 +549,6 @@
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
-
-/* Whether UnixWare ACLs are available */
-#undef HAVE_UNIXWARE_ACLS
 
 /* Define to 1 if you have the `unlinkat' function. */
 #undef HAVE_UNLINKAT
@@ -561,6 +570,9 @@
 
 /* Define as const if the declaration of iconv() needs const. */
 #undef ICONV_CONST
+
+/* OS is Linux */
+#undef LINUX
 
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */
@@ -611,6 +623,13 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
+/* netatalk lockfile path */
+#undef PATH_NETATALK_LOCK
+
+/* Define to necessary symbol if this constant uses a non-standard name on
+   your system. */
+#undef PTHREAD_CREATE_JOINABLE
+
 /* Whether the realpath function allows NULL */
 #undef REALPATH_TAKES_NULL
 
@@ -644,6 +663,9 @@
 /* Define if the PGP UAM module should be compiled */
 #undef UAM_PGP
 
+/* Use internal tbd */
+#undef USE_BUILTIN_TDB
+
 /* Define if cracklib should be used */
 #undef USE_CRACKLIB
 
@@ -655,6 +677,9 @@
 
 /* Version number of package */
 #undef VERSION
+
+/* dtrace probes */
+#undef WITH_DTRACE
 
 /* Whether sendfile() should be used */
 #undef WITH_SENDFILE

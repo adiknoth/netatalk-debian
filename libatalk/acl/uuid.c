@@ -209,7 +209,6 @@ int getuuidfromname( const char *name, uuidtype_t type, unsigned char *uuid) {
         add_cachebyname(name, uuid, mytype, 0);
     }
 
-cleanup:
 #ifdef HAVE_LDAP
     if (uuid_string) free(uuid_string);
 #endif
@@ -255,6 +254,7 @@ int getnamefromuuid(const uuidp_t uuidp, char **name, uuidtype_t *type) {
         uid = ntohl(tmp);
         if ((pwd = getpwuid(uid)) == NULL) {
             /* not found, add negative entry to cache */
+            *name = NULL;
             add_cachebyuuid(uuidp, "UUID_ENOENT", UUID_ENOENT, 0);
             ret = -1;
         } else {
@@ -264,7 +264,7 @@ int getnamefromuuid(const uuidp_t uuidp, char **name, uuidtype_t *type) {
         }
         LOG(log_debug, logtype_afpd,
             "getnamefromuuid{local}: UUID: %s -> name: %s, type:%s",
-            uuid_bin2string(uuidp), *name, uuidtype[(*type) & UUIDTYPESTR_MASK]);
+            uuid_bin2string(uuidp), *name ? *name : "-", uuidtype[(*type) & UUIDTYPESTR_MASK]);
         return ret;
     } else if (memcmp(uuidp, local_group_uuid, 12) == 0) {
         *type = UUID_GROUP;

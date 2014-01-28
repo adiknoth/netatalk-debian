@@ -7,6 +7,7 @@
 
 /* One function does the whole job */
 extern int acl_ldap_readconfig(dictionary *iniconfig);
+extern void acl_ldap_freeconfig(void);
 
 /* These are the prefvalues */
 extern char *ldap_server;
@@ -20,6 +21,8 @@ extern char *ldap_uuid_string;
 extern char *ldap_name_attr;
 extern char *ldap_group_attr;
 extern char *ldap_uid_attr;
+extern char *ldap_userfilter;
+extern char *ldap_groupfilter;
 extern int  ldap_uuid_encoding;
 
 typedef enum {
@@ -33,6 +36,7 @@ struct ldap_pref {
     int strorint;     /* string to just store in char * or convert to int ? */
     int intfromarray; /* convert to int, but use string to int mapping array pref_array[] */
     int valid;        /* -1 = mandatory, 0 = omittable/valid */
+    int valid_save;   /* copy of 'valid', used when resettting config */
 };
 
 struct pref_array {

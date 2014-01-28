@@ -59,10 +59,10 @@ Netatalk 2001 (c)
   "CNID",                            \
   "AFPDaemon",                       \
   "DSI",                             \
-  "ATalkDaemon",                     \
-  "PAPDaemon",                       \
   "UAMS",                            \
-  "end_of_list_marker"}              \
+  "FCE",                             \
+  "ad",                              \
+  "end_of_list_marker"}
 
 /* =========================================================================
    Config
@@ -85,9 +85,9 @@ UAM_MODULE_EXPORT logtype_conf_t type_configs[logtype_end_of_list_marker] = {
     DEFAULT_LOG_CONFIG, /* logtype_cnid */
     DEFAULT_LOG_CONFIG, /* logtype_afpd */
     DEFAULT_LOG_CONFIG, /* logtype_dsi */
-    DEFAULT_LOG_CONFIG, /* logtype_atalkd */
-    DEFAULT_LOG_CONFIG, /* logtype_papd */
-    DEFAULT_LOG_CONFIG /* logtype_uams */
+    DEFAULT_LOG_CONFIG, /* logtype_uams */
+    DEFAULT_LOG_CONFIG,  /* logtype_fce */
+    DEFAULT_LOG_CONFIG  /* logtype_ad */
 };
 
 static void syslog_setup(int loglevel, enum logtypes logtype, int display_options, int facility);
@@ -594,11 +594,8 @@ log:
                                  loglevel, logtype);
 
         /* If default wasnt setup its fd is -1 */
-        iov[0].iov_base = log_details_buffer;
-        iov[0].iov_len = strlen(log_details_buffer);
-        iov[1].iov_base = temp_buffer;
-        iov[1].iov_len = strlen(temp_buffer);
-        writev( fd,  iov, 2);
+        write(fd, log_details_buffer, strlen(log_details_buffer));
+        write(fd, temp_buffer, strlen(temp_buffer));
     } else {
         write(fd, temp_buffer, strlen(temp_buffer));
     }

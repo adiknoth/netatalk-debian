@@ -1,5 +1,4 @@
 /*
- * $Id: appl.c,v 1.18.4.1 2010-02-01 10:56:08 franklahm Exp $
  *
  * Copyright (c) 1990,1993 Regents of The University of Michigan.
  * All Rights Reserved.  See COPYRIGHT.
@@ -171,7 +170,11 @@ makemacpath(const struct vol *vol, char *mpath, int mpathlen, struct dir *dir, c
         }
 
         /* next part */
-        if ((uname = cnid_resolve(vol->v_cdb, &cnid, buffer, buflen)) == NULL ) {
+        AFP_CNID_START("cnid_resolve");
+        uname = cnid_resolve(vol->v_cdb, &cnid, buffer, buflen);
+        AFP_CNID_DONE();
+
+        if (uname == NULL) {
             afp_errno = AFPERR_NOOBJ;
             ret = NULL;
             goto exit;
