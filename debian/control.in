@@ -13,7 +13,9 @@ Homepage: http://netatalk.sourceforge.net/
 Package: netatalk
 Section: net
 Architecture: any
-Depends: ${shlibs:Depends}, ${perl:Depends}, ${misc:Depends}, ${cdbs:Depends}
+Depends: ${shlibs:Depends}, ${perl:Depends}, ${misc:Depends}, ${cdbs:Depends},
+   python,
+   libatalk7
 Recommends: ${cdbs:Recommends}
 Suggests: ${cdbs:Suggests}
 Description: AppleTalk user binaries
@@ -43,7 +45,8 @@ Description: AppleTalk library used by Netatalk
 Package: libatalk-dev
 Section: libdevel
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends},
+   libatalk7 (= ${binary:Version})
 Replaces: netatalk (<< 3.0.3-1)
 Conflicts: netatalk (<< 3.0.3-1)
 Description: AppleTalk library used by Netatalk (header files)
