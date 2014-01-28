@@ -24,3 +24,32 @@ Description: AppleTalk user binaries
  .
  This package contains all daemon and utility programs as well as Netatalk's
  static libraries.
+
+Package: libatalk7
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Replaces: netatalk (<< 3.0.3-1)
+Conflicts: netatalk (<< 3.0.3-1)
+Description: AppleTalk library used by Netatalk
+ Netatalk is an implementation of the AppleTalk Protocol Suite for
+ BSD-derived systems. The current release contains support for
+ EtherTalk Phase I and II, DDP, RTMP, NBP, ZIP, AEP, ATP, PAP, ASP, and
+ AFP.
+ .
+ This package contains the Atalk library (libatalk) that is part of
+ Netatalk since version 3.0.
+
+Package: libatalk-dev
+Section: libdevel
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Replaces: netatalk (<< 3.0.3-1)
+Conflicts: netatalk (<< 3.0.3-1)
+Description: AppleTalk library used by Netatalk (header files)
+ Netatalk is an implementation of the AppleTalk Protocol Suite for
+ BSD-derived systems. The current release contains support for
+ EtherTalk Phase I and II, DDP, RTMP, NBP, ZIP, AEP, ATP, PAP, ASP, and
+ AFP.
+ .
+ This package contains the Atalk library (libatalk) development headers.
