@@ -143,6 +143,7 @@ get-orig-vcs: get-orig-source
 CDBS_BUILD_DEPENDS += , libdb-dev, libwrap0-dev, libpam0g-dev, libcups2-dev, libkrb5-dev, libltdl3-dev
 CDBS_BUILD_DEPENDS += , libgcrypt11-dev, libcrack2-dev
 CDBS_BUILD_DEPENDS += , libavahi-client-dev, libldap2-dev, libacl1-dev
+CDBS_BUILD_DEPENDS += , libevent-dev
 ifneq (,$(findstring openssl,$(DEB_BUILD_OPTIONS)))
 CDBS_BUILD_DEPENDS += , $(openssl_build_depends)
 endif
