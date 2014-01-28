@@ -1,0 +1,15 @@
+From: Adrian Knoth <adi@drcomp.erfurt.thur.de>
+Description: Source init-functions in init.d-script
+Forwarded: no
+Last-Update: 2014-01-28
+--- a/distrib/initscripts/rc.debian.tmpl
++++ b/distrib/initscripts/rc.debian.tmpl
+@@ -13,6 +13,8 @@
+ 
+ set -e
+ 
++. /lib/lsb/init-functions
++
+ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+ DESC="Netatalk"
+ NAME=netatalk
