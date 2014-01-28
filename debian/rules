@@ -91,6 +91,7 @@ install/netatalk::
 
 clean::
 	rm -f debian/netatalk.init
+	rm -f Makefile config.log config.status
 
 # install the afppasswd utility (only available for SSL builds)
 install/netatalk::
