@@ -1,2 +1,3 @@
 114_fix_macusers_ps_parsing.patch
 401_netatalk_init.patch
+402_init_lsb.patch
