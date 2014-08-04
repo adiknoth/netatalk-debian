@@ -1,7 +1,8 @@
 Source: netatalk
 Section: net
 Priority: extra
-Maintainer: Jonas Smedegaard <dr@jones.dk>
+Maintainer: Debian Netatalk Packaging <pkg-netatalk-devel@lists.alioth.debian.org>
+Uploaders: Jonas Smedegaard <dr@jones.dk>
 Build-Depends: @cdbs@
 Build-Conflicts: libavahi-compat-libdnssd-dev
 Vcs-Git: git://git.debian.org/git/collab-maint/netatalk
