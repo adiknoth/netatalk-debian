@@ -152,7 +152,7 @@ static int ad_conv_v22ea_rf(const char *path, const struct stat *sp, const struc
         EC_NEG1_LOG( ad_tmplock(&adv2, ADEID_RFORK, ADLOCK_WR | ADLOCK_FILELOCK, 0, 0, 0) );
 
         /* Create a adouble:ea resource fork */
-        EC_ZERO_LOG( ad_open(&adea, path, ADFLAGS_HF | ADFLAGS_RF | ADFLAGS_RDWR | ADFLAGS_CREATE, 0666) );
+        EC_ZERO_LOG( ad_open(&adea, path, ADFLAGS_RF|ADFLAGS_RDWR|ADFLAGS_CREATE|ADFLAGS_SETSHRMD, 0666) );
 
         EC_ZERO_LOG( copy_fork(ADEID_RFORK, &adea, &adv2) );
         adea.ad_rlen = adv2.ad_rlen;
@@ -210,6 +210,7 @@ static int ad_conv_dehex(const char *path, const struct stat *sp, const struct v
     static bstring str2f = NULL;
     static bstring strdot = NULL;
     static bstring strcolon = NULL;
+    char *newadpath = NULL;
 
     if (str2e == NULL) {
         str2e = bfromcstr(":2e");
@@ -231,8 +232,13 @@ static int ad_conv_dehex(const char *path, const struct stat *sp, const struct v
     EC_ZERO( bfindreplace(newpath, str2f, strcolon, 0) );
     
     become_root();
-    if (adflags != ADFLAGS_DIR)
-        rename(vol->ad_path(path, 0), vol->ad_path(bdata(newpath), 0));
+    if (adflags != ADFLAGS_DIR) {
+        if ((newadpath = strdup(vol->ad_path(bdata(newpath), 0))) == NULL) {
+            unbecome_root();
+            EC_FAIL;
+        }
+        rename(vol->ad_path(path, 0), newadpath);
+    }
     rename(path, bdata(newpath));
     unbecome_root();
 
@@ -242,6 +248,8 @@ static int ad_conv_dehex(const char *path, const struct stat *sp, const struct v
 EC_CLEANUP:
     if (newpath)
         bdestroy(newpath);
+    if (newadpath)
+        free(newadpath);
     EC_EXIT;
 }
 

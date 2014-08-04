@@ -146,7 +146,7 @@ int ad_rebuild_adouble_header_ea(struct adouble *ad)
 /*!
  * Prepare adbuf buffer from struct adouble for writing on disk
  */
-static int ad_rebuild_adouble_header_osx(struct adouble *ad, char *adbuf)
+int ad_rebuild_adouble_header_osx(struct adouble *ad, char *adbuf)
 {
     uint32_t       temp;
     uint16_t       nent;
@@ -164,7 +164,7 @@ static int ad_rebuild_adouble_header_osx(struct adouble *ad, char *adbuf)
     memcpy(buf, &temp, sizeof( temp ));
     buf += sizeof( temp );
 
-    memcpy(buf, "Netatalk        ", 16);
+    memcpy(buf, AD_FILLER_NETATALK, strlen(AD_FILLER_NETATALK));
     buf += sizeof( ad->ad_filler );
 
     nent = htons(ADEID_NUM_OSX);
@@ -217,15 +217,12 @@ int ad_copy_header(struct adouble *add, struct adouble *ads)
             continue;
 
         len = ads->ad_eid[ eid ].ade_len;
-        if (!len || len != add->ad_eid[ eid ].ade_len)
+        if (len == 0)
             continue;
 
         switch (eid) {
         case ADEID_COMMENT:
-        case ADEID_PRIVDEV:
-        case ADEID_PRIVINO:
-        case ADEID_PRIVSYN:
-        case ADEID_PRIVID:
+        case ADEID_RFORK:
             continue;
         default:
             ad_setentrylen( add, eid, len );
@@ -429,6 +426,17 @@ int ad_close(struct adouble *ad, int adflags)
     }
 
     if (adflags & ADFLAGS_RF) {
+        /* HF is automatically opened when opening an RF, close it. */
+        if ((ad->ad_vers == AD_VERSION2) && (ad_meta_fileno(ad) != -1)) {
+            if (ad->ad_meta_refcount)
+                ad->ad_meta_refcount--;
+            if (!(--ad->ad_mdp->adf_refcount)) {
+                if (close( ad_meta_fileno(ad)) < 0)
+                    err = -1;
+                ad_meta_fileno(ad) = -1;
+            }
+        }
+
         if (ad->ad_reso_refcount)
             if (--ad->ad_reso_refcount == 0)
                 adf_lock_free(ad->ad_rfp);

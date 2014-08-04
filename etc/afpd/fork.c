@@ -153,27 +153,6 @@ static int fork_setmode(const AFPObj *obj, struct adouble *adp, int eid, int acc
     int denyreadset;
     int denywriteset;
 
-#ifdef HAVE_FSHARE_T
-    fshare_t shmd;
-
-    if (obj->options.flags & OPTION_SHARE_RESERV) {
-        shmd.f_access = (access & OPENACC_RD ? F_RDACC : 0) | (access & OPENACC_WR ? F_WRACC : 0);
-        if (shmd.f_access == 0)
-            /* we must give an access mode, otherwise fcntl will complain */
-            shmd.f_access = F_RDACC;
-        shmd.f_deny = (access & OPENACC_DRD ? F_RDDNY : F_NODNY) | (access & OPENACC_DWR) ? F_WRDNY : 0;
-        shmd.f_id = ofrefnum;
-
-        int fd = (eid == ADEID_DFORK) ? ad_data_fileno(adp) : ad_reso_fileno(adp);
-
-        if (fd != -1 && fd != AD_SYMLINK && fcntl(fd, F_SHARE, &shmd) != 0) {
-            LOG(log_debug, logtype_afpd, "fork_setmode: fcntl: %s", strerror(errno));
-            errno = EACCES;
-            return -1;
-        }
-    }
-#endif
-
     if (! (access & (OPENACC_WR | OPENACC_RD | OPENACC_DWR | OPENACC_DRD))) {
         return ad_lock(adp, eid, ADLOCK_RD | ADLOCK_FILELOCK, AD_FILELOCK_OPEN_NONE, 1, ofrefnum);
     }
@@ -232,6 +211,35 @@ static int fork_setmode(const AFPObj *obj, struct adouble *adp, int eid, int acc
                 return ret;
         }
     }
+
+    /*
+     * Fix for Bug 560: put the Solaris share reservation after our locking stuff.
+     * Note that this still leaves room for a race condition where between placing our own
+     * locks above and putting the Solaris share move below another client puts a lock.
+     * We then end up with set locks from above and return with an error code, the proper
+     * fix requires a sane cleanup function for the error path in this function.
+     */
+
+#ifdef HAVE_FSHARE_T
+    fshare_t shmd;
+
+    if (obj->options.flags & OPTION_SHARE_RESERV) {
+        shmd.f_access = (access & OPENACC_RD ? F_RDACC : 0) | (access & OPENACC_WR ? F_WRACC : 0);
+        if (shmd.f_access == 0)
+            /* we must give an access mode, otherwise fcntl will complain */
+            shmd.f_access = F_RDACC;
+        shmd.f_deny = (access & OPENACC_DRD ? F_RDDNY : F_NODNY) | (access & OPENACC_DWR) ? F_WRDNY : 0;
+        shmd.f_id = ofrefnum;
+
+        int fd = (eid == ADEID_DFORK) ? ad_data_fileno(adp) : ad_reso_fileno(adp);
+
+        if (fd != -1 && fd != AD_SYMLINK && fcntl(fd, F_SHARE, &shmd) != 0) {
+            LOG(log_debug, logtype_afpd, "fork_setmode: fcntl: %s", strerror(errno));
+            errno = EACCES;
+            return -1;
+        }
+    }
+#endif
 
     return 0;
 }
@@ -500,6 +508,8 @@ openfork_err:
 int afp_setforkparams(AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf _U_, size_t *rbuflen)
 {
     struct ofork    *ofork;
+    struct vol      *vol;
+    struct dir      *dir;
     off_t       size;
     uint16_t       ofrefnum, bitmap;
     int                 err;
@@ -520,6 +530,16 @@ int afp_setforkparams(AFPObj *obj, char *ibuf, size_t ibuflen, char *rbuf _U_, s
     if (NULL == ( ofork = of_find( ofrefnum )) ) {
         LOG(log_error, logtype_afpd, "afp_setforkparams: of_find(%d) could not locate fork", ofrefnum );
         return( AFPERR_PARAM );
+    }
+
+    vol = ofork->of_vol;
+    if ((dir = dirlookup(vol, ofork->of_did)) == NULL) {
+        LOG(log_error, logtype_afpd, "%s: bad fork did",  of_name(ofork));
+        return AFPERR_MISC;
+    }
+    if (movecwd(vol, dir) != 0) {
+        LOG(log_error, logtype_afpd, "%s: bad fork directory", dir->d_fullpath);
+        return AFPERR_MISC;
     }
 
     if (ofork->of_vol->v_flags & AFPVOL_RO)
@@ -1182,41 +1202,54 @@ static int write_fork(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf, s
     }
 
     /* find out what we have already */
-    cc = dsi_writeinit(dsi, rcvbuf, rcvbuflen);
-
-    if (!cc || (cc = write_file(ofork, eid, offset, rcvbuf, cc)) < 0) {
-        dsi_writeflush(dsi);
-        *rbuflen = 0;
-        if (obj->options.flags & OPTION_AFP_READ_LOCK)
-            ad_tmplock(ofork->of_ad, eid, ADLOCK_CLR, saveoff, reqcount, ofork->of_refnum);
-        return cc;
-    }
-
-    offset += cc;
-
-#if 0 /*def HAVE_SENDFILE_WRITE*/
-    if ((cc = ad_writefile(ofork->of_ad, eid, dsi->socket, offset, dsi->datasize)) < 0) {
-        switch (errno) {
-        case EDQUOT:
-        case EFBIG:
-        case ENOSPC:
-            cc = AFPERR_DFULL;
-            break;
-        default:
-            LOG(log_error, logtype_afpd, "afp_write: ad_writefile: %s", strerror(errno) );
-            goto afp_write_loop;
+    if ((cc = dsi_writeinit(dsi, rcvbuf, rcvbuflen)) > 0) {
+        ssize_t written;
+        if ((written = write_file(ofork, eid, offset, rcvbuf, cc)) != cc) {
+            dsi_writeflush(dsi);
+            *rbuflen = 0;
+            if (obj->options.flags & OPTION_AFP_READ_LOCK)
+                ad_tmplock(ofork->of_ad, eid, ADLOCK_CLR, saveoff, reqcount, ofork->of_refnum);
+            if (written > 0)
+                /* It's used for the read size and as error code in write_file(), ugh */
+                written = AFPERR_MISC;
+            return written;
         }
-        dsi_writeflush(dsi);
-        *rbuflen = 0;
-        if (obj->options.flags & OPTION_AFP_READ_LOCK)
-            ad_tmplock(ofork->of_ad, eid, ADLOCK_CLR, saveoff, reqcount,  ofork->of_refnum);
-        return cc;
     }
 
     offset += cc;
-    goto afp_write_done;
-#endif /* 0, was HAVE_SENDFILE_WRITE */
 
+#ifdef WITH_RECVFILE
+    if (obj->options.flags & OPTION_RECVFILE) {
+        LOG(log_maxdebug, logtype_afpd, "afp_write(fork: %" PRIu16 " [%s], off: %" PRIu64 ", size: %" PRIu32 ")",
+            ofork->of_refnum, (ofork->of_flags & AFPFORK_DATA) ? "data" : "reso", offset, dsi->datasize);
+
+        if ((cc = ad_recvfile(ofork->of_ad, eid, dsi->socket, offset, dsi->datasize, obj->options.splice_size)) < dsi->datasize) {
+            switch (errno) {
+            case EDQUOT:
+            case EFBIG:
+            case ENOSPC:
+                cc = AFPERR_DFULL;
+                dsi_writeflush(dsi);
+                break;
+            case ENOSYS:
+                goto afp_write_loop;
+            default:
+                /* Low level error, can't do much to back up */
+                cc = AFPERR_MISC;
+                LOG(log_error, logtype_afpd, "afp_write: ad_writefile: %s", strerror(errno));
+            }
+            *rbuflen = 0;
+            if (obj->options.flags & OPTION_AFP_READ_LOCK)
+                ad_tmplock(ofork->of_ad, eid, ADLOCK_CLR, saveoff, reqcount,  ofork->of_refnum);
+            return cc;
+        }
+
+        offset += cc;
+        goto afp_write_done;
+    }
+#endif
+
+afp_write_loop:
     /* loop until everything gets written. currently
      * dsi_write handles the end case by itself. */
     while ((cc = dsi_write(dsi, rcvbuf, rcvbuflen))) {
@@ -1235,6 +1268,7 @@ static int write_fork(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf, s
         offset += cc;
     }
 
+afp_write_done:
     if (obj->options.flags & OPTION_AFP_READ_LOCK)
         ad_tmplock(ofork->of_ad, eid, ADLOCK_CLR, saveoff, reqcount,  ofork->of_refnum);
     if ( ad_meta_fileno( ofork->of_ad ) != -1 ) /* META */
