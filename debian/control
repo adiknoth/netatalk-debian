@@ -1,7 +1,8 @@
 Source: netatalk
 Section: net
 Priority: extra
-Maintainer: Jonas Smedegaard <dr@jones.dk>
+Maintainer: Debian Netatalk Packaging <pkg-netatalk-devel@lists.alioth.debian.org>
+Uploaders: Jonas Smedegaard <dr@jones.dk>
 Build-Depends: cdbs (>= 0.4.106~),
  autotools-dev,
  devscripts,
@@ -19,12 +20,11 @@ Build-Depends: cdbs (>= 0.4.106~),
  libldap2-dev,
  libacl1-dev,
  libevent-dev,
- d-shlibs,
- hardening-includes
+ d-shlibs
 Build-Conflicts: libavahi-compat-libdnssd-dev
 Vcs-Git: git://git.debian.org/git/collab-maint/netatalk
 Vcs-Browser: http://git.debian.org/?p=collab-maint/netatalk.git
-Standards-Version: 3.9.4
+Standards-Version: 3.9.5
 Homepage: http://netatalk.sourceforge.net/
 
 Package: netatalk
@@ -32,7 +32,7 @@ Section: net
 Architecture: any
 Depends: ${shlibs:Depends}, ${perl:Depends}, ${misc:Depends}, ${cdbs:Depends},
    python,
-   libatalk7
+   libatalk15
 Recommends: ${cdbs:Recommends}
 Suggests: ${cdbs:Suggests}
 Description: AppleTalk user binaries
@@ -44,7 +44,7 @@ Description: AppleTalk user binaries
  This package contains all daemon and utility programs as well as Netatalk's
  static libraries.
 
-Package: libatalk7
+Package: libatalk15
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
@@ -63,7 +63,7 @@ Package: libatalk-dev
 Section: libdevel
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
-   libatalk7 (= ${binary:Version})
+   libatalk15 (= ${binary:Version})
 Replaces: netatalk (<< 3.0.3-1)
 Conflicts: netatalk (<< 3.0.3-1)
 Description: AppleTalk library used by Netatalk (header files)
