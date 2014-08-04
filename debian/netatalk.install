@@ -10,7 +10,6 @@ usr/bin/cnid2_create
 usr/bin/dbd
 usr/bin/macusers
 usr/bin/netatalk-config
-usr/bin/uniconv
 usr/lib/netatalk/*.so
 usr/sbin/afpd
 usr/sbin/cnid_dbd
