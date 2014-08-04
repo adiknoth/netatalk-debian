@@ -1,6 +1,8 @@
---- a/contrib/macusers/macusers.in
-+++ b/contrib/macusers/macusers.in
-@@ -112,7 +112,14 @@
+Index: netatalk-debian/contrib/macusers/macusers.in
+===================================================================
+--- netatalk-debian.orig/contrib/macusers/macusers.in
++++ netatalk-debian/contrib/macusers/macusers.in
+@@ -124,7 +124,14 @@ while (<PS>) {
                          close(PFILES);
                  }
  
