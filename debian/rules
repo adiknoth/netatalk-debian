@@ -99,16 +99,6 @@ install/netatalk::
 	  mkdir -p $(CURDIR)/debian/netatalk/usr/bin && cp -ax $(CURDIR)/bin/afppasswd/afppasswd debian/netatalk/usr/bin/afppasswd; \
 	fi
 
-# Rename files w/ manpage references to avoid namespace conflicts
-#  * uniconv → netatalk-uniconv
-#  * install netatalk-uniconv as system binary
-bindir=debian/netatalk/usr/bin
-man1dir=debian/netatalk/usr/share/man/man1
-binary-post-install/netatalk::
-	mv $(bindir)/uniconv $(bindir)/../sbin/netatalk-uniconv
-	perl -p -e 's/(?<!Title: )(uniconv)\\b/netatalk(?(1)\\-)$$2/g;s/(TH "UNICONV" )"1"/$$1"8"/' <$(man1dir)/uniconv.1 >$(man1dir)/../man8/netatalk-uniconv.8
-	rm $(man1dir)/uniconv.1
-
 # rename the usr/bin/asip-status.pl binary
 binary-post-install/netatalk::
 	mv $(CURDIR)/debian/netatalk/usr/bin/asip-status.pl $(CURDIR)/debian/netatalk/usr/bin/asip-status
