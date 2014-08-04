@@ -1,3 +1,83 @@
+Changes in 3.1.3
+================
+* UPD: Spotlight: more SPARQL query optimisations
+* UPD: Spotlight: new options "sparql results limit", "spotlight
+       attributes" and "spotlight expr"
+* FIX: afpd: Unarchiving certain ZIP archives fails, bug #569
+* UPD: Update Unicode support to version 7.0.0
+* FIX: Memory overflow caused by 'basedir regex', bug #567
+* NEW: afpd: delete empty resource forks, from FR #92
+* FIX: afpd: fix a crash when accessing ._ AppleDouble files created
+       by OS X via SMB, bug #564
+* FIX: afpd and dbd: Converting from AppleDouble v2 to ea may corrupt
+       the resource fork. In some circumstances an offset calculation
+       is wrong resulting in corrupt resource forks after the
+       conversion. Bug #568.
+* FIX: ad: fix for bug #563 broke ad file utilities, bug #570.
+* NEW: afpd: new advanced option controlling permissions and ACLs,
+       from FR #93
+
+Changes in 3.1.2
+================
+* FIX: Option "vol dbpath" was broken in 3.1.1
+* FIX: Spotlight: file modification date, bug #545
+* FIX: Improve reliability of afpd child handler
+* FIX: debian initscript: add 0 and 6 to Default-Stop. debian-bug#745520
+* FIX: put the Solaris share reservation after our locking stuff, bug #560.
+* UPD: Improve Linux quota behaviour
+* FIX: xattrs on *BSD, bug #562
+* NEW: afpd: support for using $u username variable in AFP volume
+       definitions. FR#90.
+* FIX: getvolbypath returns incorrect volume, bug #563
+* FIX: fd leak when using appledouble = v2, bug #554
+* UPD: New options that control whether dbus and Tracker are started:
+       'start dbus' and 'start tracker', both default to yes, FR#91
+* UPD: Spotlight: SPARQL query optimisations
+
+Changes in 3.1.1
+================
+* FIX: Add asprint() compatibility function for systems lacking it
+* FIX: Fix ressource fork name conversion. Bug #534.
+* FIX: Fix a bug where only the first configured UAM was loaded.
+       Bug #537.
+* UPD: Add support for AFP 3.4. From FR #85.
+* FIX: Registering with mDNS crashed. Bug #540
+* FIX: Saving from applications like Photoshop may fail, because
+       removing the ressource fork AppleDouble file failed. Bug #542.
+* FIX: dbd: remove orphaned ._ AppleDouble files. Bug #549.
+* NEW: afpd: Automatic conversion of ._ AppleDouble files
+       created by OS X. Bug #550.
+* FIX: afpd: Fix a crash in of_closefork(). Bug #551.
+* FIX: dbd: Don't print message "Ignoring ._file" for every ._ file.
+       Bug #552.
+* FIX: afpd: Don't flood log with failed sys_set_ea() messages.
+
+Changes in 3.1.0
+================
+* NEW: AFP Spotlight support with Gnome Tracker
+* NEW: New option "spotlight" (G/V)
+* NEW: Configure option --with-tracker-pkgconfig-version
+* NEW: Configure option --with-tracker-prefix
+* NEW: If Spotlight is enabled, launch our own dbus instance
+* NEW: New option "dbus daemon" (G)
+* UPD: Add configure option --with-afpstats for overriding the
+       result of autodetecting dbus-glib presence
+* NEW: Add recvfile support with splice() on Linux. New global options
+       "recvfile" (default: no) and "splice size" (default 64k).
+* NEW: CNID backend "mysql" for use with a MySQL server
+
+Changes in 3.0.7
+================
+* FIX: Build fixes for the Kerberos UAM
+* UPD: Use dedicated exit code for AFP connections that were dropped
+       by the client right after the TCP handshake
+* FIX: Workaround for a problem which cannot be advertized by Avahi. Bug #541.
+* FIX: Registering with mDNS crashed. Bug #540
+* FIX: Saving from applications like Photoshop may fail, because
+       removing the ressource fork AppleDouble file failed. Bug #542.
+* FIX: macusers showed root user. Bug #495.
+* UPD: Add file pathname to logmessage parse_entries: bogus eid. FR#87.
+
 Changes in 3.0.6
 ================
 * FIX: charset conversion failed when copying from Mac OS 9. Bug #523.

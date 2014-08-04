@@ -24,8 +24,14 @@
 /* Define if CNID LAST scheme backend should be compiled. */
 #undef CNID_BACKEND_LAST
 
+/* whether the MySQL CNID module is available */
+#undef CNID_BACKEND_MYSQL
+
 /* Define if CNID TDB scheme backend should be compiled. */
 #undef CNID_BACKEND_TDB
+
+/* Path to dbus-daemon */
+#undef DBUS_DAEMON_PATH
 
 /* Required BDB version, major */
 #undef DB_MAJOR_REQ
@@ -74,6 +80,9 @@
 
 /* Define to 1 if you have the `add_proplist_entry' function. */
 #undef HAVE_ADD_PROPLIST_ENTRY
+
+/* Define to 1 if you have the `asprintf' function. */
+#undef HAVE_ASPRINTF
 
 /* whether at funcs are available */
 #undef HAVE_ATFUNCS
@@ -469,6 +478,9 @@
 /* Whether Solaris ACLs are available */
 #undef HAVE_SOLARIS_ACLS
 
+/* Define to 1 if you have the `splice' function. */
+#undef HAVE_SPLICE
+
 /* Define to 1 if you have the <statfs.h> header file. */
 #undef HAVE_STATFS_H
 
@@ -541,6 +553,15 @@
 /* Define to 1 if you have the <termios.h> header file. */
 #undef HAVE_TERMIOS_H
 
+/* Define if Tracker is available */
+#undef HAVE_TRACKER
+
+/* Define if Tracker miner library is available */
+#undef HAVE_TRACKER_MINER
+
+/* Define if Tracker SPARQL is available */
+#undef HAVE_TRACKER_SPARQL
+
 /* Whether UCS-2-INTERNAL is supported */
 #undef HAVE_UCS2INTERNAL
 
@@ -558,6 +579,9 @@
 
 /* Define to 1 if you have the `utime' function. */
 #undef HAVE_UTIME
+
+/* Define to 1 if you have the `vasprintf' function. */
+#undef HAVE_VASPRINTF
 
 /* Define to 1 if you have the <xfs/libxfs.h> header file. */
 #undef HAVE_XFS_LIBXFS_H
@@ -654,6 +678,9 @@
 /* Define if TCP wrappers should be used */
 #undef TCPWRAP
 
+/* Path to Tracker */
+#undef TRACKER_PREFIX
+
 /* Define if the DHX UAM modules should be compiled */
 #undef UAM_DHX
 
@@ -681,6 +708,9 @@
 /* dtrace probes */
 #undef WITH_DTRACE
 
+/* Whether recvfile should be used */
+#undef WITH_RECVFILE
+
 /* Whether sendfile() should be used */
 #undef WITH_SENDFILE
 
@@ -698,6 +728,10 @@
 
 /* xattr functions have additional options */
 #undef XATTR_ADD_OPT
+
+/* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
+   `char[]'. */
+#undef YYTEXT_POINTER
 
 /* AT file source */
 #undef _ATFILE_SOURCE

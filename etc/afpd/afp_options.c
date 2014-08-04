@@ -94,6 +94,9 @@ static void show_version( void )
 #ifdef CNID_BACKEND_TDB
 	printf( "tdb " );
 #endif
+#ifdef CNID_BACKEND_MYSQL
+	printf( "mysql " );
+#endif
 	puts( "" );
 }
 
@@ -168,6 +171,13 @@ static void show_version_extended(void )
 
 	printf( "         D-Bus support:\t" );
 #ifdef HAVE_DBUS_GLIB
+	puts( "Yes" );
+#else
+	puts( "No" );
+#endif
+
+	printf( "     Spotlight support:\t" );
+#ifdef HAVE_TRACKER
 	puts( "Yes" );
 #else
 	puts( "No" );

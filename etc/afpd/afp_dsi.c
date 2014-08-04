@@ -39,6 +39,7 @@
 #include <atalk/fce_api.h>
 #include <atalk/globals.h>
 #include <atalk/netatalk_conf.h>
+#include <atalk/spotlight.h>
 
 #include "switch.h"
 #include "auth.h"
@@ -474,6 +475,10 @@ void afp_over_dsi(AFPObj *obj)
     int flag = 1;
     setsockopt(dsi->socket, SOL_TCP, TCP_NODELAY, &flag, sizeof(flag));
 
+    /* Initialize Spotlight */
+    if ((obj->options.flags & OPTION_SPOTLIGHT) && (obj->options.slmod_path))
+        sl_mod_load(obj);
+
     ipc_child_state(obj, DSI_RUNNING);
 
     /* get stuck here until the end */
@@ -528,7 +533,7 @@ void afp_over_dsi(AFPObj *obj)
 
         if (reload_request) {
             reload_request = 0;
-            load_volumes(AFPobj);
+            load_volumes(AFPobj, lv_none);
         }
 
         /* The first SIGINT enables debugging, the next restores the config */

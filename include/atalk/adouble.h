@@ -348,6 +348,12 @@ struct adouble {
 #define AD_AFPFILEI_GROUP       (1 << 1) /* ignore group */
 #define AD_AFPFILEI_BLANKACCESS (1 << 2) /* blank access permissions */
 
+/*
+ * String identifiers for the 16 AppleDouble filler bytes
+ */
+#define AD_FILLER_NETATALK "Netatalk        "
+#define AD_FILLER_OSX      "Mac OS X"
+
 #define ad_data_fileno(ad)  ((ad)->ad_data_fork.adf_fd)
 #define ad_reso_fileno(ad)  ((ad)->ad_rfp->adf_fd)
 #define ad_meta_fileno(ad)  ((ad)->ad_mdp->adf_fd)
@@ -376,6 +382,7 @@ struct adouble {
 /* ad_flush.c */
 extern int ad_rebuild_adouble_header_v2(struct adouble *);
 extern int ad_rebuild_adouble_header_ea(struct adouble *);
+extern  int ad_rebuild_adouble_header_osx(struct adouble *ad, char *adbuf);
 extern int ad_copy_header (struct adouble *, struct adouble *);
 extern int ad_flush (struct adouble *);
 extern int ad_close (struct adouble *, int);
@@ -449,6 +456,9 @@ extern uint32_t  ad_forcegetid(struct adouble *adp);
 
 #ifdef WITH_SENDFILE
 extern int ad_readfile_init(const struct adouble *ad, int eid, off_t *off, int end);
+#endif
+#ifdef WITH_RECVFILE
+extern ssize_t ad_recvfile(struct adouble *ad, int eid,  int sock, off_t off, size_t len, int);
 #endif
 
 #endif /* _ATALK_ADOUBLE_H */

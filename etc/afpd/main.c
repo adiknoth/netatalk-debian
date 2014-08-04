@@ -141,11 +141,6 @@ static void child_handler(void)
 #endif /* ! WAIT_ANY */
 
     while ((pid = waitpid(WAIT_ANY, &status, WNOHANG)) > 0) {
-        if ((fd = server_child_remove(server_children, pid)) != -1) {
-            fdset_del_fd(&fdset, &polldata, &fdset_used, &fdset_size, fd);        
-            break;
-        }
-
         if (WIFEXITED(status)) {
             if (WEXITSTATUS(status))
                 LOG(log_info, logtype_afpd, "child[%d]: exited %d", pid, WEXITSTATUS(status));
@@ -157,6 +152,12 @@ static void child_handler(void)
             else
                 LOG(log_info, logtype_afpd, "child[%d]: died", pid);
         }
+
+        fd = server_child_remove(server_children, pid);
+        if (fd == -1) {
+            continue;
+        }
+        fdset_del_fd(&fdset, &polldata, &fdset_used, &fdset_size, fd);
     }
 }
 
@@ -325,7 +326,7 @@ int main(int ac, char **av)
 
     /* Initialize */
     cnid_init();
-    
+
     /* watch atp, dsi sockets and ipc parent/child file descriptor. */
     fd_set_listening_sockets(&obj);
 
