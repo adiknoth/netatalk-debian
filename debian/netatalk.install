@@ -34,3 +34,4 @@ usr/share/man/man8/cnid_dbd.8
 usr/share/man/man8/cnid_metad.8
 usr/share/man/man8/netatalk.8
 var/lib/netatalk/
+lib/systemd/system/netatalk.service

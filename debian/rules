@@ -60,7 +60,7 @@ DEB_CONFIGURE_EXTRA_FLAGS := \
 	--disable-srvloc --enable-zeroconf	\
 	--enable-ddp				\
 	--without-libevent			\
-	--with-init-style=debian-sysv		\
+	--with-init-style=debian-systemd		\
 	--localstatedir=/var/lib		\
 	--enable-debian
 
@@ -87,7 +87,7 @@ binary-post-install/netatalk::
 
 # Re-install initscript with debhelper to add pre- and postinst routines
 install/netatalk::
-	mv $(DEB_DESTDIR)/etc/init.d/netatalk debian/netatalk.init
+	#mv $(DEB_DESTDIR)/etc/init.d/netatalk debian/netatalk.init
 
 clean::
 	rm -f debian/netatalk.init
@@ -102,6 +102,8 @@ install/netatalk::
 # rename the usr/bin/asip-status.pl binary
 binary-post-install/netatalk::
 	mv $(CURDIR)/debian/netatalk/usr/bin/asip-status.pl $(CURDIR)/debian/netatalk/usr/bin/asip-status
+	dh_systemd_enable -pnetatalk
+	dh_systemd_start -pnetatalk
 
 # Install the example afp.conf configuration file
 binary-post-install/netatalk::
