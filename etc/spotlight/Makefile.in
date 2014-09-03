@@ -84,14 +84,13 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 noinst_PROGRAMS = $(am__EXEEXT_1)
-@HAVE_TRACKER_SPARQL_TRUE@am__append_1 = slmod_sparql_parser.h
-@HAVE_TRACKER_SPARQL_TRUE@am__append_2 = srp
-@HAVE_TRACKER_SPARQL_TRUE@am__append_3 = slmod_sparql.la
+@HAVE_TRACKER_TRUE@am__append_1 = sparql_parser.h
+@HAVE_TRACKER_TRUE@am__append_2 = srp
+@HAVE_TRACKER_TRUE@am__append_3 = libspotlight.la
 subdir = etc/spotlight
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
-	slmod_sparql_parser.h slmod_sparql_parser.c \
-	spotlight_rawquery_lexer.c $(top_srcdir)/depcomp \
-	$(top_srcdir)/ylwrap $(noinst_HEADERS)
+	sparql_parser.h sparql_parser.c spotlight_rawquery_lexer.c \
+	$(top_srcdir)/depcomp $(top_srcdir)/ylwrap $(noinst_HEADERS)
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
 	$(top_srcdir)/macros/ax_pthread.m4 \
@@ -124,64 +123,34 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
-am__vpath_adj = case $$p in \
-    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
-    *) f=$$p;; \
-  esac;
-am__strip_dir = f=`echo $$p | sed -e 's|^.*/||'`;
-am__install_max = 40
-am__nobase_strip_setup = \
-  srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*|]/\\\\&/g'`
-am__nobase_strip = \
-  for p in $$list; do echo "$$p"; done | sed -e "s|$$srcdirstrip/||"
-am__nobase_list = $(am__nobase_strip_setup); \
-  for p in $$list; do echo "$$p $$p"; done | \
-  sed "s| $$srcdirstrip/| |;"' / .*\//!s/ .*/ ./; s,\( .*\)/[^/]*$$,\1,' | \
-  $(AWK) 'BEGIN { files["."] = "" } { files[$$2] = files[$$2] " " $$1; \
-    if (++n[$$2] == $(am__install_max)) \
-      { print $$2, files[$$2]; n[$$2] = 0; files[$$2] = "" } } \
-    END { for (dir in files) print dir, files[dir] }'
-am__base_list = \
-  sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
-  sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
-am__uninstall_files_from_dir = { \
-  test -z "$$files" \
-    || { test ! -d "$$dir" && test ! -f "$$dir" && test ! -r "$$dir"; } \
-    || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
-         $(am__cd) "$$dir" && rm -f $$files; }; \
-  }
-am__installdirs = "$(DESTDIR)$(moduledir)"
-LTLIBRARIES = $(module_LTLIBRARIES)
-slmod_sparql_la_LIBADD =
-am__slmod_sparql_la_SOURCES_DIST = slmod_sparql.c slmod_sparql_map.c \
-	slmod_sparql_parser.y spotlight_rawquery_lexer.l
-@HAVE_TRACKER_SPARQL_TRUE@am_slmod_sparql_la_OBJECTS =  \
-@HAVE_TRACKER_SPARQL_TRUE@	slmod_sparql_la-slmod_sparql.lo \
-@HAVE_TRACKER_SPARQL_TRUE@	slmod_sparql_la-slmod_sparql_map.lo \
-@HAVE_TRACKER_SPARQL_TRUE@	slmod_sparql_la-slmod_sparql_parser.lo \
-@HAVE_TRACKER_SPARQL_TRUE@	slmod_sparql_la-spotlight_rawquery_lexer.lo
-slmod_sparql_la_OBJECTS = $(am_slmod_sparql_la_OBJECTS)
+LTLIBRARIES = $(noinst_LTLIBRARIES)
+libspotlight_la_LIBADD =
+am__libspotlight_la_SOURCES_DIST = sparql_map.c sparql_parser.y \
+	spotlight_rawquery_lexer.l
+@HAVE_TRACKER_TRUE@am_libspotlight_la_OBJECTS =  \
+@HAVE_TRACKER_TRUE@	libspotlight_la-sparql_map.lo \
+@HAVE_TRACKER_TRUE@	libspotlight_la-sparql_parser.lo \
+@HAVE_TRACKER_TRUE@	libspotlight_la-spotlight_rawquery_lexer.lo
+libspotlight_la_OBJECTS = $(am_libspotlight_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
-slmod_sparql_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+libspotlight_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
-	$(slmod_sparql_la_CFLAGS) $(CFLAGS) $(slmod_sparql_la_LDFLAGS) \
+	$(libspotlight_la_CFLAGS) $(CFLAGS) $(libspotlight_la_LDFLAGS) \
 	$(LDFLAGS) -o $@
-@HAVE_TRACKER_SPARQL_TRUE@am_slmod_sparql_la_rpath = -rpath \
-@HAVE_TRACKER_SPARQL_TRUE@	$(moduledir)
-@HAVE_TRACKER_SPARQL_TRUE@am__EXEEXT_1 = srp$(EXEEXT)
+@HAVE_TRACKER_TRUE@am_libspotlight_la_rpath =
+@HAVE_TRACKER_TRUE@am__EXEEXT_1 = srp$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-am__srp_SOURCES_DIST = slmod_sparql_map.c slmod_sparql_parser.y \
+am__srp_SOURCES_DIST = sparql_map.c sparql_parser.y \
 	spotlight_rawquery_lexer.l
-@HAVE_TRACKER_SPARQL_TRUE@am_srp_OBJECTS =  \
-@HAVE_TRACKER_SPARQL_TRUE@	srp-slmod_sparql_map.$(OBJEXT) \
-@HAVE_TRACKER_SPARQL_TRUE@	srp-slmod_sparql_parser.$(OBJEXT) \
-@HAVE_TRACKER_SPARQL_TRUE@	srp-spotlight_rawquery_lexer.$(OBJEXT)
+@HAVE_TRACKER_TRUE@am_srp_OBJECTS = srp-sparql_map.$(OBJEXT) \
+@HAVE_TRACKER_TRUE@	srp-sparql_parser.$(OBJEXT) \
+@HAVE_TRACKER_TRUE@	srp-spotlight_rawquery_lexer.$(OBJEXT)
 srp_OBJECTS = $(am_srp_OBJECTS)
-@HAVE_TRACKER_SPARQL_TRUE@srp_DEPENDENCIES = $(top_builddir)/libatalk/libatalk.la
+@HAVE_TRACKER_TRUE@srp_DEPENDENCIES =  \
+@HAVE_TRACKER_TRUE@	$(top_builddir)/libatalk/libatalk.la
 srp_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(srp_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
@@ -238,8 +207,8 @@ AM_V_YACC = $(am__v_YACC_@AM_V@)
 am__v_YACC_ = $(am__v_YACC_@AM_DEFAULT_V@)
 am__v_YACC_0 = @echo "  YACC    " $@;
 am__v_YACC_1 = 
-SOURCES = $(slmod_sparql_la_SOURCES) $(srp_SOURCES)
-DIST_SOURCES = $(am__slmod_sparql_la_SOURCES_DIST) \
+SOURCES = $(libspotlight_la_SOURCES) $(srp_SOURCES)
+DIST_SOURCES = $(am__libspotlight_la_SOURCES_DIST) \
 	$(am__srp_SOURCES_DIST)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
@@ -482,31 +451,28 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 pkgconfdir = @PKGCONFDIR@
-moduledir = @UAMS_PATH@
-module_LTLIBRARIES = $(am__append_3)
-noinst_HEADERS = slmod_sparql_map.h
+noinst_LTLIBRARIES = $(am__append_3)
+noinst_HEADERS = sparql_map.h
 BUILT_SOURCES = $(am__append_1)
 AM_YFLAGS = -d
-@HAVE_TRACKER_SPARQL_TRUE@slmod_sparql_la_SOURCES = \
-@HAVE_TRACKER_SPARQL_TRUE@	slmod_sparql.c \
-@HAVE_TRACKER_SPARQL_TRUE@	slmod_sparql_map.c \
-@HAVE_TRACKER_SPARQL_TRUE@	slmod_sparql_parser.y \
-@HAVE_TRACKER_SPARQL_TRUE@	spotlight_rawquery_lexer.l
+@HAVE_TRACKER_TRUE@libspotlight_la_SOURCES = \
+@HAVE_TRACKER_TRUE@	sparql_map.c \
+@HAVE_TRACKER_TRUE@	sparql_parser.y \
+@HAVE_TRACKER_TRUE@	spotlight_rawquery_lexer.l
 
-@HAVE_TRACKER_SPARQL_TRUE@slmod_sparql_la_CFLAGS = \
-@HAVE_TRACKER_SPARQL_TRUE@	-DDBUS_API_SUBJECT_TO_CHANGE \
-@HAVE_TRACKER_SPARQL_TRUE@	@TRACKER_CFLAGS@ \
-@HAVE_TRACKER_SPARQL_TRUE@	@TRACKER_MINER_CFLAGS@ \
-@HAVE_TRACKER_SPARQL_TRUE@	-D_PATH_STATEDIR='"$(localstatedir)/netatalk"'
+@HAVE_TRACKER_TRUE@libspotlight_la_CFLAGS = \
+@HAVE_TRACKER_TRUE@	-DDBUS_API_SUBJECT_TO_CHANGE \
+@HAVE_TRACKER_TRUE@	@TRACKER_CFLAGS@ \
+@HAVE_TRACKER_TRUE@	-D_PATH_STATEDIR='"$(localstatedir)/netatalk"'
 
-@HAVE_TRACKER_SPARQL_TRUE@slmod_sparql_la_LDFLAGS = -module -avoid-version @TRACKER_LIBS@ @TRACKER_MINER_LIBS@
-@HAVE_TRACKER_SPARQL_TRUE@srp_SOURCES = \
-@HAVE_TRACKER_SPARQL_TRUE@	slmod_sparql_map.c \
-@HAVE_TRACKER_SPARQL_TRUE@	slmod_sparql_parser.y \
-@HAVE_TRACKER_SPARQL_TRUE@	spotlight_rawquery_lexer.l
+@HAVE_TRACKER_TRUE@libspotlight_la_LDFLAGS = @TRACKER_LIBS@ @TRACKER_MINER_LIBS@
+@HAVE_TRACKER_TRUE@srp_SOURCES = \
+@HAVE_TRACKER_TRUE@	sparql_map.c \
+@HAVE_TRACKER_TRUE@	sparql_parser.y \
+@HAVE_TRACKER_TRUE@	spotlight_rawquery_lexer.l
 
-@HAVE_TRACKER_SPARQL_TRUE@srp_CFLAGS = -DMAIN -I$(top_srcdir)/include @TRACKER_CFLAGS@
-@HAVE_TRACKER_SPARQL_TRUE@srp_LDADD = $(top_builddir)/libatalk/libatalk.la @MYSQL_LIBS@
+@HAVE_TRACKER_TRUE@srp_CFLAGS = -DMAIN -I$(top_srcdir)/include @TRACKER_CFLAGS@
+@HAVE_TRACKER_TRUE@srp_LDADD = $(top_builddir)/libatalk/libatalk.la @MYSQL_LIBS@
 all: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -543,33 +509,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
 
-install-moduleLTLIBRARIES: $(module_LTLIBRARIES)
-	@$(NORMAL_INSTALL)
-	@list='$(module_LTLIBRARIES)'; test -n "$(moduledir)" || list=; \
-	list2=; for p in $$list; do \
-	  if test -f $$p; then \
-	    list2="$$list2 $$p"; \
-	  else :; fi; \
-	done; \
-	test -z "$$list2" || { \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(moduledir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(moduledir)" || exit 1; \
-	  echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) $$list2 '$(DESTDIR)$(moduledir)'"; \
-	  $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) $$list2 "$(DESTDIR)$(moduledir)"; \
-	}
-
-uninstall-moduleLTLIBRARIES:
-	@$(NORMAL_UNINSTALL)
-	@list='$(module_LTLIBRARIES)'; test -n "$(moduledir)" || list=; \
-	for p in $$list; do \
-	  $(am__strip_dir) \
-	  echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=uninstall rm -f '$(DESTDIR)$(moduledir)/$$f'"; \
-	  $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=uninstall rm -f "$(DESTDIR)$(moduledir)/$$f"; \
-	done
-
-clean-moduleLTLIBRARIES:
-	-test -z "$(module_LTLIBRARIES)" || rm -f $(module_LTLIBRARIES)
-	@list='$(module_LTLIBRARIES)'; \
+clean-noinstLTLIBRARIES:
+	-test -z "$(noinst_LTLIBRARIES)" || rm -f $(noinst_LTLIBRARIES)
+	@list='$(noinst_LTLIBRARIES)'; \
 	locs=`for p in $$list; do echo $$p; done | \
 	      sed 's|^[^/]*$$|.|; s|/[^/]*$$||; s|$$|/so_locations|' | \
 	      sort -u`; \
@@ -577,12 +519,12 @@ clean-moduleLTLIBRARIES:
 	  echo rm -f $${locs}; \
 	  rm -f $${locs}; \
 	}
-slmod_sparql_parser.h: slmod_sparql_parser.c
-	@if test ! -f $@; then rm -f slmod_sparql_parser.c; else :; fi
-	@if test ! -f $@; then $(MAKE) $(AM_MAKEFLAGS) slmod_sparql_parser.c; else :; fi
+sparql_parser.h: sparql_parser.c
+	@if test ! -f $@; then rm -f sparql_parser.c; else :; fi
+	@if test ! -f $@; then $(MAKE) $(AM_MAKEFLAGS) sparql_parser.c; else :; fi
 
-slmod_sparql.la: $(slmod_sparql_la_OBJECTS) $(slmod_sparql_la_DEPENDENCIES) $(EXTRA_slmod_sparql_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(slmod_sparql_la_LINK) $(am_slmod_sparql_la_rpath) $(slmod_sparql_la_OBJECTS) $(slmod_sparql_la_LIBADD) $(LIBS)
+libspotlight.la: $(libspotlight_la_OBJECTS) $(libspotlight_la_DEPENDENCIES) $(EXTRA_libspotlight_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(libspotlight_la_LINK) $(am_libspotlight_la_rpath) $(libspotlight_la_OBJECTS) $(libspotlight_la_LIBADD) $(LIBS)
 
 clean-noinstPROGRAMS:
 	@list='$(noinst_PROGRAMS)'; test -n "$$list" || exit 0; \
@@ -603,12 +545,11 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/slmod_sparql_la-slmod_sparql.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/slmod_sparql_la-slmod_sparql_map.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/slmod_sparql_la-slmod_sparql_parser.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/slmod_sparql_la-spotlight_rawquery_lexer.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/srp-slmod_sparql_map.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/srp-slmod_sparql_parser.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspotlight_la-sparql_map.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspotlight_la-sparql_parser.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspotlight_la-spotlight_rawquery_lexer.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/srp-sparql_map.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/srp-sparql_parser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/srp-spotlight_rawquery_lexer.Po@am__quote@
 
 .c.o:
@@ -632,61 +573,54 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
 
-slmod_sparql_la-slmod_sparql.lo: slmod_sparql.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(slmod_sparql_la_CFLAGS) $(CFLAGS) -MT slmod_sparql_la-slmod_sparql.lo -MD -MP -MF $(DEPDIR)/slmod_sparql_la-slmod_sparql.Tpo -c -o slmod_sparql_la-slmod_sparql.lo `test -f 'slmod_sparql.c' || echo '$(srcdir)/'`slmod_sparql.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/slmod_sparql_la-slmod_sparql.Tpo $(DEPDIR)/slmod_sparql_la-slmod_sparql.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='slmod_sparql.c' object='slmod_sparql_la-slmod_sparql.lo' libtool=yes @AMDEPBACKSLASH@
+libspotlight_la-sparql_map.lo: sparql_map.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libspotlight_la_CFLAGS) $(CFLAGS) -MT libspotlight_la-sparql_map.lo -MD -MP -MF $(DEPDIR)/libspotlight_la-sparql_map.Tpo -c -o libspotlight_la-sparql_map.lo `test -f 'sparql_map.c' || echo '$(srcdir)/'`sparql_map.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libspotlight_la-sparql_map.Tpo $(DEPDIR)/libspotlight_la-sparql_map.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sparql_map.c' object='libspotlight_la-sparql_map.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(slmod_sparql_la_CFLAGS) $(CFLAGS) -c -o slmod_sparql_la-slmod_sparql.lo `test -f 'slmod_sparql.c' || echo '$(srcdir)/'`slmod_sparql.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libspotlight_la_CFLAGS) $(CFLAGS) -c -o libspotlight_la-sparql_map.lo `test -f 'sparql_map.c' || echo '$(srcdir)/'`sparql_map.c
 
-slmod_sparql_la-slmod_sparql_map.lo: slmod_sparql_map.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(slmod_sparql_la_CFLAGS) $(CFLAGS) -MT slmod_sparql_la-slmod_sparql_map.lo -MD -MP -MF $(DEPDIR)/slmod_sparql_la-slmod_sparql_map.Tpo -c -o slmod_sparql_la-slmod_sparql_map.lo `test -f 'slmod_sparql_map.c' || echo '$(srcdir)/'`slmod_sparql_map.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/slmod_sparql_la-slmod_sparql_map.Tpo $(DEPDIR)/slmod_sparql_la-slmod_sparql_map.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='slmod_sparql_map.c' object='slmod_sparql_la-slmod_sparql_map.lo' libtool=yes @AMDEPBACKSLASH@
+libspotlight_la-sparql_parser.lo: sparql_parser.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libspotlight_la_CFLAGS) $(CFLAGS) -MT libspotlight_la-sparql_parser.lo -MD -MP -MF $(DEPDIR)/libspotlight_la-sparql_parser.Tpo -c -o libspotlight_la-sparql_parser.lo `test -f 'sparql_parser.c' || echo '$(srcdir)/'`sparql_parser.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libspotlight_la-sparql_parser.Tpo $(DEPDIR)/libspotlight_la-sparql_parser.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sparql_parser.c' object='libspotlight_la-sparql_parser.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(slmod_sparql_la_CFLAGS) $(CFLAGS) -c -o slmod_sparql_la-slmod_sparql_map.lo `test -f 'slmod_sparql_map.c' || echo '$(srcdir)/'`slmod_sparql_map.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libspotlight_la_CFLAGS) $(CFLAGS) -c -o libspotlight_la-sparql_parser.lo `test -f 'sparql_parser.c' || echo '$(srcdir)/'`sparql_parser.c
 
-slmod_sparql_la-slmod_sparql_parser.lo: slmod_sparql_parser.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(slmod_sparql_la_CFLAGS) $(CFLAGS) -MT slmod_sparql_la-slmod_sparql_parser.lo -MD -MP -MF $(DEPDIR)/slmod_sparql_la-slmod_sparql_parser.Tpo -c -o slmod_sparql_la-slmod_sparql_parser.lo `test -f 'slmod_sparql_parser.c' || echo '$(srcdir)/'`slmod_sparql_parser.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/slmod_sparql_la-slmod_sparql_parser.Tpo $(DEPDIR)/slmod_sparql_la-slmod_sparql_parser.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='slmod_sparql_parser.c' object='slmod_sparql_la-slmod_sparql_parser.lo' libtool=yes @AMDEPBACKSLASH@
+libspotlight_la-spotlight_rawquery_lexer.lo: spotlight_rawquery_lexer.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libspotlight_la_CFLAGS) $(CFLAGS) -MT libspotlight_la-spotlight_rawquery_lexer.lo -MD -MP -MF $(DEPDIR)/libspotlight_la-spotlight_rawquery_lexer.Tpo -c -o libspotlight_la-spotlight_rawquery_lexer.lo `test -f 'spotlight_rawquery_lexer.c' || echo '$(srcdir)/'`spotlight_rawquery_lexer.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libspotlight_la-spotlight_rawquery_lexer.Tpo $(DEPDIR)/libspotlight_la-spotlight_rawquery_lexer.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='spotlight_rawquery_lexer.c' object='libspotlight_la-spotlight_rawquery_lexer.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(slmod_sparql_la_CFLAGS) $(CFLAGS) -c -o slmod_sparql_la-slmod_sparql_parser.lo `test -f 'slmod_sparql_parser.c' || echo '$(srcdir)/'`slmod_sparql_parser.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libspotlight_la_CFLAGS) $(CFLAGS) -c -o libspotlight_la-spotlight_rawquery_lexer.lo `test -f 'spotlight_rawquery_lexer.c' || echo '$(srcdir)/'`spotlight_rawquery_lexer.c
 
-slmod_sparql_la-spotlight_rawquery_lexer.lo: spotlight_rawquery_lexer.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(slmod_sparql_la_CFLAGS) $(CFLAGS) -MT slmod_sparql_la-spotlight_rawquery_lexer.lo -MD -MP -MF $(DEPDIR)/slmod_sparql_la-spotlight_rawquery_lexer.Tpo -c -o slmod_sparql_la-spotlight_rawquery_lexer.lo `test -f 'spotlight_rawquery_lexer.c' || echo '$(srcdir)/'`spotlight_rawquery_lexer.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/slmod_sparql_la-spotlight_rawquery_lexer.Tpo $(DEPDIR)/slmod_sparql_la-spotlight_rawquery_lexer.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='spotlight_rawquery_lexer.c' object='slmod_sparql_la-spotlight_rawquery_lexer.lo' libtool=yes @AMDEPBACKSLASH@
+srp-sparql_map.o: sparql_map.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(srp_CFLAGS) $(CFLAGS) -MT srp-sparql_map.o -MD -MP -MF $(DEPDIR)/srp-sparql_map.Tpo -c -o srp-sparql_map.o `test -f 'sparql_map.c' || echo '$(srcdir)/'`sparql_map.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/srp-sparql_map.Tpo $(DEPDIR)/srp-sparql_map.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sparql_map.c' object='srp-sparql_map.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(slmod_sparql_la_CFLAGS) $(CFLAGS) -c -o slmod_sparql_la-spotlight_rawquery_lexer.lo `test -f 'spotlight_rawquery_lexer.c' || echo '$(srcdir)/'`spotlight_rawquery_lexer.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(srp_CFLAGS) $(CFLAGS) -c -o srp-sparql_map.o `test -f 'sparql_map.c' || echo '$(srcdir)/'`sparql_map.c
 
-srp-slmod_sparql_map.o: slmod_sparql_map.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(srp_CFLAGS) $(CFLAGS) -MT srp-slmod_sparql_map.o -MD -MP -MF $(DEPDIR)/srp-slmod_sparql_map.Tpo -c -o srp-slmod_sparql_map.o `test -f 'slmod_sparql_map.c' || echo '$(srcdir)/'`slmod_sparql_map.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/srp-slmod_sparql_map.Tpo $(DEPDIR)/srp-slmod_sparql_map.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='slmod_sparql_map.c' object='srp-slmod_sparql_map.o' libtool=no @AMDEPBACKSLASH@
+srp-sparql_map.obj: sparql_map.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(srp_CFLAGS) $(CFLAGS) -MT srp-sparql_map.obj -MD -MP -MF $(DEPDIR)/srp-sparql_map.Tpo -c -o srp-sparql_map.obj `if test -f 'sparql_map.c'; then $(CYGPATH_W) 'sparql_map.c'; else $(CYGPATH_W) '$(srcdir)/sparql_map.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/srp-sparql_map.Tpo $(DEPDIR)/srp-sparql_map.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sparql_map.c' object='srp-sparql_map.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(srp_CFLAGS) $(CFLAGS) -c -o srp-slmod_sparql_map.o `test -f 'slmod_sparql_map.c' || echo '$(srcdir)/'`slmod_sparql_map.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(srp_CFLAGS) $(CFLAGS) -c -o srp-sparql_map.obj `if test -f 'sparql_map.c'; then $(CYGPATH_W) 'sparql_map.c'; else $(CYGPATH_W) '$(srcdir)/sparql_map.c'; fi`
 
-srp-slmod_sparql_map.obj: slmod_sparql_map.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(srp_CFLAGS) $(CFLAGS) -MT srp-slmod_sparql_map.obj -MD -MP -MF $(DEPDIR)/srp-slmod_sparql_map.Tpo -c -o srp-slmod_sparql_map.obj `if test -f 'slmod_sparql_map.c'; then $(CYGPATH_W) 'slmod_sparql_map.c'; else $(CYGPATH_W) '$(srcdir)/slmod_sparql_map.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/srp-slmod_sparql_map.Tpo $(DEPDIR)/srp-slmod_sparql_map.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='slmod_sparql_map.c' object='srp-slmod_sparql_map.obj' libtool=no @AMDEPBACKSLASH@
+srp-sparql_parser.o: sparql_parser.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(srp_CFLAGS) $(CFLAGS) -MT srp-sparql_parser.o -MD -MP -MF $(DEPDIR)/srp-sparql_parser.Tpo -c -o srp-sparql_parser.o `test -f 'sparql_parser.c' || echo '$(srcdir)/'`sparql_parser.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/srp-sparql_parser.Tpo $(DEPDIR)/srp-sparql_parser.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sparql_parser.c' object='srp-sparql_parser.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(srp_CFLAGS) $(CFLAGS) -c -o srp-slmod_sparql_map.obj `if test -f 'slmod_sparql_map.c'; then $(CYGPATH_W) 'slmod_sparql_map.c'; else $(CYGPATH_W) '$(srcdir)/slmod_sparql_map.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(srp_CFLAGS) $(CFLAGS) -c -o srp-sparql_parser.o `test -f 'sparql_parser.c' || echo '$(srcdir)/'`sparql_parser.c
 
-srp-slmod_sparql_parser.o: slmod_sparql_parser.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(srp_CFLAGS) $(CFLAGS) -MT srp-slmod_sparql_parser.o -MD -MP -MF $(DEPDIR)/srp-slmod_sparql_parser.Tpo -c -o srp-slmod_sparql_parser.o `test -f 'slmod_sparql_parser.c' || echo '$(srcdir)/'`slmod_sparql_parser.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/srp-slmod_sparql_parser.Tpo $(DEPDIR)/srp-slmod_sparql_parser.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='slmod_sparql_parser.c' object='srp-slmod_sparql_parser.o' libtool=no @AMDEPBACKSLASH@
+srp-sparql_parser.obj: sparql_parser.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(srp_CFLAGS) $(CFLAGS) -MT srp-sparql_parser.obj -MD -MP -MF $(DEPDIR)/srp-sparql_parser.Tpo -c -o srp-sparql_parser.obj `if test -f 'sparql_parser.c'; then $(CYGPATH_W) 'sparql_parser.c'; else $(CYGPATH_W) '$(srcdir)/sparql_parser.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/srp-sparql_parser.Tpo $(DEPDIR)/srp-sparql_parser.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sparql_parser.c' object='srp-sparql_parser.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(srp_CFLAGS) $(CFLAGS) -c -o srp-slmod_sparql_parser.o `test -f 'slmod_sparql_parser.c' || echo '$(srcdir)/'`slmod_sparql_parser.c
-
-srp-slmod_sparql_parser.obj: slmod_sparql_parser.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(srp_CFLAGS) $(CFLAGS) -MT srp-slmod_sparql_parser.obj -MD -MP -MF $(DEPDIR)/srp-slmod_sparql_parser.Tpo -c -o srp-slmod_sparql_parser.obj `if test -f 'slmod_sparql_parser.c'; then $(CYGPATH_W) 'slmod_sparql_parser.c'; else $(CYGPATH_W) '$(srcdir)/slmod_sparql_parser.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/srp-slmod_sparql_parser.Tpo $(DEPDIR)/srp-slmod_sparql_parser.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='slmod_sparql_parser.c' object='srp-slmod_sparql_parser.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(srp_CFLAGS) $(CFLAGS) -c -o srp-slmod_sparql_parser.obj `if test -f 'slmod_sparql_parser.c'; then $(CYGPATH_W) 'slmod_sparql_parser.c'; else $(CYGPATH_W) '$(srcdir)/slmod_sparql_parser.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(srp_CFLAGS) $(CFLAGS) -c -o srp-sparql_parser.obj `if test -f 'sparql_parser.c'; then $(CYGPATH_W) 'sparql_parser.c'; else $(CYGPATH_W) '$(srcdir)/sparql_parser.c'; fi`
 
 srp-spotlight_rawquery_lexer.o: spotlight_rawquery_lexer.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(srp_CFLAGS) $(CFLAGS) -MT srp-spotlight_rawquery_lexer.o -MD -MP -MF $(DEPDIR)/srp-spotlight_rawquery_lexer.Tpo -c -o srp-spotlight_rawquery_lexer.o `test -f 'spotlight_rawquery_lexer.c' || echo '$(srcdir)/'`spotlight_rawquery_lexer.c
@@ -801,9 +735,6 @@ check: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) check-am
 all-am: Makefile $(LTLIBRARIES) $(PROGRAMS) $(HEADERS)
 installdirs:
-	for dir in "$(DESTDIR)$(moduledir)"; do \
-	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
-	done
 install: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) install-am
 install-exec: install-exec-am
@@ -835,13 +766,13 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-	-rm -f slmod_sparql_parser.c
-	-rm -f slmod_sparql_parser.h
+	-rm -f sparql_parser.c
+	-rm -f sparql_parser.h
 	-rm -f spotlight_rawquery_lexer.c
 	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 clean: clean-am
 
-clean-am: clean-generic clean-libtool clean-moduleLTLIBRARIES \
+clean-am: clean-generic clean-libtool clean-noinstLTLIBRARIES \
 	clean-noinstPROGRAMS mostlyclean-am
 
 distclean: distclean-am
@@ -862,7 +793,7 @@ info: info-am
 
 info-am:
 
-install-data-am: install-moduleLTLIBRARIES
+install-data-am:
 
 install-dvi: install-dvi-am
 
@@ -908,25 +839,23 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-moduleLTLIBRARIES
+uninstall-am:
 
 .MAKE: all check install install-am install-strip
 
 .PHONY: CTAGS GTAGS TAGS all all-am check check-am clean clean-generic \
-	clean-libtool clean-moduleLTLIBRARIES clean-noinstPROGRAMS \
+	clean-libtool clean-noinstLTLIBRARIES clean-noinstPROGRAMS \
 	cscopelist-am ctags ctags-am distclean distclean-compile \
 	distclean-generic distclean-libtool distclean-tags distdir dvi \
 	dvi-am html html-am info info-am install install-am \
 	install-data install-data-am install-dvi install-dvi-am \
 	install-exec install-exec-am install-html install-html-am \
-	install-info install-info-am install-man \
-	install-moduleLTLIBRARIES install-pdf install-pdf-am \
-	install-ps install-ps-am install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
+	install-info install-info-am install-man install-pdf \
+	install-pdf-am install-ps install-ps-am install-strip \
+	installcheck installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags tags-am uninstall uninstall-am \
-	uninstall-moduleLTLIBRARIES
+	tags tags-am uninstall uninstall-am
 
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

@@ -688,8 +688,8 @@ DTRACE_LIBS
 atalk_cv_have_dtrace
 DEVELOPER_FALSE
 DEVELOPER_TRUE
-HAVE_TRACKER_SPARQL_FALSE
-HAVE_TRACKER_SPARQL_TRUE
+HAVE_TRACKER_FALSE
+HAVE_TRACKER_TRUE
 TRACKER_MINER_LIBS
 TRACKER_MINER_CFLAGS
 TRACKER_LIBS
@@ -729,10 +729,12 @@ LIBGCRYPT_CONFIG
 INIT_DIR
 USE_UNDEF_FALSE
 USE_UNDEF_TRUE
+USE_DEBIAN_SYSTEMD_FALSE
+USE_DEBIAN_SYSTEMD_TRUE
 USE_SYSTEMD_FALSE
 USE_SYSTEMD_TRUE
-USE_DEBIAN_FALSE
-USE_DEBIAN_TRUE
+USE_DEBIAN_SYSV_FALSE
+USE_DEBIAN_SYSV_TRUE
 USE_GENTOO_FALSE
 USE_GENTOO_TRUE
 USE_SOLARIS_FALSE
@@ -1011,8 +1013,6 @@ TDB_CFLAGS
 TDB_LIBS
 TRACKER_CFLAGS
 TRACKER_LIBS
-TRACKER_MINER_CFLAGS
-TRACKER_MINER_LIBS
 DBUS_CFLAGS
 DBUS_LIBS
 DBUS_GLIB_CFLAGS
@@ -1690,7 +1690,7 @@ Optional Packages:
   --with-pam-confdir=PATH Path to PAM config dir (default:
                           ${sysconfdir}/pam.d)
   --with-shadow           enable shadow password support [auto]
-  --with-init-style       use OS specific init config [redhat-sysv|redhat-systemd|suse-sysv|suse-systemd|gentoo|netbsd|debian|solaris|systemd]
+  --with-init-style       use OS specific init config [redhat-sysv|redhat-systemd|suse-sysv|suse-systemd|gentoo|netbsd|debian-sysv|debian-systemd|solaris|systemd]
   --with-init-dir=PATH    path to OS specific init directory
   --with-uams-path=PATH   path to UAMs [$libdir/netatalk/]
   --with-libgcrypt-dir=PATH
@@ -1708,8 +1708,8 @@ Optional Packages:
   --with-libevent-lib     path to libevent library
   --with-tdb              whether to use the bundled tdb (default: yes)
   --with-tracker-pkgconfig-version=VERSION
-                          Version suffix of the Tracker SPARQL and
-                          tracker-miner pkg in pkg-config (default: 0.12)
+                          Version suffix of the Tracker SPARQL pkg-config
+                          (default: 0.12)
   --with-tracker-prefix=PATH
                           Prefix of Tracker installation (default: none)
   --with-dtrace           Enable dtrace probes (default: enabled if dtrace
@@ -1758,10 +1758,6 @@ Some influential environment variables:
               C compiler flags for TRACKER, overriding pkg-config
   TRACKER_LIBS
               linker flags for TRACKER, overriding pkg-config
-  TRACKER_MINER_CFLAGS
-              C compiler flags for TRACKER_MINER, overriding pkg-config
-  TRACKER_MINER_LIBS
-              linker flags for TRACKER_MINER, overriding pkg-config
   DBUS_CFLAGS C compiler flags for DBUS, overriding pkg-config
   DBUS_LIBS   linker flags for DBUS, overriding pkg-config
   DBUS_GLIB_CFLAGS
@@ -16383,10 +16379,18 @@ $as_echo "enabling netbsd-style initscript support" >&6; }
 	    ac_cv_init_dir="/etc/rc.d"
         ;;
     "debian")
-	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: enabling debian-style initscript support" >&5
-$as_echo "enabling debian-style initscript support" >&6; }
+	    as_fn_error $? "--with-init-style=debian is obsoleted. Use debian-sysv or debian-systemd." "$LINENO" 5
+        ;;
+    "debian-sysv")
+	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: enabling debian-style sysv initscript support" >&5
+$as_echo "enabling debian-style sysv initscript support" >&6; }
 	    ac_cv_init_dir="/etc/init.d"
         ;;
+    "debian-systemd")
+	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: enabling debian-style systemd support" >&5
+$as_echo "enabling debian-style systemd support" >&6; }
+	    ac_cv_init_dir="/lib/systemd/system"
+	    ;;
     "solaris")
 	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: enabling solaris-style SMF support" >&5
 $as_echo "enabling solaris-style SMF support" >&6; }
@@ -16446,12 +16450,12 @@ else
   USE_GENTOO_FALSE=
 fi
 
-     if test x$init_style = xdebian; then
-  USE_DEBIAN_TRUE=
-  USE_DEBIAN_FALSE='#'
+     if test x$init_style = xdebian-sysv; then
+  USE_DEBIAN_SYSV_TRUE=
+  USE_DEBIAN_SYSV_FALSE='#'
 else
-  USE_DEBIAN_TRUE='#'
-  USE_DEBIAN_FALSE=
+  USE_DEBIAN_SYSV_TRUE='#'
+  USE_DEBIAN_SYSV_FALSE=
 fi
 
      if test x$init_style = xsystemd || test x$init_style = xredhat-systemd || test x$init_style = xsuse-systemd; then
@@ -16460,6 +16464,14 @@ fi
 else
   USE_SYSTEMD_TRUE='#'
   USE_SYSTEMD_FALSE=
+fi
+
+     if test x$init_style = xdebian-systemd; then
+  USE_DEBIAN_SYSTEMD_TRUE=
+  USE_DEBIAN_SYSTEMD_FALSE='#'
+else
+  USE_DEBIAN_SYSTEMD_TRUE='#'
+  USE_DEBIAN_SYSTEMD_FALSE=
 fi
 
      if test x$init_style = xnone; then
@@ -19040,90 +19052,14 @@ $as_echo "yes" >&6; }
 	ac_cv_have_tracker_sparql=yes
 fi
 
-pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for TRACKER_MINER" >&5
-$as_echo_n "checking for TRACKER_MINER... " >&6; }
-
-if test -n "$TRACKER_MINER_CFLAGS"; then
-    pkg_cv_TRACKER_MINER_CFLAGS="$TRACKER_MINER_CFLAGS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"tracker-miner-\$ac_cv_tracker_pkg_version >= \$ac_cv_tracker_pkg_version_min\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "tracker-miner-$ac_cv_tracker_pkg_version >= $ac_cv_tracker_pkg_version_min") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_TRACKER_MINER_CFLAGS=`$PKG_CONFIG --cflags "tracker-miner-$ac_cv_tracker_pkg_version >= $ac_cv_tracker_pkg_version_min" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-if test -n "$TRACKER_MINER_LIBS"; then
-    pkg_cv_TRACKER_MINER_LIBS="$TRACKER_MINER_LIBS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"tracker-miner-\$ac_cv_tracker_pkg_version >= \$ac_cv_tracker_pkg_version_min\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "tracker-miner-$ac_cv_tracker_pkg_version >= $ac_cv_tracker_pkg_version_min") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_TRACKER_MINER_LIBS=`$PKG_CONFIG --libs "tracker-miner-$ac_cv_tracker_pkg_version >= $ac_cv_tracker_pkg_version_min" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-
-
-
-if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
-        _pkg_short_errors_supported=yes
-else
-        _pkg_short_errors_supported=no
-fi
-        if test $_pkg_short_errors_supported = yes; then
-	        TRACKER_MINER_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "tracker-miner-$ac_cv_tracker_pkg_version >= $ac_cv_tracker_pkg_version_min" 2>&1`
-        else
-	        TRACKER_MINER_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "tracker-miner-$ac_cv_tracker_pkg_version >= $ac_cv_tracker_pkg_version_min" 2>&1`
-        fi
-	# Put the nasty error message in config.log where it belongs
-	echo "$TRACKER_MINER_PKG_ERRORS" >&5
-
-	ac_cv_have_tracker_miner=no
-elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-	ac_cv_have_tracker_miner=no
-else
-	TRACKER_MINER_CFLAGS=$pkg_cv_TRACKER_MINER_CFLAGS
-	TRACKER_MINER_LIBS=$pkg_cv_TRACKER_MINER_LIBS
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-	ac_cv_have_tracker_miner=yes
-fi
-
-    if test x"$ac_cv_have_tracker_sparql" = x"no" -o x"$ac_cv_have_tracker_miner" = x"no" ; then
+    if test x"$ac_cv_have_tracker_sparql" = x"no" ; then
         if test x"$need_tracker_sparql" = x"yes" ; then
             as_fn_error $? "$ac_cv_tracker_pkg not found" "$LINENO" 5
         fi
     else
+        ac_cv_have_tracker=yes
 
 $as_echo "#define HAVE_TRACKER 1" >>confdefs.h
-
-
-$as_echo "#define HAVE_TRACKER_SPARQL 1" >>confdefs.h
-
-
-$as_echo "#define HAVE_TRACKER_MINER 1" >>confdefs.h
 
 
 cat >>confdefs.h <<_ACEOF
@@ -19135,20 +19071,16 @@ $as_echo "#define DBUS_DAEMON_PATH \"/bin/dbus-daemon\"" >>confdefs.h
 
     fi
 
-    if test x"$ac_cv_have_tracker_sparql" = x"yes" ; then
-       ac_cv_have_tracker=yes
-    fi
 
 
 
 
-
-     if test x"$ac_cv_have_tracker_sparql" = x"yes"; then
-  HAVE_TRACKER_SPARQL_TRUE=
-  HAVE_TRACKER_SPARQL_FALSE='#'
+     if test x"$ac_cv_have_tracker" = x"yes"; then
+  HAVE_TRACKER_TRUE=
+  HAVE_TRACKER_FALSE='#'
 else
-  HAVE_TRACKER_SPARQL_TRUE='#'
-  HAVE_TRACKER_SPARQL_FALSE=
+  HAVE_TRACKER_TRUE='#'
+  HAVE_TRACKER_FALSE=
 fi
 
 
@@ -19707,7 +19639,7 @@ fi
 
 
 
-CPPFLAGS="-I\$(top_srcdir)/include -I\$(top_builddir)/include $CPPFLAGS"
+CPPFLAGS="-I\$(top_srcdir)/include -I\$(top_builddir)/include -I\$(top_srcdir) $CPPFLAGS"
 UAMS_PATH="${uams_path}"
 
 
@@ -20068,12 +20000,16 @@ if test -z "${USE_GENTOO_TRUE}" && test -z "${USE_GENTOO_FALSE}"; then
   as_fn_error $? "conditional \"USE_GENTOO\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${USE_DEBIAN_TRUE}" && test -z "${USE_DEBIAN_FALSE}"; then
-  as_fn_error $? "conditional \"USE_DEBIAN\" was never defined.
+if test -z "${USE_DEBIAN_SYSV_TRUE}" && test -z "${USE_DEBIAN_SYSV_FALSE}"; then
+  as_fn_error $? "conditional \"USE_DEBIAN_SYSV\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${USE_SYSTEMD_TRUE}" && test -z "${USE_SYSTEMD_FALSE}"; then
   as_fn_error $? "conditional \"USE_SYSTEMD\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${USE_DEBIAN_SYSTEMD_TRUE}" && test -z "${USE_DEBIAN_SYSTEMD_FALSE}"; then
+  as_fn_error $? "conditional \"USE_DEBIAN_SYSTEMD\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${USE_UNDEF_TRUE}" && test -z "${USE_UNDEF_FALSE}"; then
@@ -20092,8 +20028,8 @@ if test -z "${USE_BUILTIN_TDB_TRUE}" && test -z "${USE_BUILTIN_TDB_FALSE}"; then
   as_fn_error $? "conditional \"USE_BUILTIN_TDB\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${HAVE_TRACKER_SPARQL_TRUE}" && test -z "${HAVE_TRACKER_SPARQL_FALSE}"; then
-  as_fn_error $? "conditional \"HAVE_TRACKER_SPARQL\" was never defined.
+if test -z "${HAVE_TRACKER_TRUE}" && test -z "${HAVE_TRACKER_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_TRACKER\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${DEVELOPER_TRUE}" && test -z "${DEVELOPER_FALSE}"; then

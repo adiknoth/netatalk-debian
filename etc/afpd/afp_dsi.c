@@ -28,6 +28,8 @@
 #include <arpa/inet.h>
 #include <setjmp.h>
 #include <time.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 #include <atalk/logger.h>
 #include <atalk/dsi.h>
@@ -337,6 +339,11 @@ static void alarm_handler(int sig _U_)
     }
 }
 
+static void child_handler(int sig _U_)
+{
+    wait(NULL);
+}
+
 /* ----------------- 
    if dsi->in_write is set attention, tickle (and close?) msg
    aren't sent. We don't care about tickle 
@@ -428,6 +435,17 @@ void afp_over_dsi_sighandlers(AFPObj *obj)
         afp_dsi_die(EXITERR_SYS);
     }
 #endif /* DEBUGGING */
+
+    /*  SIGCHLD */
+    action.sa_handler = child_handler;
+#ifdef SA_NOCLDWAIT
+/* this enhancement simplifies things for Solaris, it also improves performance */
+    action.sa_flags |= SA_NOCLDWAIT;
+#endif
+    if (sigaction(SIGCHLD, &action, NULL) < 0 ) {
+        LOG(log_error, logtype_afpd, "afp_over_dsi: sigaction: %s", strerror(errno) );
+        afp_dsi_die(EXITERR_SYS);
+    }
 }
 
 /* -------------------------------------------
@@ -474,10 +492,6 @@ void afp_over_dsi(AFPObj *obj)
     /* set TCP_NODELAY */
     int flag = 1;
     setsockopt(dsi->socket, SOL_TCP, TCP_NODELAY, &flag, sizeof(flag));
-
-    /* Initialize Spotlight */
-    if ((obj->options.flags & OPTION_SPOTLIGHT) && (obj->options.slmod_path))
-        sl_mod_load(obj);
 
     ipc_child_state(obj, DSI_RUNNING);
 
@@ -533,7 +547,7 @@ void afp_over_dsi(AFPObj *obj)
 
         if (reload_request) {
             reload_request = 0;
-            load_volumes(AFPobj, lv_none);
+            load_volumes(AFPobj, lv_force);
         }
 
         /* The first SIGINT enables debugging, the next restores the config */
@@ -627,7 +641,7 @@ void afp_over_dsi(AFPObj *obj)
                     replaycache[rc_idx].AFPcommand = function;
                     replaycache[rc_idx].result = err;
                 } else {
-                    LOG(log_error, logtype_afpd, "bad function %X", function);
+                    LOG(log_maxdebug, logtype_afpd, "bad function %X", function);
                     dsi->datalen = 0;
                     err = AFPERR_NOOP;
                 }
