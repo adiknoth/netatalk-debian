@@ -8,7 +8,7 @@ netatalk (3.1.6-1) UNRELEASED; urgency=low
   * Bump DH compat level to 9
   * Build-depend on libevent-dev
   * Rename libatalk4 to libatalk16
-  * Change init system to debian-sysv (for the time being)
+  * Change init system to debian-systemd
 
  -- Adrian Knoth <adi@drcomp.erfurt.thur.de>  Tue, 28 Jan 2014 18:10:18 +0100
 
