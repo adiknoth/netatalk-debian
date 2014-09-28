@@ -436,7 +436,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 @USE_BUILTIN_LIBEVENT_FALSE@SUBDIRS = include libatalk bin config etc contrib distrib doc man macros test
 @USE_BUILTIN_LIBEVENT_TRUE@SUBDIRS = libevent include libatalk bin config etc contrib distrib doc man macros test
-EXTRA_DIST = CONTRIBUTORS COPYRIGHT COPYING NEWS VERSION
+EXTRA_DIST = CONTRIBUTORS COPYRIGHT COPYING NEWS VERSION abigen.sh
 ACLOCAL_AMFLAGS = -I macros
 AUTOMAKE_OPTIONS = foreign
 all: config.h

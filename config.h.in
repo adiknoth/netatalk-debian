@@ -556,12 +556,6 @@
 /* Define if Tracker is available */
 #undef HAVE_TRACKER
 
-/* Define if Tracker miner library is available */
-#undef HAVE_TRACKER_MINER
-
-/* Define if Tracker SPARQL is available */
-#undef HAVE_TRACKER_SPARQL
-
 /* Whether UCS-2-INTERNAL is supported */
 #undef HAVE_UCS2INTERNAL
 

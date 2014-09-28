@@ -9,8 +9,8 @@
 #include <gio/gio.h>
 #include <atalk/talloc.h>
 #include <atalk/spotlight.h>
-#ifdef HAVE_TRACKER_SPARQL
-#include "slmod_sparql_parser.h"
+#ifdef HAVE_TRACKER
+#include "sparql_parser.h"
 #define SLQ_VAR ssp_slq
 #endif
 %}
@@ -35,6 +35,7 @@ true                                  {yylval.bval = true; return BOOL;}
 \&\&                                  return AND;
 \|\|                                  return OR;
 \=\=                                  return EQUAL;
+\=                                    return EQUAL;
 \!\=                                  return UNEQUAL;
 \<                                    return LT;
 \>                                    return GT;
