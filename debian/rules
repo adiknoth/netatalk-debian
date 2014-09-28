@@ -60,7 +60,7 @@ DEB_CONFIGURE_EXTRA_FLAGS := \
 	--disable-srvloc --enable-zeroconf	\
 	--enable-ddp				\
 	--without-libevent			\
-	--with-init-style=debian		\
+	--with-init-style=debian-sysv		\
 	--localstatedir=/var/lib		\
 	--enable-debian
 
