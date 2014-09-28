@@ -39,6 +39,7 @@ extern void afp_get_cmdline( int *ac, char ***av );
 #include <atalk/server_ipc.h>
 #include <atalk/uuid.h>
 #include <atalk/globals.h>
+#include <atalk/fce_api.h>
 #include <atalk/spotlight.h>
 #include <atalk/unix.h>
 
@@ -186,7 +187,9 @@ static int set_auth_switch(const AFPObj *obj, int expired)
         case 31:
             uam_afpserver_action(AFP_SYNCDIR, UAM_AFPSERVER_POSTAUTH, afp_syncdir, NULL);
             uam_afpserver_action(AFP_SYNCFORK, UAM_AFPSERVER_POSTAUTH, afp_syncfork, NULL);
+#ifdef HAVE_TRACKER
             uam_afpserver_action(AFP_SPOTLIGHT_PRIVATE, UAM_AFPSERVER_POSTAUTH, afp_spotlight_rpc, NULL);
+#endif
             uam_afpserver_action(AFP_ENUMERATE_EXT2, UAM_AFPSERVER_POSTAUTH, afp_enumerate_ext2, NULL);
 
         case 30:
@@ -312,6 +315,9 @@ static int login(AFPObj *obj, struct passwd *pwd, void (*logout)(void), int expi
 
     /* Some PAM module might have reset our signal handlers and timer, so we need to reestablish them */
     afp_over_dsi_sighandlers(obj);
+
+    /* Send FCE login event */
+    fce_register(obj, FCE_LOGIN, "", NULL);
 
     return( AFP_OK );
 }
@@ -831,6 +837,10 @@ int afp_logout(AFPObj *obj, char *ibuf _U_, size_t ibuflen  _U_, char *rbuf  _U_
     close_all_vol(obj);
     dsi->flags = DSI_AFP_LOGGED_OUT;
     *rbuflen = 0;
+
+    /* Send FCE login event */
+    fce_register(obj, FCE_LOGOUT, "", NULL);
+
     return AFP_OK;
 }
 

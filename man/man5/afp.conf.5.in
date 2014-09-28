@@ -2,12 +2,12 @@
 .\"     Title: afp.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.78.0 <http://docbook.sf.net/>
-.\"      Date: 05 Jun 2014
+.\"      Date: 06 Aug 2014
 .\"    Manual: @NETATALK_VERSION@
 .\"    Source: @NETATALK_VERSION@
 .\"  Language: English
 .\"
-.TH "AFP\&.CONF" "5" "05 Jun 2014" "@NETATALK_VERSION@" "@NETATALK_VERSION@"
+.TH "AFP\&.CONF" "5" "06 Aug 2014" "@NETATALK_VERSION@" "@NETATALK_VERSION@"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -552,7 +552,7 @@ Advanced permission control that deals with ACLs\&.
 .\}
 
 \fBignore\fR
-\- UNIX chmod() requests are completely ignored
+\- UNIX chmod() requests are completely ignored, use this option to allow the parent directory\*(Aqs ACL inheritance full control over new items\&.
 .RE
 .sp
 .RS 4
@@ -628,6 +628,13 @@ Default size is 8192, maximum size is 131072\&. Given value is rounded up to nea
 extmap file = \fIpath\fR \fB(G)\fR
 .RS 4
 Sets the path to the file which defines file extension type/creator mappings\&. (default is @pkgconfdir@/extmap\&.conf)\&.
+.RE
+.PP
+force xattr with sticky bit = \fIBOOLEAN\fR (default: \fIno\fR) \fB(G/V)\fR
+.RS 4
+Writing metadata xattr on directories with the sticky bit set may fail even though we may have write access to a directory, because if the sticky bit is set only the owner is allowed to write xattrs\&.
+.sp
+By enabling this option Netatalk will write the metadata xattr as root\&.
 .RE
 .PP
 guest account = \fIname\fR \fB(G)\fR
@@ -801,6 +808,107 @@ Both logtype and loglevels are case insensitive\&.
 .PP
 Netatalk includes a nifty filesystem change event mechanism where afpd processes notify interested listeners about certain filesystem event by UDP network datagrams\&.
 .PP
+The following FCE events are defined:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+file modification (\fBfmod\fR)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+file deletion (\fBfdel\fR)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+directory deletion (\fBddel\fR)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+file creation (\fBfcre\fR)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+directory creation (\fBdcre\fR)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+file move or rename (\fBfmov\fR)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+directory move or rename (\fBdmov\fR)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+login (\fBlogin\fR)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+logout (\fBlogout\fR)
+.RE
+.PP
 fce listener = \fIhost[:port]\fR \fB(G)\fR
 .RS 4
 Enables sending FCE events to the specified
@@ -809,7 +917,12 @@ Enables sending FCE events to the specified
 is 12250 if not specified\&. Specifying multiple listeners is done by having this option once for each of them\&.
 .RE
 .PP
-fce events = \fIfmod,fdel,ddel,fcre,dcre,tmsz\fR \fB(G)\fR
+fce version = \fI1|2\fR \fB(G)\fR
+.RS 4
+FCE protocol version, default is 1\&. You need version 2 for the fmov, dmov, login or logout events\&.
+.RE
+.PP
+fce events = \fIfmod,fdel,ddel,fcre,dcre,fmov,dmov,login,logout\fR \fB(G)\fR
 .RS 4
 Specifies which FCE events are active, default is
 \fIfmod,fdel,ddel,fcre,dcre\fR\&.
@@ -823,6 +936,16 @@ Coalesce FCE events\&.
 fce holdfmod = \fIseconds\fR \fB(G)\fR
 .RS 4
 This determines the time delay in seconds which is always waited if another file modification for the same file is done by a client before sending an FCE file modification event (fmod)\&. For example saving a file in Photoshop would generate multiple events by itself because the application is opening, modifying and closing a file multiple times for every "save"\&. Default: 60 seconds\&.
+.RE
+.PP
+fce ignore names = \fINAME[/NAME2/\&.\&.\&.]\fR \fB(G)\fR
+.RS 4
+Slash delimited list of filenames for which FCE events shall not be generated\&. Default: \&.DS_Store\&.
+.RE
+.PP
+fce notify script = \fIPATH\fR \fB(G)\fR
+.RS 4
+Script which will be executed for every FCE event, see contrib/shell_utils/fce_ev_script\&.shfrom the Netatalk sources for an example script\&.
 .RE
 .SS "Debug Parameters"
 .PP
@@ -1194,6 +1317,26 @@ Boolean volume options\&.
 acls = \fIBOOLEAN\fR (default: \fIyes\fR) \fB(V)\fR
 .RS 4
 Whether to flag volumes as supporting ACLs\&. If ACL support is compiled in, this is yes by default\&.
+.RE
+.PP
+case sensitive = \fIBOOLEAN\fR (default: \fIyes\fR) \fB(V)\fR
+.RS 4
+Whether to flag volumes as supporting case\-sensitive filenames\&. If the filesystem is case\-insensitive, set to no\&. However, it is not fully verified\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+In spite of being case sensitive as a matter of fact, netatalk 3\&.1\&.3 and earlier did not notify kCaseSensitive flag to the client\&. Starting with 3\&.1\&.4, it is notified correctly by default\&.
+.sp .5v
+.RE
 .RE
 .PP
 cnid dev = \fIBOOLEAN\fR (default: \fIyes\fR) \fB(V)\fR

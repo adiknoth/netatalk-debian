@@ -16,6 +16,7 @@
 
 # Makefile.am for etc/netatlk/
 
+
 VPATH = @srcdir@
 am__is_gnu_make = test -n '$(MAKEFILE_LIST)' && test -n '$(MAKELEVEL)'
 am__make_running_with_option = \
@@ -93,7 +94,7 @@ sbin_PROGRAMS = netatalk$(EXEEXT)
 @USE_BUILTIN_LIBEVENT_FALSE@am__append_4 = @LIBEVENT_LDFLAGS@ -levent
 subdir = etc/netatalk
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
-	$(top_srcdir)/depcomp
+	$(top_srcdir)/depcomp $(noinst_HEADERS)
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
 	$(top_srcdir)/macros/ax_pthread.m4 \
@@ -128,7 +129,9 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(sbindir)"
 PROGRAMS = $(sbin_PROGRAMS)
-am_netatalk_OBJECTS = netatalk-netatalk.$(OBJEXT)
+am_netatalk_OBJECTS = netatalk-netatalk.$(OBJEXT) \
+	netatalk-afp_avahi.$(OBJEXT) netatalk-afp_mdns.$(OBJEXT) \
+	netatalk-afp_zeroconf.$(OBJEXT)
 netatalk_OBJECTS = $(am_netatalk_OBJECTS)
 netatalk_DEPENDENCIES = $(top_builddir)/libatalk/libatalk.la \
 	$(am__append_2)
@@ -180,6 +183,7 @@ am__can_run_installinfo = \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
+HEADERS = $(noinst_HEADERS)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 # Read a list of newline-separated strings from the standard input,
 # and print each of them once, without duplicates.  Input order is
@@ -415,15 +419,16 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 pkgconfdir = @PKGCONFDIR@
-netatalk_SOURCES = netatalk.c
-netatalk_CFLAGS = -D_PATH_CONFDIR=\"$(pkgconfdir)/\" \
+netatalk_SOURCES = netatalk.c afp_avahi.c afp_mdns.c afp_zeroconf.c
+netatalk_CFLAGS = @ZEROCONF_CFLAGS@ -D_PATH_CONFDIR=\"$(pkgconfdir)/\" \
 	-D_PATH_STATEDIR='"$(localstatedir)/netatalk/"' \
 	-D_PATH_AFPD=\"$(sbindir)/afpd\" \
 	-D_PATH_CNID_METAD=\"$(sbindir)/cnid_metad\" $(am__append_1) \
 	$(am__append_3)
-netatalk_LDADD = @MYSQL_LIBS@ $(top_builddir)/libatalk/libatalk.la \
-	$(am__append_2)
+netatalk_LDADD = @MYSQL_LIBS@ @ZEROCONF_LIBS@ \
+	$(top_builddir)/libatalk/libatalk.la $(am__append_2)
 netatalk_LDFLAGS = $(am__append_4)
+noinst_HEADERS = afp_zeroconf.h afp_avahi.h afp_mdns.h
 all: all-am
 
 .SUFFIXES:
@@ -518,6 +523,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netatalk-afp_avahi.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netatalk-afp_mdns.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netatalk-afp_zeroconf.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netatalk-netatalk.Po@am__quote@
 
 .c.o:
@@ -554,6 +562,48 @@ netatalk-netatalk.obj: netatalk.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='netatalk.c' object='netatalk-netatalk.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netatalk_CFLAGS) $(CFLAGS) -c -o netatalk-netatalk.obj `if test -f 'netatalk.c'; then $(CYGPATH_W) 'netatalk.c'; else $(CYGPATH_W) '$(srcdir)/netatalk.c'; fi`
+
+netatalk-afp_avahi.o: afp_avahi.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netatalk_CFLAGS) $(CFLAGS) -MT netatalk-afp_avahi.o -MD -MP -MF $(DEPDIR)/netatalk-afp_avahi.Tpo -c -o netatalk-afp_avahi.o `test -f 'afp_avahi.c' || echo '$(srcdir)/'`afp_avahi.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netatalk-afp_avahi.Tpo $(DEPDIR)/netatalk-afp_avahi.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='afp_avahi.c' object='netatalk-afp_avahi.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netatalk_CFLAGS) $(CFLAGS) -c -o netatalk-afp_avahi.o `test -f 'afp_avahi.c' || echo '$(srcdir)/'`afp_avahi.c
+
+netatalk-afp_avahi.obj: afp_avahi.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netatalk_CFLAGS) $(CFLAGS) -MT netatalk-afp_avahi.obj -MD -MP -MF $(DEPDIR)/netatalk-afp_avahi.Tpo -c -o netatalk-afp_avahi.obj `if test -f 'afp_avahi.c'; then $(CYGPATH_W) 'afp_avahi.c'; else $(CYGPATH_W) '$(srcdir)/afp_avahi.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netatalk-afp_avahi.Tpo $(DEPDIR)/netatalk-afp_avahi.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='afp_avahi.c' object='netatalk-afp_avahi.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netatalk_CFLAGS) $(CFLAGS) -c -o netatalk-afp_avahi.obj `if test -f 'afp_avahi.c'; then $(CYGPATH_W) 'afp_avahi.c'; else $(CYGPATH_W) '$(srcdir)/afp_avahi.c'; fi`
+
+netatalk-afp_mdns.o: afp_mdns.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netatalk_CFLAGS) $(CFLAGS) -MT netatalk-afp_mdns.o -MD -MP -MF $(DEPDIR)/netatalk-afp_mdns.Tpo -c -o netatalk-afp_mdns.o `test -f 'afp_mdns.c' || echo '$(srcdir)/'`afp_mdns.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netatalk-afp_mdns.Tpo $(DEPDIR)/netatalk-afp_mdns.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='afp_mdns.c' object='netatalk-afp_mdns.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netatalk_CFLAGS) $(CFLAGS) -c -o netatalk-afp_mdns.o `test -f 'afp_mdns.c' || echo '$(srcdir)/'`afp_mdns.c
+
+netatalk-afp_mdns.obj: afp_mdns.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netatalk_CFLAGS) $(CFLAGS) -MT netatalk-afp_mdns.obj -MD -MP -MF $(DEPDIR)/netatalk-afp_mdns.Tpo -c -o netatalk-afp_mdns.obj `if test -f 'afp_mdns.c'; then $(CYGPATH_W) 'afp_mdns.c'; else $(CYGPATH_W) '$(srcdir)/afp_mdns.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netatalk-afp_mdns.Tpo $(DEPDIR)/netatalk-afp_mdns.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='afp_mdns.c' object='netatalk-afp_mdns.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netatalk_CFLAGS) $(CFLAGS) -c -o netatalk-afp_mdns.obj `if test -f 'afp_mdns.c'; then $(CYGPATH_W) 'afp_mdns.c'; else $(CYGPATH_W) '$(srcdir)/afp_mdns.c'; fi`
+
+netatalk-afp_zeroconf.o: afp_zeroconf.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netatalk_CFLAGS) $(CFLAGS) -MT netatalk-afp_zeroconf.o -MD -MP -MF $(DEPDIR)/netatalk-afp_zeroconf.Tpo -c -o netatalk-afp_zeroconf.o `test -f 'afp_zeroconf.c' || echo '$(srcdir)/'`afp_zeroconf.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netatalk-afp_zeroconf.Tpo $(DEPDIR)/netatalk-afp_zeroconf.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='afp_zeroconf.c' object='netatalk-afp_zeroconf.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netatalk_CFLAGS) $(CFLAGS) -c -o netatalk-afp_zeroconf.o `test -f 'afp_zeroconf.c' || echo '$(srcdir)/'`afp_zeroconf.c
+
+netatalk-afp_zeroconf.obj: afp_zeroconf.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netatalk_CFLAGS) $(CFLAGS) -MT netatalk-afp_zeroconf.obj -MD -MP -MF $(DEPDIR)/netatalk-afp_zeroconf.Tpo -c -o netatalk-afp_zeroconf.obj `if test -f 'afp_zeroconf.c'; then $(CYGPATH_W) 'afp_zeroconf.c'; else $(CYGPATH_W) '$(srcdir)/afp_zeroconf.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netatalk-afp_zeroconf.Tpo $(DEPDIR)/netatalk-afp_zeroconf.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='afp_zeroconf.c' object='netatalk-afp_zeroconf.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netatalk_CFLAGS) $(CFLAGS) -c -o netatalk-afp_zeroconf.obj `if test -f 'afp_zeroconf.c'; then $(CYGPATH_W) 'afp_zeroconf.c'; else $(CYGPATH_W) '$(srcdir)/afp_zeroconf.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -645,7 +695,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS)
+all-am: Makefile $(PROGRAMS) $(HEADERS)
 installdirs:
 	for dir in "$(DESTDIR)$(sbindir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \

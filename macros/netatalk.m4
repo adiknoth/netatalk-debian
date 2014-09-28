@@ -148,7 +148,7 @@ AC_DEFUN([AC_NETATALK_SPOTLIGHT], [
 
     dnl Tracker SPARQL
     AC_ARG_WITH([tracker-pkgconfig-version],
-      [AS_HELP_STRING([--with-tracker-pkgconfig-version=VERSION],[Version suffix of the Tracker SPARQL and tracker-miner pkg in pkg-config (default: 0.12)])],
+      [AS_HELP_STRING([--with-tracker-pkgconfig-version=VERSION],[Version suffix of the Tracker SPARQL pkg-config (default: 0.12)])],
       [ac_cv_tracker_pkg_version=$withval],
       [ac_cv_tracker_pkg_version=$ac_cv_tracker_pkg_version_default]
     )
@@ -161,29 +161,23 @@ AC_DEFUN([AC_NETATALK_SPOTLIGHT], [
 
     AC_ARG_VAR([PKG_CONFIG_PATH], [Path to additional pkg-config packages])
     PKG_CHECK_MODULES([TRACKER], [tracker-sparql-$ac_cv_tracker_pkg_version >= $ac_cv_tracker_pkg_version_min], [ac_cv_have_tracker_sparql=yes], [ac_cv_have_tracker_sparql=no])
-    PKG_CHECK_MODULES([TRACKER_MINER], [tracker-miner-$ac_cv_tracker_pkg_version >= $ac_cv_tracker_pkg_version_min], [ac_cv_have_tracker_miner=yes], [ac_cv_have_tracker_miner=no])
 
-    if test x"$ac_cv_have_tracker_sparql" = x"no" -o x"$ac_cv_have_tracker_miner" = x"no" ; then
+    if test x"$ac_cv_have_tracker_sparql" = x"no" ; then
         if test x"$need_tracker_sparql" = x"yes" ; then
             AC_MSG_ERROR([$ac_cv_tracker_pkg not found])
         fi
     else
+        ac_cv_have_tracker=yes
         AC_DEFINE(HAVE_TRACKER, 1, [Define if Tracker is available])
-        AC_DEFINE(HAVE_TRACKER_SPARQL, 1, [Define if Tracker SPARQL is available])
-        AC_DEFINE(HAVE_TRACKER_MINER, 1, [Define if Tracker miner library is available])
         AC_DEFINE_UNQUOTED(TRACKER_PREFIX, ["$ac_cv_tracker_prefix"], [Path to Tracker])
         AC_DEFINE([DBUS_DAEMON_PATH], ["/bin/dbus-daemon"], [Path to dbus-daemon])
-    fi
-
-    if test x"$ac_cv_have_tracker_sparql" = x"yes" ; then
-       ac_cv_have_tracker=yes
     fi
 
     AC_SUBST(TRACKER_CFLAGS)
     AC_SUBST(TRACKER_LIBS)
     AC_SUBST(TRACKER_MINER_CFLAGS)
     AC_SUBST(TRACKER_MINER_LIBS)
-    AM_CONDITIONAL(HAVE_TRACKER_SPARQL, [test x"$ac_cv_have_tracker_sparql" = x"yes"])
+    AM_CONDITIONAL(HAVE_TRACKER, [test x"$ac_cv_have_tracker" = x"yes"])
 ])
 
 dnl Whether to disable bundled libevent
@@ -486,7 +480,7 @@ AC_ARG_ENABLE(shell-check,
 dnl Check for optional initscript install
 AC_DEFUN([AC_NETATALK_INIT_STYLE], [
     AC_ARG_WITH(init-style,
-                [  --with-init-style       use OS specific init config [[redhat-sysv|redhat-systemd|suse-sysv|suse-systemd|gentoo|netbsd|debian|solaris|systemd]]],
+                [  --with-init-style       use OS specific init config [[redhat-sysv|redhat-systemd|suse-sysv|suse-systemd|gentoo|netbsd|debian-sysv|debian-systemd|solaris|systemd]]],
                 init_style="$withval", init_style=none
     )
     case "$init_style" in 
@@ -521,9 +515,16 @@ AC_DEFUN([AC_NETATALK_INIT_STYLE], [
 	    ac_cv_init_dir="/etc/rc.d"
         ;;
     "debian")
-	    AC_MSG_RESULT([enabling debian-style initscript support])
+	    AC_MSG_ERROR([--with-init-style=debian is obsoleted. Use debian-sysv or debian-systemd.])
+        ;;
+    "debian-sysv")
+	    AC_MSG_RESULT([enabling debian-style sysv initscript support])
 	    ac_cv_init_dir="/etc/init.d"
         ;;
+    "debian-systemd")
+	    AC_MSG_RESULT([enabling debian-style systemd support])
+	    ac_cv_init_dir="/lib/systemd/system"
+	    ;;
     "solaris")
 	    AC_MSG_RESULT([enabling solaris-style SMF support])
 	    ac_cv_init_dir="/lib/svc/manifest/network/"
@@ -545,8 +546,9 @@ AC_DEFUN([AC_NETATALK_INIT_STYLE], [
     AM_CONDITIONAL(USE_SUSE_SYSV, test x$init_style = xsuse-sysv)
     AM_CONDITIONAL(USE_SOLARIS, test x$init_style = xsolaris)
     AM_CONDITIONAL(USE_GENTOO, test x$init_style = xgentoo)
-    AM_CONDITIONAL(USE_DEBIAN, test x$init_style = xdebian)
+    AM_CONDITIONAL(USE_DEBIAN_SYSV, test x$init_style = xdebian-sysv)
     AM_CONDITIONAL(USE_SYSTEMD, test x$init_style = xsystemd || test x$init_style = xredhat-systemd || test x$init_style = xsuse-systemd)
+    AM_CONDITIONAL(USE_DEBIAN_SYSTEMD, test x$init_style = xdebian-systemd)
     AM_CONDITIONAL(USE_UNDEF, test x$init_style = xnone)
 
     AC_ARG_WITH(init-dir,

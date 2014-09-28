@@ -816,7 +816,7 @@ uninstall-local:
 	rm -f $(DESTDIR)$(pkgconfdir)/dbus-session.conf
 	rm -f $(DESTDIR)$(localstatedir)/netatalk/README
 	rm -f $(DESTDIR)$(localstatedir)/netatalk/CNID/README
-@USE_DEBIAN_TRUE@	rm -f $(DESTDIR)/etc/default/netatalk
+@USE_DEBIAN_SYSV_TRUE@	rm -f $(DESTDIR)/etc/default/netatalk
 
 install-config-files: $(CONFFILES) $(GENFILES)
 	$(mkinstalldirs) $(DESTDIR)$(pkgconfdir)

@@ -548,6 +548,36 @@ static int getoption_bool(const dictionary *conf, const char *vol, const char *o
 }
 
 /*!
+ * Get boolean option from volume, default section or global - use default value if not set
+ *
+ * Order of precedence: volume -> default section -> global -> default value
+ *
+ * "vdg" means volume, default section or global
+ *
+ * @param conf    (r) config handle
+ * @param vol     (r) volume name (must be section name ie wo vars expanded)
+ * @param opt     (r) option
+ * @param defsec  (r) if "option" is not found in "vol", try to find it in section "defsec"
+ * @param defval  (r) if neither "vol" nor "defsec" contain "opt" return "defval"
+ *
+ * @returns       const option string from "vol" or "defsec", or "defval" if not found
+ */
+static int vdgoption_bool(const dictionary *conf, const char *vol, const char *opt, const char *defsec, int defval)
+{
+    int result;
+
+    result = atalk_iniparser_getboolean(conf, vol, opt, -1);
+
+    if ((result == -1) && (defsec != NULL))
+        result = atalk_iniparser_getboolean(conf, defsec, opt, -1);
+
+    if (result == -1)
+        result = atalk_iniparser_getboolean(conf, INISEC_GLOBAL, opt, defval);
+
+    return result;
+}
+
+/*!
  * Create volume struct
  *
  * @param obj      (r) handle
@@ -773,6 +803,8 @@ static struct vol *creatvol(AFPObj *obj,
         else if (strcasecmp(val, "xlateupper") == 0)
             volume->v_casefold = AFPVOL_ULOWERMUPPER;
     }
+    if (getoption_bool(obj->iniconfig, section, "case sensitive", preset, 1))
+        volume->v_casefold |= AFPVOL_CASESENS;
 
     if (getoption_bool(obj->iniconfig, section, "read only", preset, 0))
         volume->v_flags |= AFPVOL_RO;
@@ -811,6 +843,8 @@ static struct vol *creatvol(AFPObj *obj,
         volume->v_preexec_close = 1;
     if (getoption_bool(obj->iniconfig, section, "root preexec close", preset, 0))
         volume->v_root_preexec_close = 1;
+    if (vdgoption_bool(obj->iniconfig, section, "force xattr with sticky bit", preset, 0))
+        volume->v_flags |= AFPVOL_FORCE_STICKY_XATTR;
 
     if ((val = getoption(obj->iniconfig, section, "ignored attributes", preset, obj->options.ignored_attr))) {
         if (strstr(val, "all")) {
@@ -865,6 +899,8 @@ static struct vol *creatvol(AFPObj *obj,
         volume->v_ad_options |= ADVOL_FOLLO_SYML;
     if ((volume->v_flags & AFPVOL_RO))
         volume->v_ad_options |= ADVOL_RO;
+    if ((volume->v_flags & AFPVOL_FORCE_STICKY_XATTR))
+        volume->v_ad_options |= ADVOL_FORCE_STICKY_XATTR;
 
     /* Mac to Unix conversion flags*/
     if ((volume->v_flags & AFPVOL_EILSEQ))
@@ -1013,14 +1049,45 @@ EC_CLEANUP:
 
 /* ----------------------
  */
-static int volfile_changed(struct afp_options *p)
+static int volfile_changed(AFPObj *obj)
 {
     struct stat st;
+    struct afp_options *p = &obj->options;
+    int result;
+    const char *includefile;
 
-    if (!stat(p->configfile, &st) && st.st_mtime > p->volfile.mtime) {
+    result = stat(p->configfile, &st);
+    if (result != 0) {
+        LOG(log_debug, logtype_afpd, "where is the config file %s ?",
+            p->configfile);
+        /*
+         * We return 1 which means "config file changed". The caller
+         * will re-read config and fail too which is what we want.
+         */
+        return 1;
+    }
+
+    if (st.st_mtime > p->volfile.mtime) {
         p->volfile.mtime = st.st_mtime;
         return 1;
     }
+
+    includefile = atalk_iniparser_getstring(obj->iniconfig, INISEC_GLOBAL,
+                                            "include", NULL);
+    if (includefile) {
+        result = stat(includefile, &st);
+        if (result != 0) {
+            LOG(log_debug, logtype_afpd, "where is the include file %s ?",
+                includefile);
+            return 1;
+        }
+
+        if (st.st_mtime > p->includefile.mtime) {
+            p->includefile.mtime = st.st_mtime;
+            return 1;
+        }
+    }
+
     return 0;
 }
 
@@ -1396,6 +1463,7 @@ int load_volumes(AFPObj *obj, lv_flags_t flags)
     struct stat         st;
     int                 retries = 0;
     struct vol         *vol;
+    char               *includefile;
 
     LOG(log_debug, logtype_afpd, "load_volumes: BEGIN");
 
@@ -1416,7 +1484,7 @@ int load_volumes(AFPObj *obj, lv_flags_t flags)
     }
 
     if (Volumes) {
-        if (!volfile_changed(&obj->options))
+        if (!(flags & lv_force) && !volfile_changed(obj))
             goto EC_CLEANUP;
         have_uservol = 0;
         for (vol = Volumes; vol; vol = vol->v_next) {
@@ -1435,6 +1503,13 @@ int load_volumes(AFPObj *obj, lv_flags_t flags)
         LOG(log_debug, logtype_afpd, "load_volumes: no volumes yet");
         EC_ZERO_LOG( lstat(obj->options.configfile, &st) );
         obj->options.volfile.mtime = st.st_mtime;
+
+        includefile = atalk_iniparser_getstring(obj->iniconfig, INISEC_GLOBAL,
+                                                "include", NULL);
+        if (includefile) {
+            EC_ZERO_LOG( stat(includefile, &st) );
+            obj->options.includefile.mtime = st.st_mtime;
+        }
     }
 
     /* try putting a read lock on the volume file twice, sleep 1 second if first attempt fails */
@@ -1462,7 +1537,7 @@ int load_volumes(AFPObj *obj, lv_flags_t flags)
 
     EC_ZERO_LOG( readvolfile(obj, pwresult) );
 
-    struct vol *p, *prevvol;
+    struct vol *nextvol, *prevvol;
 
     vol = Volumes;
     prevvol = NULL;
@@ -1470,17 +1545,18 @@ int load_volumes(AFPObj *obj, lv_flags_t flags)
     while (vol) {
         if (vol->v_deleted && !(vol->v_flags & AFPVOL_OPEN)) {
             LOG(log_debug, logtype_afpd, "load_volumes: deleted: %s", vol->v_localname);
-            if (prevvol)
+            nextvol = vol->v_next;
+            if (prevvol) {
                 prevvol->v_next = vol->v_next;
-            else
-                Volumes = NULL;
-            p = vol->v_next;
+            } else {
+                Volumes = nextvol;
+            }
             volume_free(vol);
-            vol = p;
-        } else {
-            prevvol = vol;
-            vol = vol->v_next;
+            vol = nextvol;
+            continue;
         }
+        prevvol = vol;
+        vol = vol->v_next;
     }
 
 EC_CLEANUP:
@@ -1788,9 +1864,6 @@ int afp_config_parse(AFPObj *AFPObj, char *processname)
     options->configfile  = AFPObj->cmdlineconfigfile ? strdup(AFPObj->cmdlineconfigfile) : strdup(_PATH_CONFDIR "afp.conf");
     options->sigconffile = strdup(_PATH_STATEDIR "afp_signature.conf");
     options->uuidconf    = strdup(_PATH_STATEDIR "afp_voluuid.conf");
-#ifdef HAVE_TRACKER_SPARQL
-    options->slmod_path  = strdup(_PATH_AFPDUAMPATH "slmod_sparql.so");
-#endif
     options->flags       = OPTION_UUID | AFPObj->cmdlineflags;
     
     if ((config = atalk_iniparser_load(AFPObj->options.configfile)) == NULL)
@@ -2080,9 +2153,6 @@ void afp_config_free(AFPObj *obj)
         CONFIG_ARG_FREE(obj->options.fqdn);
     if (obj->options.ignored_attr)
         CONFIG_ARG_FREE(obj->options.ignored_attr);
-    if (obj->options.slmod_path)
-        CONFIG_ARG_FREE(obj->options.slmod_path);
-
     if (obj->options.unixcodepage)
         CONFIG_ARG_FREE(obj->options.unixcodepage);
     if (obj->options.maccodepage)

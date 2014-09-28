@@ -42,6 +42,7 @@
 #include <atalk/netatalk_conf.h>
 #include <atalk/bstrlib.h>
 #include <atalk/bstradd.h>
+#include "afp_zeroconf.h"
 
 #include <event2/event.h>
 
@@ -173,7 +174,7 @@ static void sigterm_cb(evutil_socket_t fd, short what, void *arg)
     event_del(sigquit_ev);
     event_del(timer_ev);
 
-#ifdef HAVE_TRACKER_SPARQL
+#ifdef HAVE_TRACKER
     system("tracker-control -t");
 #endif
     kill_childs(SIGTERM, &afpd_pid, &cnid_metad_pid, &dbus_pid, NULL);
@@ -183,7 +184,7 @@ static void sigterm_cb(evutil_socket_t fd, short what, void *arg)
 static void sigquit_cb(evutil_socket_t fd, short what, void *arg)
 {
     LOG(log_note, logtype_afpd, "Exiting on SIGQUIT");
-#ifdef HAVE_TRACKER_SPARQL
+#ifdef HAVE_TRACKER
     system("tracker-control -t");
 #endif
     kill_childs(SIGQUIT, &afpd_pid, &cnid_metad_pid, &dbus_pid, NULL);
@@ -193,6 +194,14 @@ static void sigquit_cb(evutil_socket_t fd, short what, void *arg)
 static void sighup_cb(evutil_socket_t fd, short what, void *arg)
 {
     LOG(log_note, logtype_afpd, "Received SIGHUP, sending all processes signal to reload config");
+
+    if (!(obj.options.flags & OPTION_NOZEROCONF)) {
+        zeroconf_deregister();
+        load_volumes(&obj, lv_all | lv_force);
+        zeroconf_register(&obj);
+        LOG(log_note, logtype_default, "Re-registered with Zeroconf");
+    }
+
     kill_childs(SIGHUP, &afpd_pid, &cnid_metad_pid, NULL);
 }
 
@@ -420,7 +429,7 @@ int main(int argc, char **argv)
 
         if (atalk_iniparser_getboolean(obj.iniconfig, INISEC_GLOBAL, "start dbus", 1)) {
             dbus_path = atalk_iniparser_getstring(obj.iniconfig, INISEC_GLOBAL, "dbus daemon", DBUS_DAEMON_PATH);
-            LOG(log_debug, logtype_default, "DBUS: '%s'", dbus_path);
+            LOG(log_note, logtype_default, "Starting dbus: %s", dbus_path);
             if ((dbus_pid = run_process(dbus_path, "--config-file=" _PATH_CONFDIR "dbus-session.conf", NULL)) == NETATALK_SRV_ERROR) {
                 LOG(log_error, logtype_default, "Error starting '%s'", dbus_path);
                 netatalk_exit(EXITERR_CONF);
@@ -433,11 +442,17 @@ int main(int argc, char **argv)
         set_sl_volumes();
 
         if (atalk_iniparser_getboolean(obj.iniconfig, INISEC_GLOBAL, "start tracker", 1)) {
+            LOG(log_note, logtype_default, "Starting Tracker");
             system(TRACKER_PREFIX "/bin/tracker-control -s");
         }
     }
 #endif
 
+    /* Now register with zeroconf, we also need the volumes for that */
+    if (! (obj.options.flags & OPTION_NOZEROCONF)) {
+        zeroconf_register(&obj);
+        LOG(log_note, logtype_default, "Registered with Zeroconf");
+    }
 
     /* run the event loop */
     ret = event_base_dispatch(base);
