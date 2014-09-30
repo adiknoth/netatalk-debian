@@ -84,8 +84,11 @@ target_triplet = @target@
 TESTS = test.sh test$(EXEEXT)
 check_PROGRAMS = test$(EXEEXT)
 @HAVE_ACLS_TRUE@am__append_1 = $(top_srcdir)/etc/afpd/acls.c
-@WITH_DTRACE_TRUE@am__append_2 = afp_dtrace.o @DTRACE_LIBS@
-@WITH_DTRACE_TRUE@am__append_3 = afp_dtrace.o
+@HAVE_TRACKER_TRUE@am__append_2 = $(top_srcdir)/etc/afpd/spotlight.c
+@HAVE_TRACKER_TRUE@am__append_3 = $(top_builddir)/etc/spotlight/libspotlight.la
+@HAVE_TRACKER_TRUE@am__append_4 = @TRACKER_CFLAGS@
+@WITH_DTRACE_TRUE@am__append_5 = afp_dtrace.o @DTRACE_LIBS@
+@WITH_DTRACE_TRUE@am__append_6 = afp_dtrace.o
 subdir = test/afpd
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/depcomp $(noinst_HEADERS) \
@@ -123,15 +126,12 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__test_SOURCES_DIST = test.c subtests.c afpfunc_helpers.c \
-	$(top_srcdir)/etc/afpd/afp_avahi.c \
 	$(top_srcdir)/etc/afpd/afp_config.c \
 	$(top_srcdir)/etc/afpd/afp_dsi.c \
-	$(top_srcdir)/etc/afpd/afp_mdns.c \
 	$(top_srcdir)/etc/afpd/afp_options.c \
 	$(top_srcdir)/etc/afpd/afp_util.c \
 	$(top_srcdir)/etc/afpd/afprun.c $(top_srcdir)/etc/afpd/appl.c \
 	$(top_srcdir)/etc/afpd/auth.c \
-	$(top_srcdir)/etc/afpd/afp_zeroconf.c \
 	$(top_srcdir)/etc/afpd/catsearch.c \
 	$(top_srcdir)/etc/afpd/desktop.c \
 	$(top_srcdir)/etc/afpd/dircache.c \
@@ -147,34 +147,33 @@ am__test_SOURCES_DIST = test.c subtests.c afpfunc_helpers.c \
 	$(top_srcdir)/etc/afpd/nfsquota.c \
 	$(top_srcdir)/etc/afpd/ofork.c $(top_srcdir)/etc/afpd/quota.c \
 	$(top_srcdir)/etc/afpd/status.c \
-	$(top_srcdir)/etc/afpd/spotlight.c \
 	$(top_srcdir)/etc/afpd/spotlight_marshalling.c \
 	$(top_srcdir)/etc/afpd/switch.c $(top_srcdir)/etc/afpd/uam.c \
 	$(top_srcdir)/etc/afpd/unix.c $(top_srcdir)/etc/afpd/volume.c \
-	$(top_srcdir)/etc/afpd/acls.c
+	$(top_srcdir)/etc/afpd/acls.c \
+	$(top_srcdir)/etc/afpd/spotlight.c
 @HAVE_ACLS_TRUE@am__objects_1 = test-acls.$(OBJEXT)
+@HAVE_TRACKER_TRUE@am__objects_2 = test-spotlight.$(OBJEXT)
 am_test_OBJECTS = test-test.$(OBJEXT) test-subtests.$(OBJEXT) \
-	test-afpfunc_helpers.$(OBJEXT) test-afp_avahi.$(OBJEXT) \
-	test-afp_config.$(OBJEXT) test-afp_dsi.$(OBJEXT) \
-	test-afp_mdns.$(OBJEXT) test-afp_options.$(OBJEXT) \
+	test-afpfunc_helpers.$(OBJEXT) test-afp_config.$(OBJEXT) \
+	test-afp_dsi.$(OBJEXT) test-afp_options.$(OBJEXT) \
 	test-afp_util.$(OBJEXT) test-afprun.$(OBJEXT) \
 	test-appl.$(OBJEXT) test-auth.$(OBJEXT) \
-	test-afp_zeroconf.$(OBJEXT) test-catsearch.$(OBJEXT) \
-	test-desktop.$(OBJEXT) test-dircache.$(OBJEXT) \
-	test-directory.$(OBJEXT) test-enumerate.$(OBJEXT) \
-	test-extattrs.$(OBJEXT) test-fce_api.$(OBJEXT) \
-	test-fce_util.$(OBJEXT) test-file.$(OBJEXT) \
-	test-filedir.$(OBJEXT) test-fork.$(OBJEXT) test-hash.$(OBJEXT) \
-	test-mangle.$(OBJEXT) test-messages.$(OBJEXT) \
-	test-nfsquota.$(OBJEXT) test-ofork.$(OBJEXT) \
-	test-quota.$(OBJEXT) test-status.$(OBJEXT) \
-	test-spotlight.$(OBJEXT) test-spotlight_marshalling.$(OBJEXT) \
+	test-catsearch.$(OBJEXT) test-desktop.$(OBJEXT) \
+	test-dircache.$(OBJEXT) test-directory.$(OBJEXT) \
+	test-enumerate.$(OBJEXT) test-extattrs.$(OBJEXT) \
+	test-fce_api.$(OBJEXT) test-fce_util.$(OBJEXT) \
+	test-file.$(OBJEXT) test-filedir.$(OBJEXT) test-fork.$(OBJEXT) \
+	test-hash.$(OBJEXT) test-mangle.$(OBJEXT) \
+	test-messages.$(OBJEXT) test-nfsquota.$(OBJEXT) \
+	test-ofork.$(OBJEXT) test-quota.$(OBJEXT) \
+	test-status.$(OBJEXT) test-spotlight_marshalling.$(OBJEXT) \
 	test-switch.$(OBJEXT) test-uam.$(OBJEXT) test-unix.$(OBJEXT) \
-	test-volume.$(OBJEXT) $(am__objects_1)
+	test-volume.$(OBJEXT) $(am__objects_1) $(am__objects_2)
 test_OBJECTS = $(am_test_OBJECTS)
 @WITH_DTRACE_TRUE@am__DEPENDENCIES_1 = afp_dtrace.o
 test_DEPENDENCIES = $(top_builddir)/libatalk/libatalk.la \
-	$(am__DEPENDENCIES_1)
+	$(am__append_3) $(am__DEPENDENCIES_1)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -665,17 +664,14 @@ top_srcdir = @top_srcdir@
 pkgconfdir = @PKGCONFDIR@
 noinst_HEADERS = test.h subtests.h afpfunc_helpers.h
 EXTRA_DIST = test.sh
-CLEANFILES = test.default test.conf $(am__append_3)
+CLEANFILES = test.default test.conf $(am__append_6)
 test_SOURCES = test.c subtests.c afpfunc_helpers.c \
-	$(top_srcdir)/etc/afpd/afp_avahi.c \
 	$(top_srcdir)/etc/afpd/afp_config.c \
 	$(top_srcdir)/etc/afpd/afp_dsi.c \
-	$(top_srcdir)/etc/afpd/afp_mdns.c \
 	$(top_srcdir)/etc/afpd/afp_options.c \
 	$(top_srcdir)/etc/afpd/afp_util.c \
 	$(top_srcdir)/etc/afpd/afprun.c $(top_srcdir)/etc/afpd/appl.c \
 	$(top_srcdir)/etc/afpd/auth.c \
-	$(top_srcdir)/etc/afpd/afp_zeroconf.c \
 	$(top_srcdir)/etc/afpd/catsearch.c \
 	$(top_srcdir)/etc/afpd/desktop.c \
 	$(top_srcdir)/etc/afpd/dircache.c \
@@ -691,27 +687,22 @@ test_SOURCES = test.c subtests.c afpfunc_helpers.c \
 	$(top_srcdir)/etc/afpd/nfsquota.c \
 	$(top_srcdir)/etc/afpd/ofork.c $(top_srcdir)/etc/afpd/quota.c \
 	$(top_srcdir)/etc/afpd/status.c \
-	$(top_srcdir)/etc/afpd/spotlight.c \
 	$(top_srcdir)/etc/afpd/spotlight_marshalling.c \
 	$(top_srcdir)/etc/afpd/switch.c $(top_srcdir)/etc/afpd/uam.c \
 	$(top_srcdir)/etc/afpd/unix.c $(top_srcdir)/etc/afpd/volume.c \
-	$(am__append_1)
-test_CFLAGS = \
-	-I$(top_srcdir)/etc/afpd \
-	-I$(top_srcdir)/include \
-	-I$(top_srcdir)/sys \
-	@ZEROCONF_CFLAGS@ @GSSAPI_CFLAGS@ @KRB5_CFLAGS@\
-	-DAPPLCNAME \
+	$(am__append_1) $(am__append_2)
+test_CFLAGS = -I$(top_srcdir)/etc/afpd -I$(top_srcdir)/include \
+	-I$(top_srcdir)/sys @GSSAPI_CFLAGS@ @KRB5_CFLAGS@ -DAPPLCNAME \
 	-DSERVERTEXT=\"$(SERVERTEXT)/\" \
 	-D_PATH_AFPDPWFILE=\"$(pkgconfdir)/afppasswd\" \
 	-D_PATH_AFPDUAMPATH=\"$(UAMS_PATH)/\" \
 	-D_PATH_CONFDIR=\"$(pkgconfdir)/\" \
-	-D_PATH_STATEDIR='"$(localstatedir)/netatalk/"'
-
+	-D_PATH_STATEDIR='"$(localstatedir)/netatalk/"' \
+	$(am__append_4)
 test_LDADD = $(top_builddir)/libatalk/libatalk.la @LIBGCRYPT_LIBS@ \
-	@QUOTA_LIBS@ @WRAP_LIBS@ @LIBADD_DL@ @ACL_LIBS@ \
-	@ZEROCONF_LIBS@ @PTHREAD_LIBS@ @GSSAPI_LIBS@ @KRB5_LIBS@ \
-	@MYSQL_LIBS@ $(am__append_2)
+	@QUOTA_LIBS@ @WRAP_LIBS@ @LIBADD_DL@ @ACL_LIBS@ @PTHREAD_LIBS@ \
+	@GSSAPI_LIBS@ @KRB5_LIBS@ @MYSQL_LIBS@ $(am__append_3) \
+	$(am__append_5)
 test_LDFLAGS = -export-dynamic
 @WITH_DTRACE_TRUE@DTRACE_OBJ = test-afp_dsi.o test-fork.o test-appl.o test-catsearch.o test-directory.o test-enumerate.o test-file.o test-filedir.o
 all: all-am
@@ -769,13 +760,10 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test-acls.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test-afp_avahi.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test-afp_config.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test-afp_dsi.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test-afp_mdns.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test-afp_options.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test-afp_util.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test-afp_zeroconf.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test-afpfunc_helpers.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test-afprun.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test-appl.Po@am__quote@
@@ -870,20 +858,6 @@ test-afpfunc_helpers.obj: afpfunc_helpers.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -c -o test-afpfunc_helpers.obj `if test -f 'afpfunc_helpers.c'; then $(CYGPATH_W) 'afpfunc_helpers.c'; else $(CYGPATH_W) '$(srcdir)/afpfunc_helpers.c'; fi`
 
-test-afp_avahi.o: $(top_srcdir)/etc/afpd/afp_avahi.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -MT test-afp_avahi.o -MD -MP -MF $(DEPDIR)/test-afp_avahi.Tpo -c -o test-afp_avahi.o `test -f '$(top_srcdir)/etc/afpd/afp_avahi.c' || echo '$(srcdir)/'`$(top_srcdir)/etc/afpd/afp_avahi.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test-afp_avahi.Tpo $(DEPDIR)/test-afp_avahi.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/etc/afpd/afp_avahi.c' object='test-afp_avahi.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -c -o test-afp_avahi.o `test -f '$(top_srcdir)/etc/afpd/afp_avahi.c' || echo '$(srcdir)/'`$(top_srcdir)/etc/afpd/afp_avahi.c
-
-test-afp_avahi.obj: $(top_srcdir)/etc/afpd/afp_avahi.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -MT test-afp_avahi.obj -MD -MP -MF $(DEPDIR)/test-afp_avahi.Tpo -c -o test-afp_avahi.obj `if test -f '$(top_srcdir)/etc/afpd/afp_avahi.c'; then $(CYGPATH_W) '$(top_srcdir)/etc/afpd/afp_avahi.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/etc/afpd/afp_avahi.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test-afp_avahi.Tpo $(DEPDIR)/test-afp_avahi.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/etc/afpd/afp_avahi.c' object='test-afp_avahi.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -c -o test-afp_avahi.obj `if test -f '$(top_srcdir)/etc/afpd/afp_avahi.c'; then $(CYGPATH_W) '$(top_srcdir)/etc/afpd/afp_avahi.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/etc/afpd/afp_avahi.c'; fi`
-
 test-afp_config.o: $(top_srcdir)/etc/afpd/afp_config.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -MT test-afp_config.o -MD -MP -MF $(DEPDIR)/test-afp_config.Tpo -c -o test-afp_config.o `test -f '$(top_srcdir)/etc/afpd/afp_config.c' || echo '$(srcdir)/'`$(top_srcdir)/etc/afpd/afp_config.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test-afp_config.Tpo $(DEPDIR)/test-afp_config.Po
@@ -911,20 +885,6 @@ test-afp_dsi.obj: $(top_srcdir)/etc/afpd/afp_dsi.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/etc/afpd/afp_dsi.c' object='test-afp_dsi.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -c -o test-afp_dsi.obj `if test -f '$(top_srcdir)/etc/afpd/afp_dsi.c'; then $(CYGPATH_W) '$(top_srcdir)/etc/afpd/afp_dsi.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/etc/afpd/afp_dsi.c'; fi`
-
-test-afp_mdns.o: $(top_srcdir)/etc/afpd/afp_mdns.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -MT test-afp_mdns.o -MD -MP -MF $(DEPDIR)/test-afp_mdns.Tpo -c -o test-afp_mdns.o `test -f '$(top_srcdir)/etc/afpd/afp_mdns.c' || echo '$(srcdir)/'`$(top_srcdir)/etc/afpd/afp_mdns.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test-afp_mdns.Tpo $(DEPDIR)/test-afp_mdns.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/etc/afpd/afp_mdns.c' object='test-afp_mdns.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -c -o test-afp_mdns.o `test -f '$(top_srcdir)/etc/afpd/afp_mdns.c' || echo '$(srcdir)/'`$(top_srcdir)/etc/afpd/afp_mdns.c
-
-test-afp_mdns.obj: $(top_srcdir)/etc/afpd/afp_mdns.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -MT test-afp_mdns.obj -MD -MP -MF $(DEPDIR)/test-afp_mdns.Tpo -c -o test-afp_mdns.obj `if test -f '$(top_srcdir)/etc/afpd/afp_mdns.c'; then $(CYGPATH_W) '$(top_srcdir)/etc/afpd/afp_mdns.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/etc/afpd/afp_mdns.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test-afp_mdns.Tpo $(DEPDIR)/test-afp_mdns.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/etc/afpd/afp_mdns.c' object='test-afp_mdns.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -c -o test-afp_mdns.obj `if test -f '$(top_srcdir)/etc/afpd/afp_mdns.c'; then $(CYGPATH_W) '$(top_srcdir)/etc/afpd/afp_mdns.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/etc/afpd/afp_mdns.c'; fi`
 
 test-afp_options.o: $(top_srcdir)/etc/afpd/afp_options.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -MT test-afp_options.o -MD -MP -MF $(DEPDIR)/test-afp_options.Tpo -c -o test-afp_options.o `test -f '$(top_srcdir)/etc/afpd/afp_options.c' || echo '$(srcdir)/'`$(top_srcdir)/etc/afpd/afp_options.c
@@ -995,20 +955,6 @@ test-auth.obj: $(top_srcdir)/etc/afpd/auth.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/etc/afpd/auth.c' object='test-auth.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -c -o test-auth.obj `if test -f '$(top_srcdir)/etc/afpd/auth.c'; then $(CYGPATH_W) '$(top_srcdir)/etc/afpd/auth.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/etc/afpd/auth.c'; fi`
-
-test-afp_zeroconf.o: $(top_srcdir)/etc/afpd/afp_zeroconf.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -MT test-afp_zeroconf.o -MD -MP -MF $(DEPDIR)/test-afp_zeroconf.Tpo -c -o test-afp_zeroconf.o `test -f '$(top_srcdir)/etc/afpd/afp_zeroconf.c' || echo '$(srcdir)/'`$(top_srcdir)/etc/afpd/afp_zeroconf.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test-afp_zeroconf.Tpo $(DEPDIR)/test-afp_zeroconf.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/etc/afpd/afp_zeroconf.c' object='test-afp_zeroconf.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -c -o test-afp_zeroconf.o `test -f '$(top_srcdir)/etc/afpd/afp_zeroconf.c' || echo '$(srcdir)/'`$(top_srcdir)/etc/afpd/afp_zeroconf.c
-
-test-afp_zeroconf.obj: $(top_srcdir)/etc/afpd/afp_zeroconf.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -MT test-afp_zeroconf.obj -MD -MP -MF $(DEPDIR)/test-afp_zeroconf.Tpo -c -o test-afp_zeroconf.obj `if test -f '$(top_srcdir)/etc/afpd/afp_zeroconf.c'; then $(CYGPATH_W) '$(top_srcdir)/etc/afpd/afp_zeroconf.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/etc/afpd/afp_zeroconf.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test-afp_zeroconf.Tpo $(DEPDIR)/test-afp_zeroconf.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/etc/afpd/afp_zeroconf.c' object='test-afp_zeroconf.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -c -o test-afp_zeroconf.obj `if test -f '$(top_srcdir)/etc/afpd/afp_zeroconf.c'; then $(CYGPATH_W) '$(top_srcdir)/etc/afpd/afp_zeroconf.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/etc/afpd/afp_zeroconf.c'; fi`
 
 test-catsearch.o: $(top_srcdir)/etc/afpd/catsearch.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -MT test-catsearch.o -MD -MP -MF $(DEPDIR)/test-catsearch.Tpo -c -o test-catsearch.o `test -f '$(top_srcdir)/etc/afpd/catsearch.c' || echo '$(srcdir)/'`$(top_srcdir)/etc/afpd/catsearch.c
@@ -1262,20 +1208,6 @@ test-status.obj: $(top_srcdir)/etc/afpd/status.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -c -o test-status.obj `if test -f '$(top_srcdir)/etc/afpd/status.c'; then $(CYGPATH_W) '$(top_srcdir)/etc/afpd/status.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/etc/afpd/status.c'; fi`
 
-test-spotlight.o: $(top_srcdir)/etc/afpd/spotlight.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -MT test-spotlight.o -MD -MP -MF $(DEPDIR)/test-spotlight.Tpo -c -o test-spotlight.o `test -f '$(top_srcdir)/etc/afpd/spotlight.c' || echo '$(srcdir)/'`$(top_srcdir)/etc/afpd/spotlight.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test-spotlight.Tpo $(DEPDIR)/test-spotlight.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/etc/afpd/spotlight.c' object='test-spotlight.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -c -o test-spotlight.o `test -f '$(top_srcdir)/etc/afpd/spotlight.c' || echo '$(srcdir)/'`$(top_srcdir)/etc/afpd/spotlight.c
-
-test-spotlight.obj: $(top_srcdir)/etc/afpd/spotlight.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -MT test-spotlight.obj -MD -MP -MF $(DEPDIR)/test-spotlight.Tpo -c -o test-spotlight.obj `if test -f '$(top_srcdir)/etc/afpd/spotlight.c'; then $(CYGPATH_W) '$(top_srcdir)/etc/afpd/spotlight.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/etc/afpd/spotlight.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test-spotlight.Tpo $(DEPDIR)/test-spotlight.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/etc/afpd/spotlight.c' object='test-spotlight.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -c -o test-spotlight.obj `if test -f '$(top_srcdir)/etc/afpd/spotlight.c'; then $(CYGPATH_W) '$(top_srcdir)/etc/afpd/spotlight.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/etc/afpd/spotlight.c'; fi`
-
 test-spotlight_marshalling.o: $(top_srcdir)/etc/afpd/spotlight_marshalling.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -MT test-spotlight_marshalling.o -MD -MP -MF $(DEPDIR)/test-spotlight_marshalling.Tpo -c -o test-spotlight_marshalling.o `test -f '$(top_srcdir)/etc/afpd/spotlight_marshalling.c' || echo '$(srcdir)/'`$(top_srcdir)/etc/afpd/spotlight_marshalling.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test-spotlight_marshalling.Tpo $(DEPDIR)/test-spotlight_marshalling.Po
@@ -1359,6 +1291,20 @@ test-acls.obj: $(top_srcdir)/etc/afpd/acls.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/etc/afpd/acls.c' object='test-acls.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -c -o test-acls.obj `if test -f '$(top_srcdir)/etc/afpd/acls.c'; then $(CYGPATH_W) '$(top_srcdir)/etc/afpd/acls.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/etc/afpd/acls.c'; fi`
+
+test-spotlight.o: $(top_srcdir)/etc/afpd/spotlight.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -MT test-spotlight.o -MD -MP -MF $(DEPDIR)/test-spotlight.Tpo -c -o test-spotlight.o `test -f '$(top_srcdir)/etc/afpd/spotlight.c' || echo '$(srcdir)/'`$(top_srcdir)/etc/afpd/spotlight.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test-spotlight.Tpo $(DEPDIR)/test-spotlight.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/etc/afpd/spotlight.c' object='test-spotlight.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -c -o test-spotlight.o `test -f '$(top_srcdir)/etc/afpd/spotlight.c' || echo '$(srcdir)/'`$(top_srcdir)/etc/afpd/spotlight.c
+
+test-spotlight.obj: $(top_srcdir)/etc/afpd/spotlight.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -MT test-spotlight.obj -MD -MP -MF $(DEPDIR)/test-spotlight.Tpo -c -o test-spotlight.obj `if test -f '$(top_srcdir)/etc/afpd/spotlight.c'; then $(CYGPATH_W) '$(top_srcdir)/etc/afpd/spotlight.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/etc/afpd/spotlight.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test-spotlight.Tpo $(DEPDIR)/test-spotlight.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/etc/afpd/spotlight.c' object='test-spotlight.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_CFLAGS) $(CFLAGS) -c -o test-spotlight.obj `if test -f '$(top_srcdir)/etc/afpd/spotlight.c'; then $(CYGPATH_W) '$(top_srcdir)/etc/afpd/spotlight.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/etc/afpd/spotlight.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

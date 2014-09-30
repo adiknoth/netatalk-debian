@@ -412,7 +412,7 @@ noinst_DATA = $(GENERATED_FILES)
 #
 # checking for "Debian" style sysv scripts:
 #
-@USE_DEBIAN_TRUE@sysvdir = $(INIT_DIR)
+@USE_DEBIAN_SYSV_TRUE@sysvdir = $(INIT_DIR)
 
 #
 # checking for "Gentoo" style sysv scripts:
@@ -433,11 +433,16 @@ noinst_DATA = $(GENERATED_FILES)
 # checking for "SuSE" style sysv scripts:
 #
 @USE_SUSE_SYSV_TRUE@sysvdir = $(INIT_DIR)
-@USE_DEBIAN_TRUE@sysv_SCRIPTS = netatalk
+@USE_DEBIAN_SYSV_TRUE@sysv_SCRIPTS = netatalk
 @USE_GENTOO_TRUE@sysv_SCRIPTS = netatalk
 @USE_NETBSD_TRUE@sysv_SCRIPTS = netatalk
 @USE_REDHAT_SYSV_TRUE@sysv_SCRIPTS = netatalk
 @USE_SUSE_SYSV_TRUE@sysv_SCRIPTS = netatalk
+
+#
+# checking for "Debian" style systemd scripts:
+#
+@USE_DEBIAN_SYSTEMD_TRUE@servicedir = $(INIT_DIR)
 
 #
 # checking for Solaris init scripts
@@ -448,6 +453,7 @@ noinst_DATA = $(GENERATED_FILES)
 # checking for general systemd scripts:
 #
 @USE_SYSTEMD_TRUE@servicedir = $(INIT_DIR)
+@USE_DEBIAN_SYSTEMD_TRUE@service_DATA = netatalk.service
 @USE_SOLARIS_TRUE@service_DATA = netatalk.xml
 @USE_SYSTEMD_TRUE@service_DATA = netatalk.service
 all: all-am
@@ -620,7 +626,7 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-@USE_DEBIAN_FALSE@@USE_GENTOO_FALSE@@USE_NETBSD_FALSE@@USE_REDHAT_SYSV_FALSE@@USE_SOLARIS_FALSE@@USE_SUSE_SYSV_FALSE@@USE_SYSTEMD_FALSE@@USE_UNDEF_FALSE@install-data-hook:
+@USE_DEBIAN_SYSTEMD_FALSE@@USE_DEBIAN_SYSV_FALSE@@USE_GENTOO_FALSE@@USE_NETBSD_FALSE@@USE_REDHAT_SYSV_FALSE@@USE_SOLARIS_FALSE@@USE_SUSE_SYSV_FALSE@@USE_SYSTEMD_FALSE@@USE_UNDEF_FALSE@install-data-hook:
 @USE_NETBSD_FALSE@@USE_UNDEF_FALSE@uninstall-hook:
 clean: clean-am
 
@@ -747,6 +753,17 @@ uninstall: uninstall-startup
 @USE_SYSTEMD_TRUE@	rm -f $(DESTDIR)$(servicedir)/netatalk.service
 @USE_SYSTEMD_TRUE@	-systemctl daemon-reload
 
+@USE_DEBIAN_SYSTEMD_TRUE@netatalk.service: service.systemd
+@USE_DEBIAN_SYSTEMD_TRUE@	cp -f service.systemd netatalk.service
+
+@USE_DEBIAN_SYSTEMD_TRUE@install-data-hook:
+@USE_DEBIAN_SYSTEMD_TRUE@	-systemctl daemon-reload
+
+@USE_DEBIAN_SYSTEMD_TRUE@uninstall-startup:
+@USE_DEBIAN_SYSTEMD_TRUE@	-systemctl disable $(service_DATA)
+@USE_DEBIAN_SYSTEMD_TRUE@	rm -f $(DESTDIR)$(servicedir)/netatalk.service
+@USE_DEBIAN_SYSTEMD_TRUE@	-systemctl daemon-reload
+
 @USE_SUSE_SYSV_TRUE@$(sysv_SCRIPTS): rc.suse
 @USE_SUSE_SYSV_TRUE@	cp -f rc.suse $(sysv_SCRIPTS)
 @USE_SUSE_SYSV_TRUE@	chmod a+x $(sysv_SCRIPTS)
@@ -783,14 +800,14 @@ uninstall: uninstall-startup
 
 @USE_GENTOO_TRUE@uninstall-startup:
 
-@USE_DEBIAN_TRUE@$(sysv_SCRIPTS): rc.debian
-@USE_DEBIAN_TRUE@	cp -f rc.debian $(sysv_SCRIPTS)
-@USE_DEBIAN_TRUE@	chmod a+x $(sysv_SCRIPTS)
+@USE_DEBIAN_SYSV_TRUE@$(sysv_SCRIPTS): rc.debian
+@USE_DEBIAN_SYSV_TRUE@	cp -f rc.debian $(sysv_SCRIPTS)
+@USE_DEBIAN_SYSV_TRUE@	chmod a+x $(sysv_SCRIPTS)
 
-@USE_DEBIAN_TRUE@install-data-hook:
+@USE_DEBIAN_SYSV_TRUE@install-data-hook:
 #	update-rc.d $(sysv_SCRIPTS) defaults 90 10
 
-@USE_DEBIAN_TRUE@uninstall-startup:
+@USE_DEBIAN_SYSV_TRUE@uninstall-startup:
 #	rm -f $(DESTDIR)$(sysvdir)/$(sysv_SCRIPTS)
 #	update-rc.d netatalk remove
 

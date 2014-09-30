@@ -10,16 +10,13 @@ EXTRA_DIST = test.sh
 CLEANFILES = test.default test.conf
 
 test_SOURCES =  test.c subtests.c afpfunc_helpers.c \
-				$(top_srcdir)/etc/afpd/afp_avahi.c \
 				$(top_srcdir)/etc/afpd/afp_config.c \
 				$(top_srcdir)/etc/afpd/afp_dsi.c \
-				$(top_srcdir)/etc/afpd/afp_mdns.c \
 				$(top_srcdir)/etc/afpd/afp_options.c \
 				$(top_srcdir)/etc/afpd/afp_util.c \
 				$(top_srcdir)/etc/afpd/afprun.c \
 				$(top_srcdir)/etc/afpd/appl.c \
 				$(top_srcdir)/etc/afpd/auth.c \
-				$(top_srcdir)/etc/afpd/afp_zeroconf.c \
 				$(top_srcdir)/etc/afpd/catsearch.c \
 				$(top_srcdir)/etc/afpd/desktop.c \
 				$(top_srcdir)/etc/afpd/dircache.c \
@@ -38,22 +35,17 @@ test_SOURCES =  test.c subtests.c afpfunc_helpers.c \
 				$(top_srcdir)/etc/afpd/ofork.c \
 				$(top_srcdir)/etc/afpd/quota.c \
 				$(top_srcdir)/etc/afpd/status.c \
-				$(top_srcdir)/etc/afpd/spotlight.c \
 				$(top_srcdir)/etc/afpd/spotlight_marshalling.c \
 				$(top_srcdir)/etc/afpd/switch.c \
 				$(top_srcdir)/etc/afpd/uam.c \
 				$(top_srcdir)/etc/afpd/unix.c \
 				$(top_srcdir)/etc/afpd/volume.c
 
-if HAVE_ACLS
-test_SOURCES += $(top_srcdir)/etc/afpd/acls.c
-endif
-
 test_CFLAGS = \
 	-I$(top_srcdir)/etc/afpd \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/sys \
-	@ZEROCONF_CFLAGS@ @GSSAPI_CFLAGS@ @KRB5_CFLAGS@\
+	@GSSAPI_CFLAGS@ @KRB5_CFLAGS@\
 	-DAPPLCNAME \
 	-DSERVERTEXT=\"$(SERVERTEXT)/\" \
 	-D_PATH_AFPDPWFILE=\"$(pkgconfdir)/afppasswd\" \
@@ -63,9 +55,19 @@ test_CFLAGS = \
 
 test_LDADD = \
 	$(top_builddir)/libatalk/libatalk.la \
-	@LIBGCRYPT_LIBS@ @QUOTA_LIBS@ @WRAP_LIBS@ @LIBADD_DL@ @ACL_LIBS@ @ZEROCONF_LIBS@ @PTHREAD_LIBS@ @GSSAPI_LIBS@ @KRB5_LIBS@ @MYSQL_LIBS@
+	@LIBGCRYPT_LIBS@ @QUOTA_LIBS@ @WRAP_LIBS@ @LIBADD_DL@ @ACL_LIBS@ @PTHREAD_LIBS@ @GSSAPI_LIBS@ @KRB5_LIBS@ @MYSQL_LIBS@
 
 test_LDFLAGS = -export-dynamic
+
+if HAVE_ACLS
+test_SOURCES += $(top_srcdir)/etc/afpd/acls.c
+endif
+
+if HAVE_TRACKER
+test_SOURCES += $(top_srcdir)/etc/afpd/spotlight.c
+test_LDADD += $(top_builddir)/etc/spotlight/libspotlight.la
+test_CFLAGS += @TRACKER_CFLAGS@
+endif
 
 if WITH_DTRACE
 DTRACE_OBJ = test-afp_dsi.o test-fork.o test-appl.o test-catsearch.o test-directory.o test-enumerate.o test-file.o test-filedir.o

@@ -102,7 +102,11 @@ struct vol {
 };
 
 /* load_volumes() flags */
-typedef enum {lv_none = 0, lv_all = 1} lv_flags_t;
+typedef enum {
+    lv_none = 0,
+    lv_all = 1,
+    lv_force = 2
+} lv_flags_t;
 
 /* volume flags */
 #define AFPVOL_OPEN (1<<0)
@@ -118,6 +122,7 @@ typedef enum {lv_none = 0, lv_all = 1} lv_flags_t;
 #define AFPVOL_RO        (1 << 8)   /* read-only volume */
 #define AFPVOL_CHMOD_PRESERVE_ACL (1 << 9) /* try to preserve ACLs */
 #define AFPVOL_CHMOD_IGNORE (1 << 10) /* try to preserve ACLs */
+#define AFPVOL_FORCE_STICKY_XATTR (1 << 11) /* write metadata xattr as root on sticky dirs */
 #define AFPVOL_NOSTAT    (1 << 16)  /* advertise the volume even if we can't stat() it
                                      * maybe because it will be mounted later in preexec */
 #define AFPVOL_UNIX_PRIV (1 << 17)  /* support unix privileges */
@@ -154,6 +159,7 @@ typedef enum {lv_none = 0, lv_all = 1} lv_flags_t;
 #define AFPVOL_UMUPPER         (AFPVOL_MTOUUPPER | AFPVOL_UTOMUPPER)
 #define AFPVOL_UUPPERMLOWER    (AFPVOL_MTOUUPPER | AFPVOL_UTOMLOWER)
 #define AFPVOL_ULOWERMUPPER    (AFPVOL_MTOULOWER | AFPVOL_UTOMUPPER)
+#define AFPVOL_CASESENS        (1 << 4)
 
 #define AFPVOLSIG_FLAT          0x0001 /* flat fs */
 #define AFPVOLSIG_FIX           0x0002 /* fixed ids */
@@ -169,8 +175,11 @@ typedef enum {lv_none = 0, lv_all = 1} lv_flags_t;
 #define VOLPBIT_ATTR_UNIXPRIV     (1 << 5)
 #define VOLPBIT_ATTR_UTF8         (1 << 6)
 #define VOLPBIT_ATTR_NONETIDS     (1 << 7)
+#define VOLPBIT_ATTR_PRIVPARENT   (1 << 8)
+#define VOLPBIT_ATTR_NOTFILEXCHG  (1 << 9)
 #define VOLPBIT_ATTR_EXT_ATTRS    (1 << 10)
 #define VOLPBIT_ATTR_ACLS         (1 << 11)
+#define VOLPBIT_ATTR_CASESENS     (1 << 12)
 #define VOLPBIT_ATTR_TM           (1 << 13)
 
 #define VOLPBIT_ATTR    0
