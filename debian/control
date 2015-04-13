@@ -20,7 +20,8 @@ Build-Depends: cdbs (>= 0.4.106~),
  libldap2-dev,
  libacl1-dev,
  libevent-dev,
- d-shlibs
+ d-shlibs,
+ dh-systemd
 Build-Conflicts: libavahi-compat-libdnssd-dev
 Vcs-Git: git://git.debian.org/git/collab-maint/netatalk
 Vcs-Browser: http://git.debian.org/?p=collab-maint/netatalk.git
