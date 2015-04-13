@@ -141,7 +141,7 @@ CDBS_BUILD_DEPENDS += , $(openssl_build_depends)
 endif
 
 # Needed for our packaging routines
-CDBS_BUILD_DEPENDS += , d-shlibs
+CDBS_BUILD_DEPENDS += , d-shlibs, dh-systemd
 
 # Needed (always/often/seldom) at runtime
 #  * netbase needed by network-facing daemons

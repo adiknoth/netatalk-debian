@@ -9,6 +9,7 @@ netatalk (3.1.6-1) UNRELEASED; urgency=low
   * Build-depend on libevent-dev
   * Rename libatalk4 to libatalk16
   * Change init system to debian-systemd
+  * Build-depend on dh-systemd
 
  -- Adrian Knoth <adi@drcomp.erfurt.thur.de>  Tue, 28 Jan 2014 18:10:18 +0100
 
