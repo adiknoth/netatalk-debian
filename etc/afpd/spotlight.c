@@ -402,12 +402,25 @@ static bool create_result_handle(slq_t *slq)
 static bool add_results(sl_array_t *array, slq_t *slq)
 {
     sl_filemeta_t *fm;
-    uint64_t status = 0;
+    uint64_t status;
 
     /* FileMeta */
     fm = talloc_zero(array, sl_filemeta_t);
     if (!fm) {
         return false;
+    }
+
+    switch (slq->slq_state) {
+    case SLQ_STATE_RUNNING:
+        /*
+         * Wtf, why 35? Taken from an AFP capture.
+         */
+        status = 35;
+        break;
+
+    default:
+        status = 0;
+        break;
     }
 
     dalloc_add_copy(array, &status, uint64_t);
@@ -817,6 +830,7 @@ static int sl_rpc_openQuery(AFPObj *obj,
     gchar *sparql_query;
     GError *error = NULL;
     bool ok;
+    sl_array_t *scope_array;
 
     array = talloc_zero(reply, sl_array_t);
 
@@ -873,6 +887,20 @@ static int sl_rpc_openQuery(AFPObj *obj,
         EC_FAIL;
     }
     slq->slq_reqinfo = talloc_steal(slq, reqinfo);
+
+    scope_array = dalloc_value_for_key(query, "DALLOC_CTX", 0, "DALLOC_CTX", 1,
+                                       "kMDScopeArray");
+    if (scope_array == NULL) {
+        slq->slq_scope = talloc_strdup(slq, v->v_path);
+    } else {
+        slq->slq_scope = talloc_strdup(slq, scope_array->dd_talloc_array[0]);
+    }
+    if (slq->slq_scope == NULL) {
+        LOG(log_error, logtype_sl, "failed to setup search scope");
+        EC_FAIL;
+    }
+
+    LOG(log_debug, logtype_sl, "Search scope: \"%s\"", slq->slq_scope);
 
     cnids = dalloc_value_for_key(query, "DALLOC_CTX", 0, "DALLOC_CTX", 1,
                                  "kMDQueryItemArray");

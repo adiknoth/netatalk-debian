@@ -1,10 +1,29 @@
+Changes in 3.1.7
+================
+* UPD: Spotlight: enhance behaviour for long running queries, client
+       will now show "progress wheel" while waiting for first results.
+* FIX: netatalk: fix a crash on Solaris when registering with mDNS
+* FIX: netatalk: SIGHUP would kill the process instead of being resent
+       to the other Netatalk processes, bug #579
+* FIX: afpd: Solaris locking problem, bug #559
+* FIX: Handling of malformed UTF8 strings, bug #524
+* FIX: afpd: umask handling, bug #576
+* FIX: Spotlight: Limiting searches to subfolders, bug #581
+* FIX: afpd: reloading logging config may result in privilege
+       escalation in afpd processes
+* FIX: afpd: ACL related error messages, now logged with loglevel
+       debug instead of error
+* FIX: cnid_metad: fix tsockfd_create() return value on error
+* FIX: CNID/MySQL: volume table name generation, bug #566.
+
 Changes in 3.1.6
 ================
 * FIX: Spotlight: fix for long running queries
 * UPD: afpd: distribute SIGHUP from parent afpd to children and force
        reload shares
 * FIX: netatalk: refresh Zeroconf registration when receiving SIGHUP
-* NEW: configure option "--with-init-style=debian-systemd" for Debian 8 jessieand later.
+* NEW: configure option "--with-init-style=debian-systemd" for Debian 8 jessie
+       and later.
        "--with-init-style=debian" is renamed "--with-init-style=debian-sysv".
 
 Changes in 3.1.5

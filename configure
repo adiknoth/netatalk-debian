@@ -634,6 +634,10 @@ ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS
 LIBOBJS
+AM_BACKSLASH
+AM_DEFAULT_VERBOSITY
+AM_DEFAULT_V
+AM_V
 USE_SHADOWPW_FALSE
 USE_SHADOWPW_TRUE
 HAVE_ATFUNCS_FALSE
@@ -694,6 +698,7 @@ TRACKER_MINER_LIBS
 TRACKER_MINER_CFLAGS
 TRACKER_LIBS
 TRACKER_CFLAGS
+PKG_CONFIG_PATH
 USE_BUILTIN_TDB_FALSE
 USE_BUILTIN_TDB_TRUE
 TDB_LIBS
@@ -760,8 +765,6 @@ AVAHI_TPOLL_LIBS
 AVAHI_TPOLL_CFLAGS
 AVAHI_LIBS
 AVAHI_CFLAGS
-PKG_CONFIG_LIBDIR
-PKG_CONFIG_PATH
 PKG_CONFIG
 QUOTA_LIBS
 compiled_backends
@@ -845,10 +848,6 @@ CC
 MAINT
 MAINTAINER_MODE_FALSE
 MAINTAINER_MODE_TRUE
-AM_BACKSLASH
-AM_DEFAULT_VERBOSITY
-AM_DEFAULT_V
-AM_V
 am__untar
 am__tar
 AMTAR
@@ -929,7 +928,6 @@ GREP'
 ac_subst_files=''
 ac_user_opts='
 enable_option_checking
-enable_silent_rules
 enable_maintainer_mode
 enable_dependency_tracking
 enable_shared
@@ -988,6 +986,7 @@ with_dbus_sysconf_dir
 enable_fhs
 with_lockfile
 with_docbook
+enable_silent_rules
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1003,14 +1002,13 @@ YFLAGS
 MYSQL_CFLAGS
 MYSQL_LIBS
 PKG_CONFIG
-PKG_CONFIG_PATH
-PKG_CONFIG_LIBDIR
 AVAHI_CFLAGS
 AVAHI_LIBS
 AVAHI_TPOLL_CFLAGS
 AVAHI_TPOLL_LIBS
 TDB_CFLAGS
 TDB_LIBS
+PKG_CONFIG_PATH
 TRACKER_CFLAGS
 TRACKER_LIBS
 DBUS_CFLAGS
@@ -1636,8 +1634,6 @@ Optional Features:
   --disable-option-checking  ignore unrecognized --enable/--with options
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
-  --enable-silent-rules   less verbose build output (undo: "make V=1")
-  --disable-silent-rules  verbose build output (undo: "make V=0")
   --disable-maintainer-mode
                           disable make rules and dependencies not useful (and
                           sometimes confusing) to the casual installer
@@ -1665,6 +1661,8 @@ Optional Features:
   --disable-sendfile       disable sendfile syscall
   --enable-developer      whether to enable developer build (ABI checking)
   --enable-fhs            use Filesystem Hierarchy Standard (FHS) compatibility
+  --enable-silent-rules   less verbose build output (undo: "make V=1")
+  --disable-silent-rules  verbose build output (undo: "make V=0")
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -1741,10 +1739,6 @@ Some influential environment variables:
               C compiler flags for MySQL, overriding checks
   MYSQL_LIBS  linker flags for MySQL, overriding checks
   PKG_CONFIG  path to pkg-config utility
-  PKG_CONFIG_PATH
-              directories to add to pkg-config's search path
-  PKG_CONFIG_LIBDIR
-              path overriding pkg-config's built-in search path
   AVAHI_CFLAGS
               C compiler flags for AVAHI, overriding pkg-config
   AVAHI_LIBS  linker flags for AVAHI, overriding pkg-config
@@ -1754,6 +1748,8 @@ Some influential environment variables:
               linker flags for AVAHI_TPOLL, overriding pkg-config
   TDB_CFLAGS  C compiler flags for TDB, overriding pkg-config
   TDB_LIBS    linker flags for TDB, overriding pkg-config
+  PKG_CONFIG_PATH
+              Path to additional pkg-config packages
   TRACKER_CFLAGS
               C compiler flags for TRACKER, overriding pkg-config
   TRACKER_LIBS
@@ -2849,7 +2845,7 @@ test -n "$target_alias" &&
     NONENONEs,x,x, &&
   program_prefix=${target_alias}-
 
-am__api_version='1.13'
+am__api_version='1.12'
 
 # Find a good install program.  We prefer a C program (faster),
 # so one script is as good as another.  But avoid the broken or
@@ -3033,8 +3029,8 @@ if test x"${MISSING+set}" != xset; then
   esac
 fi
 # Use eval to expand $SHELL
-if eval "$MISSING --is-lightweight"; then
-  am_missing_run="$MISSING "
+if eval "$MISSING --run true"; then
+  am_missing_run="$MISSING --run "
 else
   am_missing_run=
   { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: 'missing' script is too old or missing" >&5
@@ -3274,45 +3270,6 @@ else
 fi
 rmdir .tst 2>/dev/null
 
-# Check whether --enable-silent-rules was given.
-if test "${enable_silent_rules+set}" = set; then :
-  enableval=$enable_silent_rules;
-fi
-
-case $enable_silent_rules in # (((
-  yes) AM_DEFAULT_VERBOSITY=0;;
-   no) AM_DEFAULT_VERBOSITY=1;;
-    *) AM_DEFAULT_VERBOSITY=1;;
-esac
-am_make=${MAKE-make}
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $am_make supports nested variables" >&5
-$as_echo_n "checking whether $am_make supports nested variables... " >&6; }
-if ${am_cv_make_support_nested_variables+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if $as_echo 'TRUE=$(BAR$(V))
-BAR0=false
-BAR1=true
-V=1
-am__doit:
-	@$(TRUE)
-.PHONY: am__doit' | $am_make -f - >/dev/null 2>&1; then
-  am_cv_make_support_nested_variables=yes
-else
-  am_cv_make_support_nested_variables=no
-fi
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $am_cv_make_support_nested_variables" >&5
-$as_echo "$am_cv_make_support_nested_variables" >&6; }
-if test $am_cv_make_support_nested_variables = yes; then
-    AM_V='$(V)'
-  AM_DEFAULT_V='$(AM_DEFAULT_VERBOSITY)'
-else
-  AM_V=$AM_DEFAULT_VERBOSITY
-  AM_DEFAULT_V=$AM_DEFAULT_VERBOSITY
-fi
-AM_BACKSLASH='\'
-
 if test "`cd $srcdir && pwd`" != "`pwd`"; then
   # Use -I$(srcdir) only when $(srcdir) != ., so that make's output
   # is not polluted with repeated "-I."
@@ -3376,12 +3333,7 @@ mkdir_p='$(MKDIR_P)'
 # in the wild :-(  We should find a proper way to deprecate it ...
 AMTAR='$${TAR-tar}'
 
-
-# We'll loop over all known methods to create a tar archive until one works.
-_am_tools='gnutar  pax cpio none'
-
 am__tar='$${TAR-tar} chof - "$$tardir"' am__untar='$${TAR-tar} xf -'
-
 
 
 
@@ -6969,7 +6921,7 @@ ia64-*-hpux*)
   rm -rf conftest*
   ;;
 
-x86_64-*kfreebsd*-gnu|x86_64-*linux*|powerpc*-*linux*| \
+x86_64-*kfreebsd*-gnu|x86_64-*linux*|ppc*-*linux*|powerpc*-*linux*| \
 s390*-*linux*|s390*-*tpf*|sparc*-*linux*)
   # Find out which ABI we are using.
   echo 'int i;' > conftest.$ac_ext
@@ -6987,10 +6939,7 @@ s390*-*linux*|s390*-*tpf*|sparc*-*linux*)
 	  x86_64-*linux*)
 	    LD="${LD-ld} -m elf_i386"
 	    ;;
-	  powerpc64le-*linux*)
-	    LD="${LD-ld} -m elf32lppclinux"
-	    ;;
-	  powerpc64-*linux*)
+	  ppc64-*linux*|powerpc64-*linux*)
 	    LD="${LD-ld} -m elf32ppclinux"
 	    ;;
 	  s390x-*linux*)
@@ -7009,10 +6958,7 @@ s390*-*linux*|s390*-*tpf*|sparc*-*linux*)
 	  x86_64-*linux*)
 	    LD="${LD-ld} -m elf_x86_64"
 	    ;;
-	  powerpcle-*linux*)
-	    LD="${LD-ld} -m elf64lppc"
-	    ;;
-	  powerpc-*linux*)
+	  ppc*-*linux*|powerpc*-*linux*)
 	    LD="${LD-ld} -m elf64ppc"
 	    ;;
 	  s390*-*linux*|s390*-*tpf*)
@@ -11160,14 +11106,10 @@ fi
   # before this can be enabled.
   hardcode_into_libs=yes
 
-  # Add ABI-specific directories to the system library path.
-  sys_lib_dlsearch_path_spec="/lib64 /usr/lib64 /lib /usr/lib"
-
   # Append ld.so.conf contents to the search path
   if test -f /etc/ld.so.conf; then
     lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s 2>/dev/null", \$2)); skip = 1; } { if (!skip) print \$0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;/^[	 ]*hwcap[	 ]/d;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;s/"//g;/^$/d' | tr '\n' ' '`
-    sys_lib_dlsearch_path_spec="$sys_lib_dlsearch_path_spec $lt_ld_extra"
-
+    sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
   fi
 
   # We used to test for /lib/ld.so.1 and disable shared libraries on
@@ -15448,11 +15390,6 @@ $as_echo "#define NO_QUOTA_SUPPORT 1" >>confdefs.h
 
 
 
-
-
-
-
-
 if test "x$ac_cv_env_PKG_CONFIG_set" != "xset"; then
 	if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}pkg-config", so it can be a program name with args.
@@ -15565,6 +15502,7 @@ $as_echo "yes" >&6; }
 $as_echo "no" >&6; }
 		PKG_CONFIG=""
 	fi
+
 fi
 
 	ZEROCONF_LIBS=""
@@ -15719,7 +15657,6 @@ if test -n "$AVAHI_CFLAGS"; then
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
   pkg_cv_AVAHI_CFLAGS=`$PKG_CONFIG --cflags " avahi-client >= 0.6 " 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
 fi
@@ -15736,7 +15673,6 @@ if test -n "$AVAHI_LIBS"; then
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
   pkg_cv_AVAHI_LIBS=`$PKG_CONFIG --libs " avahi-client >= 0.6 " 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
 fi
@@ -15747,8 +15683,6 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
         _pkg_short_errors_supported=yes
@@ -15756,9 +15690,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        AVAHI_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs " avahi-client >= 0.6 " 2>&1`
+	        AVAHI_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors " avahi-client >= 0.6 " 2>&1`
         else
-	        AVAHI_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs " avahi-client >= 0.6 " 2>&1`
+	        AVAHI_PKG_ERRORS=`$PKG_CONFIG --print-errors " avahi-client >= 0.6 " 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$AVAHI_PKG_ERRORS" >&5
@@ -15772,10 +15706,9 @@ installed software in a non-standard prefix.
 
 Alternatively, you may set the environment variables AVAHI_CFLAGS
 and AVAHI_LIBS to avoid the need to call pkg-config.
-See the pkg-config man page for more details." "$LINENO" 5
+See the pkg-config man page for more details.
+" "$LINENO" 5
 elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
 	{ { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error $? "The pkg-config script could not be found or is too old.  Make sure it
@@ -15793,7 +15726,7 @@ else
 	AVAHI_LIBS=$pkg_cv_AVAHI_LIBS
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-
+	:
 fi
 
 pkg_failed=no
@@ -15810,7 +15743,6 @@ if test -n "$AVAHI_TPOLL_CFLAGS"; then
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
   pkg_cv_AVAHI_TPOLL_CFLAGS=`$PKG_CONFIG --cflags " avahi-client >= 0.6.4 " 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
 fi
@@ -15827,7 +15759,6 @@ if test -n "$AVAHI_TPOLL_LIBS"; then
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
   pkg_cv_AVAHI_TPOLL_LIBS=`$PKG_CONFIG --libs " avahi-client >= 0.6.4 " 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
 fi
@@ -15838,8 +15769,6 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
         _pkg_short_errors_supported=yes
@@ -15847,18 +15776,18 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        AVAHI_TPOLL_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs " avahi-client >= 0.6.4 " 2>&1`
+	        AVAHI_TPOLL_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors " avahi-client >= 0.6.4 " 2>&1`
         else
-	        AVAHI_TPOLL_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs " avahi-client >= 0.6.4 " 2>&1`
+	        AVAHI_TPOLL_PKG_ERRORS=`$PKG_CONFIG --print-errors " avahi-client >= 0.6.4 " 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$AVAHI_TPOLL_PKG_ERRORS" >&5
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: This Avahi implementation is not supporting threaded poll objects. Maybe this is not what you want." >&5
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+                { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: This Avahi implementation is not supporting threaded poll objects. Maybe this is not what you want." >&5
 $as_echo "$as_me: WARNING: This Avahi implementation is not supporting threaded poll objects. Maybe this is not what you want." >&2;}
 elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: This Avahi implementation is not supporting threaded poll objects. Maybe this is not what you want." >&5
 $as_echo "$as_me: WARNING: This Avahi implementation is not supporting threaded poll objects. Maybe this is not what you want." >&2;}
 else
@@ -18882,7 +18811,6 @@ if test -n "$TDB_CFLAGS"; then
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
   pkg_cv_TDB_CFLAGS=`$PKG_CONFIG --cflags "tdb" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
 fi
@@ -18899,7 +18827,6 @@ if test -n "$TDB_LIBS"; then
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
   pkg_cv_TDB_LIBS=`$PKG_CONFIG --libs "tdb" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
 fi
@@ -18910,8 +18837,6 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
         _pkg_short_errors_supported=yes
@@ -18919,24 +18844,24 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        TDB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "tdb" 2>&1`
+	        TDB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "tdb" 2>&1`
         else
-	        TDB_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "tdb" 2>&1`
+	        TDB_PKG_ERRORS=`$PKG_CONFIG --print-errors "tdb" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$TDB_PKG_ERRORS" >&5
 
-	as_fn_error $? "couldn't find tdb with pkg-config" "$LINENO" 5
-elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
+                as_fn_error $? "couldn't find tdb with pkg-config" "$LINENO" 5
+elif test $pkg_failed = untried; then
 	as_fn_error $? "couldn't find tdb with pkg-config" "$LINENO" 5
 else
 	TDB_CFLAGS=$pkg_cv_TDB_CFLAGS
 	TDB_LIBS=$pkg_cv_TDB_LIBS
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-
+	:
 fi
         fi
         use_bundled_tdb=no
@@ -18995,7 +18920,6 @@ if test -n "$TRACKER_CFLAGS"; then
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
   pkg_cv_TRACKER_CFLAGS=`$PKG_CONFIG --cflags "tracker-sparql-$ac_cv_tracker_pkg_version >= $ac_cv_tracker_pkg_version_min" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
 fi
@@ -19012,7 +18936,6 @@ if test -n "$TRACKER_LIBS"; then
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
   pkg_cv_TRACKER_LIBS=`$PKG_CONFIG --libs "tracker-sparql-$ac_cv_tracker_pkg_version >= $ac_cv_tracker_pkg_version_min" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
 fi
@@ -19023,8 +18946,6 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
         _pkg_short_errors_supported=yes
@@ -19032,17 +18953,17 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        TRACKER_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "tracker-sparql-$ac_cv_tracker_pkg_version >= $ac_cv_tracker_pkg_version_min" 2>&1`
+	        TRACKER_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "tracker-sparql-$ac_cv_tracker_pkg_version >= $ac_cv_tracker_pkg_version_min" 2>&1`
         else
-	        TRACKER_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "tracker-sparql-$ac_cv_tracker_pkg_version >= $ac_cv_tracker_pkg_version_min" 2>&1`
+	        TRACKER_PKG_ERRORS=`$PKG_CONFIG --print-errors "tracker-sparql-$ac_cv_tracker_pkg_version >= $ac_cv_tracker_pkg_version_min" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$TRACKER_PKG_ERRORS" >&5
 
-	ac_cv_have_tracker_sparql=no
-elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
+                ac_cv_have_tracker_sparql=no
+elif test $pkg_failed = untried; then
 	ac_cv_have_tracker_sparql=no
 else
 	TRACKER_CFLAGS=$pkg_cv_TRACKER_CFLAGS
@@ -19219,7 +19140,6 @@ if test -n "$DBUS_CFLAGS"; then
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
   pkg_cv_DBUS_CFLAGS=`$PKG_CONFIG --cflags "dbus-1 >= 1.1" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
 fi
@@ -19236,7 +19156,6 @@ if test -n "$DBUS_LIBS"; then
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
   pkg_cv_DBUS_LIBS=`$PKG_CONFIG --libs "dbus-1 >= 1.1" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
 fi
@@ -19247,8 +19166,6 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
         _pkg_short_errors_supported=yes
@@ -19256,17 +19173,17 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        DBUS_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "dbus-1 >= 1.1" 2>&1`
+	        DBUS_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "dbus-1 >= 1.1" 2>&1`
         else
-	        DBUS_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "dbus-1 >= 1.1" 2>&1`
+	        DBUS_PKG_ERRORS=`$PKG_CONFIG --print-errors "dbus-1 >= 1.1" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$DBUS_PKG_ERRORS" >&5
 
-	have_dbus=no
-elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
+                have_dbus=no
+elif test $pkg_failed = untried; then
 	have_dbus=no
 else
 	DBUS_CFLAGS=$pkg_cv_DBUS_CFLAGS
@@ -19290,7 +19207,6 @@ if test -n "$DBUS_GLIB_CFLAGS"; then
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
   pkg_cv_DBUS_GLIB_CFLAGS=`$PKG_CONFIG --cflags "dbus-glib-1" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
 fi
@@ -19307,7 +19223,6 @@ if test -n "$DBUS_GLIB_LIBS"; then
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
   pkg_cv_DBUS_GLIB_LIBS=`$PKG_CONFIG --libs "dbus-glib-1" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
 fi
@@ -19318,8 +19233,6 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
         _pkg_short_errors_supported=yes
@@ -19327,17 +19240,17 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        DBUS_GLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "dbus-glib-1" 2>&1`
+	        DBUS_GLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "dbus-glib-1" 2>&1`
         else
-	        DBUS_GLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "dbus-glib-1" 2>&1`
+	        DBUS_GLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors "dbus-glib-1" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$DBUS_GLIB_PKG_ERRORS" >&5
 
-	have_dbus_glib=no
-elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
+                have_dbus_glib=no
+elif test $pkg_failed = untried; then
 	have_dbus_glib=no
 else
 	DBUS_GLIB_CFLAGS=$pkg_cv_DBUS_GLIB_CFLAGS
@@ -19361,7 +19274,6 @@ if test -n "$DBUS_GTHREAD_CFLAGS"; then
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
   pkg_cv_DBUS_GTHREAD_CFLAGS=`$PKG_CONFIG --cflags "gthread-2.0" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
 fi
@@ -19378,7 +19290,6 @@ if test -n "$DBUS_GTHREAD_LIBS"; then
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
   pkg_cv_DBUS_GTHREAD_LIBS=`$PKG_CONFIG --libs "gthread-2.0" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
 fi
@@ -19389,8 +19300,6 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
         _pkg_short_errors_supported=yes
@@ -19398,17 +19307,17 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        DBUS_GTHREAD_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "gthread-2.0" 2>&1`
+	        DBUS_GTHREAD_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "gthread-2.0" 2>&1`
         else
-	        DBUS_GTHREAD_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "gthread-2.0" 2>&1`
+	        DBUS_GTHREAD_PKG_ERRORS=`$PKG_CONFIG --print-errors "gthread-2.0" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$DBUS_GTHREAD_PKG_ERRORS" >&5
 
-	have_dbus_gthread=no
-elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
+                have_dbus_gthread=no
+elif test $pkg_failed = untried; then
 	have_dbus_gthread=no
 else
 	DBUS_GTHREAD_CFLAGS=$pkg_cv_DBUS_GTHREAD_CFLAGS
@@ -19913,6 +19822,7 @@ DEFS=-DHAVE_CONFIG_H
 
 ac_libobjs=
 ac_ltlibobjs=
+U=
 for ac_i in : $LIBOBJS; do test "x$ac_i" = x: && continue
   # 1. Remove the extension, and $U if already installed.
   ac_script='s/\$U\././;s/\.o$//;s/\.obj$//'
@@ -21663,7 +21573,7 @@ $as_echo "$as_me: executing $ac_file commands" >&6;}
 
   case $ac_file$ac_mode in
     "depfiles":C) test x"$AMDEP_TRUE" != x"" || {
-  # Older Autoconf quotes --file arguments for eval, but not when files
+  # Autoconf 2.62 quotes --file arguments for eval, but not when files
   # are listed without --file.  Let's play safe and only enable the eval
   # if we detect the quoting.
   case $CONFIG_FILES in
@@ -21714,7 +21624,7 @@ $as_echo X"$mf" |
     DEPDIR=`sed -n 's/^DEPDIR = //p' < "$mf"`
     test -z "$DEPDIR" && continue
     am__include=`sed -n 's/^am__include = //p' < "$mf"`
-    test -z "$am__include" && continue
+    test -z "am__include" && continue
     am__quote=`sed -n 's/^am__quote = //p' < "$mf"`
     # Find all dependency output files, they are included files with
     # $(DEPDIR) in their names.  We invoke sed twice because it is the
