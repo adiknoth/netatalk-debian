@@ -33,7 +33,7 @@ Section: net
 Architecture: any
 Depends: ${shlibs:Depends}, ${perl:Depends}, ${misc:Depends}, ${cdbs:Depends},
    python,
-   libatalk16
+   libatalk17
 Recommends: ${cdbs:Recommends}
 Suggests: ${cdbs:Suggests}
 Description: AppleTalk user binaries
@@ -45,7 +45,7 @@ Description: AppleTalk user binaries
  This package contains all daemon and utility programs as well as Netatalk's
  static libraries.
 
-Package: libatalk16
+Package: libatalk17
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
@@ -64,7 +64,7 @@ Package: libatalk-dev
 Section: libdevel
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
-   libatalk16 (= ${binary:Version})
+   libatalk17 (= ${binary:Version})
 Replaces: netatalk (<< 3.0.3-1)
 Conflicts: netatalk (<< 3.0.3-1)
 Description: AppleTalk library used by Netatalk (header files)

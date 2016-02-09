@@ -1,3 +1,9 @@
+netatalk (3.1.8-1) UNRELEASED; urgency=low
+
+  * Imported Upstream version 3.1.8
+
+ -- Anton Vlasov <druidvav@gmail.com>  Tue, 9 Feb 2016 21:48:18 +0300
+
 netatalk (3.1.7-1) UNRELEASED; urgency=low
 
   * Imported Upstream version 3.1.7
