@@ -80,21 +80,18 @@ static unsigned char iobuf[MAXIOBUF];
 static const char **skip_files;
 static struct fce_close_event last_close_event;
 
-/*
- * This only initializes consecutive events beginning at 1, high
- * numbered events must be initialized in the code
- */
-static char *fce_event_names[FCE_LAST_EVENT + 1] = {
-    "",
-    "FCE_FILE_MODIFY",
-    "FCE_FILE_DELETE",
-    "FCE_DIR_DELETE",
-    "FCE_FILE_CREATE",
-    "FCE_DIR_CREATE",
-    "FCE_FILE_MOVE",
-    "FCE_DIR_MOVE",
-    "FCE_LOGIN",
-    "FCE_LOGOUT"
+static char *fce_event_names[] = {
+    [FCE_FILE_MODIFY] = "FCE_FILE_MODIFY",
+    [FCE_FILE_DELETE] = "FCE_FILE_DELETE",
+    [FCE_DIR_DELETE] = "FCE_DIR_DELETE",
+    [FCE_FILE_CREATE] = "FCE_FILE_CREATE",
+    [FCE_DIR_CREATE] = "FCE_DIR_CREATE",
+    [FCE_FILE_MOVE] = "FCE_FILE_MOVE",
+    [FCE_DIR_MOVE] = "FCE_DIR_MOVE",
+    [FCE_LOGIN] = "FCE_LOGIN",
+    [FCE_LOGOUT] = "FCE_LOGOUT",
+    [FCE_CONN_START] = "FCE_CONN_START",
+    [FCE_CONN_BROKEN] = "FCE_CONN_BROKEN"
 };
 
 /*
@@ -196,12 +193,12 @@ static ssize_t build_fce_packet(const AFPObj *obj,
     datalen += 8;
 
     /* version */
-    *p = FCE_PACKET_VERSION;
+    *p = obj->fce_version;
     p += 1;
     datalen += 1;
 
     /* optional: options */
-    if (FCE_PACKET_VERSION > 1) {
+    if (obj->fce_version > 1) {
         if (oldpath)
             packet_info |= FCE_EV_INFO_SRCPATH;
         *p = packet_info;
@@ -215,13 +212,15 @@ static ssize_t build_fce_packet(const AFPObj *obj,
     datalen += 1;
 
     /* optional: padding */
-    if (FCE_PACKET_VERSION > 1) {
+    if (obj->fce_version > 1) {
+        *p = 0;
         p += 1;
         datalen += 1;
     }
 
     /* optional: reserved */
-    if (FCE_PACKET_VERSION > 1) {
+    if (obj->fce_version > 1) {
+        memset(p, 0, 8);
         p += 8;
         datalen += 8;
     }
@@ -298,9 +297,6 @@ static void send_fce_event(const AFPObj *obj, int event, const char *path, const
     /* initialized ? */
     if (first_event == true) {
         first_event = false;
-
-        fce_event_names[FCE_CONN_START] = "FCE_CONN_START";
-        fce_event_names[FCE_CONN_BROKEN] = "FCE_CONN_BROKEN";
 
         struct passwd *pwd = getpwuid(obj->uid);
         user = strdup(pwd->pw_name);
