@@ -10,6 +10,7 @@ netatalk (3.1.8-1) UNRELEASED; urgency=low
   * Rename libatalk4 to libatalk17
   * Change init system to debian-systemd
   * Build-depend on dh-systemd
+  * Logrotate added
 
  -- Adrian Knoth <adi@drcomp.erfurt.thur.de>  Tue, 28 Jan 2014 18:10:18 +0100
 
