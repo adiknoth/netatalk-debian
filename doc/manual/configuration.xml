@@ -92,7 +92,7 @@ basedir regex = /home
 </programlisting></para>
 
         <para>Now any user logging into the AFP server will have a user volume
-        available whos path is <filename>/home/NAME</filename>.</para>
+        available whose path is <filename>/home/NAME</filename>.</para>
 
         <para>A more complex setup would be a server with a large amount of
         user homes which are split across eg two different
@@ -631,10 +631,8 @@ basedir regex = /usr/home</programlisting></para>
 
               <para>If a character cannot be converted from the <option>mac
               charset</option> to the selected <option>vol charset</option>,
-              afpd will save it as a CAP encoded character. For AFP3 clients,
-              afpd will convert the UTF8 character to <option>mac
-              charset</option> first. If this conversion fails, you'll receive
-              a -50 error on the mac. <emphasis>Note</emphasis>: Whenever you
+              you'll receive a -50 error on the mac.
+              <emphasis>Note</emphasis>: Whenever you
               can, please stick with the default UTF8 volume format. see
               <citerefentry>
                   <refentrytitle>afp.conf</refentrytitle>
@@ -1022,11 +1020,11 @@ uams_dhx2.so -&gt; uams_dhx2_pam.so</programlisting> then you're using PAM,
 
                 <entry>Password will be encrypted with 128 bit SSL, user will
                 be authenticated against the server but not vice versa.
-                Therefor weak against man-in-the-middle attacks.</entry>
+                Therefore weak against man-in-the-middle attacks.</entry>
 
                 <entry>Password will be encrypted using libgcrypt with CAST
                 128 in CBC mode. User will be authenticated against the server
-                but not vice versa. Therefor weak against man-in-the-middle
+                but not vice versa. Therefore weak against man-in-the-middle
                 attacks.</entry>
 
                 <entry>Password is not sent over the network. Due to the
@@ -1206,9 +1204,9 @@ uams_dhx2.so -&gt; uams_dhx2_pam.so</programlisting> then you're using PAM,
           </indexterm> permission bits. On a Mac, the Finder uses these bits
           to adjust permission in Finder windows. Example: a folder whose
           UNIX mode is read-only and an ACL giving the user write access,
-          will display the effectve read-write permission. Without the
+          will display the effective read-write permission. Without the
           permission mapping the Finder would display a read-only icon and
-          the user woldn't be able to write to the folder.</para>
+          the user wouldn't be able to write to the folder.</para>
 
         <para>By default, the effective permission of the authenticated user
         are only mapped to the mentioned UARights<indexterm>
@@ -1223,7 +1221,7 @@ uams_dhx2.so -&gt; uams_dhx2_pam.so</programlisting> then you're using PAM,
         things get more involved as you must then setup both client and server
         to be part on a authentication domain (directory service, eg LDAP,
         OpenDirectory). The reason is, that in OS X ACLs are bound to UUIDs,
-        not just uid's or gid's. Therefor afpd must be able to map every
+        not just uid's or gid's. Therefore afpd must be able to map every
         filesystem uid and gid to a UUID so that it can return the server side
         ACLs which are bound to UNIX uid and gid mapped to OS X UUIDs.</para>
 
@@ -1255,7 +1253,7 @@ aclmode = passthrough</screen>
             <para>Your server and the clients must be part of a security
             association where identity data is coming from a common source.
             ACLs in Darwin are based on UUIDs and so is the ACL specification
-            in AFP 3.2. Therefor your source of identity data has to provide
+            in AFP 3.2. Therefore your source of identity data has to provide
             an attribute for every user and group where a UUID is stored as a
             ASCII string. In other words:</para>
 
@@ -1547,8 +1545,12 @@ aclmode = passthrough</screen>
         for which spotlight is disabled won't be searchable at all.</para>
       </warning>
 
-      <para>In case the <command>dbus-daemon</command> binary is not installed
-      at the path <filename>/bin/dbus-daemon</filename>, you must use the
+      <para>The <command>dbus-daemon</command> binary has to be installed for
+      Spotlight feature. The path to dbus-daemon is determined by --with-dbus-daemon
+      option to "configure".</para>
+
+      <para>In case the <command>dbus-daemon</command> binary is installed
+      at the other path, you must use the
       global option <option>dbus daemon</option> to point to the path, eg for
       Solaris with Tracker from OpenCSW: <screen>dbus daemon = /opt/csw/bin/dbus-daemon</screen></para>
     </sect2>
@@ -1567,10 +1569,10 @@ aclmode = passthrough</screen>
           watches must be added individually.</para>
 
           <para>On Solaris the FEN file event notification system is used. It
-          is unkown which limitations and ressource consumption this Solaris
+          is unknown which limitations and resource consumption this Solaris
           subsystem may have.</para>
 
-          <para>We therefor recommend to disable live filesystem monitoring
+          <para>We therefore recommend to disable live filesystem monitoring
           and let Tracker periodically scan filesystems for changes instead,
           see the Tracker configuration options <link
           linkend="enable-monitors">enable-monitors</link> and <link
@@ -1583,7 +1585,7 @@ aclmode = passthrough</screen>
       <title>Using Tracker commandline tools on the server</title>
 
       <para>Netatalk must be running, commands must be executed as root and
-      some environent variables must be set up (adjust PREFIX to point to
+      some environment variables must be set up (adjust PREFIX to point to
       the base directory Netatalk in installed to):<screen>$ su
 # cat .tracker_profile
 PREFIX="/"
@@ -1598,28 +1600,58 @@ export DBUS_SESSION_BUS_ADDRESS="unix:path=$PREFIX/var/netatalk/spotlight.ipc"
       PATH:<screen># export PATH=/opt/csw/bin:$PATH</screen></para>
 
       <sect3>
-        <title>Starting and stopping Tracker</title>
+        <title>Querying Tracker status</title>
 
         <variablelist>
           <varlistentry>
-            <term>Querying Tracker status</term>
-
+            <term>Recent Tracker:</term>
             <listitem>
-              <screen># tracker-control -S</screen>
+              <screen># tracker daemon</screen>
             </listitem>
           </varlistentry>
 
           <varlistentry>
-            <term>Stop Tracker</term>
+          <term>Old Tracker:</term>
+          <listitem>
+            <screen># tracker-control -S</screen>
+          </listitem>
+          </varlistentry>
+        </variablelist>
+      </sect3>
 
+      <sect3>
+        <title>Stop Tracker</title>
+
+        <variablelist>
+          <varlistentry>
+            <term>Recent Tracker:</term>
+            <listitem>
+              <screen># tracker daemon -t</screen>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term>Old Tracker:</term>
             <listitem>
               <screen># tracker-control -t</screen>
             </listitem>
           </varlistentry>
+        </variablelist>
+      </sect3>
+
+      <sect3>
+        <title>Start Tracker</title>
+
+        <variablelist>
+          <varlistentry>
+            <term>Recent Tracker:</term>
+            <listitem>
+              <screen># tracker daemon -s</screen>
+            </listitem>
+          </varlistentry>
 
           <varlistentry>
-            <term>Start Tracker status</term>
-
+            <term>Old Tracker:</term>
             <listitem>
               <screen># tracker-control -s</screen>
             </listitem>
@@ -1630,20 +1662,63 @@ export DBUS_SESSION_BUS_ADDRESS="unix:path=$PREFIX/var/netatalk/spotlight.ipc"
       <sect3>
         <title>Reindex directory</title>
 
-        <screen># tracker-control -f PATH</screen>
-      </sect3>
+        <variablelist>
+          <varlistentry>
+            <term>Recent Tracker:</term>
+            <listitem>
+              <screen># tracker index -f PATH</screen>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term>Old Tracker:</term>
+            <listitem>
+              <screen># tracker-control -f PATH</screen>
+            </listitem>
+          </varlistentry>
+        </variablelist>
+        </sect3>
 
       <sect3>
         <title>Query Tracker for information about a file or directory</title>
 
-        <screen># tracker-info PATH</screen>
-      </sect3>
+        <variablelist>
+          <varlistentry>
+            <term>Recent Tracker:</term>
+            <listitem>
+              <screen># tracker info PATH</screen>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term>Old Tracker:</term>
+            <listitem>
+              <screen># tracker-info PATH</screen>
+            </listitem>
+          </varlistentry>
+        </variablelist>
+        </sect3>
 
       <sect3>
         <title>Search Tracker</title>
 
-        <screen># tracker-search QUERY</screen>
-      </sect3>
+        <variablelist>
+          <varlistentry>
+            <term>Recent Tracker:</term>
+            <listitem>
+              <screen># tracker search QUERY</screen>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term>Old Tracker:</term>
+            <listitem>
+              <screen># tracker-search QUERY</screen>
+            </listitem>
+          </varlistentry>
+        </variablelist>
+
+        </sect3>
     </sect2>
 
     <sect2>
@@ -1654,8 +1729,8 @@ export DBUS_SESSION_BUS_ADDRESS="unix:path=$PREFIX/var/netatalk/spotlight.ipc"
 
       <para>Gnome dconf settings are per-user settings, so, as Netatalk runs
       the Tracker processes as root, the settings are stored in the root user
-      context and reading or changing these settings must be perfomed as root
-      and Netatalk must be running (and again the enviroment must be set up
+      context and reading or changing these settings must be performed as root
+      and Netatalk must be running (and again the environment must be set up
       as shown above).</para>
 
       <para><screen># gsettings list-recursively | grep Tracker

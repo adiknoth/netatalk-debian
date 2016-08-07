@@ -154,10 +154,23 @@ AC_DEFUN([AC_NETATALK_SPOTLIGHT], [
     )
 
     AC_ARG_WITH([tracker-prefix],
-      [AS_HELP_STRING([--with-tracker-prefix=PATH],[Prefix of Tracker installation (default: none)])],
+      [AS_HELP_STRING([--with-tracker-prefix=PATH],[Prefix of Tracker (default: none)])],
       [ac_cv_tracker_prefix=$withval],
       [ac_cv_tracker_prefix="`pkg-config --variable=prefix tracker-sparql-$ac_cv_tracker_pkg_version`"]
     )
+
+    AC_ARG_WITH([tracker-install-prefix],
+      [AS_HELP_STRING([--with-tracker-install-prefix=PATH],[Install prefix for Tracker (default: none)])],
+      [ac_cv_tracker_install_prefix=$withval],
+      [ac_cv_tracker_install_prefix=$ac_cv_tracker_prefix]
+    )
+
+    AC_ARG_WITH([dbus-daemon],
+      [AS_HELP_STRING([--with-dbus-daemon=PATH],[Path to DBus daemon (default: /bin/dbus-daemon)])],
+      [ac_cv_dbus_daemon=$withval],
+      [ac_cv_dbus_daemon=/bin/dbus-daemon]
+    )
+    DBUS_DAEMON_PATH=$ac_cv_dbus_daemon
 
     AC_ARG_VAR([PKG_CONFIG_PATH], [Path to additional pkg-config packages])
     PKG_CHECK_MODULES([TRACKER], [tracker-sparql-$ac_cv_tracker_pkg_version >= $ac_cv_tracker_pkg_version_min], [ac_cv_have_tracker_sparql=yes], [ac_cv_have_tracker_sparql=no])
@@ -169,14 +182,29 @@ AC_DEFUN([AC_NETATALK_SPOTLIGHT], [
     else
         ac_cv_have_tracker=yes
         AC_DEFINE(HAVE_TRACKER, 1, [Define if Tracker is available])
-        AC_DEFINE_UNQUOTED(TRACKER_PREFIX, ["$ac_cv_tracker_prefix"], [Path to Tracker])
-        AC_DEFINE([DBUS_DAEMON_PATH], ["/bin/dbus-daemon"], [Path to dbus-daemon])
+        AC_DEFINE_UNQUOTED(TRACKER_PREFIX, ["$ac_cv_tracker_install_prefix"], [Path to Tracker])
+        AC_DEFINE_UNQUOTED([DBUS_DAEMON_PATH], ["$ac_cv_dbus_daemon"], [Path to dbus-daemon])
+    fi
+
+    dnl Tracker Managing Command
+    if test x"$ac_cv_have_tracker" = x"yes" ; then
+        AC_CHECK_PROGS(ac_cv_tracker_manage, tracker tracker-control, , ["$ac_cv_tracker_prefix"/bin])
+        if test x"$ac_cv_tracker_manage" = x"tracker" ; then
+           TRACKER_MANAGING_COMMAND="tracker daemon"
+           AC_DEFINE(TRACKER_MANAGING_COMMAND, "tracker daemon", [tracker managing command])
+        elif test x"$ac_cv_tracker_manage" = x"tracker-control" ; then
+           TRACKER_MANAGING_COMMAND="tracker-control"
+           AC_DEFINE(TRACKER_MANAGING_COMMAND, "tracker-control", [tracker managing command])
+        else
+           AC_MSG_ERROR([could find neither tracker command nor tracker-control command])
+        fi
     fi
 
     AC_SUBST(TRACKER_CFLAGS)
     AC_SUBST(TRACKER_LIBS)
     AC_SUBST(TRACKER_MINER_CFLAGS)
     AC_SUBST(TRACKER_MINER_LIBS)
+    AC_SUBST(DBUS_DAEMON_PATH)
     AM_CONDITIONAL(HAVE_TRACKER, [test x"$ac_cv_have_tracker" = x"yes"])
 ])
 
@@ -335,25 +363,6 @@ powerpc64:yes | s390x:yes | sparc*:yes | x86_64:yes | i386:yes)
 esac
 ])
 
-dnl Check for optional admin group support
-AC_DEFUN([AC_NETATALK_ADMIN_GROUP], [
-    netatalk_cv_admin_group=yes
-    AC_MSG_CHECKING([for administrative group support])
-    AC_ARG_ENABLE(admin-group,
- 	    [  --disable-admin-group   disable admin group],[
-            if test x"$enableval" = x"no"; then
-		         AC_DEFINE(ADMIN_GRP, 0, [Define if the admin group should be enabled])
-		         netatalk_cv_admin_group=no
-		         AC_MSG_RESULT([no])
-	        else
-		         AC_DEFINE(ADMIN_GRP, 1, [Define if the admin group should be enabled])
-		         AC_MSG_RESULT([yes])
-            fi],[
-		AC_DEFINE(ADMIN_GRP, 1, [Define if the admin group should be enabled])
-		AC_MSG_RESULT([yes])
-	])
-])
-
 dnl Check for optional cracklib support
 AC_DEFUN([AC_NETATALK_CRACKLIB], [
 netatalk_cv_with_cracklib=no
@@ -480,7 +489,7 @@ AC_ARG_ENABLE(shell-check,
 dnl Check for optional initscript install
 AC_DEFUN([AC_NETATALK_INIT_STYLE], [
     AC_ARG_WITH(init-style,
-                [  --with-init-style       use OS specific init config [[redhat-sysv|redhat-systemd|suse-sysv|suse-systemd|gentoo|netbsd|debian-sysv|debian-systemd|solaris|systemd]]],
+                [  --with-init-style       use OS specific init config [[redhat-sysv|redhat-systemd|suse-sysv|suse-systemd|gentoo-openrc|gentoo-systemd|netbsd|debian-sysv|debian-systemd|solaris|openrc|systemd]]],
                 init_style="$withval", init_style=none
     )
     case "$init_style" in 
@@ -507,8 +516,15 @@ AC_DEFUN([AC_NETATALK_INIT_STYLE], [
 	    ac_cv_init_dir="/usr/lib/systemd/system"
 	    ;;
     "gentoo")
-	    AC_MSG_RESULT([enabling gentoo-style initscript support])
+	    AC_MSG_ERROR([--with-init-style=gentoo is obsoleted. Use gentoo-openrc or gentoo-systemd.])
+        ;;
+    "gentoo-openrc")
+	    AC_MSG_RESULT([enabling gentoo-style openrc support])
 	    ac_cv_init_dir="/etc/init.d"
+        ;;
+    "gentoo-systemd")
+	    AC_MSG_RESULT([enabling gentoo-style systemd support])
+	    ac_cv_init_dir="/usr/lib/systemd/system"
         ;;
     "netbsd")
 	    AC_MSG_RESULT([enabling netbsd-style initscript support])
@@ -529,6 +545,10 @@ AC_DEFUN([AC_NETATALK_INIT_STYLE], [
 	    AC_MSG_RESULT([enabling solaris-style SMF support])
 	    ac_cv_init_dir="/lib/svc/manifest/network/"
         ;;
+    "openrc")
+	    AC_MSG_RESULT([enabling general openrc support])
+	    ac_cv_init_dir="/etc/init.d"
+        ;;
     "systemd")
 	    AC_MSG_RESULT([enabling general systemd support])
 	    ac_cv_init_dir="/usr/lib/systemd/system"
@@ -545,9 +565,9 @@ AC_DEFUN([AC_NETATALK_INIT_STYLE], [
     AM_CONDITIONAL(USE_REDHAT_SYSV, test x$init_style = xredhat-sysv)
     AM_CONDITIONAL(USE_SUSE_SYSV, test x$init_style = xsuse-sysv)
     AM_CONDITIONAL(USE_SOLARIS, test x$init_style = xsolaris)
-    AM_CONDITIONAL(USE_GENTOO, test x$init_style = xgentoo)
+    AM_CONDITIONAL(USE_OPENRC, test x$init_style = xopenrc || test x$init_style = xgentoo-openrc)
     AM_CONDITIONAL(USE_DEBIAN_SYSV, test x$init_style = xdebian-sysv)
-    AM_CONDITIONAL(USE_SYSTEMD, test x$init_style = xsystemd || test x$init_style = xredhat-systemd || test x$init_style = xsuse-systemd)
+    AM_CONDITIONAL(USE_SYSTEMD, test x$init_style = xsystemd || test x$init_style = xredhat-systemd || test x$init_style = xsuse-systemd || test x$init_style = xgentoo-systemd)
     AM_CONDITIONAL(USE_DEBIAN_SYSTEMD, test x$init_style = xdebian-systemd)
     AM_CONDITIONAL(USE_UNDEF, test x$init_style = xnone)
 
@@ -564,6 +584,7 @@ AC_DEFUN([AC_NETATALK_OS_SPECIFIC], [
 case "$host_os" in
 	*aix*)				this_os=aix ;;
 	*freebsd*) 			this_os=freebsd ;;
+	*kfreebsd*)			this_os=kfreebsd ;;
 	*hpux11*)			this_os=hpux11 ;;
 	*irix*)				this_os=irix ;;
 	*linux*)   			this_os=linux ;;
@@ -586,7 +607,7 @@ dnl --------------------- GNU source
 case "$this_os" in
 	linux)	AC_DEFINE(_GNU_SOURCE, 1, [Whether to use GNU libc extensions])
         ;;
-     kfreebsd-gnu) AC_DEFINE(_GNU_SOURCE, 1, [Whether to use GNU libc extensions])
+	kfreebsd) AC_DEFINE(_GNU_SOURCE, 1, [Whether to use GNU libc extensions])
         ;;
 esac
 
@@ -601,7 +622,7 @@ if test x"$this_os" = "xfreebsd"; then
 fi
 
 dnl ----- GNU/kFreeBSD specific -----
-if test x"$this_os" = "xkfreebsd-gnu"; then 
+if test x"$this_os" = "xkfreebsd"; then
 	AC_MSG_RESULT([ * GNU/kFreeBSD specific configuration])
 	AC_DEFINE(BSD4_4, 1, [BSD compatiblity macro])
 	AC_DEFINE(FREEBSD, 1, [Define if OS is FreeBSD])
@@ -623,8 +644,6 @@ if test x"$this_os" = "xlinux"; then
 	dnl ----- on every single version of linux I've ever played with.
 	dnl ----- see etc/afpd/quota.c
 	AC_DEFINE(HAVE_BROKEN_DBTOB, 1, [Define if dbtob is broken])
-
-	need_dash_r=no
 fi
 
 dnl ----- NetBSD specific -----
@@ -635,7 +654,6 @@ if test x"$this_os" = "xnetbsd"; then
     AC_DEFINE(OPEN_NOFOLLOW_ERRNO, EFTYPE, errno returned by open with O_NOFOLLOW)
 
 	CFLAGS="-I\$(top_srcdir)/sys/netbsd $CFLAGS"
-	need_dash_r=yes 
 
 	dnl ----- NetBSD does not have crypt.h, uses unistd.h -----
 	AC_DEFINE(UAM_DHX, 1, [Define if the DHX UAM modules should be compiled])
@@ -658,7 +676,6 @@ if test x"$this_os" = "xsolaris"; then
 	AC_DEFINE(SOLARIS, 1, [Solaris compatibility macro])
     AC_DEFINE(_XOPEN_SOURCE, 600, [Solaris compilation environment])
     AC_DEFINE(__EXTENSIONS__,  1, [Solaris compilation environment])
-	need_dash_r=yes
 	init_style=solaris
 fi
 
@@ -666,6 +683,25 @@ dnl Whether to run ldconfig after installing libraries
 AC_PATH_PROG(NETA_LDCONFIG, ldconfig, , [$PATH$PATH_SEPARATOR/sbin$PATH_SEPARATOR/bin$PATH_SEPARATOR/usr/sbin$PATH_SEPARATOR/usr/bin])
 echo NETA_LDCONFIG = $NETA_LDCONFIG
 AM_CONDITIONAL(RUN_LDCONFIG, test x"$this_os" = x"linux" -a x"$NETA_LDCONFIG" != x"")
+])
+
+dnl Check whether to enable rpath (the default on Solaris and NetBSD)
+AC_DEFUN([AC_NETATALK_SET_RPATH], [
+	AS_CASE("$this_os", [solaris|netbsd],
+		[default_rpath=yes],
+		[default_rpath=no])
+	AS_CASE("$this_os", [linux|kfreebsd],
+		[enable_dtags=yes],
+		[enable_dtags=no])
+	AC_ARG_ENABLE(rpath,
+		AS_HELP_STRING([--enable-rpath],
+			[enable RPATH/RUNPATH (default: $default_rpath)]),
+		AS_CASE("$enableval",
+			[yes], [enable_rpath=yes],
+			[no], [enable_rpath=no],
+			[AC_MSG_ERROR([bad value $enableval for --enable-rpath])]),
+		[enable_rpath=$default_rpath])
+	AC_MSG_RESULT([$enable_rpath])
 ])
 
 dnl Check for building PGP UAM module
@@ -727,7 +763,7 @@ AC_MSG_RESULT($with_kerberos)
 
 if test x"$with_kerberos" != x"no"; then
    have_krb5_header="no"
-   AC_CHECK_HEADERS([krb5/krb5.h krb5.h], [have_krb5_header="yes"; break])
+   AC_CHECK_HEADERS([krb5/krb5.h krb5.h kerberosv5/krb5.h], [have_krb5_header="yes"; break])
    if test x"$have_krb5_header" = x"no" && test x"$with_kerberos" != x"auto"; then
       AC_MSG_FAILURE([--with-kerberos was given, but no headers found])
    fi

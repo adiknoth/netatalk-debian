@@ -5,7 +5,7 @@
 
     <manvolnum>5</manvolnum>
 
-    <refmiscinfo class="date">26 Oct 2015</refmiscinfo>
+    <refmiscinfo class="date">04 Apr 2016</refmiscinfo>
 
     <refmiscinfo class="source">@NETATALK_VERSION@</refmiscinfo>
   </refmeta>
@@ -297,6 +297,40 @@
         </varlistentry>
 
         <varlistentry>
+          <term>admin group = <replaceable>group</replaceable>
+          <type>(G)</type></term>
+
+          <listitem>
+            <para>Allows users of a certain group to be seen as the superuser
+            when they log in. This option is disabled by default.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term>force user = <replaceable>USER</replaceable>
+          <type>(G)</type></term>
+
+          <listitem>
+            <para>This specifies a UNIX user name that will be
+            assigned as the default user for all users connecting to
+            this server. This is useful for sharing files. You should
+            also use it carefully as using it incorrectly can cause
+            security problems.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term>force group = <replaceable>GROUP</replaceable>
+          <type>(G)</type></term>
+
+          <listitem>
+            <para>This specifies a UNIX group name that will be
+            assigned as the default primary group for all users
+            connecting to this server.</para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
           <term>k5 keytab = <replaceable>path</replaceable>
           <type>(G)</type></term>
 
@@ -376,7 +410,7 @@
               </varlistentry>
 
               <varlistentry>
-                <term>uams_randum.so</term>
+                <term>uams_randnum.so</term>
 
                 <listitem>
                   <para>allows Random Number and Two-Way Random Number
@@ -762,16 +796,6 @@
 
       <variablelist>
         <varlistentry>
-          <term>admin group = <replaceable>group</replaceable>
-          <type>(G)</type></term>
-
-          <listitem>
-            <para>Allows users of a certain group to be seen as the superuser
-            when they log in. This option is disabled by default.</para>
-          </listitem>
-        </varlistentry>
-
-        <varlistentry>
           <term>afp read locks = <replaceable>BOOLEAN</replaceable> (default:
           <emphasis>no</emphasis>) <type>(G)</type></term>
 
@@ -896,7 +920,8 @@
 
           <listitem>
             <para>Sets the path to dbus-daemon binary used by Spotlight feature.
-            The default is <filename>/bin/dbus-daemon</filename>.</para>
+            The default value <filename>[@DBUS_DAEMON_PATH@]</filename>
+            is determined when building netatalk.</para>
           </listitem>
         </varlistentry>
 
@@ -1093,8 +1118,11 @@
           <emphasis>yes</emphasis>) <type>(G)</type></term>
 
           <listitem>
-            <para>Whether to start Tracker with 
-            <emphasis>tracker-control -s</emphasis>.</para>
+            <para>Whether to start Tracker with
+            "<command>tracker daemon -s</command>".
+            In case of old Tracker,
+            "<command>tracker-control -s</command>"
+            is used instead.</para>
           </listitem>
         </varlistentry>
 
@@ -2250,9 +2278,6 @@
       </citerefentry>
       provided charset. It is highly recommended to stick to the default
     UTF-8.</para>
-
-    <para><emphasis>Note</emphasis>: Whenever you can, please stick with the
-    default UTF-8 volume format.</para>
   </refsect1>
 
   <refsect1>

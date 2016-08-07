@@ -176,7 +176,7 @@ static void sigterm_cb(evutil_socket_t fd, short what, void *arg)
     event_del(timer_ev);
 
 #ifdef HAVE_TRACKER
-    system("tracker-control -t");
+    system(TRACKER_MANAGING_COMMAND " -t");
 #endif
     kill_childs(SIGTERM, &afpd_pid, &cnid_metad_pid, &dbus_pid, NULL);
 }
@@ -186,7 +186,7 @@ static void sigquit_cb(evutil_socket_t fd, short what, void *arg)
 {
     LOG(log_note, logtype_afpd, "Exiting on SIGQUIT");
 #ifdef HAVE_TRACKER
-    system("tracker-control -t");
+    system(TRACKER_MANAGING_COMMAND " -t");
 #endif
     kill_childs(SIGQUIT, &afpd_pid, &cnid_metad_pid, &dbus_pid, NULL);
 }
@@ -198,7 +198,7 @@ static void sighup_cb(evutil_socket_t fd, short what, void *arg)
 
     if (!(obj.options.flags & OPTION_NOZEROCONF)) {
         zeroconf_deregister();
-        load_volumes(&obj, lv_all | lv_force);
+        load_volumes(&obj, LV_ALL | LV_FORCE);
         zeroconf_register(&obj);
         LOG(log_note, logtype_default, "Re-registered with Zeroconf");
     }
@@ -335,9 +335,52 @@ static pid_t run_process(const char *path, ...)
     return pid;
 }
 
+static void show_netatalk_version( void )
+{
+	int num, i;
+
+	printf( "netatalk %s - Netatalk AFP server service controller daemon\n\n", VERSION );
+
+	puts( "This program is free software; you can redistribute it and/or modify it under" );
+	puts( "the terms of the GNU General Public License as published by the Free Software" );
+	puts( "Foundation; either version 2 of the License, or (at your option) any later" );
+	puts( "version. Please see the file COPYING for further information and details.\n" );
+
+	puts( "netatalk has been compiled with support for these features:\n" );
+
+	printf( "     Spotlight support:\t" );
+#ifdef HAVE_TRACKER
+	puts( "Yes" );
+#else
+	puts( "No" );
+#endif
+
+}
+
+static void show_netatalk_paths( void )
+{
+	printf( "                  afpd:\t%s\n", _PATH_AFPD);
+	printf( "            cnid_metad:\t%s\n", _PATH_CNID_METAD);
+
+#ifdef HAVE_TRACKER
+	printf( "       tracker manager:\t%s\n", TRACKER_PREFIX "/bin/" TRACKER_MANAGING_COMMAND);
+	printf( "           dbus-daemon:\t%s\n", DBUS_DAEMON_PATH);
+#endif
+
+	printf( "              afp.conf:\t%s\n", _PATH_CONFDIR "afp.conf");
+
+#ifdef HAVE_TRACKER
+	printf( "     dbus-session.conf:\t%s\n", _PATH_CONFDIR "dbus-session.conf");
+#endif
+
+	printf( "    netatalk lock file:\t%s\n", PATH_NETATALK_LOCK);
+
+}
+
 static void usage(void)
 {
     printf("usage: netatalk [-F configfile] \n");
+    printf("       netatalk -v|-V \n");
 }
 
 int main(int argc, char **argv)
@@ -349,13 +392,19 @@ int main(int argc, char **argv)
     /* Log SIGBUS/SIGSEGV SBT */
     fault_setup(NULL);
 
-    while ((c = getopt(argc, argv, ":dF:")) != -1) {
+    while ((c = getopt(argc, argv, ":dF:vV")) != -1) {
         switch(c) {
         case 'd':
             debug = 1;
             break;
         case 'F':
             obj.cmdlineconfigfile = strdup(optarg);
+            break;
+        case 'v':       /* version */
+        case 'V':       /* version */
+            show_netatalk_version( ); puts( "" );
+            show_netatalk_paths( ); puts( "" );
+            exit( 0 );
             break;
         default:
             usage();
@@ -378,7 +427,7 @@ int main(int argc, char **argv)
     if (afp_config_parse(&obj, "netatalk") != 0)
         netatalk_exit(EXITERR_CONF);
 
-    load_volumes(&obj, lv_all);
+    load_volumes(&obj, LV_ALL);
 
     event_set_log_callback(libevent_logmsg_cb);
     event_set_fatal_callback(netatalk_exit);
@@ -444,8 +493,8 @@ int main(int argc, char **argv)
         set_sl_volumes();
 
         if (atalk_iniparser_getboolean(obj.iniconfig, INISEC_GLOBAL, "start tracker", 1)) {
-            LOG(log_note, logtype_default, "Starting Tracker");
-            system(TRACKER_PREFIX "/bin/tracker-control -s");
+            LOG(log_note, logtype_default, "Starting Tracker: " TRACKER_PREFIX "/bin/" TRACKER_MANAGING_COMMAND " -s");
+            system(TRACKER_PREFIX "/bin/" TRACKER_MANAGING_COMMAND " -s");
         }
     }
 #endif

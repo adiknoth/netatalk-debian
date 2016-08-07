@@ -218,9 +218,8 @@ static int set_auth_switch(const AFPObj *obj, int expired)
 
 static int login(AFPObj *obj, struct passwd *pwd, void (*logout)(void), int expired)
 {
-#ifdef ADMIN_GRP
-    int admin = 0;
-#endif /* ADMIN_GRP */
+    bool admin = false;
+    int i;
 
     if ( pwd->pw_uid == 0 ) {   /* don't allow root login */
         LOG(log_error, logtype_afpd, "login: root login denied!" );
@@ -238,77 +237,47 @@ static int login(AFPObj *obj, struct passwd *pwd, void (*logout)(void), int expi
     if (set_groups(obj, pwd) != 0)
         return AFPERR_BADUAM;
 
-#ifdef ADMIN_GRP
     LOG(log_debug, logtype_afpd, "obj->options.admingid == %d", obj->options.admingid);
 
     if (obj->options.admingid != 0) {
-        int i;
         for (i = 0; i < obj->ngroups; i++) {
-            if (obj->groups[i] == obj->options.admingid) admin = 1;
+            if (obj->groups[i] == obj->options.admingid) {
+                admin = true;
+            }
         }
     }
     if (admin) {
         ad_setfuid(0);
         LOG(log_info, logtype_afpd, "admin login -- %s", pwd->pw_name );
-    }
-    if (!admin)
-#endif /* ADMIN_GRP */
-#ifdef TRU64
-    {
-        struct DSI *dsi = obj->handle;
-        struct hostent *hp;
-        char *clientname;
-        int argc;
-        char **argv;
-        char hostname[256];
-
-        afp_get_cmdline( &argc, &argv );
-
-        hp = gethostbyaddr( (char *) &dsi->client.sin_addr,
-                            sizeof( struct in_addr ),
-                            dsi->client.sin_family );
-
-        if( hp )
-            clientname = hp->h_name;
-        else
-            clientname = inet_ntoa( dsi->client.sin_addr );
-
-        sprintf( hostname, "%s@%s", pwd->pw_name, clientname );
-
-        if( sia_become_user( NULL, argc, argv, hostname, pwd->pw_name,
-                             NULL, FALSE, NULL, NULL,
-                             SIA_BEU_REALLOGIN ) != SIASUCCESS )
-            return AFPERR_BADUAM;
-
-        LOG(log_info, logtype_afpd, "session from %s (%s)", hostname,
-            inet_ntoa( dsi->client.sin_addr ) );
-
+    } else {
         if (setegid( pwd->pw_gid ) < 0 || seteuid( pwd->pw_uid ) < 0) {
             LOG(log_error, logtype_afpd, "login: %s %s", pwd->pw_name, strerror(errno) );
             return AFPERR_BADUAM;
         }
     }
-#else /* TRU64 */
-    if (setegid( pwd->pw_gid ) < 0 || seteuid( pwd->pw_uid ) < 0) {
-        LOG(log_error, logtype_afpd, "login: %s %s", pwd->pw_name, strerror(errno) );
-        return AFPERR_BADUAM;
+
+    if (obj->options.force_user) {
+        if (seteuid(obj->options.force_uid) < 0) {
+            LOG(log_error, logtype_afpd, "login: %s %s", pwd->pw_name, strerror(errno));
+            return AFPERR_BADUAM;
+        }
+        LOG(log_info, logtype_afpd, "login: force uid: %ju", (uintmax_t)obj->options.force_uid);
     }
-#endif /* TRU64 */
+
+    if (obj->options.force_group) {
+        if (setegid(obj->options.force_gid) < 0) {
+            LOG(log_error, logtype_afpd, "login: %s %s", pwd->pw_name, strerror(errno));
+            return AFPERR_BADUAM;
+        }
+        LOG(log_info, logtype_afpd, "login: force gid: %ju", (uintmax_t)obj->options.force_gid);
+    }
 
     LOG(log_debug, logtype_afpd, "login: supplementary groups: %s", print_groups(obj->ngroups, obj->groups));
 
-    /* There's probably a better way to do this, but for now, we just play root */
-#ifdef ADMIN_GRP
-    if (admin)
-        obj->uid = 0;
-    else
-#endif /* ADMIN_GRP */
-        obj->uid = geteuid();
-
     set_auth_switch(obj, expired);
-    /* save our euid, we need it for preexec_close */
-    obj->uid = geteuid();
     obj->logout = logout;
+    obj->uid = pwd->pw_uid;
+    obj->euid = geteuid();
 
     /* pam_umask or similar might have changed our umask */
     (void)umask(obj->options.umask);

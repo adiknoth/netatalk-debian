@@ -2,12 +2,12 @@
 .\"     Title: afp.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.78.0 <http://docbook.sf.net/>
-.\"      Date: 26 Oct 2015
+.\"      Date: 04 Apr 2016
 .\"    Manual: @NETATALK_VERSION@
 .\"    Source: @NETATALK_VERSION@
 .\"  Language: English
 .\"
-.TH "AFP\&.CONF" "5" "26 Oct 2015" "@NETATALK_VERSION@" "@NETATALK_VERSION@"
+.TH "AFP\&.CONF" "5" "04 Apr 2016" "@NETATALK_VERSION@" "@NETATALK_VERSION@"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -269,6 +269,21 @@ Specifying eg "\fBadmin auth user = root\fR" whenever a normal user login fails,
 \fBadmin auth user\fR, you can authenticate as any other user\&.
 .RE
 .PP
+admin group = \fIgroup\fR \fB(G)\fR
+.RS 4
+Allows users of a certain group to be seen as the superuser when they log in\&. This option is disabled by default\&.
+.RE
+.PP
+force user = \fIUSER\fR \fB(G)\fR
+.RS 4
+This specifies a UNIX user name that will be assigned as the default user for all users connecting to this server\&. This is useful for sharing files\&. You should also use it carefully as using it incorrectly can cause security problems\&.
+.RE
+.PP
+force group = \fIGROUP\fR \fB(G)\fR
+.RS 4
+This specifies a UNIX group name that will be assigned as the default primary group for all users connecting to this server\&.
+.RE
+.PP
 k5 keytab = \fIpath\fR \fB(G)\fR, k5 service = \fIservice\fR \fB(G)\fR, k5 realm = \fIrealm\fR \fB(G)\fR
 .RS 4
 These are required if the server supports the Kerberos 5 authentication UAM\&.
@@ -305,7 +320,7 @@ uams_clrtxt\&.so
 (uams_pam\&.so or uams_passwd\&.so) Allow logins with passwords transmitted in the clear\&. (legacy)
 .RE
 .PP
-uams_randum\&.so
+uams_randnum\&.so
 .RS 4
 allows Random Number and Two\-Way Random Number Exchange for authentication (requires a separate file containing the passwords, either @pkgconfdir@/afppasswd file or the one specified via "\fBpasswd file\fR")\&. See
 \fBafppasswd\fR(1)
@@ -515,11 +530,6 @@ service registration if Avahi or mDNSResponder were compiled in\&.
 .RE
 .SS "Miscellaneous Options"
 .PP
-admin group = \fIgroup\fR \fB(G)\fR
-.RS 4
-Allows users of a certain group to be seen as the superuser when they log in\&. This option is disabled by default\&.
-.RE
-.PP
 afp read locks = \fIBOOLEAN\fR (default: \fIno\fR) \fB(G)\fR
 .RS 4
 Whether to apply locks to the byte region read in FPRead calls\&. The AFP spec mandates this, but it\*(Aqs not really in line with UNIX semantics and is a performance hug\&.
@@ -614,8 +624,9 @@ Specifies the IP address and port of a cnid_metad server, required for CNID dbd 
 .PP
 dbus daemon = \fIpath\fR \fB(G)\fR
 .RS 4
-Sets the path to dbus\-daemon binary used by Spotlight feature\&. The default is
-/bin/dbus\-daemon\&.
+Sets the path to dbus\-daemon binary used by Spotlight feature\&. The default value
+[@DBUS_DAEMON_PATH@]
+is determined when building netatalk\&.
 .RE
 .PP
 dircachesize = \fInumber\fR \fB(G)\fR
@@ -721,8 +732,7 @@ Whether to start a dbus instance for use with Tracker\&.
 .PP
 start tracker = \fIBOOLEAN\fR (default: \fIyes\fR) \fB(G)\fR
 .RS 4
-Whether to start Tracker with
-\fItracker\-control \-s\fR\&.
+Whether to start Tracker with "\fBtracker daemon \-s\fR"\&. In case of old Tracker, "\fBtracker\-control \-s\fR" is used instead\&.
 .RE
 .PP
 veto message = \fIBOOLEAN\fR (default: \fIno\fR) \fB(G)\fR
@@ -1502,8 +1512,6 @@ option will allow you to select another volume encoding\&.
 will accept any
 \fBiconv\fR(1)
 provided charset\&. It is highly recommended to stick to the default UTF\-8\&.
-.PP
-\fINote\fR: Whenever you can, please stick with the default UTF\-8 volume format\&.
 .SH "SEE ALSO"
 .PP
 \fBafpd\fR(8),

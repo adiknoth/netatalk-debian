@@ -1025,6 +1025,7 @@ static struct vol *creatvol(AFPObj *obj,
     if (!check_vol_acl_support(volume)) {
         LOG(log_debug, logtype_afpd, "creatvol(\"%s\"): disabling ACL support", volume->v_path);
         volume->v_flags &= ~AFPVOL_ACLS;
+	obj->options.flags &= ~(OPTION_ACL2MODE | OPTION_ACL2MACCESS);
     }
 #endif
 
@@ -1466,7 +1467,10 @@ int load_charset(struct vol *vol)
  * Initialize volumes and load ini configfile
  *
  * @param obj      (r) handle
- * @param flags    (r) flags controlling volume load behaviour
+ * @param flags    (r) flags controlling volume load behaviour:
+ *                     LV_DEFAULT: load shares in a user/session context, this honors authorisation
+ *                     LV_ALL: load shares that are available in the config file
+ *                     LV_FORCE: reload file even though the timestamp wasn't changed
  */
 int load_volumes(AFPObj *obj, lv_flags_t flags)
 {
@@ -1492,7 +1496,7 @@ int load_volumes(AFPObj *obj, lv_flags_t flags)
         EC_NULL( pwbuf = malloc(bufsize) );
     }
 
-    if (!(flags & lv_all) && obj->uid) {
+    if (!(flags & LV_ALL)) {
         ret = getpwuid_r(obj->uid, &pwent, pwbuf, bufsize, &pwresult);
         if (pwresult == NULL) {
             LOG(log_error, logtype_afpd, "load_volumes: getpwuid_r: %s", strerror(errno));
@@ -1502,7 +1506,7 @@ int load_volumes(AFPObj *obj, lv_flags_t flags)
     }
 
     if (Volumes) {
-        if (!(flags & lv_force) && !volfile_changed(obj))
+        if (!(flags & LV_FORCE) && !volfile_changed(obj))
             goto EC_CLEANUP;
         have_uservol = 0;
         for (vol = Volumes; vol; vol = vol->v_next) {
@@ -1709,18 +1713,36 @@ struct vol *getvolbypath(AFPObj *obj, const char *path)
     struct vol *tmp;
     const struct passwd *pw;
     char        volname[AFPVOL_U8MNAMELEN + 1];
-    char        *realabspath = NULL;
+    char        abspath[MAXPATHLEN + 1];
     char        volpath[MAXPATHLEN + 1], *realvolpath = NULL;
     char        tmpbuf[MAXPATHLEN + 1];
     const char *secname, *basedir, *p = NULL, *subpath = NULL, *subpathconfig;
     char *user = NULL, *prw;
     regmatch_t match[1];
+    size_t abspath_len;
 
     LOG(log_debug, logtype_afpd, "getvolbypath(\"%s\")", path);
 
-    /*  build absolute path */
-    EC_NULL( realabspath = realpath_safe(path) );
-    path = realabspath;
+    if (path[0] != '/') {
+        /* relative path, build absolute path */
+        EC_NULL_LOG( getcwd(abspath, MAXPATHLEN) );
+        strlcat(abspath, "/", MAXPATHLEN);
+        strlcat(abspath, path, MAXPATHLEN);
+        path = abspath;
+    } else {
+        strlcpy(abspath, path, MAXPATHLEN);
+        path = abspath;
+    }
+    /* path now points to a copy of path in the abspath buffer */
+
+    /*
+     * Strip trailing slashes
+     */
+    abspath_len = strlen(abspath);
+    while (abspath[abspath_len - 1] == '/') {
+        abspath[abspath_len - 1] = 0;
+        abspath_len--;
+    }
 
     for (tmp = Volumes; tmp; tmp = tmp->v_next) { /* (1) */
         size_t v_path_len = strlen(tmp->v_path);
@@ -1842,8 +1864,6 @@ EC_CLEANUP:
         free(user);
     if (realvolpath)
         free(realvolpath);
-    if (realabspath)
-        free(realabspath);
     if (ret != 0)
         vol = NULL;
     return vol;
@@ -1995,13 +2015,27 @@ int afp_config_parse(AFPObj *AFPObj, char *processname)
         putenv(options->k5keytab);
     }
 
-#ifdef ADMIN_GRP
     if ((p = atalk_iniparser_getstring(config, INISEC_GLOBAL, "admin group",  NULL))) {
          struct group *gr = getgrnam(p);
          if (gr != NULL)
              options->admingid = gr->gr_gid;
     }
-#endif /* ADMIN_GRP */
+
+    if ((p = atalk_iniparser_getstring(config, INISEC_GLOBAL, "force user",  NULL))) {
+         struct passwd *pw = getpwnam(p);
+         if (pw != NULL) {
+             options->force_uid = pw->pw_uid;
+             options->force_user = true;
+         }
+    }
+
+    if ((p = atalk_iniparser_getstring(config, INISEC_GLOBAL, "force group",  NULL))) {
+         struct group *gr = getgrnam(p);
+         if (gr != NULL) {
+             options->force_gid = gr->gr_gid;
+             options->force_group = true;
+         }
+    }
 
     q = atalk_iniparser_getstrdup(config, INISEC_GLOBAL, "cnid server", "localhost:4700");
     r = strrchr(q, ':');

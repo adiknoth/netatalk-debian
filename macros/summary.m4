@@ -47,7 +47,6 @@ dnl	if test x"$netatalk_cv_linux_sendfile" != x; then
 dnl		AC_MSG_RESULT([         Linux sendfile support:  $netatalk_cv_linux_sendfile])
 dnl	fi
 	AC_MSG_RESULT([         quota support:           $netatalk_cv_quotasupport])
-	AC_MSG_RESULT([         admin group support:     $netatalk_cv_admin_group])
 	AC_MSG_RESULT([         valid shell check:       $netatalk_cv_use_shellcheck])
 	AC_MSG_RESULT([         cracklib support:        $netatalk_cv_with_cracklib])
 dnl	AC_MSG_RESULT([         Samba sharemode interop: $neta_cv_have_smbshmd])
@@ -63,6 +62,12 @@ dnl	AC_MSG_RESULT([         Samba sharemode interop: $neta_cv_have_smbshmd])
 	fi
 	if test x"$atalk_cv_with_dbus" = x"yes"; then
 		AC_MSG_RESULT([         dbus system directory:   $ac_cv_dbus_sysdir])
+	fi
+	if test x"$ac_cv_have_tracker" = x"yes"; then
+		AC_MSG_RESULT([         dbus daemon path:        $ac_cv_dbus_daemon])
+		AC_MSG_RESULT([         tracker prefix:          $ac_cv_tracker_prefix])
+		AC_MSG_RESULT([         tracker install prefix:  $ac_cv_tracker_install_prefix])
+		AC_MSG_RESULT([         tracker manager:         $ac_cv_tracker_install_prefix/bin/$TRACKER_MANAGING_COMMAND])
 	fi
 	if test x"$use_pam_so" = x"yes"; then
 	   if test x"$netatalk_cv_install_pam" = x"yes"; then
