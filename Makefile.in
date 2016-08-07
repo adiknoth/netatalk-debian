@@ -102,11 +102,6 @@ am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
 	$(top_srcdir)/macros/iconv.m4 \
 	$(top_srcdir)/macros/largefile-check.m4 \
 	$(top_srcdir)/macros/libgcrypt.m4 \
-	$(top_srcdir)/macros/libtool.m4 \
-	$(top_srcdir)/macros/ltoptions.m4 \
-	$(top_srcdir)/macros/ltsugar.m4 \
-	$(top_srcdir)/macros/ltversion.m4 \
-	$(top_srcdir)/macros/lt~obsolete.m4 \
 	$(top_srcdir)/macros/netatalk.m4 \
 	$(top_srcdir)/macros/pam-check.m4 \
 	$(top_srcdir)/macros/perl-check.m4 \
@@ -186,8 +181,8 @@ CSCOPE = cscope
 DIST_SUBDIRS = include libatalk bin config etc contrib distrib doc man \
 	macros test libevent
 am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/config.h.in AUTHORS \
-	COPYING NEWS compile config.guess config.sub depcomp \
-	install-sh ltmain.sh missing ylwrap
+	COPYING NEWS compile config.guess config.sub install-sh \
+	ltmain.sh missing
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -257,6 +252,7 @@ CPPFLAGS = @CPPFLAGS@
 CRYPT_LIBS = @CRYPT_LIBS@
 CYGPATH_W = @CYGPATH_W@
 DBUS_CFLAGS = @DBUS_CFLAGS@
+DBUS_DAEMON_PATH = @DBUS_DAEMON_PATH@
 DBUS_GLIB_CFLAGS = @DBUS_GLIB_CFLAGS@
 DBUS_GLIB_LIBS = @DBUS_GLIB_LIBS@
 DBUS_GTHREAD_CFLAGS = @DBUS_GTHREAD_CFLAGS@
@@ -391,6 +387,7 @@ abs_top_srcdir = @abs_top_srcdir@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
+ac_cv_tracker_manage = @ac_cv_tracker_manage@
 am__include = @am__include@
 am__leading_dot = @am__leading_dot@
 am__quote = @am__quote@

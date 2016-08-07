@@ -3,9 +3,6 @@
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
 
-/* Define if the admin group should be enabled */
-#undef ADMIN_GRP
-
 /* Define if AFS should be used */
 #undef AFS
 
@@ -291,6 +288,9 @@
 
 /* Define if Kerberos 5 is available */
 #undef HAVE_KERBEROS
+
+/* Define to 1 if you have the <kerberosv5/krb5.h> header file. */
+#undef HAVE_KERBEROSV5_KRB5_H
 
 /* Define to 1 if you have the `krb5_free_error_message' function. */
 #undef HAVE_KRB5_FREE_ERROR_MESSAGE
@@ -676,6 +676,9 @@
 
 /* Define if TCP wrappers should be used */
 #undef TCPWRAP
+
+/* tracker managing command */
+#undef TRACKER_MANAGING_COMMAND
 
 /* Path to Tracker */
 #undef TRACKER_PREFIX

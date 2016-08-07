@@ -94,8 +94,8 @@ AC_NETATALK_64BIT_LIBS
 dnl OS specific checks
 AC_NETATALK_OS_SPECIFIC
 
-dnl Check for optional admin group support
-AC_NETATALK_ADMIN_GROUP
+dnl Whether to set rpath
+AC_NETATALK_SET_RPATH
 
 dnl Check for optional AFS support
 AC_NETATALK_AFS_CHECK
