@@ -690,8 +690,10 @@ DEVELOPER_FALSE
 DEVELOPER_TRUE
 HAVE_TRACKER_FALSE
 HAVE_TRACKER_TRUE
+DBUS_DAEMON_PATH
 TRACKER_MINER_LIBS
 TRACKER_MINER_CFLAGS
+ac_cv_tracker_manage
 TRACKER_LIBS
 TRACKER_CFLAGS
 USE_BUILTIN_TDB_FALSE
@@ -735,8 +737,8 @@ USE_SYSTEMD_FALSE
 USE_SYSTEMD_TRUE
 USE_DEBIAN_SYSV_FALSE
 USE_DEBIAN_SYSV_TRUE
-USE_GENTOO_FALSE
-USE_GENTOO_TRUE
+USE_OPENRC_FALSE
+USE_OPENRC_TRUE
 USE_SOLARIS_FALSE
 USE_SOLARIS_TRUE
 USE_SUSE_SYSV_FALSE
@@ -942,7 +944,7 @@ with_gnu_ld
 with_sysroot
 enable_libtool_lock
 enable_largefile
-enable_admin_group
+enable_rpath
 enable_afs
 with_pkgconfdir
 with_message_dir
@@ -983,6 +985,8 @@ with_libevent_lib
 with_tdb
 with_tracker_pkgconfig_version
 with_tracker_prefix
+with_tracker_install_prefix
+with_dbus_daemon
 enable_developer
 with_dtrace
 with_afpstats
@@ -1654,7 +1658,7 @@ Optional Features:
                           optimize for fast installation [default=yes]
   --disable-libtool-lock  avoid locking (might break parallel builds)
   --disable-largefile     omit support for large files
-  --disable-admin-group   disable admin group
+  --enable-rpath          enable RPATH/RUNPATH (default: $default_rpath)
   --enable-afs            enable AFS support
   --enable-debug          enable verbose debug code
   --enable-debugging      disable SIGALRM timers and DSI tickles (eg for debugging with gdb/dbx/...)
@@ -1696,7 +1700,7 @@ Optional Packages:
   --with-pam-confdir=PATH Path to PAM config dir (default:
                           ${sysconfdir}/pam.d)
   --with-shadow           enable shadow password support [auto]
-  --with-init-style       use OS specific init config [redhat-sysv|redhat-systemd|suse-sysv|suse-systemd|gentoo|netbsd|debian-sysv|debian-systemd|solaris|systemd]
+  --with-init-style       use OS specific init config [redhat-sysv|redhat-systemd|suse-sysv|suse-systemd|gentoo-openrc|gentoo-systemd|netbsd|debian-sysv|debian-systemd|solaris|openrc|systemd]
   --with-init-dir=PATH    path to OS specific init directory
   --with-uams-path=PATH   path to UAMs [$libdir/netatalk/]
   --with-libgcrypt-dir=PATH
@@ -1717,7 +1721,10 @@ Optional Packages:
                           Version suffix of the Tracker SPARQL pkg-config
                           (default: 0.12)
   --with-tracker-prefix=PATH
-                          Prefix of Tracker installation (default: none)
+                          Prefix of Tracker (default: none)
+  --with-tracker-install-prefix=PATH
+                          Install prefix for Tracker (default: none)
+  --with-dbus-daemon=PATH Path to DBus daemon (default: /bin/dbus-daemon)
   --with-dtrace           Enable dtrace probes (default: enabled if dtrace
                           found)
   --with-afpstats         Enable AFP statistics via dbus (default: enabled if
@@ -8943,10 +8950,6 @@ _lt_linker_boilerplate=`cat conftest.err`
 $RM -r conftest*
 
 
-## CAVEAT EMPTOR:
-## There is no encapsulation within the following macros, do not change
-## the running order or otherwise move them around unless you know exactly
-## what you are doing...
 if test -n "$compiler"; then
 
 lt_prog_compiler_no_builtin_flag=
@@ -14755,6 +14758,7 @@ esac
 case "$host_os" in
 	*aix*)				this_os=aix ;;
 	*freebsd*) 			this_os=freebsd ;;
+	*kfreebsd*)			this_os=kfreebsd ;;
 	*hpux11*)			this_os=hpux11 ;;
 	*irix*)				this_os=irix ;;
 	*linux*)   			this_os=linux ;;
@@ -14778,7 +14782,7 @@ case "$this_os" in
 $as_echo "#define _GNU_SOURCE 1" >>confdefs.h
 
         ;;
-     kfreebsd-gnu)
+	kfreebsd)
 $as_echo "#define _GNU_SOURCE 1" >>confdefs.h
 
         ;;
@@ -14799,7 +14803,7 @@ $as_echo "#define OPEN_NOFOLLOW_ERRNO EMLINK" >>confdefs.h
 
 fi
 
-if test x"$this_os" = "xkfreebsd-gnu"; then
+if test x"$this_os" = "xkfreebsd"; then
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result:  * GNU/kFreeBSD specific configuration" >&5
 $as_echo " * GNU/kFreeBSD specific configuration" >&6; }
 
@@ -14864,8 +14868,6 @@ done
 
 $as_echo "#define HAVE_BROKEN_DBTOB 1" >>confdefs.h
 
-
-	need_dash_r=no
 fi
 
 if test x"$this_os" = "xnetbsd"; then
@@ -14882,7 +14884,6 @@ $as_echo "#define OPEN_NOFOLLOW_ERRNO EFTYPE" >>confdefs.h
 
 
 	CFLAGS="-I\$(top_srcdir)/sys/netbsd $CFLAGS"
-	need_dash_r=yes
 
 
 $as_echo "#define UAM_DHX 1" >>confdefs.h
@@ -14921,7 +14922,6 @@ $as_echo "#define _XOPEN_SOURCE 600" >>confdefs.h
 
 $as_echo "#define __EXTENSIONS__ 1" >>confdefs.h
 
-	need_dash_r=yes
 	init_style=solaris
 fi
 
@@ -14977,36 +14977,34 @@ fi
 
 
 
-    netatalk_cv_admin_group=yes
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for administrative group support" >&5
-$as_echo_n "checking for administrative group support... " >&6; }
-    # Check whether --enable-admin-group was given.
-if test "${enable_admin_group+set}" = set; then :
-  enableval=$enable_admin_group;
-            if test x"$enableval" = x"no"; then
-
-$as_echo "#define ADMIN_GRP 0" >>confdefs.h
-
-		         netatalk_cv_admin_group=no
-		         { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-	        else
-
-$as_echo "#define ADMIN_GRP 1" >>confdefs.h
-
-		         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-            fi
+	case "$this_os" in #(
+  solaris|netbsd) :
+    default_rpath=yes ;; #(
+  *) :
+    default_rpath=no ;;
+esac
+	case "$this_os" in #(
+  linux|kfreebsd) :
+    enable_dtags=yes ;; #(
+  *) :
+    enable_dtags=no ;;
+esac
+	# Check whether --enable-rpath was given.
+if test "${enable_rpath+set}" = set; then :
+  enableval=$enable_rpath; case "$enableval" in #(
+  yes) :
+    enable_rpath=yes ;; #(
+  no) :
+    enable_rpath=no ;; #(
+  *) :
+    as_fn_error $? "bad value $enableval for --enable-rpath" "$LINENO" 5 ;;
+esac
 else
-
-
-$as_echo "#define ADMIN_GRP 1" >>confdefs.h
-
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
+  enable_rpath=$default_rpath
 fi
 
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_rpath" >&5
+$as_echo "$enable_rpath" >&6; }
 
 
 
@@ -16864,9 +16862,17 @@ $as_echo "enabling suse-style systemd support (>=openSUSE12.1)" >&6; }
 	    ac_cv_init_dir="/usr/lib/systemd/system"
 	    ;;
     "gentoo")
-	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: enabling gentoo-style initscript support" >&5
-$as_echo "enabling gentoo-style initscript support" >&6; }
+	    as_fn_error $? "--with-init-style=gentoo is obsoleted. Use gentoo-openrc or gentoo-systemd." "$LINENO" 5
+        ;;
+    "gentoo-openrc")
+	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: enabling gentoo-style openrc support" >&5
+$as_echo "enabling gentoo-style openrc support" >&6; }
 	    ac_cv_init_dir="/etc/init.d"
+        ;;
+    "gentoo-systemd")
+	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: enabling gentoo-style systemd support" >&5
+$as_echo "enabling gentoo-style systemd support" >&6; }
+	    ac_cv_init_dir="/usr/lib/systemd/system"
         ;;
     "netbsd")
 	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: enabling netbsd-style initscript support" >&5
@@ -16890,6 +16896,11 @@ $as_echo "enabling debian-style systemd support" >&6; }
 	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: enabling solaris-style SMF support" >&5
 $as_echo "enabling solaris-style SMF support" >&6; }
 	    ac_cv_init_dir="/lib/svc/manifest/network/"
+        ;;
+    "openrc")
+	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: enabling general openrc support" >&5
+$as_echo "enabling general openrc support" >&6; }
+	    ac_cv_init_dir="/etc/init.d"
         ;;
     "systemd")
 	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: enabling general systemd support" >&5
@@ -16937,12 +16948,12 @@ else
   USE_SOLARIS_FALSE=
 fi
 
-     if test x$init_style = xgentoo; then
-  USE_GENTOO_TRUE=
-  USE_GENTOO_FALSE='#'
+     if test x$init_style = xopenrc || test x$init_style = xgentoo-openrc; then
+  USE_OPENRC_TRUE=
+  USE_OPENRC_FALSE='#'
 else
-  USE_GENTOO_TRUE='#'
-  USE_GENTOO_FALSE=
+  USE_OPENRC_TRUE='#'
+  USE_OPENRC_FALSE=
 fi
 
      if test x$init_style = xdebian-sysv; then
@@ -16953,7 +16964,7 @@ else
   USE_DEBIAN_SYSV_FALSE=
 fi
 
-     if test x$init_style = xsystemd || test x$init_style = xredhat-systemd || test x$init_style = xsuse-systemd; then
+     if test x$init_style = xsystemd || test x$init_style = xredhat-systemd || test x$init_style = xsuse-systemd || test x$init_style = xgentoo-systemd; then
   USE_SYSTEMD_TRUE=
   USE_SYSTEMD_FALSE='#'
 else
@@ -17207,8 +17218,11 @@ $as_echo_n "checking for SSL... " >&6; }
 			if test -f "$ssldir/include/openssl/cast.h" ; then
 				SSL_CFLAGS="$SSL_CFLAGS -I$ssldir/include -I$ssldir/include/openssl"
 				SSL_LIBS="$SSL_LIBS -L$ssldir/$atalk_libname -L$ssldir -lcrypto"
-				if test "x$need_dash_r" = "xyes"; then
+				if test "x$enable_rpath" = "xyes"; then
 					SSL_LIBS="$SSL_LIBS -R$ssldir/$atalk_libname -R$ssldir"
+					if test "x$enable_dtags" = "xyes"; then
+						SSL_LIBS="$SSL_LIBS -Wl,--enable-new-dtags"
+					fi
 				fi
 				{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ssldir (enabling RANDNUM and DHX support)" >&5
 $as_echo "$ssldir (enabling RANDNUM and DHX support)" >&6; }
@@ -17513,8 +17527,11 @@ fi
                         if test x"${atalk_cv_bdb_version}" = x"yes"; then
                             BDB_CFLAGS="-I${bdbdir}/include${subdir}"
                             BDB_LIBS="-L${bdblibdir} ${atalk_cv_lib_db}"
-                            if test x"$need_dash_r" = x"yes"; then
+                            if test x"$enable_rpath" = x"yes"; then
                                 BDB_LIBS="$BDB_LIBS -R${bdblibdir}"
+                                if test x"$enable_dtags" = x"yes"; then
+                                    BDB_LIBS="$BDB_LIBS -Wl,--enable-new-dtags"
+                                fi
                             fi
                             BDB_BIN="$bdbbindir"
                             BDB_PATH="$bdbdir"
@@ -17609,8 +17626,11 @@ fi
                            if test x"${atalk_cv_bdb_version}" = x"yes"; then
                               BDB_CFLAGS="-I${bdbdir}/include${subdir}"
                               BDB_LIBS="-L${bdblibdir} ${atalk_cv_lib_db}"
-                              if test x"$need_dash_r" = x"yes"; then
+                              if test x"$enable_rpath" = x"yes"; then
                                  BDB_LIBS="$BDB_LIBS -R${bdblibdir}"
+                                 if test x"$enable_dtags" = x"yes"; then
+                                     BDB_LIBS="$BDB_LIBS -Wl,--enable-new-dtags"
+                                 fi
                               fi
                               BDB_BIN="$bdbbindir"
                               BDB_PATH="$bdbdir"
@@ -18055,7 +18075,7 @@ $as_echo "$with_kerberos" >&6; }
 
 if test x"$with_kerberos" != x"no"; then
    have_krb5_header="no"
-   for ac_header in krb5/krb5.h krb5.h
+   for ac_header in krb5/krb5.h krb5.h kerberosv5/krb5.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -19475,6 +19495,27 @@ fi
 
 
 
+# Check whether --with-tracker-install-prefix was given.
+if test "${with_tracker_install_prefix+set}" = set; then :
+  withval=$with_tracker_install_prefix; ac_cv_tracker_install_prefix=$withval
+else
+  ac_cv_tracker_install_prefix=$ac_cv_tracker_prefix
+
+fi
+
+
+
+# Check whether --with-dbus-daemon was given.
+if test "${with_dbus_daemon+set}" = set; then :
+  withval=$with_dbus_daemon; ac_cv_dbus_daemon=$withval
+else
+  ac_cv_dbus_daemon=/bin/dbus-daemon
+
+fi
+
+    DBUS_DAEMON_PATH=$ac_cv_dbus_daemon
+
+
 
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TRACKER" >&5
@@ -19558,13 +19599,74 @@ $as_echo "#define HAVE_TRACKER 1" >>confdefs.h
 
 
 cat >>confdefs.h <<_ACEOF
-#define TRACKER_PREFIX "$ac_cv_tracker_prefix"
+#define TRACKER_PREFIX "$ac_cv_tracker_install_prefix"
 _ACEOF
 
 
-$as_echo "#define DBUS_DAEMON_PATH \"/bin/dbus-daemon\"" >>confdefs.h
+cat >>confdefs.h <<_ACEOF
+#define DBUS_DAEMON_PATH "$ac_cv_dbus_daemon"
+_ACEOF
 
     fi
+
+        if test x"$ac_cv_have_tracker" = x"yes" ; then
+        for ac_prog in tracker tracker-control
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_ac_cv_tracker_manage+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$ac_cv_tracker_manage"; then
+  ac_cv_prog_ac_cv_tracker_manage="$ac_cv_tracker_manage" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in "$ac_cv_tracker_prefix"/bin
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_ac_cv_tracker_manage="$ac_prog"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+ac_cv_tracker_manage=$ac_cv_prog_ac_cv_tracker_manage
+if test -n "$ac_cv_tracker_manage"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_tracker_manage" >&5
+$as_echo "$ac_cv_tracker_manage" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$ac_cv_tracker_manage" && break
+done
+
+        if test x"$ac_cv_tracker_manage" = x"tracker" ; then
+           TRACKER_MANAGING_COMMAND="tracker daemon"
+
+$as_echo "#define TRACKER_MANAGING_COMMAND \"tracker daemon\"" >>confdefs.h
+
+        elif test x"$ac_cv_tracker_manage" = x"tracker-control" ; then
+           TRACKER_MANAGING_COMMAND="tracker-control"
+
+$as_echo "#define TRACKER_MANAGING_COMMAND \"tracker-control\"" >>confdefs.h
+
+        else
+           as_fn_error $? "could find neither tracker command nor tracker-control command" "$LINENO" 5
+        fi
+    fi
+
 
 
 
@@ -20491,8 +20593,8 @@ if test -z "${USE_SOLARIS_TRUE}" && test -z "${USE_SOLARIS_FALSE}"; then
   as_fn_error $? "conditional \"USE_SOLARIS\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${USE_GENTOO_TRUE}" && test -z "${USE_GENTOO_FALSE}"; then
-  as_fn_error $? "conditional \"USE_GENTOO\" was never defined.
+if test -z "${USE_OPENRC_TRUE}" && test -z "${USE_OPENRC_FALSE}"; then
+  as_fn_error $? "conditional \"USE_OPENRC\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${USE_DEBIAN_SYSV_TRUE}" && test -z "${USE_DEBIAN_SYSV_FALSE}"; then
@@ -23178,8 +23280,6 @@ $as_echo "         Zeroconf support:        $netatalk_cv_zeroconf" >&6; }
 $as_echo "         tcp wrapper support:     $netatalk_cv_tcpwrap" >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result:          quota support:           $netatalk_cv_quotasupport" >&5
 $as_echo "         quota support:           $netatalk_cv_quotasupport" >&6; }
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result:          admin group support:     $netatalk_cv_admin_group" >&5
-$as_echo "         admin group support:     $netatalk_cv_admin_group" >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result:          valid shell check:       $netatalk_cv_use_shellcheck" >&5
 $as_echo "         valid shell check:       $netatalk_cv_use_shellcheck" >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result:          cracklib support:        $netatalk_cv_with_cracklib" >&5
@@ -23205,6 +23305,16 @@ $as_echo "         init directory:          $ac_cv_init_dir" >&6; }
 	if test x"$atalk_cv_with_dbus" = x"yes"; then
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result:          dbus system directory:   $ac_cv_dbus_sysdir" >&5
 $as_echo "         dbus system directory:   $ac_cv_dbus_sysdir" >&6; }
+	fi
+	if test x"$ac_cv_have_tracker" = x"yes"; then
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result:          dbus daemon path:        $ac_cv_dbus_daemon" >&5
+$as_echo "         dbus daemon path:        $ac_cv_dbus_daemon" >&6; }
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result:          tracker prefix:          $ac_cv_tracker_prefix" >&5
+$as_echo "         tracker prefix:          $ac_cv_tracker_prefix" >&6; }
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result:          tracker install prefix:  $ac_cv_tracker_install_prefix" >&5
+$as_echo "         tracker install prefix:  $ac_cv_tracker_install_prefix" >&6; }
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result:          tracker manager:         $ac_cv_tracker_install_prefix/bin/$TRACKER_MANAGING_COMMAND" >&5
+$as_echo "         tracker manager:         $ac_cv_tracker_install_prefix/bin/$TRACKER_MANAGING_COMMAND" >&6; }
 	fi
 	if test x"$use_pam_so" = x"yes"; then
 	   if test x"$netatalk_cv_install_pam" = x"yes"; then
