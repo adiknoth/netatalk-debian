@@ -1,7 +1,7 @@
-netatalk (3.1.8-2) UNRELEASED; urgency=low
+netatalk (3.1.9-1) UNRELEASED; urgency=low
 
   [ Adrian Knoth ]
-  * Imported Upstream version 3.1.8
+  * Imported Upstream version 3.1.9
   * Bump standards version
   * Fix lintian warning regarding debian/copyright
   * Add patch to source init functions in init.d script
@@ -15,7 +15,7 @@ netatalk (3.1.8-2) UNRELEASED; urgency=low
   [ Ilya Rusalowski ]
   * Add logrotate
 
- -- Adrian Knoth <adi@drcomp.erfurt.thur.de>  Tue, 28 Jan 2014 18:10:18 +0100
+ -- Adrian Knoth <adi@drcomp.erfurt.thur.de>  Fri, 12 Aug 2016 12:39:40 +0200
 
 netatalk (3.0.6-1) experimental; urgency=low
 
