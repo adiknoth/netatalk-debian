@@ -40,6 +40,7 @@
 #include <atalk/unix.h>
 #include <atalk/netatalk_conf.h>
 #include <atalk/server_ipc.h>
+#include <atalk/ldapconfig.h>
 
 #ifdef CNID_DB
 #include <atalk/cnid.h>
@@ -379,7 +380,7 @@ static int getvolparams(const AFPObj *obj, uint16_t bitmap, struct vol *vol, str
                         ashort |= VOLPBIT_ATTR_UNIXPRIV;
                     if (vol->v_flags & AFPVOL_TM)
                         ashort |= VOLPBIT_ATTR_TM;
-                    if (vol->v_flags & AFPVOL_NONETIDS)
+                    if (!ldap_config_valid || vol->v_flags & AFPVOL_NONETIDS)
                         ashort |= VOLPBIT_ATTR_NONETIDS;
                     if (obj->afp_version >= 32) {
                         if (vol->v_vfs_ea)
@@ -534,7 +535,7 @@ int afp_getsrvrparms(AFPObj *obj, char *ibuf _U_, size_t ibuflen _U_, char *rbuf
     size_t      len;
     uint32_t    aint;
 
-    load_volumes(obj, lv_none);
+    load_volumes(obj, LV_DEFAULT);
 
     data = rbuf + 5;
     for ( vcnt = 0, volume = getvolumes(); volume && vcnt < 255; volume = volume->v_next ) {
@@ -737,7 +738,7 @@ int afp_openvol(AFPObj *obj, char *ibuf, size_t ibuflen _U_, char *rbuf, size_t 
     if ((len + 1) & 1) /* pad to an even boundary */
         ibuf++;
 
-    load_volumes(obj, lv_none);
+    load_volumes(obj, LV_DEFAULT);
 
     for ( volume = getvolumes(); volume; volume = volume->v_next ) {
         if ( strcasecmp_w( (ucs2_t*) volname, volume->v_name ) == 0 ) {
