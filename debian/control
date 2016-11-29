@@ -23,8 +23,8 @@ Build-Depends: cdbs (>= 0.4.106~),
  d-shlibs,
  dh-systemd
 Build-Conflicts: libavahi-compat-libdnssd-dev
-Vcs-Git: git://git.debian.org/git/collab-maint/netatalk
-Vcs-Browser: http://git.debian.org/?p=collab-maint/netatalk.git
+Vcs-Git: https://anonscm.debian.org/git/collab-maint/netatalk.git
+Vcs-Browser: https://anonscm.debian.org/gitweb/?p=collab-maint/netatalk.git
 Standards-Version: 3.9.5
 Homepage: http://netatalk.sourceforge.net/
 
