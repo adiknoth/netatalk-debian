@@ -124,6 +124,11 @@ am__aclocal_m4_deps = $(top_srcdir)/macros/afs-check.m4 \
 	$(top_srcdir)/macros/iconv.m4 \
 	$(top_srcdir)/macros/largefile-check.m4 \
 	$(top_srcdir)/macros/libgcrypt.m4 \
+	$(top_srcdir)/macros/libtool.m4 \
+	$(top_srcdir)/macros/ltoptions.m4 \
+	$(top_srcdir)/macros/ltsugar.m4 \
+	$(top_srcdir)/macros/ltversion.m4 \
+	$(top_srcdir)/macros/lt~obsolete.m4 \
 	$(top_srcdir)/macros/netatalk.m4 \
 	$(top_srcdir)/macros/pam-check.m4 \
 	$(top_srcdir)/macros/perl-check.m4 \
@@ -501,7 +506,7 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-VERSION_INFO = 17:0:0
+VERSION_INFO = 18:0:0
 
 # History:          VERSION_INFO
 #
@@ -527,6 +532,8 @@ VERSION_INFO = 17:0:0
 #   3.1.6           16:0:0
 #   3.1.7           forgotten
 #   3.1.8           17:0:0
+#   3.1.9           17:0:0
+#   3.1.10          18:0:0
 SUBDIRS = acl adouble bstring compat cnid dsi iniparser talloc util \
 	unicode vfs $(am__append_1)
 lib_LTLIBRARIES = libatalk.la
@@ -563,7 +570,8 @@ EXTRA_DIST = \
 	libatalk-3.1.4.abi \
 	libatalk-3.1.5.abi \
 	libatalk-3.1.6.abi \
-	libatalk-3.1.8.abi
+	libatalk-3.1.8.abi \
+	libatalk-3.1.10.abi
 
 all: all-recursive
 
