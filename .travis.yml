@@ -1,12 +1,17 @@
 sudo: required
 language: generic
-
 services:
-  - docker
-
+- docker
 script:
-  - wget -O- http://travis.debian.net/script.sh | sh -
-
+- wget -O- http://travis.debian.net/script.sh | sh -
 branches:
   except:
-    - /^debian\/\d/
+  - /^debian\/\d/
+deploy:
+  provider: releases
+  api_key:
+    secure: lYzplaxPCd5mZYQkG5lG9gwg05b1kWLQAdx2lPAdW5FH+FwUpc2pMsAkNuBJIt57b+2Sz7c44FpLZgW4BVFT0Mmb/Ng3b5kOnaK3HKqp8nWRGDunxFz8u9d3DcGU8kdMqgc2DneC/+LSQ23a+B8Pg0xqZAGnyX8MeEh0W00dRHIw0g72/56bLzRJMIovo2kDbTSax70k5IHzmFOr454AgBrBwjAjhWXtgisyd1qUmxMvW3Grvsw/zWHbuth4u+i20CpT1DQCnMMjj6EdShREN0c5hJFbz9J5+dWKRuR0xZinYk1CLfaCEIWPGMZiS4uAqd6c2oUtP7by9R8vri1qKU29GOK1g3QgmjTrWtGzkpurcmVDTHPqRvbrfQ7ZTKn/zeJ4cRzcVEs9q65msIj/NOPyTxYc/FSxEsWEEFfMCpVgza9s+W/I7LkD/ZRxMUBX8xf4WgEFsaZxFFlzXippP6uyHLi/FE8wM3q4yHoD+pQpIPjG/lhZdSDVUkCoLhoNKQlrnJWBh02zS7Apb6dNEC5jZhFMwmnDBt3gy2YXNsKOQ/ZCox5PbkrCBsHInE8qD80sRGSGTCu09K5YUy5dvGsjccypKyD89tsoBcpYG1rWyAcQOcR+CSXMJ/WL/uMFZB69+2B2Lm1etKUOGPHxW2uSIl+NfwORQkUQBi1Pu34=
+  file_glob: true
+  file: ../*.deb
+  on:
+    repo: dgilman/netatalk-debian
