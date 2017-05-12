@@ -1,3 +1,10 @@
+netatalk (3.1.11-1) UNRELEASED; urgency=medium
+
+  [ Adrian Knoth ]
+  * Imported Upstream version 3.1.11
+
+ -- Adrian Knoth <adi@drcomp.erfurt.thur.de>  Fri, 12 May 2017 21:56:40 +0200
+
 netatalk (3.1.10-1) UNRELEASED; urgency=medium
 
   [ Adrian Knoth ]
