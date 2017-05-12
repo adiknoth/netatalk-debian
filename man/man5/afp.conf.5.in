@@ -2,12 +2,12 @@
 .\"     Title: afp.conf
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.78.0 <http://docbook.sf.net/>
-.\"      Date: 04 Apr 2016
+.\"      Date: 27 Dec 2016
 .\"    Manual: @NETATALK_VERSION@
 .\"    Source: @NETATALK_VERSION@
 .\"  Language: English
 .\"
-.TH "AFP\&.CONF" "5" "04 Apr 2016" "@NETATALK_VERSION@" "@NETATALK_VERSION@"
+.TH "AFP\&.CONF" "5" "27 Dec 2016" "@NETATALK_VERSION@" "@NETATALK_VERSION@"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -519,13 +519,13 @@ Maximum number of bytes spliced\&.
 .PP
 use sendfile = \fIBOOLEAN\fR (default: \fIyes\fR) \fB(G)\fR
 .RS 4
-Whether to use sendfile
+Whether to use sendfile.\" sendfile
 syscall for sending file data to clients\&.
 .RE
 .PP
 zeroconf = \fIBOOLEAN\fR (default: \fIyes\fR) \fB(G)\fR
 .RS 4
-Whether to use automatic Zeroconf
+Whether to use automatic Zeroconf.\" Zeroconf: Bonjour
 service registration if Avahi or mDNSResponder were compiled in\&.
 .RE
 .SS "Miscellaneous Options"
@@ -678,7 +678,7 @@ and should be quoted\&. Extended characters are allowed\&.
 .PP
 mimic model = \fImodel\fR \fB(G)\fR
 .RS 4
-Specifies the icon model that appears on clients\&. Defaults to off\&. Note that afpd must support Zeroconf\&. Examples: RackMac (same as Xserve), PowerBook, PowerMac, Macmini, iMac, MacBook, MacBookPro, MacBookAir, MacPro, AppleTV1,1, AirPort\&.
+Specifies the icon model that appears on clients\&. Defaults to off\&. Note that netatalk must support Zeroconf\&. Examples: RackMac (same as Xserve), PowerBook, PowerMac, Macmini, iMac, MacBook, MacBookPro, MacBookAir, MacPro, AppleTV1,1, AirPort\&.
 .RE
 .PP
 signature = <text> \fB(G)\fR
@@ -776,6 +776,11 @@ Use section
 \fBname\fR
 as option preset for all volumes (when set in the [Global] section) or for one volume (when set in that volume\*(Aqs section)\&.
 .RE
+.PP
+zeroconf name = \fIname\fR \fB(G)\fR
+.RS 4
+Specifies a human\-readable name that uniquely describes registered services\&. The zeroconf name is advertised as UTF\-8, up to 63 octets (bytes) in length\&. Defaults to hostname\&. Note that netatalk must support Zeroconf\&.
+.RE
 .SS "Logging Options"
 .PP
 log file = \fIlogfile\fR \fB(G)\fR
@@ -812,7 +817,7 @@ Both logtype and loglevels are case insensitive\&.
 .sp .5v
 .RE
 .RE
-.SS "Filesystem Change Events (FCE)"
+.SS "Filesystem Change Events (FCE.\" FCE )"
 .PP
 Netatalk includes a nifty filesystem change event mechanism where afpd processes notify interested listeners about certain filesystem event by UDP network datagrams\&.
 .PP
@@ -1193,7 +1198,7 @@ set the CNID backend to be used for the volume, default is [@DEFAULT_CNID_SCHEME
 .PP
 ea = \fInone|auto|sys|ad|samba\fR \fB(V)\fR
 .RS 4
-Specify how Extended Attributes
+Specify how Extended Attributes.\" Extended Attributes
 are stored\&.
 \fBauto\fR
 is the default\&.
