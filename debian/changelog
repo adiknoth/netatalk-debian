@@ -1,7 +1,7 @@
-netatalk (3.1.10-1) UNRELEASED; urgency=medium
+netatalk (3.1.11-1) UNRELEASED; urgency=medium
 
   [ Adrian Knoth ]
-  * Imported Upstream version 3.1.10
+  * Imported Upstream version 3.1.11
   * Bump standards version
   * Fix lintian warning regarding debian/copyright
   * Add patch to source init functions in init.d script
@@ -15,7 +15,10 @@ netatalk (3.1.10-1) UNRELEASED; urgency=medium
   [ Ilya Rusalowski ]
   * Add logrotate
 
- -- Adrian Knoth <adi@drcomp.erfurt.thur.de>  Fri, 12 Aug 2016 12:39:40 +0200
+  [ Mostyn Bramley-Moore ]
+  * licensecheck is part of the devscripts package in jessie and earlier
+
+ -- Adrian Knoth <adi@drcomp.erfurt.thur.de>  Sun, 04 Jun 2017 21:27:58 +0200
 
 netatalk (3.0.6-1) experimental; urgency=low
 
