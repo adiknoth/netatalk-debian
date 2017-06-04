@@ -11,7 +11,6 @@ Standards-Version: 3.9.8
 Homepage: http://netatalk.sourceforge.net/
 
 Package: netatalk
-Section: net
 Architecture: any
 Depends: ${shlibs:Depends}, ${perl:Depends}, ${misc:Depends}, ${cdbs:Depends},
    python,
