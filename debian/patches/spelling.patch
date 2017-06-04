@@ -1,0 +1,597 @@
+Description: Fix spelling errors flagged by Debian's lintian
+Author: Adrian Knoth <aknoth@google.com>
+Last-updated: 2017-06-04
+Forwarded: Yes
+
+Index: netatalk-debian/libatalk/vfs/ea_sys.c
+===================================================================
+--- netatalk-debian.orig/libatalk/vfs/ea_sys.c
++++ netatalk-debian/libatalk/vfs/ea_sys.c
+@@ -55,7 +55,7 @@
+  *    oflag        (r) link and create flag
+  *    attruname    (r) name of attribute
+  *
+- * Returns: AFP code: AFP_OK on success or appropiate AFP error code
++ * Returns: AFP code: AFP_OK on success or appropriate AFP error code
+  *
+  * Effects:
+  *
+@@ -148,7 +148,7 @@ int sys_get_easize(VFS_FUNC_ARGS_EA_GETS
+  *    attruname    (r) name of attribute
+  *    maxreply     (r) maximum EA size as of current specs/real-life
+  *    fd           (r) file descriptor
+- * Returns: AFP code: AFP_OK on success or appropiate AFP error code
++ * Returns: AFP code: AFP_OK on success or appropriate AFP error code
+  *
+  * Effects:
+  *
+@@ -265,7 +265,7 @@ int sys_get_eacontent(VFS_FUNC_ARGS_EA_G
+  *    uname        (r) filename
+  *    oflag        (r) link and create flag
+  *
+- * Returns: AFP code: AFP_OK on success or appropiate AFP error code
++ * Returns: AFP code: AFP_OK on success or appropriate AFP error code
+  *
+  * Effects:
+  *
+@@ -307,7 +307,7 @@ int sys_list_eas(VFS_FUNC_ARGS_EA_LIST)
+             ret = AFP_OK;
+             goto exit;
+         default:
+-            LOG(log_debug, logtype_afpd, "sys_list_extattr(%s): error opening atttribute dir: %s", uname, strerror(errno));
++            LOG(log_debug, logtype_afpd, "sys_list_extattr(%s): error opening attribute dir: %s", uname, strerror(errno));
+             ret = AFPERR_MISC;
+             goto exit;
+     }
+@@ -360,7 +360,7 @@ exit:
+  *    attrsize     (r) length EA in ibuf
+  *    oflag        (r) link and create flag
+  *
+- * Returns: AFP code: AFP_OK on success or appropiate AFP error code
++ * Returns: AFP code: AFP_OK on success or appropriate AFP error code
+  *
+  * Effects:
+  *
+@@ -459,7 +459,7 @@ int sys_set_ea(VFS_FUNC_ARGS_EA_SET)
+  *    oflag        (r) link and create flag
+  *    fd           (r) file descriptor
+  *
+- * Returns: AFP code: AFP_OK on success or appropiate AFP error code
++ * Returns: AFP code: AFP_OK on success or appropriate AFP error code
+  *
+  * Effects:
+  *
+Index: netatalk-debian/etc/afpd/auth.c
+===================================================================
+--- netatalk-debian.orig/etc/afpd/auth.c
++++ netatalk-debian/etc/afpd/auth.c
+@@ -540,7 +540,7 @@ int afp_disconnect(AFPObj *obj, char *ib
+     const struct itimerval none = {{0, 0}, {0, 0}};
+     setitimer(ITIMER_REAL, &none, NULL);
+ 
+-    /* check for old session, possibly transfering session from here to there */
++    /* check for old session, possibly transferring session from here to there */
+     if (ipc_child_write(obj->ipc_fd, IPC_DISCOLDSESSION, tklen, &token) != 0)
+         goto exit;
+     /* write uint16_t DSI request ID */
+@@ -552,7 +552,7 @@ int afp_disconnect(AFPObj *obj, char *ib
+     if (send_fd(obj->ipc_fd, dsi->socket) != 0)
+         goto exit;
+     /* Now see what happens: either afpd master sends us SIGTERM because our session */
+-    /* has been transfered to a old disconnected session, or we continue    */
++    /* has been transferred to a old disconnected session, or we continue    */
+     sleep(5);
+ 
+     if (!(dsi->flags & DSI_RECONINPROG)) { /* deleted in SIGTERM handler */
+Index: netatalk-debian/libatalk/util/server_child.c
+===================================================================
+--- netatalk-debian.orig/libatalk/util/server_child.c
++++ netatalk-debian/libatalk/util/server_child.c
+@@ -253,7 +253,7 @@ int server_child_transfer_session(server
+         return 0;
+     }
+ 
+-    LOG(log_note, logtype_default, "Reconnect: transfering session to child[%u]", pid);
++    LOG(log_note, logtype_default, "Reconnect: transferring session to child[%u]", pid);
+     
+     if (writet(child->afpch_ipc_fd, &DSI_requestID, 2, 0, 2) != 2) {
+         LOG(log_error, logtype_default, "Reconnect: error sending DSI id to child[%u]", pid);
+Index: netatalk-debian/bin/ad/ad_cp.c
+===================================================================
+--- netatalk-debian.orig/bin/ad/ad_cp.c
++++ netatalk-debian/bin/ad/ad_cp.c
+@@ -451,7 +451,7 @@ static int copy(const char *path,
+         dne = 0;
+     }
+ 
+-    /* Convert basename to appropiate volume encoding */
++    /* Convert basename to appropriate volume encoding */
+     if (dvolume.vol->v_path) {
+         if ((convert_dots_encoding(&svolume, &dvolume, to.p_path, MAXPATHLEN)) == -1) {
+             SLOG("Error converting name for %s", to.p_path);
+Index: netatalk-debian/etc/afpd/directory.c
+===================================================================
+--- netatalk-debian.orig/etc/afpd/directory.c
++++ netatalk-debian/etc/afpd/directory.c
+@@ -1062,7 +1062,7 @@ int dir_modify(const struct vol *vol,
+  *     return with curdir = dir parent, struct path = dirname
+  * 11. If it's there and it's a file, it must should be the last element of the requested
+  *     path. Return with curdir = cnode name parent dir, struct path = filename
+- * 12. Treat symlinks like files, dont follow them
++ * 12. Treat symlinks like files, don't follow them
+  * 13. If it's a dir:
+  * 14. Search the dircache for it
+  * 15. If it's not in the cache, create a struct dir for it and add it to the cache
+@@ -1300,7 +1300,7 @@ struct path *cname(struct vol *vol, stru
+  * @param vol   (r) pointer to struct vol
+  * @param dir   (r) pointer to struct dir
+  *
+- * @returns 0 on success, -1 on error with afp_errno set appropiately
++ * @returns 0 on success, -1 on error with afp_errno set appropriately
+  */
+ int movecwd(const struct vol *vol, struct dir *dir)
+ {
+Index: netatalk-debian/etc/afpd/filedir.c
+===================================================================
+--- netatalk-debian.orig/etc/afpd/filedir.c
++++ netatalk-debian/etc/afpd/filedir.c
+@@ -283,7 +283,7 @@ static int moveandrename(const AFPObj *o
+      *   b) the oldname (renameat is available)
+      * we are in the dest folder so we need to use 
+      *   a) oldunixname for ad_open
+-     *   b) fchdir sdir_fd before eg ad_open or use *at functions where appropiate
++     *   b) fchdir sdir_fd before eg ad_open or use *at functions where appropriate
+      */
+ 
+     if (sdir_fd != -1) {
+Index: netatalk-debian/etc/cnid_dbd/cmd_dbd.c
+===================================================================
+--- netatalk-debian.orig/etc/cnid_dbd/cmd_dbd.c
++++ netatalk-debian/etc/cnid_dbd/cmd_dbd.c
+@@ -95,7 +95,7 @@ static void usage (void)
+ {
+     printf("Usage: dbd [-cfFstuvV] <path to netatalk volume>\n\n"
+            "dbd scans all file and directories of AFP volumes, updating the\n"
+-           "CNID database of the volume. dbd must be run with appropiate\n"
++           "CNID database of the volume. dbd must be run with appropriate\n"
+            "permissions i.e. as root.\n\n"
+            "Options:\n"
+            "   -s scan volume: treat the volume as read only and don't\n"
+Index: netatalk-debian/etc/cnid_dbd/cmd_dbd_scanvol.c
+===================================================================
+--- netatalk-debian.orig/etc/cnid_dbd/cmd_dbd_scanvol.c
++++ netatalk-debian/etc/cnid_dbd/cmd_dbd_scanvol.c
+@@ -195,7 +195,7 @@ static int check_adfile(const char *fnam
+         dbd_log(LOGSTD, "Missing AppleDouble file '%s/%s'", cwdbuf, adname);
+ 
+         if (dbd_flags & DBD_FLAGS_SCAN)
+-            /* Scan only requested, dont change anything */
++            /* Scan only requested, don't change anything */
+             return -1;
+ 
+         /* Create ad file */
+@@ -368,7 +368,7 @@ static int check_addir(int volroot)
+         /* Yes, but are we only scanning ? */
+         if (dbd_flags & DBD_FLAGS_SCAN) {
+             /* Yes:  missing .Parent is not a problem, but missing ad-dir
+-               causes later checking of ad-files to fail. So we have to return appropiately */
++               causes later checking of ad-files to fail. So we have to return appropriately */
+             if (addir_ok != 0)
+                 return -1;
+             else  /* (adpar_ok != 0) */
+@@ -445,7 +445,7 @@ static int check_eafile_in_adouble(const
+                         cwdbuf, ADv2_DIRNAME, name);
+ 
+                 if (dbd_flags & DBD_FLAGS_SCAN)
+-                    /* Scan only requested, dont change anything */
++                    /* Scan only requested, don't change anything */
+                     goto ea_check_done;
+ 
+                 if ((unlink(name)) != 0) {
+@@ -528,7 +528,7 @@ static int read_addir(void)
+                     cwdbuf, ADv2_DIRNAME, ep->d_name);
+ 
+             if (dbd_flags & DBD_FLAGS_SCAN)
+-                /* Scan only requested, dont change anything */
++                /* Scan only requested, don't change anything */
+                 continue;;
+ 
+             if ((unlink(ep->d_name)) != 0) {
+Index: netatalk-debian/include/atalk/ea.h
+===================================================================
+--- netatalk-debian.orig/include/atalk/ea.h
++++ netatalk-debian/include/atalk/ea.h
+@@ -126,7 +126,7 @@ typedef enum {
+     EA_RDONLY    = (1<<2),      /* open read only */
+     EA_RDWR      = (1<<3),      /* open read/write */
+     /* ea_open internal flags */
+-    EA_DIR       = (1<<4)       /* ea header file is for a dir, ea_open adds it as appropiate */
++    EA_DIR       = (1<<4)       /* ea header file is for a dir, ea_open adds it as appropriate */
+ } eaflags_t;
+ 
+ #define EA_MAGIC_OFF   0
+Index: netatalk-debian/libatalk/acl/uuid.c
+===================================================================
+--- netatalk-debian.orig/libatalk/acl/uuid.c
++++ netatalk-debian/libatalk/acl/uuid.c
+@@ -222,7 +222,7 @@ int getuuidfromname( const char *name, u
+  * type: returns USER, GROUP or LOCAL
+  * return 0 on success !=0 on errror
+  *
+- * Caller must free name appropiately.
++ * Caller must free name appropriately.
+  */
+ int getnamefromuuid(const uuidp_t uuidp, char **name, uuidtype_t *type) {
+     int ret;
+Index: netatalk-debian/libatalk/vfs/ea_ad.c
+===================================================================
+--- netatalk-debian.orig/libatalk/vfs/ea_ad.c
++++ netatalk-debian/libatalk/vfs/ea_ad.c
+@@ -996,7 +996,7 @@ exit:
+  *    oflag        (r) link and create flag
+  *    attruname    (r) name of attribute
+  *
+- * Returns: AFP code: AFP_OK on success or appropiate AFP error code
++ * Returns: AFP code: AFP_OK on success or appropriate AFP error code
+  *
+  * Effects:
+  *
+@@ -1057,7 +1057,7 @@ int get_easize(VFS_FUNC_ARGS_EA_GETSIZE)
+  *    attruname    (r) name of attribute
+  *    maxreply     (r) maximum EA size as of current specs/real-life
+  *
+- * Returns: AFP code: AFP_OK on success or appropiate AFP error code
++ * Returns: AFP code: AFP_OK on success or appropriate AFP error code
+  *
+  * Effects:
+  *
+@@ -1145,7 +1145,7 @@ int get_eacontent(VFS_FUNC_ARGS_EA_GETCO
+  *    uname        (r) filename
+  *    oflag        (r) link and create flag
+  *
+- * Returns: AFP code: AFP_OK on success or appropiate AFP error code
++ * Returns: AFP code: AFP_OK on success or appropriate AFP error code
+  *
+  * Effects:
+  *
+@@ -1226,7 +1226,7 @@ exit:
+  *    attrsize     (r) length EA in ibuf
+  *    oflag        (r) link and create flag
+  *
+- * Returns: AFP code: AFP_OK on success or appropiate AFP error code
++ * Returns: AFP code: AFP_OK on success or appropriate AFP error code
+  *
+  * Effects:
+  *
+@@ -1279,7 +1279,7 @@ exit:
+  *    attruname    (r) EA name
+  *    oflag        (r) link and create flag
+  *
+- * Returns: AFP code: AFP_OK on success or appropiate AFP error code
++ * Returns: AFP code: AFP_OK on success or appropriate AFP error code
+  *
+  * Effects:
+  *
+Index: netatalk-debian/doc/manpages/man5/afp.conf.5.xml
+===================================================================
+--- netatalk-debian.orig/doc/manpages/man5/afp.conf.5.xml
++++ netatalk-debian/doc/manpages/man5/afp.conf.5.xml
+@@ -1079,7 +1079,7 @@
+ 
+         <varlistentry>
+           <term>spotlight attributes =
+-          <replaceable>COMMA SEPERATED STRING</replaceable> (default:
++          <replaceable>COMMA SEPARATED STRING</replaceable> (default:
+           <emphasis>EMPTY</emphasis>) <type>(G)</type></term>
+ 
+           <listitem>
+Index: netatalk-debian/man/man5/afp.conf.5.in
+===================================================================
+--- netatalk-debian.orig/man/man5/afp.conf.5.in
++++ netatalk-debian/man/man5/afp.conf.5.in
+@@ -705,7 +705,7 @@ Whether to enable Spotlight searches\&.
+ option\&.
+ .RE
+ .PP
+-spotlight attributes = \fICOMMA SEPERATED STRING\fR (default: \fIEMPTY\fR) \fB(G)\fR
++spotlight attributes = \fICOMMA SEPARATED STRING\fR (default: \fIEMPTY\fR) \fB(G)\fR
+ .RS 4
+ A list of attributes that are allowed to be used in Spotlight searches\&. By default all attributes can be searched, passing a string limits attributes to elements of the string\&. Example:
+ .sp
+Index: netatalk-debian/etc/afpd/fce_api.c
+===================================================================
+--- netatalk-debian.orig/etc/afpd/fce_api.c
++++ netatalk-debian/etc/afpd/fce_api.c
+@@ -97,7 +97,7 @@ static char *fce_event_names[] = {
+ /*
+  *
+  * Initialize network structs for any listeners
+- * We dont give return code because all errors are handled internally (I hope..)
++ * We don't give return code because all errors are handled internally (I hope..)
+  *
+  * */
+ void fce_init_udp()
+@@ -284,7 +284,7 @@ static ssize_t build_fce_packet(const AF
+ 
+ /*
+  * Send the fce information to all (connected) listeners
+- * We dont give return code because all errors are handled internally (I hope..)
++ * We don't give return code because all errors are handled internally (I hope..)
+  * */
+ static void send_fce_event(const AFPObj *obj, int event, const char *path, const char *oldpath)
+ {    
+@@ -410,7 +410,7 @@ static void send_fce_event(const AFPObj
+         /* Problems ? */
+         if (sent_data != data_len) {
+             /* Argh, socket broke, we close and retry later */
+-            LOG(log_error, logtype_fce, "send_fce_event: error sending packet to %s:%s, transfered %d of %d: %s",
++            LOG(log_error, logtype_fce, "send_fce_event: error sending packet to %s:%s, transferred %d of %d: %s",
+                 udp_entry->addr, udp_entry->port, sent_data, data_len, strerror(errno));
+ 
+             close( udp_entry->sock );
+Index: netatalk-debian/etc/cnid_dbd/cnid_metad.c
+===================================================================
+--- netatalk-debian.orig/etc/cnid_dbd/cnid_metad.c
++++ netatalk-debian/etc/cnid_dbd/cnid_metad.c
+@@ -218,7 +218,7 @@ static struct server *test_usockfn(const
+                 if (up->count > MAXSPAWN) {
+                     /* ...and already tried to fork too often */
+                     LOG(log_maxdebug, logtype_cnid, "maybe_start_dbd: respawning too fast");
+-                    return -1; /* just exit, dont sleep, because we might have work to do for another client  */
++                    return -1; /* just exit, don't sleep, because we might have work to do for another client  */
+                 }
+             } else {
+                 /* out of respawn too fast windows reset the count */
+@@ -232,7 +232,7 @@ static struct server *test_usockfn(const
+         if (up->count > MAXSPAWN) {
+             /* We spawned too fast. From now until the first time we tried + TESTTIME seconds
+                we will just return -1 above */
+-            LOG(log_info, logtype_cnid, "maybe_start_dbd: reached MAXSPAWN threshhold");
++            LOG(log_info, logtype_cnid, "maybe_start_dbd: reached MAXSPAWN threshold");
+        }
+     }
+ 
+Index: netatalk-debian/etc/uams/uams_dhx2_pam.c
+===================================================================
+--- netatalk-debian.orig/etc/uams/uams_dhx2_pam.c
++++ netatalk-debian/etc/uams/uams_dhx2_pam.c
+@@ -77,7 +77,7 @@ static int dh_params_generate (unsigned
+     gcry_error_t err;
+ 
+     /* Version check should be the very first call because it
+-       makes sure that important subsystems are intialized. */
++       makes sure that important subsystems are initialized. */
+     if (!gcry_check_version (GCRYPT_VERSION)) {
+         LOG(log_error, logtype_uams, "PAM DHX2: libgcrypt versions mismatch. Need: %s", GCRYPT_VERSION);
+         result = AFPERR_MISC;
+Index: netatalk-debian/etc/uams/uams_dhx2_passwd.c
+===================================================================
+--- netatalk-debian.orig/etc/uams/uams_dhx2_passwd.c
++++ netatalk-debian/etc/uams/uams_dhx2_passwd.c
+@@ -84,7 +84,7 @@ dh_params_generate (gcry_mpi_t *ret_p, g
+     gcry_error_t err;
+ 
+     /* Version check should be the very first call because it
+-       makes sure that important subsystems are intialized. */
++       makes sure that important subsystems are initialized. */
+     if (!gcry_check_version (GCRYPT_VERSION)) {
+         LOG(log_info, logtype_uams, "PAM DHX2: libgcrypt versions mismatch. Need: %s", GCRYPT_VERSION);
+         result = AFPERR_MISC;
+Index: netatalk-debian/etc/uams/uams_gss.c
+===================================================================
+--- netatalk-debian.orig/etc/uams/uams_gss.c
++++ netatalk-debian/etc/uams/uams_gss.c
+@@ -527,7 +527,7 @@ static int gss_create_principal(AFPObj *
+     krb5_kt_cursor cursor;
+ 
+     if (krb5_init_context(&context)) {
+-        LOG(log_error, logtype_afpd, "gss_create_principal: failed to intialize a krb5_context");
++        LOG(log_error, logtype_afpd, "gss_create_principal: failed to initialize a krb5_context");
+         goto exit;
+     }
+     if ((ret = krb5_kt_default(context, &keytab)))
+Index: netatalk-debian/libevent/ChangeLog
+===================================================================
+--- netatalk-debian.orig/libevent/ChangeLog
++++ netatalk-debian/libevent/ChangeLog
+@@ -1049,7 +1049,7 @@ Changes in 2.0.1-alpha (17 Apr 2009):
+  o improve documentation on event_base_loopexit; patch from Scott Lamb
+  o New function, event_{base_}loopbreak.  Like event_loopexit, it makes an event loop stop executing and return.  Unlike event_loopexit, it keeps subsequent pending events from getting executed.  Patch from Scott Lamb
+  o Check return value of event_add in signal.c
+- o provide event_reinit() to reintialize an event_base after fork
++ o provide event_reinit() to reinitialize an event_base after fork
+  o New function event_set_mem_functinons.  It allows the user to give libevent replacement functions to use for memory management in place of malloc(), free(), etc.  This should be generally useful for memory instrumentation, specialized allocators, and so on.
+  o The kqueue implementation now catches signals that are raised after event_add() is called but before the event_loop() call.  This makes it match the other implementations.
+  o The kqueue implementation now restores original signal handlers correctly when its signal events are removed.
+Index: netatalk-debian/etc/afpd/acls.c
+===================================================================
+--- netatalk-debian.orig/etc/afpd/acls.c
++++ netatalk-debian/etc/afpd/acls.c
+@@ -827,7 +827,7 @@ static int map_aces_darwin_to_posix(cons
+         darwin_ace_rights = ntohl(darwin_aces->darwin_ace_rights);
+         perm = map_darwin_right_to_posix_permset(darwin_ace_rights, (*def_aclp != NULL));
+         if (perm == 0)
+-            continue;       /* dont add empty perm */
++            continue;       /* don't add empty perm */
+ 
+         LOG(log_debug, logtype_afpd, "map_ace: no: %u, flags: %08x, darwin: %08x, posix: %02x",
+             ace_count, darwin_ace_flags, darwin_ace_rights, perm);
+@@ -1117,7 +1117,7 @@ static int remove_acl(const struct vol *
+ 
+ /*
+   Set ACL. Subtleties:
+-  - the client sends a complete list of ACEs, not only new ones. So we dont need to do
++  - the client sends a complete list of ACEs, not only new ones. So we don't need to do
+   any combination business (one exception being 'kFileSec_Inherit': see next)
+   - client might request that we add inherited ACEs via 'kFileSec_Inherit'.
+   We will store inherited ACEs first, which is Darwins canonical order.
+@@ -1709,7 +1709,7 @@ int afp_setacl(AFPObj *obj, char *ibuf,
+ 
+     /* Start processing request */
+ 
+-    /* Change owner: dont even try */
++    /* Change owner: don't even try */
+     if (bitmap & kFileSec_UUID) {
+         LOG(log_debug, logtype_afpd,
+             "afp_setacl(\"%s\"): ignoring change owner request",
+Index: netatalk-debian/etc/afpd/dircache.c
+===================================================================
+--- netatalk-debian.orig/etc/afpd/dircache.c
++++ netatalk-debian/etc/afpd/dircache.c
+@@ -240,7 +240,7 @@ static unsigned long queue_count;
+  * The default is to remove the 256 oldest entries from the cache.
+  * 1. Get the oldest entry
+  * 2. If it's in use ie open forks reference it or it's curdir requeue it,
+- *    dont remove it
++ *    don't remove it
+  * 3. Remove the dir from the main cache and the didname index
+  * 4. Free the struct dir structure and all its members
+  */
+Index: netatalk-debian/etc/afpd/extattrs.c
+===================================================================
+--- netatalk-debian.orig/etc/afpd/extattrs.c
++++ netatalk-debian/etc/afpd/extattrs.c
+@@ -236,7 +236,7 @@ static char *to_stringz(char *ibuf, uint
+ static char attrmname[256];
+ 
+     if (len > 255)
+-        /* dont fool with us */
++        /* don't fool with us */
+         len = 255;
+ 
+     /* we must copy the name as its not 0-terminated and I DONT WANT TO WRITE to ibuf */
+Index: netatalk-debian/include/atalk/logger.h
+===================================================================
+--- netatalk-debian.orig/include/atalk/logger.h
++++ netatalk-debian/include/atalk/logger.h
+@@ -50,7 +50,7 @@
+  *
+  *
+  * Note:
+- * dont get confused by log_init(). It only gets called if your app
++ * don't get confused by log_init(). It only gets called if your app
+  * forgets to setup logging before calling LOG.
+  */
+ 
+Index: netatalk-debian/libatalk/acl/ldap.c
+===================================================================
+--- netatalk-debian.orig/libatalk/acl/ldap.c
++++ netatalk-debian/libatalk/acl/ldap.c
+@@ -343,7 +343,7 @@ EC_CLEANUP:
+ int ldap_getuuidfromname( const char *name, uuidtype_t type, char **uuid_string) {
+     int ret;
+     int len;
+-    char filter[256];           /* this should really be enough. we dont want to malloc everything! */
++    char filter[256];           /* this should really be enough. we don't want to malloc everything! */
+     char *attributes[]  = { ldap_uuid_attr, NULL};
+     char *ldap_attr;
+ 
+Index: netatalk-debian/libatalk/adouble/ad_open.c
+===================================================================
+--- netatalk-debian.orig/libatalk/adouble/ad_open.c
++++ netatalk-debian/libatalk/adouble/ad_open.c
+@@ -850,7 +850,7 @@ static int ad_mkrf(const char *path)
+ #ifdef HAVE_EAFD
+ static int ad_mkrf_ea(const char *path _U_)
+ {
+-    AFP_PANIC("ad_mkrf_ea: dont use");
++    AFP_PANIC("ad_mkrf_ea: don't use");
+     return 0;
+ }
+ #endif
+@@ -911,7 +911,7 @@ static int ad_header_upgrade(struct adou
+ 
+ static int ad_header_upgrade_ea(struct adouble *ad _U_, const char *name _U_)
+ {
+-    AFP_PANIC("ad_header_upgrade_ea: dont use");
++    AFP_PANIC("ad_header_upgrade_ea: don't use");
+     return 0;
+ }
+ 
+Index: netatalk-debian/libatalk/util/unix.c
+===================================================================
+--- netatalk-debian.orig/libatalk/util/unix.c
++++ netatalk-debian/libatalk/util/unix.c
+@@ -292,7 +292,7 @@ int ochmod(char *path, mode_t mode, cons
+ /* 
+  * @brief ostat/fsstatat multiplexer
+  *
+- * ostatat mulitplexes ostat and fstatat. If we dont HAVE_ATFUNCS, dirfd is ignored.
++ * ostatat mulitplexes ostat and fstatat. If we don't HAVE_ATFUNCS, dirfd is ignored.
+  *
+  * @param dirfd   (r) Only used if HAVE_ATFUNCS, ignored else, -1 gives AT_FDCWD
+  * @param path    (r) pathname
+Index: netatalk-debian/libatalk/vfs/unix.c
+===================================================================
+--- netatalk-debian.orig/libatalk/vfs/unix.c
++++ netatalk-debian/libatalk/vfs/unix.c
+@@ -284,7 +284,7 @@ int netatalk_unlinkat(int dirfd, const c
+ /*
+  * @brief This is equivalent of unix rename()
+  *
+- * unix_rename mulitplexes rename and renameat. If we dont HAVE_ATFUNCS, sfd and dfd
++ * unix_rename mulitplexes rename and renameat. If we don't HAVE_ATFUNCS, sfd and dfd
+  * are ignored.
+  *
+  * @param sfd        (r) if we HAVE_ATFUNCS, -1 gives AT_FDCWD
+@@ -313,7 +313,7 @@ int unix_rename(int sfd, const char *old
+ /* 
+  * @brief stat/fsstatat multiplexer
+  *
+- * statat mulitplexes stat and fstatat. If we dont HAVE_ATFUNCS, dirfd is ignored.
++ * statat mulitplexes stat and fstatat. If we don't HAVE_ATFUNCS, dirfd is ignored.
+  *
+  * @param dirfd   (r) Only used if HAVE_ATFUNCS, ignored else, -1 gives AT_FDCWD
+  * @param path    (r) pathname
+Index: netatalk-debian/libevent/WIN32-Code/event2/event-config.h
+===================================================================
+--- netatalk-debian.orig/libevent/WIN32-Code/event2/event-config.h
++++ netatalk-debian/libevent/WIN32-Code/event2/event-config.h
+@@ -354,7 +354,7 @@
+ /* Define to `unsigned' if <sys/types.h> does not define. */
+ /* #undef _EVENT_size_t */
+ 
+-/* Define to unsigned int if you dont have it */
++/* Define to unsigned int if you don't have it */
+ #define _EVENT_socklen_t unsigned int
+ 
+ /* Define to `int' if <sys/types.h> does not define. */
+Index: netatalk-debian/libevent/config.h.in
+===================================================================
+--- netatalk-debian.orig/libevent/config.h.in
++++ netatalk-debian/libevent/config.h.in
+@@ -425,7 +425,7 @@
+ /* Define to `unsigned int' if <sys/types.h> does not define. */
+ #undef size_t
+ 
+-/* Define to unsigned int if you dont have it */
++/* Define to unsigned int if you don't have it */
+ #undef socklen_t
+ 
+ /* Define to `int' if <sys/types.h> does not define. */
+Index: netatalk-debian/libevent/configure.in
+===================================================================
+--- netatalk-debian.orig/libevent/configure.in
++++ netatalk-debian/libevent/configure.in
+@@ -603,7 +603,7 @@ AC_TRY_COMPILE([
+   AC_MSG_RESULT([yes]),
+   [AC_MSG_RESULT([no])
+   AC_DEFINE(socklen_t, unsigned int,
+-	[Define to unsigned int if you dont have it])]
++	[Define to unsigned int if you don't have it])]
+ )
+ 
+ AC_MSG_CHECKING([whether our compiler supports __func__])
+Index: netatalk-debian/NEWS
+===================================================================
+--- netatalk-debian.orig/NEWS
++++ netatalk-debian/NEWS
+@@ -755,7 +755,7 @@ Changes in 2.1.2
+ * FIX: afpd: ExtendedAttributes in FreeBSD
+ * FIX: afpd: sharing home folders corrupted the per volume umask.
+ * UPD: afpd: umask for home folders is no longer taken from startup umask.
+-* UPD: afpd: dont and permissions with parent folder when creating new
++* UPD: afpd: don't and permissions with parent folder when creating new
+        directories on "upriv" volumes.
+ * UPD: afpd: use 'afpserver@fqdn' instead of 'afpserver/fqdn@realm'.
+        Prevents a crash in older GNU GSSAPI libs on eg. CentOS 5.x.
