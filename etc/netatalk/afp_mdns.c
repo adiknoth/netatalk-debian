@@ -36,7 +36,7 @@ static pthread_t       poller;
  * Its easier to use asprintf to set the TXT record values
  */
 
-int TXTRecordPrintf(TXTRecordRef * rec, const char * key, const char * fmt, ... ) 
+int TXTRecordPrintf(TXTRecordRef * rec, const char * key, const char * fmt, ... )
 {
     int ret = 0;
     char *str;
@@ -45,7 +45,7 @@ int TXTRecordPrintf(TXTRecordRef * rec, const char * key, const char * fmt, ... 
 
     if( 0 > vasprintf(&str, fmt, ap ) ) {
         va_end(ap);
-        return -1;    
+        return -1;
     }
     va_end(ap);
 
@@ -57,7 +57,7 @@ int TXTRecordPrintf(TXTRecordRef * rec, const char * key, const char * fmt, ... 
     return ret;
 }
 
-int TXTRecordKeyPrintf(TXTRecordRef * rec, const char * key_fmt, int key_var, const char * fmt, ...) 
+int TXTRecordKeyPrintf(TXTRecordRef * rec, const char * key_fmt, int key_var, const char * fmt, ...)
 {
     int ret = 0;
     char *key = NULL, *str = NULL;
@@ -135,7 +135,7 @@ static void RegisterReply(DNSServiceRef sdRef, DNSServiceFlags flags, DNSService
  * registered and frees associated memory
  */
 static void unregister_stuff() {
-    pthread_cancel(poller);    
+    pthread_cancel(poller);
 
     for (int i = 0; i < svc_ref_count; i++)
         close(fds[i].fd);
@@ -212,14 +212,26 @@ static void register_stuff(const AFPObj *obj) {
 
     port = atoi(obj->options.port);
 
-    if (convert_string(obj->options.unixcharset,
-                       CH_UTF8,
-                       obj->options.hostname,
-                       -1,
-                       name,
-                       MAXINSTANCENAMELEN) <= 0) {
-        LOG(log_error, logtype_afpd, "Could not set Zeroconf instance name");
-        goto fail;
+    if (obj->options.zeroconfname) {
+        if (convert_string(obj->options.unixcharset,
+                            CH_UTF8,
+                            obj->options.zeroconfname,
+                            -1,
+                            name,
+                            MAXINSTANCENAMELEN) <= 0) {
+            LOG(log_error, logtype_afpd, "Could not set Zeroconf instance name: %s", obj->options.zeroconfname);
+            goto fail;
+        }
+    } else {
+        if (convert_string(obj->options.unixcharset,
+                           CH_UTF8,
+                           obj->options.hostname,
+                           -1,
+                           name,
+                           MAXINSTANCENAMELEN) <= 0) {
+            LOG(log_error, logtype_afpd, "Could not set Zeroconf instance name: %s", obj->options.hostname);
+            goto fail;
+        }
     }
 
     error = DNSServiceRegister(&svc_refs[svc_ref_count++],

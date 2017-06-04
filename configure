@@ -17178,6 +17178,9 @@ $as_echo "#define UAM_DHX2 1" >>confdefs.h
 
     :
   else
+    if test x$libgcrypt_config_prefix != x"no" ; then
+      as_fn_error $? "Could not find libcgrypt development files needed for the DHX2 UAM, please install the libgcrypt devel package" "$LINENO" 5
+    fi
     LIBGCRYPT_CFLAGS=""
     LIBGCRYPT_LIBS=""
     :
