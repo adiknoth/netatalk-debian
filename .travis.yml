@@ -1,5 +1,9 @@
 sudo: required
 language: generic
+env:
+- TRAVIS_DEBIAN_DISTRIBUTION=jessie
+- TRAVIS_DEBIAN_DISTRIBUTION=stretch
+- TRAVIS_DEBIAN_DISTRIBUTION=buster
 services:
 - docker
 script:
@@ -7,6 +11,8 @@ script:
 branches:
   except:
   - /^debian\/\d/
+after_success:
+- /bin/bash -c 'cd ..; for deb in *.deb; do mv "$deb" "$TRAVIS_DEBIAN_DISTRIBUTION"_"$deb"; done'
 deploy:
   provider: releases
   api_key:
@@ -14,4 +20,4 @@ deploy:
   file_glob: true
   file: ../*.deb
   on:
-    repo: dgilman/netatalk-debian
+    tags: true
