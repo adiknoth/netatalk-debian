@@ -1,5 +1,11 @@
+Changes in 3.1.12
+=================
+* FIX: dhx uams: build with LibreSSL, GitHub#91
+* FIX: various spelling errors
+* FIX: CVE-2018-1160
+
 Changes in 3.1.11
-================
+=================
 * NEW: Global option "zeroconf name", FR#99
 * NEW: show Zeroconf support by "netatalk -V", FR#100
 * UPD: gentoo: Switch openrc init script to openrc-run, GitHub#77
@@ -10,7 +16,7 @@ Changes in 3.1.11
 * UPD: dhx uams: OpenSSL 1.1 support, GitHub#87
 
 Changes in 3.1.10
-================
+=================
 * FIX: cannot build when ldap is not defined, bug #630
 * FIX: SIGHUP can cause core dump when mdns is enabled, bug #72
 * FIX: Solaris: stale pid file puts netatalk into maintenance mode, bug #73
@@ -755,7 +761,7 @@ Changes in 2.1.2
 * FIX: afpd: ExtendedAttributes in FreeBSD
 * FIX: afpd: sharing home folders corrupted the per volume umask.
 * UPD: afpd: umask for home folders is no longer taken from startup umask.
-* UPD: afpd: dont and permissions with parent folder when creating new
+* UPD: afpd: don't and permissions with parent folder when creating new
        directories on "upriv" volumes.
 * UPD: afpd: use 'afpserver@fqdn' instead of 'afpserver/fqdn@realm'.
        Prevents a crash in older GNU GSSAPI libs on eg. CentOS 5.x.
