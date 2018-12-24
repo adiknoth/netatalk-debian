@@ -1,3 +1,10 @@
+netatalk (3.1.12-1) experimental; urgency=high
+
+  [ Richard van den Berg ]
+  * Imported Upstream version 3.1.12
+
+ -- Richard van den Berg <richard@vdberg.org>  Tue, 25 Dec 2018 00:29:20 +0200
+
 netatalk (3.1.11-1) UNRELEASED; urgency=medium
 
   [ Adrian Knoth ]
