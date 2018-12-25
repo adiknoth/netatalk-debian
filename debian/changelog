@@ -1,8 +1,7 @@
-netatalk (3.1.11-1) UNRELEASED; urgency=medium
+netatalk (3.1.12-1) UNRELEASED; urgency=medium
 
   [ Adrian Knoth ]
-  * Imported Upstream version 3.1.11
-  * Bump standards version
+  * Imported Upstream version 3.1.12
   * Fix lintian warning regarding debian/copyright
   * Add patch to source init functions in init.d script
   * Explicitly disable bundled libevent
@@ -18,7 +17,17 @@ netatalk (3.1.11-1) UNRELEASED; urgency=medium
   [ Mostyn Bramley-Moore ]
   * licensecheck is part of the devscripts package in jessie and earlier
 
- -- Adrian Knoth <adi@drcomp.erfurt.thur.de>  Sun, 04 Jun 2017 21:27:58 +0200
+  [ Adrian Knoth ]
+  * Bump standards version to 3.9.8
+  * Remove duplicate Section field in control.in
+  * Regenerate control
+
+  [ David Gilman ]
+  * Add .travis.yml from http://travis.debian.net.
+  * Update travis to deploy deb pkgs
+  * Build multiple releases with travis
+
+ -- Adrian Knoth <adi@drcomp.erfurt.thur.de>  Tue, 25 Dec 2018 11:18:57 +0100
 
 netatalk (3.0.6-1) experimental; urgency=low
 
