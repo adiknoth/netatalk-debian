@@ -23196,10 +23196,10 @@ $as_echo "    LIBEVENT:" >&6; }
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result:         bundled" >&5
 $as_echo "        bundled" >&6; }
     else
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result:         LIBS   = $LIBEVENT_CFLAGS" >&5
-$as_echo "        LIBS   = $LIBEVENT_CFLAGS" >&6; }
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result:         CFLAGS = $LIBEVENT_LDFLAGS" >&5
-$as_echo "        CFLAGS = $LIBEVENT_LDFLAGS" >&6; }
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result:         LIBS   = $LIBEVENT_LDFLAGS" >&5
+$as_echo "        LIBS   = $LIBEVENT_LDFLAGS" >&6; }
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result:         CFLAGS = $LIBEVENT_CFLAGS" >&5
+$as_echo "        CFLAGS = $LIBEVENT_CFLAGS" >&6; }
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: result:     TDB:" >&5
 $as_echo "    TDB:" >&6; }
