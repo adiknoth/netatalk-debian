@@ -1,0 +1,22 @@
+sudo: required
+language: generic
+env:
+- TRAVIS_DEBIAN_DISTRIBUTION=stretch
+- TRAVIS_DEBIAN_DISTRIBUTION=buster
+services:
+- docker
+script:
+- wget -O- http://travis.debian.net/script.sh | sh -
+branches:
+  except:
+  - /^debian\/\d/
+after_success:
+- /bin/bash -c 'cd ..; for deb in *.deb; do mv "$deb" "$TRAVIS_DEBIAN_DISTRIBUTION"_"$deb"; done'
+deploy:
+  provider: releases
+  api_key:
+    secure: cBEPvvv4lp0ttoJPs10WTdvw/eEF3Lyy8jvGeheWTslKuTSt3MXsW8ROR+gZNOtra4rp+wYAQSj9TigfbrzFMztdKnInj51VFHLngImwGhhFM5vMMoroXhMZdJrQjIMhwmn1n+/C5avVEH77HOoh6fygQ7sjv2VfSh3nX687a+k/zsmiG2tEAiMd0LJrPxjvS6nKH6beObJab6kgFmyQAG0cpxDsCJ6TE8Ho0aHQ3XUC2wsp+j6fnZ7XE1ZKZk8iHKZU4XqZDSRrFB4L9DPTr0O8u8A04KrBsZSDONq6JZBEQmFJIRKSoXeYSt/L0/j5S7GXSJL1TifM9fGZxBKNIJ4ZrOCfbGq9ySv0MVKiNGd7aRYMoHyW3YbMjNtNdED6vcIUvWTplEEleYQkItKxjX+J+g5/NJmBDtY3cK6cOA8ekhaot0EdM/aL05i4Dt2BkPnEXf2CaKzO+ccqMbsPcVy/Yry6dStpgLeteawRqhCOXlq4FUoYeAWhQ99FcK2SVugaRUH61Bd12ATInrDFbFK4h1cPUtQcOuOuABqVWio5lvC3F0xJmwYxLCOHnovmJus7O3+kMrNIVPy7U5XWa7DIte3FhbOrhEXPU0brAEdxLyIFCL951o9CyBZPBxBjRxnn19ckDCJNnO++m9d5pyQiVALFRsaP0oHBc7fMeLY=
+  file_glob: true
+  file: ../*.deb
+  on:
+    tags: true
